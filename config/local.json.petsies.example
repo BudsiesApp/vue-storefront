@@ -931,6 +931,15 @@
     "endpoint": "/api/url",
     "map_endpoint": "/api/url/map"
   },
+  "paypal": {
+    "clientId": "same-as-magento",
+    "disabledMethods": ["giropay", "sofort", "card", "credit", "mybank", "sepa"], 
+    "addJsToGlobalHead": true,
+    "endpoint": {
+      "complete": "/api/ext/paypal/complete",
+      "setExpressCheckout": "/api/ext/paypal/setExpressCheckout"
+      }
+  },
   "fastly": {
     "enabled": false
   },
