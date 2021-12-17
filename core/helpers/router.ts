@@ -17,8 +17,6 @@ export const createRouter = (): VueRouter => {
     mode: 'history',
     base: __dirname,
     scrollBehavior: (to, from) => {
-      if (to.name === from.name && to.meta.preventScrollBehaviorOnTheSameRoute) return;
-
       if (to.hash) {
         return {
           selector: to.hash
