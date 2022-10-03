@@ -10,6 +10,8 @@
       "minifyJS": true,
       "minifyCSS": true
     },
+    "petsiesDomain": "${PETSIES_STORE_DOMAIN}",
+    "budsiesDomain": "${BUDSIES_STORE_DOMAIN}",
     "useOutputCacheTagging": false,
     "useOutputCache": false,
     "outputCacheDefaultTtl": 86400,
