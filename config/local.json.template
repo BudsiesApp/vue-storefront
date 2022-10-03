@@ -10,8 +10,6 @@
       "minifyJS": true,
       "minifyCSS": true
     },
-    "petsiesDomain": "${PETSIES_STORE_DOMAIN}",
-    "budsiesDomain": "${BUDSIES_STORE_DOMAIN}",
     "useOutputCacheTagging": false,
     "useOutputCache": false,
     "outputCacheDefaultTtl": 86400,
@@ -92,7 +90,11 @@
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/url-rewrite"
   },
   "budsies": {
-    "endpoint": "https://${VSF_API_DOMAIN}/api/ext/budsies"
+    "endpoint": "https://${VSF_API_DOMAIN}/api/ext/budsies",
+    "domain": "${BUDSIES_STORE_DOMAIN}"
+  },
+  "petsies": {
+    "domain": "${PETSIES_STORE_DOMAIN}"
   },
   "initialResources": [
     {
