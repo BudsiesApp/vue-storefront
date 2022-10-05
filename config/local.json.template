@@ -91,10 +91,8 @@
   },
   "budsies": {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/budsies",
-    "domain": "${BUDSIES_STORE_DOMAIN}"
-  },
-  "petsies": {
-    "domain": "${PETSIES_STORE_DOMAIN}"
+    "budsiesStoreDomain": "${BUDSIES_STORE_DOMAIN}",
+    "petsiesStoreDomain": "${PETSIES_STORE_DOMAIN}"
   },
   "initialResources": [
     {
