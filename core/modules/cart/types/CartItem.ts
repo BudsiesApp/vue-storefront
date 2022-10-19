@@ -20,7 +20,7 @@ export default interface CartItem extends Product {
   plushieBreed?: string,
   plushieName?: string,
   plushieDescription?: string,
-  bodyparts?: object,
+  bodyparts?: Record<string, (string | number)[]>,
   customFields?: object,
   uploadMethod?: string,
   customerImages?: CustomerImage[],
