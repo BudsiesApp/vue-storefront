@@ -24,5 +24,6 @@ export default interface CartItem extends Product {
   customFields?: object,
   uploadMethod?: string,
   customerImages?: CustomerImage[],
-  giftcard_options?: GiftCardOptions
+  giftcard_options?: GiftCardOptions,
+  customerType?: string
 }
