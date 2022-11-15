@@ -361,5 +361,25 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     return result;
+  },
+  async createBulkorder (context, payload): Promise<number> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/create`)
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while creating bulk order' + result);
+    }
+
+    return result;
   }
 }
