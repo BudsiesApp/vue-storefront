@@ -6,6 +6,7 @@ import RushAddon from '../models/rush-addon.model'
 import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartOption from '../types/bodypart-option'
+import BulkorderQuote from '../models/bulkorder-quote.model'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -107,6 +108,19 @@ const getters: GetterTree<BudsiesState, RootState> = {
     }
 
     return customerEmail;
+  },
+  getBulkorderQuotes: (state: BudsiesState) => (id: number): BulkorderQuote[] => {
+    const result: BulkorderQuote[] = [];
+
+    if (!state.bulkordersQuotes[id] || !state.bulkordersQuotes[id].length) {
+      return result;
+    }
+
+    state.bulkordersQuotes[id].forEach((id) => {
+      result.push(state.bulkorderQuotes[id]);
+    });
+
+    return result;
   }
 }
 

@@ -6,6 +6,7 @@ import BodypartValue from '../models/bodypart-value.model';
 import Bodypart from '../models/bodypart.model';
 import { BudsiesState } from '../types/State'
 import * as types from './mutation-types';
+import BulkorderQuote from '../models/bulkorder-quote.model';
 
 export const mutations: MutationTree<BudsiesState> = {
   setAddon (state: BudsiesState, { key, addon }: { key: string, addon: ExtraPhotoAddon }) {
@@ -68,5 +69,15 @@ export const mutations: MutationTree<BudsiesState> = {
   },
   [types.CUSTOMER_EMAIL_SET] (state: BudsiesState, { email }: { email: string }) {
     Vue.set(state, 'customerEmail', email);
+  },
+  setBulkorderQuotes (state: BudsiesState, { key, quotes }: { key: string, quotes: BulkorderQuote[] }) {
+    const ids: number[] = [];
+
+    quotes.forEach((item) => {
+      ids.push(item.id);
+      Vue.set(state.bulkorderQuotes, item.id, item);
+    });
+
+    Vue.set(state.bulkordersQuotes, key, ids);
   }
 }

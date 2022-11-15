@@ -29,6 +29,10 @@ import isBodypartValueApiResponse from '../models/is-bodypart-value-api-response
 import BodypartApiResponse from '../models/bodypart-api-response.interface'
 import Task from 'core/lib/sync/types/Task'
 import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function'
+import BulkorderQuote from '../models/bulkorder-quote.model';
+import BulkorderQuoteApiResponse from '../models/bulkorder-quote-api-response.interface';
+import isBulkorderQuoteApiResponse from '../models/is-bulkorder-quote-api-response.typeguard';
+import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory'
 
 function parse<T, R> (
   items: unknown[],
@@ -361,5 +365,29 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     return result;
+  },
+  async loadBulkorderQuotes (
+    { commit, state },
+    { bulkorderId }
+  ): Promise<void> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/quotes`);
+
+    const result = await TaskQueue.execute({
+      url: `${url}?bulkOrderId=${bulkorderId}`,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    const quotes = parse<BulkorderQuote, BulkorderQuoteApiResponse>(
+      result.result,
+      bulkorderQuoteFactory,
+      isBulkorderQuoteApiResponse
+    );
+
+    commit('setBulkorderQuotes', { key: bulkorderId, quotes });
   }
 }
