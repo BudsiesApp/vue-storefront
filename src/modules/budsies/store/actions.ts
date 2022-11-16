@@ -362,7 +362,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     return result;
   },
-  async fetchCustomerTypes ({ commit, getters }, { useCache = true }): Promise<any> {
+  async fetchCustomerTypes ({ commit, getters }, useCache = true): Promise<any> {
     const customerTypes = getters['getCustomerTypes'];
 
     if (customerTypes.length && useCache) {
