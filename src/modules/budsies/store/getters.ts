@@ -6,6 +6,7 @@ import RushAddon from '../models/rush-addon.model'
 import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartOption from '../types/bodypart-option'
+import { Dictionary } from '../types/Dictionary.type'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -107,6 +108,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
     }
 
     return customerEmail;
+  },
+  getCustomerTypes: (state: BudsiesState): Dictionary<string> => {
+    return state.customerTypes;
   }
 }
 
