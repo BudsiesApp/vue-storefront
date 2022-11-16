@@ -29,6 +29,7 @@ import isBodypartValueApiResponse from '../models/is-bodypart-value-api-response
 import BodypartApiResponse from '../models/bodypart-api-response.interface'
 import Task from 'core/lib/sync/types/Task'
 import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function'
+import BulkOrderStatus from '../types/bulk-order-status';
 
 function parse<T, R> (
   items: unknown[],
@@ -378,6 +379,25 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     if (resultCode !== 200) {
       throw Error('Error while creating bulk order' + result);
+    }
+
+    return result;
+  },
+  async getBulkOrderStatus (context, payload): Promise<BulkOrderStatus> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/status?bulkOrderId=${payload}`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while getting bulk order status' + result);
     }
 
     return result;
