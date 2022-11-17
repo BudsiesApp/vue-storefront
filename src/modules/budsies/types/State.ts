@@ -16,5 +16,5 @@ export interface BudsiesState {
   plushieShortcode: Dictionary<string>,
   customerEmail: string | undefined,
   breeds: string[],
-  customerTypes: Dictionary<string>
+  customerTypes?: Dictionary<string>
 }

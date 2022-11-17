@@ -405,9 +405,10 @@ export const actions: ActionTree<BudsiesState, RootState> = {
   async fetchCustomerTypes ({ commit, getters }, useCache = true): Promise<any> {
     const customerTypes = getters['getCustomerTypes'];
 
-    if (customerTypes.length && useCache) {
+    if (customerTypes && useCache) {
       return customerTypes;
     }
+
     const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/client-types`);
 
     const { result, resultCode } = await TaskQueue.execute({
