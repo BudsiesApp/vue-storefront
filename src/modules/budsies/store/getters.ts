@@ -109,7 +109,7 @@ const getters: GetterTree<BudsiesState, RootState> = {
 
     return customerEmail;
   },
-  getCustomerTypes: (state: BudsiesState): Dictionary<string> => {
+  getCustomerTypes: (state: BudsiesState): Dictionary<string> | undefined => {
     return state.customerTypes;
   }
 }

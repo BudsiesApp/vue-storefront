@@ -70,7 +70,7 @@ export const mutations: MutationTree<BudsiesState> = {
   [types.CUSTOMER_EMAIL_SET] (state: BudsiesState, { email }: { email: string }) {
     Vue.set(state, 'customerEmail', email);
   },
-  [types.CUSTOMER_TYPES_SET] (state: BudsiesState, customerTypes: Dictionary<string>) {
-    state.customerTypes = customerTypes;
+  [types.CUSTOMER_TYPES_SET] (state: BudsiesState, customerTypes: Dictionary<string> | undefined) {
+    Vue.set(state, 'customerTypes', customerTypes);
   }
 }

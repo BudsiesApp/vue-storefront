@@ -31,6 +31,8 @@ import { ProductId } from './models/product.id';
 import fillProductWithAdditionalFields from './helpers/fill-product-with-additional-fields.function';
 import BodypartOption from './types/bodypart-option';
 import ForeversWizardEvents from './types/forevers-wizard-events';
+import BulkorderQuoteProductId from './types/bulkorder-quote-product-id';
+import BulkOrderStatus from './types/bulk-order-status';
 
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
@@ -71,5 +73,7 @@ export {
   ImageUploadMethod,
   ProductId,
   BodypartOption,
-  ForeversWizardEvents
+  ForeversWizardEvents,
+  BulkorderQuoteProductId,
+  BulkOrderStatus
 }
