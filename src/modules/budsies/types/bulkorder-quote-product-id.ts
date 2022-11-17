@@ -1,4 +1,4 @@
-const enum BulkorderQuoteProductId {
+enum BulkorderQuoteProductId {
   PLUSHIE = 1,
   PILLOW = 2,
   KEYCHAIN = 3
