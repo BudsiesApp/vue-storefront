@@ -401,5 +401,31 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     return result;
+  },
+  async fetchCustomerTypes ({ commit, getters }, useCache = true): Promise<any> {
+    const customerTypes = getters['getCustomerTypes'];
+
+    if (customerTypes.length && useCache) {
+      return customerTypes;
+    }
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/client-types`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while getting customer types' + result)
+    }
+
+    commit(types.CUSTOMER_TYPES_SET, result);
+
+    return result;
   }
 }
