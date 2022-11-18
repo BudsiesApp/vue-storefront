@@ -34,6 +34,7 @@ import BulkorderQuoteApiResponse from '../models/bulkorder-quote-api-response.in
 import isBulkorderQuoteApiResponse from '../models/is-bulkorder-quote-api-response.typeguard';
 import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory';
 import BulkOrderStatus from '../types/bulk-order-status';
+import BulkOrderInfo from '../types/bulk-order-info';
 
 function parse<T, R> (
   items: unknown[],
@@ -426,6 +427,25 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     if (resultCode !== 200) {
       throw Error('Error while getting bulk order status' + result);
+    }
+
+    return result;
+  },
+  async getBulkOrderInfo (context, payload): Promise<BulkOrderInfo> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/info?bulkOrderId=${payload}`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while getting bulk order info' + result);
     }
 
     return result;

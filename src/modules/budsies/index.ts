@@ -34,6 +34,7 @@ import ForeversWizardEvents from './types/forevers-wizard-events';
 import BulkorderQuote from './models/bulkorder-quote.model';
 import BulkorderQuoteProductId from './types/bulkorder-quote-product-id';
 import BulkOrderStatus from './types/bulk-order-status';
+import BulkOrderInfo from './types/bulk-order-info';
 
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
@@ -76,6 +77,7 @@ export {
   BodypartOption,
   ForeversWizardEvents,
   BulkorderQuote,
+  BulkOrderInfo,
   BulkorderQuoteProductId,
   BulkOrderStatus
 }
