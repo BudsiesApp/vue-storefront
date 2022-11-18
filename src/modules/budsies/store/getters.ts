@@ -7,6 +7,7 @@ import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartOption from '../types/bodypart-option'
 import BulkorderQuote from '../models/bulkorder-quote.model'
+import { Dictionary } from '../types/Dictionary.type'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -121,6 +122,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
     });
 
     return result;
+  },
+  getCustomerTypes: (state: BudsiesState): Dictionary<string> | undefined => {
+    return state.customerTypes;
   }
 }
 

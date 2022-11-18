@@ -18,5 +18,6 @@ export interface BudsiesState {
   customerEmail: string | undefined,
   breeds: string[],
   bulkorderQuotes: Dictionary<BulkorderQuote>,
-  bulkordersQuotes: Dictionary<number[]>
+  bulkordersQuotes: Dictionary<number[]>,
+  customerTypes?: Dictionary<string>
 }

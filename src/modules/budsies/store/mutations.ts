@@ -5,6 +5,7 @@ import RushAddon from '../models/rush-addon.model'
 import BodypartValue from '../models/bodypart-value.model';
 import Bodypart from '../models/bodypart.model';
 import { BudsiesState } from '../types/State'
+import { Dictionary } from '../types/Dictionary.type';
 import * as types from './mutation-types';
 import BulkorderQuote from '../models/bulkorder-quote.model';
 
@@ -79,5 +80,8 @@ export const mutations: MutationTree<BudsiesState> = {
     });
 
     Vue.set(state.bulkordersQuotes, key, ids);
+  },
+  [types.CUSTOMER_TYPES_SET] (state: BudsiesState, customerTypes: Dictionary<string> | undefined) {
+    Vue.set(state, 'customerTypes', customerTypes);
   }
 }

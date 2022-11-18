@@ -32,7 +32,8 @@ import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function
 import BulkorderQuote from '../models/bulkorder-quote.model';
 import BulkorderQuoteApiResponse from '../models/bulkorder-quote-api-response.interface';
 import isBulkorderQuoteApiResponse from '../models/is-bulkorder-quote-api-response.typeguard';
-import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory'
+import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory';
+import BulkOrderStatus from '../types/bulk-order-status';
 
 function parse<T, R> (
   items: unknown[],
@@ -389,5 +390,71 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     );
 
     commit('setBulkorderQuotes', { key: bulkorderId, quotes });
+  },
+  async createBulkorder (context, payload): Promise<number> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/create`)
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while creating bulk order' + result);
+    }
+
+    return result;
+  },
+  async getBulkOrderStatus (context, payload): Promise<BulkOrderStatus> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/status?bulkOrderId=${payload}`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while getting bulk order status' + result);
+    }
+
+    return result;
+  },
+  async fetchCustomerTypes ({ commit, getters }, useCache = true): Promise<any> {
+    const customerTypes = getters['getCustomerTypes'];
+
+    if (customerTypes && useCache) {
+      return customerTypes;
+    }
+
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/client-types`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while getting customer types' + result)
+    }
+
+    commit(types.CUSTOMER_TYPES_SET, result);
+
+    return result;
   }
 }

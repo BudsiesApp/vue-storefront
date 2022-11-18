@@ -13,5 +13,6 @@ export const state: BudsiesState = {
   customerEmail: undefined,
   breeds: [],
   bulkorderQuotes: {},
-  bulkordersQuotes: {}
+  bulkordersQuotes: {},
+  customerTypes: undefined
 }
