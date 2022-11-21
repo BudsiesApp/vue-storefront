@@ -14,4 +14,12 @@ export default class BulkorderQuote {
       }
     });
   }
+
+  public getFinalPrice (): number {
+    return this.productionPrice + this.shippingPrice;
+  }
+
+  public getTotalPrice (): number {
+    return this.qty * this.getFinalPrice();
+  }
 }
