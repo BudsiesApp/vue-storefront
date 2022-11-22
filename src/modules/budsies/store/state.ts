@@ -12,6 +12,7 @@ export const state: BudsiesState = {
   plushieShortcode: {},
   customerEmail: undefined,
   breeds: [],
+  bulkorderInfo: undefined,
   bulkorderQuotes: {},
   bulkordersQuotes: {},
   customerTypes: undefined
