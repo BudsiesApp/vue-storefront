@@ -407,7 +407,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while creating bulk order: ' + result.errorMessage);
     }
 
     return result;
@@ -427,7 +427,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while choosing bulk order quote: ' + result.errorMessage);
     }
 
     return result;
@@ -447,7 +447,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while sending bulk order question: ' + result.errorMessage);
     };
   },
   async loadBulkOrderInfo ({ commit, state }, payload): Promise<void> {
@@ -464,7 +464,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while getting bulk order info' + result);
+      throw Error('Error while getting bulk order info: ' + result.errorMessage);
     }
 
     commit('setBulkorderInfo', { info: result });
@@ -489,7 +489,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while getting customer types' + result)
+      throw Error('Error while getting customer types: ' + result.errorMessage)
     }
 
     commit(types.CUSTOMER_TYPES_SET, result);
