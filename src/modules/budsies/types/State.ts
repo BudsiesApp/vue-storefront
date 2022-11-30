@@ -3,6 +3,8 @@ import RushAddon from '../models/rush-addon.model'
 import BodypartValue from '../models/bodypart-value.model'
 import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
+import BulkorderQuote from '../models/bulkorder-quote.model'
+import BulkOrderInfo from './bulk-order-info'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -16,5 +18,8 @@ export interface BudsiesState {
   plushieShortcode: Dictionary<string>,
   customerEmail: string | undefined,
   breeds: string[],
+  bulkorderInfo: BulkOrderInfo | undefined,
+  bulkorderQuotes: Dictionary<BulkorderQuote>,
+  bulkordersQuotes: Dictionary<number[]>,
   customerTypes?: Dictionary<string>
 }
