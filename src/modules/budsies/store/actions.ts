@@ -412,7 +412,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     return result;
   },
-  async chooseQuote (context, payload): Promise<number> {
+  async chooseBulkOrderQuote (context, payload): Promise<number> {
     const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/quote-choose?token={{token}}&cartId={{cartId}}`)
 
     const { result, resultCode } = await TaskQueue.execute({
