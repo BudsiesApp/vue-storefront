@@ -6,7 +6,9 @@ import RushAddon from '../models/rush-addon.model'
 import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartOption from '../types/bodypart-option'
+import BulkorderQuote from '../models/bulkorder-quote.model'
 import { Dictionary } from '../types/Dictionary.type'
+import BulkOrderInfo from '../types/bulk-order-info'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -108,6 +110,22 @@ const getters: GetterTree<BudsiesState, RootState> = {
     }
 
     return customerEmail;
+  },
+  getBulkorderQuotes: (state: BudsiesState) => (id: number): BulkorderQuote[] | undefined => {
+    const result: BulkorderQuote[] = [];
+
+    if (!state.bulkordersQuotes[id]) {
+      return undefined;
+    }
+
+    state.bulkordersQuotes[id].forEach((id) => {
+      result.push(state.bulkorderQuotes[id]);
+    });
+
+    return result;
+  },
+  getBulkorderInfo: (state: BudsiesState): BulkOrderInfo | undefined => {
+    return state.bulkorderInfo;
   },
   getCustomerTypes: (state: BudsiesState): Dictionary<string> | undefined => {
     return state.customerTypes;

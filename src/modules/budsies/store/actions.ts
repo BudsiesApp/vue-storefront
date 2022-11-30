@@ -29,7 +29,12 @@ import isBodypartValueApiResponse from '../models/is-bodypart-value-api-response
 import BodypartApiResponse from '../models/bodypart-api-response.interface'
 import Task from 'core/lib/sync/types/Task'
 import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function'
+import BulkorderQuote from '../models/bulkorder-quote.model';
+import BulkorderQuoteApiResponse from '../models/bulkorder-quote-api-response.interface';
+import isBulkorderQuoteApiResponse from '../models/is-bulkorder-quote-api-response.typeguard';
+import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory';
 import BulkOrderStatus from '../types/bulk-order-status';
+import BulkOrderInfo from '../types/bulk-order-info';
 
 function parse<T, R> (
   items: unknown[],
@@ -363,6 +368,30 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     return result;
   },
+  async loadBulkorderQuotes (
+    { commit, state },
+    { bulkorderId }
+  ): Promise<void> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/quotes`);
+
+    const result = await TaskQueue.execute({
+      url: `${url}?bulkOrderId=${bulkorderId}`,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    const quotes = parse<BulkorderQuote, BulkorderQuoteApiResponse>(
+      result.result,
+      bulkorderQuoteFactory,
+      isBulkorderQuoteApiResponse
+    );
+
+    commit('setBulkorderQuotes', { key: bulkorderId, quotes });
+  },
   async createBulkorder (context, payload): Promise<number> {
     const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/create`)
 
@@ -378,13 +407,51 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while creating bulk order: ' + result.errorMessage);
     }
 
     return result;
   },
-  async getBulkOrderStatus (context, payload): Promise<BulkOrderStatus> {
-    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/status?bulkOrderId=${payload}`);
+  async chooseBulkOrderQuote (context, payload): Promise<number> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/quote-choose?token={{token}}&cartId={{cartId}}`)
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while choosing bulk order quote: ' + result.errorMessage);
+    }
+
+    return result;
+  },
+  async sendBulkOrderQuestion (context, payload): Promise<void> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/question`)
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while sending bulk order question: ' + result.errorMessage);
+    };
+  },
+  async loadBulkOrderInfo ({ commit, state }, payload): Promise<void> {
+    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/info?bulkOrderId=${payload}`);
 
     const { result, resultCode } = await TaskQueue.execute({
       url,
@@ -397,10 +464,10 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while getting bulk order status' + result);
+      throw Error('Error while getting bulk order info: ' + result.errorMessage);
     }
 
-    return result;
+    commit('setBulkorderInfo', { info: result });
   },
   async fetchCustomerTypes ({ commit, getters }, useCache = true): Promise<any> {
     const customerTypes = getters['getCustomerTypes'];
@@ -422,7 +489,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while getting customer types' + result)
+      throw Error('Error while getting customer types: ' + result.errorMessage)
     }
 
     commit(types.CUSTOMER_TYPES_SET, result);
