@@ -378,7 +378,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while creating bulk order' + result.errorMessage);
     }
 
     return result;
