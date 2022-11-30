@@ -407,7 +407,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while creating bulk order: ' + result.errorMessage);
     }
 
     return result;
@@ -427,7 +427,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while choosing bulk order quote: ' + result.errorMessage);
     }
 
     return result;
@@ -447,27 +447,8 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while creating bulk order' + result);
+      throw Error('Error while sending bulk order question: ' + result.errorMessage);
     };
-  },
-  async getBulkOrderStatus (context, payload): Promise<BulkOrderStatus> {
-    const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/status?bulkOrderId=${payload}`);
-
-    const { result, resultCode } = await TaskQueue.execute({
-      url,
-      payload: {
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        mode: 'cors',
-        method: 'GET'
-      },
-      silent: false
-    });
-
-    if (resultCode !== 200) {
-      throw Error('Error while getting bulk order status' + result);
-    }
-
-    return result;
   },
   async loadBulkOrderInfo ({ commit, state }, payload): Promise<void> {
     const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/info?bulkOrderId=${payload}`);
@@ -483,7 +464,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while getting bulk order info' + result);
+      throw Error('Error while getting bulk order info: ' + result.errorMessage);
     }
 
     commit('setBulkorderInfo', { info: result });
@@ -508,7 +489,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while getting customer types' + result)
+      throw Error('Error while getting customer types: ' + result.errorMessage)
     }
 
     commit(types.CUSTOMER_TYPES_SET, result);
