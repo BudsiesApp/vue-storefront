@@ -88,7 +88,7 @@ export const PaymentAffirm: StorefrontModule = function ({ app, store, appConfig
             return;
           }
 
-          method.hint = app.$t('Affirm page will opened in the separate window to securely complete your purchase. Just fill out a few pieces of basic information and get a real-time decision. Checking your eligibility won\'t affect your credit score.').toString();
+          method.hint = app.$t('You will be redirected to Affirm to securely complete your purchase. Just fill out a few pieces of basic information and get a real-time decision. Checking your eligibility won\'t affect your credit score.').toString();
           method.icon = affirmIcon;
         })
       };
