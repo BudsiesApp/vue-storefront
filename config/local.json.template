@@ -873,7 +873,7 @@
   },
   "googleTagManager": {
     "id": "${GTM_ID}",
-    "debug": true,
+    "debug": false,
     "product_attributes": [
       "name",
       "id",
