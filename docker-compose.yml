@@ -44,6 +44,7 @@ services:
       - AMAZONPAY_CLIENT_ID
 
       - VIRTUAL_HOST=${DOMAIN}
+      - VIRTUAL_PORT=3000
       - LETSENCRYPT_HOST=${DOMAIN}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
     volumes:
@@ -72,6 +73,8 @@ services:
       # - vue-storefront-api
     expose:
       - 3000
+    ports:
+      - 9229:9229
 
 volumes: 
   cache:
