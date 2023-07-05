@@ -49,7 +49,8 @@ interface ProductSpecificPriceDirective {
 interface ProductPriceDirective {
   type: DirectiveType.PRODUCT_PRICE,
   isPromo: boolean,
-  productSku: string
+  productSku: string,
+  isColorful: boolean
 }
 
 interface ProcessedTextPart {
@@ -162,10 +163,13 @@ export default Vue.extend({
       }
 
       if (directiveName === 'productPrice') {
+        const style = directiveParams[2];
+
         const directive: ProductPriceDirective = {
           productSku: directiveParams[0],
           isPromo: directiveParams[1] === 'promo',
-          type: DirectiveType.PRODUCT_PRICE
+          type: DirectiveType.PRODUCT_PRICE,
+          isColorful: !style || style !== 'plain'
         }
 
         return directive
@@ -274,7 +278,8 @@ export default Vue.extend({
         props: {
           regularPrice: regular,
           specialPrice: special,
-          isPromo: textPart.isPromo
+          isPromo: textPart.isPromo,
+          isColorful: textPart.isColorful
         }
       }
 
