@@ -66,7 +66,7 @@ export default Vue.extend({
     text-decoration: line-through;
     font-style: italic;
     font-weight: normal;
-    margin-right: var(--spacer-xs);
+    margin-right: var(--spacer-2xs);
   }
 
   &.-colorful {
@@ -74,6 +74,7 @@ export default Vue.extend({
 
     ._regular-price {
       color: var(--c-warning);
+      margin-right: var(--spacer-xs);
     }
 
     ._final-price {
