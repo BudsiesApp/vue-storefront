@@ -1,5 +1,8 @@
 <template>
-  <span class="storyblok-rich-text-price-component">
+  <span
+    class="storyblok-rich-text-price-component"
+    :class="{'-colorful': isColorful}"
+  >
     <span class="_regular-price" v-if="showRegularPrice">
       {{ formattedRegularPrice }}
     </span>
@@ -29,6 +32,10 @@ export default Vue.extend({
     isPromo: {
       type: Boolean,
       default: true
+    },
+    isColorful: {
+      type: Boolean,
+      default: true
     }
   },
   computed: {
@@ -55,19 +62,24 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 .storyblok-rich-text-price-component {
-  font-size: 24px;
-
   ._regular-price {
     text-decoration: line-through;
-    color: var(--c-warning);
     font-style: italic;
     font-weight: normal;
     margin-right: var(--spacer-xs);
   }
 
-  ._final-price {
+  &.-colorful {
+    font-size: 24px;
+
+    ._regular-price {
+      color: var(--c-warning);
+    }
+
+    ._final-price {
       color: var(--c-primary);
       font-weight: bold;
+    }
   }
 }
 </style>
