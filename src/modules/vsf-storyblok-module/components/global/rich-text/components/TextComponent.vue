@@ -272,8 +272,8 @@ export default Vue.extend({
       const processedTextPart: ProcessedTextPart = {
         id: uuidv4(),
         text: '',
-        classes: [],
-        styles: {},
+        classes: this.classes,
+        styles: this.styles,
         component: 'price-component',
         props: {
           regularPrice: regular,
@@ -295,7 +295,7 @@ export default Vue.extend({
         id: uuidv4(),
         text: prices[textPart.priceType],
         classes: this.classes,
-        styles: {},
+        styles: this.styles,
         component: 'span'
       }
     },
