@@ -443,5 +443,26 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     EventBus.$emit('address-removed', payload.address.id);
+  },
+  async remindAboutBudsies (context, payload: {
+    email: string,
+    date: string
+  }): Promise<void> {
+    const url = `${config.budsies.endpoint}/plushie-reminders`;
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw new Error(`Error while send plushie reminders request: ${result}`);
+    }
   }
 }
