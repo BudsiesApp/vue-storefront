@@ -25,7 +25,7 @@ export default interface CartItem extends Product {
   uploadMethod?: string,
   customerImages?: CustomerImage[],
   giftcard_options?: GiftCardOptions,
-  upgrade_option_values?: {
+  upgradeOptionValues?: {
     upgradeSku: string,
     optionsValues: Record<string, string>
   }[]
