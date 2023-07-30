@@ -861,7 +861,7 @@
   "braintree" : {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/braintree",
     "applePay": {
-      "displayName": "My Petsies",
+      "displayName": "${DEFAULT_STORE_NAME}",
       "label": "Budsies Co LLC"
     }
   },
@@ -895,7 +895,7 @@
         "CancelOrderReference": "https://${VSF_API_DOMAIN}/api/ext/amazon-pay/CancelOrderReference",
         "Authorize": "https://${VSF_API_DOMAIN}/api/ext/amazon-pay/Authorize"
     },
-      "storeName": "Petsies",
+      "storeName": "${DEFAULT_STORE_NAME}",
       "authorization": {
           "asynchronous": true
       },
