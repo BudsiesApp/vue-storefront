@@ -444,9 +444,9 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     EventBus.$emit('address-removed', payload.address.id);
   },
-  async remindAboutBudsies (context, payload: {
-    email: string,
-    date: string
+  async createPlushieReminder (context, payload: {
+    customerEmail: string,
+    remindDate: string
   }): Promise<void> {
     const url = `${config.budsies.endpoint}/plushie-reminders`;
 
