@@ -22,7 +22,7 @@ import { SET_IS_SYNCED } from 'src/modules/promotion-platform/types/StoreMutatio
 const baseRaffleUrl = `${config.budsies.endpoint}/raffle`;
 
 export const actions: ActionTree<StoreState, RootState> = {
-  async [FETCH_CURRENT_STATE] (_, { commit }): Promise<CurrentState> {
+  async [FETCH_CURRENT_STATE] ({ commit }): Promise<CurrentState> {
     const url = processURLAddress(`${baseRaffleUrl}/states/current`);
 
     const { result, resultCode } = await TaskQueue.execute({
@@ -48,15 +48,17 @@ export const actions: ActionTree<StoreState, RootState> = {
 
     return currentState;
   },
-  async [REGISTER] ({
-    email,
-    firstName,
-    lastName
-  }: {
-    email: string,
-    firstName: string,
-    lastName: string
-  }, { commit, getters }): Promise<ParticipantData> {
+  async [REGISTER] (
+    { commit, getters },
+    {
+      email,
+      firstName,
+      lastName
+    }: {
+      email: string,
+      firstName: string,
+      lastName: string
+    }): Promise<ParticipantData> {
     const url = processURLAddress(`${baseRaffleUrl}/registrations`);
     const referrerCode = getters[GET_REFERRER_TOKEN];
 
@@ -97,7 +99,10 @@ export const actions: ActionTree<StoreState, RootState> = {
 
     return participantData;
   },
-  async [FETCH_PARTICIPANT_BY_ID] (participantId, { commit }): Promise<ParticipantData> {
+  async [FETCH_PARTICIPANT_BY_ID] (
+    { commit },
+    participantId: string
+  ): Promise<ParticipantData> {
     const url = processURLAddress(`${baseRaffleUrl}/participants/${participantId}`);
 
     const { result, resultCode } = await TaskQueue.execute({
@@ -130,8 +135,8 @@ export const actions: ActionTree<StoreState, RootState> = {
     return participantData;
   },
   async [FETCH_WINNING_TICKETS] (
-    { useCache = true }: {useCache: boolean},
-    { commit, getters }
+    { commit, getters },
+    { useCache = true }: {useCache: boolean}
   ): Promise<Ticket[]> {
     const url = processURLAddress(`${baseRaffleUrl}/tickets/winning`);
     const fetchedWinningTickets = getters[GET_LAST_WINNING_TICKETS];
@@ -161,7 +166,7 @@ export const actions: ActionTree<StoreState, RootState> = {
 
     return result;
   },
-  async [VERIFY_TOKEN] (token: string, { commit }): Promise<boolean> {
+  async [VERIFY_TOKEN] ({ commit }, token: string): Promise<boolean> {
     const url = processURLAddress(`${baseRaffleUrl}/tokenVerificationRequests`);
 
     const { result, resultCode } = await TaskQueue.execute({
