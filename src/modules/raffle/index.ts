@@ -13,7 +13,6 @@ import * as getters from './types/getter';
 import * as mutations from './types/mutation';
 import { SN_RAFFLE } from './types/store-name';
 import { cacheHandlerFactory } from './helpers/cache-handler.factory';
-import { RAFFLE_MODULE_SYNCED_EVENT_NAME } from './types/event';
 
 import RafflePending from './components/pending.vue';
 import RaffleRegistrationForm from './components/registration-form.vue';
@@ -62,7 +61,6 @@ export {
   CurrentState,
   Ticket,
   ParticipantData,
-  RAFFLE_MODULE_SYNCED_EVENT_NAME,
   RafflePending,
   RaffleRegistrationForm,
   RaffleModalPreviousWinningTickets,

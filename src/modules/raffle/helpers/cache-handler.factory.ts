@@ -14,12 +14,10 @@ export function cacheHandlerFactory () {
     if (type.endsWith(types.PARTICIPANT_DATA_SET)) {
       if (!mutation.payload) {
         raffleStorage.removeItem('raffle-token');
-        raffleStorage.removeItem('participant-id');
         return;
       }
 
       raffleStorage.setItem('raffle-token', mutation.payload.token);
-      raffleStorage.setItem('participant-id', mutation.payload.participantId);
     }
 
     if (type.endsWith(types.REFERRER_TOKEN_SET)) {
