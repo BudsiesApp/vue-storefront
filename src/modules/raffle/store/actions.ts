@@ -8,7 +8,6 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 
 import CurrentState from '../models/current-state.model';
 import ParticipantData from '../models/participant-data.model';
-import Ticket from '../models/ticket.model';
 import { StoreState } from '../types/store-state.interface';
 import { FETCH_CURRENT_STATE, FETCH_WINNING_TICKETS, REGISTER, SYNCHRONIZE, VERIFY_TOKEN } from '../types/action';
 import { GET_CURRENT_STATE, GET_IS_SYNCED, GET_LAST_WINNING_TICKETS, GET_REFERRER_TOKEN } from '../types/getter';
@@ -109,7 +108,7 @@ export const actions: ActionTree<StoreState, RootState> = {
   async [FETCH_WINNING_TICKETS] (
     { commit, getters },
     { useCache }: {useCache: boolean} = { useCache: true }
-  ): Promise<Ticket[]> {
+  ): Promise<string[]> {
     const url = processURLAddress(`${baseRaffleUrl}/tickets/winning`);
     const fetchedWinningTickets = getters[GET_LAST_WINNING_TICKETS];
 

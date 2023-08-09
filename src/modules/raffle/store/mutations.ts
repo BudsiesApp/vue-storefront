@@ -5,7 +5,6 @@ import { CURRENT_STATE_SET, IS_SYNCED_SET, LAST_WINNING_TICKETS_SET, PARTICIPANT
 import { StoreState } from '../types/store-state.interface';
 import ParticipantData from '../models/participant-data.model';
 import CurrentState from '../models/current-state.model';
-import Ticket from '../models/ticket.model';
 
 export const mutations: MutationTree<StoreState> = {
   [PARTICIPANT_DATA_SET] (state: StoreState, payload: ParticipantData): void {

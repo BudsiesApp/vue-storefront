@@ -235,6 +235,7 @@ export default Vue.extend({
 
     ._form-input {
       flex-grow: 1;
+      flex-basis: 100%;
 
       &._last-name {
         margin-top: var(--spacer-sm);
