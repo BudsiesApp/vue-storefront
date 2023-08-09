@@ -118,7 +118,7 @@
         {{ $t('You can see all previously chosen ticket numbers') }}
         <SfButton
           class="sf-button--text"
-          @click="showWinners"
+          @click="$emit('show-previous-winning-tickets-button-click')"
         >
           {{ $t('here') }}
         </SfButton>
@@ -136,7 +136,10 @@ import { extend, ValidationProvider, ValidationObserver } from 'vee-validate';
 import { email, required } from 'vee-validate/dist/rules';
 import Vue from 'vue';
 
+import i18n from '@vue-storefront/i18n'
+
 import { SfButton, SfHeading, SfInput } from '@storefront-ui/vue';
+
 import { SN_RAFFLE } from '../types/store-name';
 import { REGISTER } from '../types/action';
 
@@ -202,18 +205,21 @@ export default Vue.extend({
           firstName: this.firstName,
           lastName: this.lastName
         });
+      } catch (error) {
+        this.$store.dispatch('notification/spawnNotification', {
+          type: 'error',
+          message: (error as Error).message,
+          action1: { label: i18n.t('OK') }
+        })
       } finally {
         this.isSubmitting = false;
       }
-    },
-    showWinners (): void {
-      //
     }
   }
 })
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .raffle-registration-form {
   ._accent {
     color: var(--c-warning);

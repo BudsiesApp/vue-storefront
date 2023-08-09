@@ -9,7 +9,7 @@ import Ticket from '../models/ticket.model';
 
 export const getters: GetterTree<StoreState, RootState> = {
   [GET_REFERRER_TOKEN] (state): string | undefined {
-    return state.referrerCode;
+    return state.referrerToken;
   },
   [GET_PARTICIPANT_DATA] (state): ParticipantData | undefined {
     return state.participantData;
@@ -17,7 +17,7 @@ export const getters: GetterTree<StoreState, RootState> = {
   [GET_CURRENT_STATE] (state): CurrentState | undefined {
     return state.currentState;
   },
-  [GET_LAST_WINNING_TICKETS] (state): Ticket[] {
+  [GET_LAST_WINNING_TICKETS] (state): string[] {
     return state.lastWinningTickets;
   },
   [GET_IS_SYNCED] (state): boolean {

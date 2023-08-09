@@ -13,12 +13,10 @@ import Ticket from '../models/ticket.model';
 import { StoreState } from '../types/store-state.interface';
 import { FETCH_CURRENT_STATE, FETCH_PARTICIPANT_BY_ID, FETCH_WINNING_TICKETS, REGISTER, SYNCHRONIZE, VERIFY_TOKEN } from '../types/action';
 import { GET_IS_SYNCED, GET_LAST_WINNING_TICKETS, GET_REFERRER_TOKEN } from '../types/getter';
-import { CURRENT_STATE_SET, LAST_WINNING_TICKETS_SET, PARTICIPANT_DATA_SET } from '../types/mutation';
+import { CURRENT_STATE_SET, IS_SYNCED_SET, LAST_WINNING_TICKETS_SET, PARTICIPANT_DATA_SET, REFERRER_TOKEN_SET } from '../types/mutation';
 import { TokenStatusValue } from '../types/token-status.value';
 import { SN_RAFFLE } from '../types/store-name';
 import { RAFFLE_MODULE_SYNCED_EVENT_NAME } from '../types/event';
-import { SET_IS_SYNCED } from 'src/modules/promotion-platform/types/StoreMutations';
-import { TicketStatusValue } from '../types/ticket-status.value';
 
 const baseRaffleUrl = `${config.budsies.endpoint}/raffle`;
 
@@ -84,27 +82,9 @@ export const actions: ActionTree<StoreState, RootState> = {
       silent: false
     });
 
-    if (resultCode === 500) { // TODO mock
-      const participantData = new ParticipantData(
-        1,
-        'testcode',
-        [
-          {
-            code: 'SCR100001',
-            ticketStatus: TicketStatusValue.PENDING
-          }
-        ],
-        'testcode',
-        false
-      );
-
-      commit(PARTICIPANT_DATA_SET, participantData);
-
-      return participantData;
-    }
-
     if (resultCode !== 200) {
-      throw new Error(`Error while raffle registration`);
+      const message = result.errorMessage || 'Error while raffle registration';
+      throw new Error(message);
     }
 
     const participantData = new ParticipantData(
@@ -135,7 +115,7 @@ export const actions: ActionTree<StoreState, RootState> = {
         mode: 'cors',
         method: 'GET'
       },
-      silent: false
+      silent: true
     });
 
     if (resultCode !== 200) {
@@ -202,7 +182,7 @@ export const actions: ActionTree<StoreState, RootState> = {
           token
         })
       },
-      silent: false
+      silent: true
     });
 
     if (resultCode !== 200) {
@@ -214,12 +194,14 @@ export const actions: ActionTree<StoreState, RootState> = {
       return false;
     }
 
+    const participantDataResponse = result.participantData;
+
     const participantData = new ParticipantData(
-      result.participantId,
-      result.referralLink,
-      result.tickets,
-      result.token,
-      result.isWinner
+      participantDataResponse.participantId,
+      participantDataResponse.referralLink,
+      participantDataResponse.tickets,
+      participantDataResponse.token,
+      participantDataResponse.isWinner
     );
 
     commit(PARTICIPANT_DATA_SET, participantData);
@@ -233,14 +215,19 @@ export const actions: ActionTree<StoreState, RootState> = {
 
     const raffleStorage = StorageManager.get(SN_RAFFLE);
 
-    const token = raffleStorage.getItem('raffle-token');
-    const participantId = raffleStorage.getItem('participant-id');
+    const token = await raffleStorage.getItem('raffle-token');
+    const participantId = await raffleStorage.getItem('participant-id');
+    const referrerToken = await raffleStorage.getItem('referrer-token');
+
+    if (referrerToken) {
+      commit(REFERRER_TOKEN_SET, referrerToken);
+    }
 
     if (token) {
       const isFound = await dispatch(VERIFY_TOKEN, token);
 
       if (isFound) {
-        commit(SET_IS_SYNCED, true);
+        commit(IS_SYNCED_SET, true);
         EventBus.$emit(RAFFLE_MODULE_SYNCED_EVENT_NAME);
         return;
       }
@@ -250,7 +237,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       await dispatch(FETCH_PARTICIPANT_BY_ID, participantId);
     }
 
-    commit(SET_IS_SYNCED, true);
+    commit(IS_SYNCED_SET, true);
     EventBus.$emit(RAFFLE_MODULE_SYNCED_EVENT_NAME);
   }
 }

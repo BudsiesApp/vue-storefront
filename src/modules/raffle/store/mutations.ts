@@ -15,9 +15,9 @@ export const mutations: MutationTree<StoreState> = {
     Vue.set(state, 'currentState', payload);
   },
   [REFERRER_TOKEN_SET] (state: StoreState, payload: string): void {
-    Vue.set(state, 'referralToken', payload);
+    Vue.set(state, 'referrerToken', payload);
   },
-  [LAST_WINNING_TICKETS_SET] (state: StoreState, payload: Ticket[]): void {
+  [LAST_WINNING_TICKETS_SET] (state: StoreState, payload: string[]): void {
     state.lastWinningTickets = payload;
   },
   [IS_SYNCED_SET] (state: StoreState, payload: boolean): void {

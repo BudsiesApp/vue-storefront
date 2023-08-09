@@ -45,7 +45,7 @@
         {{ referralLink }}
       </a>
 
-      <div class="_referral-link-copy" />
+      <div class="_referral-link-copy" @click="onCopyLinkClick" />
     </div>
 
     <div class="_referral-mobile-hint">
@@ -62,33 +62,60 @@
       </li>
     </ul>
 
-    <m-social-icons class="_social-icons" />
+    <m-social-sharing
+      class="_social-sharing"
+      :sharing-url="sharingData.url"
+      :sharing-description="sharingData.description"
+      :twitter-description="sharingData.twitterDescription"
+      :e-mail-subject="sharingData.eMailSubject"
+    />
 
     <SfHeading
       class="_title _good-luck"
       :level="3"
       :title="$t('Good luck!')"
     />
+
+    <SfButton
+      class="_winning-tickets sf-button--text"
+      @click.prevent="$emit('show-previous-winning-tickets-button-click')"
+    >
+      {{ $t('See past winning numbers') }}
+    </SfButton>
   </div>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from 'vue';
 
-import { SfHeading } from '@storefront-ui/vue';
+import { SfButton, SfHeading } from '@storefront-ui/vue';
 
 import ParticipantData from '../models/participant-data.model';
 import Ticket from '../models/ticket.model';
 
+import MSocialSharing from 'theme/components/molecules/m-social-sharing.vue';
+
 export default Vue.extend({
   name: 'RafflePending',
   components: {
-    SfHeading
+    SfButton,
+    SfHeading,
+    MSocialSharing
   },
   props: {
     participantData: {
       type: Object as PropType<ParticipantData>,
       required: true
+    }
+  },
+  data () {
+    return {
+      sharingData: {
+        url: this.participantData.referralLink,
+        description: this.$t('Hey! Check out these Specialty Commissions from Budsies. You send them a photo of your drawing, ref sheet or artwork, and they make it into a custom stuffed animal. Here is a VIP link:'),
+        twitterDescription: this.$t('Woah! Now you can turn your original characters and drawings into plush @Budsies'),
+        eMailSubject: this.$t('Woah! You can turn your original characters and drawings into plush')
+      }
     }
   },
   computed: {
@@ -97,6 +124,11 @@ export default Vue.extend({
     },
     referralLink (): string {
       return this.participantData.referralLink;
+    }
+  },
+  methods: {
+    onCopyLinkClick (): void {
+      navigator.clipboard.writeText(this.participantData.referralLink);
     }
   }
 })
@@ -149,6 +181,7 @@ export default Vue.extend({
 
   ._email-notification {
     margin-top: var(--spacer-lg);
+    margin-bottom: 0;
   }
 
   ._code {
@@ -166,6 +199,7 @@ export default Vue.extend({
 
   ._title {
     --heading-title-font-size: var(--font-xl);
+    margin-top: var(--spacer-lg);
   }
 
   ._referral-link-container {
@@ -174,6 +208,7 @@ export default Vue.extend({
 
     ._referral-link {
       color: var(--c-primary);
+      line-height: 1;
     }
 
     ._referral-link-copy {
@@ -196,8 +231,21 @@ export default Vue.extend({
     margin-top: var(--spacer-sm);
   }
 
+  ._social-sharing {
+    margin-top: var(--spacer-xl);
+    text-align: center;
+  }
+
   ._good-luck {
     margin-top: var(--spacer-xl);
+  }
+
+  ._winning-tickets {
+    margin: var(--spacer-sm) auto 0;
+    display: block;
+    text-decoration: none;
+    color: var(--c-link);
+    font-size: var(--font-sm);
   }
 
   @include for-desktop {

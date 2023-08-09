@@ -4,6 +4,6 @@ export const state: StoreState = {
   currentState: undefined,
   participantData: undefined,
   lastWinningTickets: [],
-  referrerCode: undefined,
+  referrerToken: undefined,
   isSynced: false
 }
