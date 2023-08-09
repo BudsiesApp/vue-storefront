@@ -12,7 +12,7 @@ import ParticipantData from '../models/participant-data.model';
 import Ticket from '../models/ticket.model';
 import { StoreState } from '../types/store-state.interface';
 import { FETCH_CURRENT_STATE, FETCH_PARTICIPANT_BY_ID, FETCH_WINNING_TICKETS, REGISTER, SYNCHRONIZE, VERIFY_TOKEN } from '../types/action';
-import { GET_IS_SYNCED, GET_LAST_WINNING_TICKETS, GET_REFERRER_TOKEN } from '../types/getter';
+import { GET_CURRENT_STATE, GET_IS_SYNCED, GET_LAST_WINNING_TICKETS, GET_REFERRER_TOKEN } from '../types/getter';
 import { CURRENT_STATE_SET, IS_SYNCED_SET, LAST_WINNING_TICKETS_SET, PARTICIPANT_DATA_SET, REFERRER_TOKEN_SET } from '../types/mutation';
 import { TokenStatusValue } from '../types/token-status.value';
 import { SN_RAFFLE } from '../types/store-name';
@@ -21,7 +21,16 @@ import { RAFFLE_MODULE_SYNCED_EVENT_NAME } from '../types/event';
 const baseRaffleUrl = `${config.budsies.endpoint}/raffle`;
 
 export const actions: ActionTree<StoreState, RootState> = {
-  async [FETCH_CURRENT_STATE] ({ commit }): Promise<CurrentState> {
+  async [FETCH_CURRENT_STATE] (
+    { commit, getters },
+    { useCache }: {useCache: boolean} = { useCache: true }
+  ): Promise<CurrentState> {
+    const cachedState = getters[GET_CURRENT_STATE];
+
+    if (cachedState && useCache) {
+      return cachedState;
+    }
+
     const url = processURLAddress(`${baseRaffleUrl}/states/current`);
 
     const { result, resultCode } = await TaskQueue.execute({
