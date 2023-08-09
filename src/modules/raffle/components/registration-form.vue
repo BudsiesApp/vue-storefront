@@ -22,7 +22,7 @@
             :name="$t('First Name')"
           >
             <SfInput
-              class="_form-input -half"
+              class="_form-input"
               v-model="firstName"
               name="firstName"
               :label="$t('First Name')"
@@ -38,7 +38,7 @@
             :name="$t('Last Name')"
           >
             <SfInput
-              class="_form-input -half"
+              class="_form-input _last-name"
               v-model="lastName"
               name="lastName"
               :label="$t('Last Name')"
@@ -220,6 +220,8 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
+@import "~@storefront-ui/shared/styles/helpers/breakpoints";
+
 .raffle-registration-form {
   ._accent {
     color: var(--c-warning);
@@ -228,14 +230,14 @@ export default Vue.extend({
   ._row {
     display: flex;
     align-items: flex-start;
+    flex-wrap: wrap;
     margin-top: var(--spacer-sm);
 
     ._form-input {
-      margin-left: var(--spacer-lg);
       flex-grow: 1;
 
-      &:first-child {
-        margin-left: 0;
+      &._last-name {
+        margin-top: var(--spacer-sm);
       }
     }
 
@@ -318,6 +320,8 @@ export default Vue.extend({
   ._apply-button {
     --button-font-size: var(--font-sm);
     --button-font-line-height: 1;
+
+    width: 100%;
   }
 
   ._rules {
@@ -328,6 +332,28 @@ export default Vue.extend({
     margin-top: var(--spacer-base);
     font-size: var(--font-xs);
     text-align: center;
+  }
+
+  @include for-desktop() {
+    ._row {
+      flex-wrap: nowrap;
+
+      ._form-input {
+        margin-left: var(--spacer-lg);
+
+        &:first-child {
+          margin-left: 0;
+        }
+
+        &._last-name {
+          margin-top: 0;
+        }
+      }
+    }
+
+    ._apply-button {
+      width: auto;
+    }
   }
 }
 </style>
