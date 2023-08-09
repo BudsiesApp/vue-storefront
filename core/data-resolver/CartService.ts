@@ -78,8 +78,9 @@ const updateItem = async (cartServerToken: string, cartItem: CartItem): Promise<
       body: JSON.stringify({
         cartItem: {
           ...cartItem,
-          quoteId: cartItem.quoteId || cartServerToken
-        }
+          quoteId: cartItem.quoteId || cartServerToken,
+        },
+        participantID: cartItem.participantID || undefined // TODO probably better to pass this param in cart item(Looks like API expect this field like separate from cart item).
       })
     }
   });
