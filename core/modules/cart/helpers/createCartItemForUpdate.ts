@@ -25,7 +25,7 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     uploadMethod: clientItem.uploadMethod ? clientItem.uploadMethod : undefined,
     giftcard_options: clientItem.giftcard_options ? clientItem.giftcard_options : undefined,
     upgradeOptionValues: clientItem.upgradeOptionValues,
-    participantID: clientItem.participantID ? clientItem.participantID : undefined
+    participantId: clientItem.participantId ? clientItem.participantId : undefined
   } as any as CartItem
 
   if (updateIds && serverItem.quote_id && serverItem.item_id) {

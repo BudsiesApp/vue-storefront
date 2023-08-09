@@ -45,7 +45,7 @@ export const RaffleModule: StorefrontModule = async function ({ store }) {
         return;
       }
 
-      cartItem.participantID = participantData.participantId;
+      cartItem.participantId = participantData.participantId;
 
       return {
         cartItem
