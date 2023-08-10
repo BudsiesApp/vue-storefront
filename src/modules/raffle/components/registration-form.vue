@@ -182,8 +182,10 @@ export default Vue.extend({
   },
   computed: {
     nextDrawing (): string {
+      const date = new Date(this.nextDrawingDate);
+
       return this.$t('Next Drawing: {date}', {
-        date: this.nextDrawingDate
+        date: date.toLocaleDateString()
       }).toString();
     }
   },
