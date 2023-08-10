@@ -36,6 +36,8 @@ import BulkorderQuoteProductId from './types/bulkorder-quote-product-id';
 import BulkOrderStatus from './types/bulk-order-status';
 import BulkOrderInfo from './types/bulk-order-info';
 
+import ProductStructuredData from './components/ProductStructuredData.vue';
+
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
   store.registerModule('budsies', budsiesStore);
@@ -79,5 +81,6 @@ export {
   BulkorderQuote,
   BulkOrderInfo,
   BulkorderQuoteProductId,
-  BulkOrderStatus
+  BulkOrderStatus,
+  ProductStructuredData
 }
