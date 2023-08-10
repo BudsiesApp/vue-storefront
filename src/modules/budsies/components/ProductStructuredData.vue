@@ -23,7 +23,7 @@ export default Vue.extend({
     structuredData (): string | undefined {
       const storeView = currentStoreView();
 
-      const price = getProductDefaultPrice(this.product, {});
+      const price = getProductDefaultPrice(this.product, {}, false);
       const finalPrice = price.special && price.special < price.regular
         ? price.special
         : price.regular;
