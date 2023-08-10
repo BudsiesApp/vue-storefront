@@ -1,5 +1,5 @@
 <template>
-  <script v-html="structuredData" />
+  <script type="application/ld+json" v-html="structuredData" />
 </template>
 
 <script lang="ts">
