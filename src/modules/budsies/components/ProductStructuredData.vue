@@ -1,5 +1,5 @@
 <template>
-  <script v-html="structuredData" v-if="structuredData" />
+  <script v-html="structuredData" />
 </template>
 
 <script lang="ts">
@@ -21,11 +21,8 @@ export default Vue.extend({
   },
   computed: {
     structuredData (): string | undefined {
-      if (!this.product) {
-        return;
-      }
-
       const storeView = currentStoreView();
+
       const price = getProductDefaultPrice(this.product, {});
       const finalPrice = price.special && price.special < price.regular
         ? price.special
