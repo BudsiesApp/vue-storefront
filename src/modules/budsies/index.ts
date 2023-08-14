@@ -32,6 +32,8 @@ import fillProductWithAdditionalFields from './helpers/fill-product-with-additio
 import BodypartOption from './types/bodypart-option';
 import PlushieWizardEvents from './types/plushie-wizard-events';
 
+import ProductStructuredData from './components/ProductStructuredData.vue';
+
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
   store.registerModule('budsies', budsiesStore);
@@ -71,5 +73,6 @@ export {
   ImageUploadMethod,
   ProductId,
   BodypartOption,
-  PlushieWizardEvents
+  PlushieWizardEvents,
+  ProductStructuredData
 }

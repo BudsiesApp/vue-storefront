@@ -302,7 +302,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       silent: false
     });
   },
-  async sharePetBirthday (
+  async shareBirthday (
     { state },
     payload: {
       name: string,
@@ -325,7 +325,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while sharing pet birthday ' + result)
+      throw Error('Error while sharing birthday ' + result)
     }
 
     return result;
