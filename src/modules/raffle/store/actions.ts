@@ -14,6 +14,7 @@ import { GET_CURRENT_STATE, GET_IS_SYNCED, GET_LAST_WINNING_TICKETS, GET_REFERRE
 import { CURRENT_STATE_SET, IS_SYNCED_SET, LAST_WINNING_TICKETS_SET, PARTICIPANT_DATA_SET, REFERRER_TOKEN_SET } from '../types/mutation';
 import { TokenStatusValue } from '../types/token-status.value';
 import { SN_RAFFLE } from '../types/store-name';
+import { RAFFLE_TOKEN, REFERRER_TOKEN } from '../types/local-storage-keys';
 
 const baseRaffleUrl = `${config.budsies.endpoint}/raffle`;
 
@@ -98,7 +99,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       result.referralLink,
       result.tickets,
       result.token,
-      result.isWinner
+      result.canPurchaseSpecComm
     );
 
     commit(PARTICIPANT_DATA_SET, participantData);
@@ -172,7 +173,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       participantDataResponse.referralLink,
       participantDataResponse.tickets,
       participantDataResponse.token,
-      participantDataResponse.isWinner
+      participantDataResponse.canPurchaseSpecComm
     );
 
     commit(PARTICIPANT_DATA_SET, participantData);
@@ -186,8 +187,8 @@ export const actions: ActionTree<StoreState, RootState> = {
 
     const raffleStorage = StorageManager.get(SN_RAFFLE);
 
-    const token = await raffleStorage.getItem('raffle-token');
-    const referrerToken = await raffleStorage.getItem('referrer-token');
+    const token = await raffleStorage.getItem(RAFFLE_TOKEN);
+    const referrerToken = await raffleStorage.getItem(REFERRER_TOKEN);
 
     if (referrerToken) {
       commit(REFERRER_TOKEN_SET, referrerToken);

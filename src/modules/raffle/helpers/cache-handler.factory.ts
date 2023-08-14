@@ -5,6 +5,7 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 
 import * as types from '../types/mutation';
 import { SN_RAFFLE } from '../types/store-name';
+import { RAFFLE_TOKEN, REFERRER_TOKEN } from '../types/local-storage-keys';
 
 export function cacheHandlerFactory () {
   return (mutation: MutationPayload, state: RootState) => {
@@ -13,15 +14,15 @@ export function cacheHandlerFactory () {
 
     if (type.endsWith(types.PARTICIPANT_DATA_SET)) {
       if (!mutation.payload) {
-        raffleStorage.removeItem('raffle-token');
+        raffleStorage.removeItem(RAFFLE_TOKEN);
         return;
       }
 
-      raffleStorage.setItem('raffle-token', mutation.payload.token);
+      raffleStorage.setItem(RAFFLE_TOKEN, mutation.payload.token);
     }
 
     if (type.endsWith(types.REFERRER_TOKEN_SET)) {
-      raffleStorage.setItem('referrer-token', mutation.payload);
+      raffleStorage.setItem(REFERRER_TOKEN, mutation.payload);
     }
   }
 }

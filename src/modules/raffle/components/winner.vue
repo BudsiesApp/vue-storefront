@@ -10,7 +10,6 @@
 
     <router-link
       class="_button"
-      target="_blank"
       :to="{
         name: 'specialty-commissions-creation',
         query: {

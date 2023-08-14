@@ -92,6 +92,7 @@ import { SfButton, SfHeading } from '@storefront-ui/vue';
 
 import ParticipantData from '../models/participant-data.model';
 import Ticket from '../models/ticket.model';
+import { TicketStatusValue } from '../types/ticket-status.value';
 
 import MSocialSharing from 'theme/components/molecules/m-social-sharing.vue';
 
@@ -120,7 +121,10 @@ export default Vue.extend({
   },
   computed: {
     tickets (): Ticket[] {
-      return this.participantData.tickets;
+      return this.participantData.tickets.filter(
+        (ticket) => ticket.status &&
+         ticket.status === TicketStatusValue.PENDING
+      );
     },
     referralLink (): string {
       return this.participantData.referralLink;

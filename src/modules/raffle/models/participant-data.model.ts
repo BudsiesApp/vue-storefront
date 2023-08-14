@@ -6,9 +6,9 @@ export default class ParticipantData {
     public readonly referralLink: string,
     public readonly tickets: Ticket[],
     public readonly token: string,
-    public readonly isWinner: boolean
+    public readonly canPurchaseSpecComm: boolean
   ) {
-    [participantId, referralLink, tickets, token, isWinner].forEach((arg, index) => {
+    [participantId, referralLink, tickets, token, canPurchaseSpecComm].forEach((arg, index) => {
       if (arg === undefined) {
         throw new Error(`Undefined value passed at position: ${index}`);
       }

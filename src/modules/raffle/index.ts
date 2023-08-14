@@ -13,6 +13,7 @@ import * as getters from './types/getter';
 import * as mutations from './types/mutation';
 import { SN_RAFFLE } from './types/store-name';
 import { cacheHandlerFactory } from './helpers/cache-handler.factory';
+import * as syncLocalStorageChange from './helpers/sync-local-storage-change';
 
 import RafflePending from './components/pending.vue';
 import RaffleRegistrationForm from './components/registration-form.vue';
@@ -25,6 +26,7 @@ export const RaffleModule: StorefrontModule = async function ({ store }) {
 
   if (!isServer) {
     store.subscribe(cacheHandlerFactory());
+    syncLocalStorageChange.addEventListener();
 
     await store.dispatch(`${SN_RAFFLE}/${actions.SYNCHRONIZE}`);
 

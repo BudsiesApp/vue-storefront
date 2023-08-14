@@ -1,18 +1,11 @@
 import rootStore from '@vue-storefront/core/store'
-import { storeViews } from 'config'
-import { currentStoreView } from '@vue-storefront/core/lib/multistore'
+
+import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check-multistore-local-storage-key.function';
 
 import { SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE } from '../types/StoreMutations';
 
-function checkMultistoreKey (key: string, path: string): boolean {
-  const { multistore, commonCache } = storeViews
-  const storeView = currentStoreView();
-  if ((!multistore && !storeView.storeCode) || (multistore && commonCache)) return key === path
-  return key === `${storeView.storeCode}-${path}`
-}
-
 function getItemsFromStorage ({ key }) {
-  if (checkMultistoreKey(key, 'shop/promotionPlatform/production-spot-countdown-expiration-date')) {
+  if (checkMultiStoreLocalStorageKey(key, 'shop/promotionPlatform/production-spot-countdown-expiration-date')) {
     const value = JSON.parse(localStorage[key]);
     rootStore.commit(`promotionPlatform/${SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE}`, value);
   }
