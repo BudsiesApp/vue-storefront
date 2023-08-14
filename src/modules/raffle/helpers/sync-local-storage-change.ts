@@ -4,32 +4,52 @@ import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check
 
 import { SN_RAFFLE } from '../types/store-name';
 import { VERIFY_TOKEN } from '../types/action';
-import { RAFFLE_TOKEN } from '../types/local-storage-keys';
-import { PARTICIPANT_DATA_SET } from '../types/mutation';
+import { RAFFLE_TOKEN, REFERRER_TOKEN } from '../types/local-storage-keys';
+import { PARTICIPANT_DATA_SET, REFERRER_TOKEN_SET } from '../types/mutation';
+
+const clearParticipantData = () => {
+  rootStore.commit(`${SN_RAFFLE}/${PARTICIPANT_DATA_SET}`, undefined);
+}
+const clearReferrerToken = () => {
+  rootStore.commit(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`, undefined);
+}
 
 function getItemsFromStorage ({ key }: {key: string | null}) {
   if (!key) {
-    rootStore.commit(`${SN_RAFFLE}/${PARTICIPANT_DATA_SET}`, undefined);
+    clearParticipantData();
+    clearReferrerToken();
     return;
   }
 
-  if (checkMultiStoreLocalStorageKey(key, `shop/${SN_RAFFLE}/${RAFFLE_TOKEN}`)) {
-    const storedValue = localStorage[key];
+  const isRaffleTokenChanged = checkMultiStoreLocalStorageKey(key, `shop/${SN_RAFFLE}/${RAFFLE_TOKEN}`);
+  const isReferrerTokenChanged = checkMultiStoreLocalStorageKey(key, `shop/${SN_RAFFLE}/${REFERRER_TOKEN}`);
 
-    if (!storedValue) {
-      rootStore.commit(`${SN_RAFFLE}/${PARTICIPANT_DATA_SET}`, undefined);
-      return;
-    }
-
-    const value = JSON.parse(localStorage[key]);
-
-    if (!value) {
-      rootStore.commit(`${SN_RAFFLE}/${PARTICIPANT_DATA_SET}`, undefined);
-      return;
-    }
-
-    rootStore.dispatch(`${SN_RAFFLE}/${VERIFY_TOKEN}`, value);
+  if (!isRaffleTokenChanged && !isReferrerTokenChanged) {
+    return;
   }
+
+  const clearDataFunction = isRaffleTokenChanged ? clearParticipantData : clearReferrerToken;
+
+  const storedValue = localStorage[key];
+
+  if (!storedValue) {
+    clearDataFunction();
+    return;
+  }
+
+  const value = JSON.parse(localStorage[key]);
+
+  if (!value) {
+    clearDataFunction();
+    return;
+  }
+
+  if (isRaffleTokenChanged) {
+    rootStore.dispatch(`${SN_RAFFLE}/${VERIFY_TOKEN}`, value);
+    return;
+  }
+
+  rootStore.commit(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`, value);
 }
 
 function addEventListener () {

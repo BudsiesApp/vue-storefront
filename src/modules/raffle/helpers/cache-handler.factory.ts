@@ -22,6 +22,11 @@ export function cacheHandlerFactory () {
     }
 
     if (type.endsWith(types.REFERRER_TOKEN_SET)) {
+      if (!mutation.payload) {
+        raffleStorage.removeItem(REFERRER_TOKEN);
+        return;
+      }
+
       raffleStorage.setItem(REFERRER_TOKEN, mutation.payload);
     }
   }
