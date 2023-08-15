@@ -2,7 +2,7 @@ import Vue from 'vue';
 import RootState from '@vue-storefront/core/types/RootState'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import { processURLAddress } from '@vue-storefront/core/helpers'
-import { ActionTree } from 'vuex'
+import { ActionTree, Commit } from 'vuex'
 import config from 'config'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
@@ -29,6 +29,7 @@ import isBodypartValueApiResponse from '../models/is-bodypart-value-api-response
 import BodypartApiResponse from '../models/bodypart-api-response.interface'
 import Task from 'core/lib/sync/types/Task'
 import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function'
+import { Dictionary } from '../types/Dictionary.type';
 
 function parse<T, R> (
   items: unknown[],
@@ -49,6 +50,32 @@ function parse<T, R> (
   });
 
   return values;
+}
+
+function parseBodyPartValues (commit: Commit, item: any): void {
+  const values = parse<BodypartValue, BodypartValueApiResponse>(
+    item.values,
+    bodypartValueFactory,
+    isBodypartValueApiResponse
+  );
+
+  if (item.child_bodyparts) {
+    item.child_bodyparts.forEach((childItem: any) => {
+      const childItemValues = parse<BodypartValue, BodypartValueApiResponse>(
+        childItem.values,
+        bodypartValueFactory,
+        isBodypartValueApiResponse
+      );
+
+      commit('setBodypartBodypartsValues', { key: childItem.id + '', values: childItemValues });
+
+      delete childItem.values;
+    })
+  }
+
+  commit('setBodypartBodypartsValues', { key: item.id + '', values });
+
+  delete item.values;
 }
 
 export const actions: ActionTree<BudsiesState, RootState> = {
@@ -134,29 +161,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     result.result.forEach((item: any) => {
-      const values = parse<BodypartValue, BodypartValueApiResponse>(
-        item.values,
-        bodypartValueFactory,
-        isBodypartValueApiResponse
-      );
-
-      if (item.child_bodyparts) {
-        item.child_bodyparts.forEach((childItem: any) => {
-          const childItemValues = parse<BodypartValue, BodypartValueApiResponse>(
-            childItem.values,
-            bodypartValueFactory,
-            isBodypartValueApiResponse
-          );
-
-          commit('setBodypartBodypartsValues', { key: childItem.id + '', values: childItemValues });
-
-          delete childItem.values;
-        })
-      }
-
-      commit('setBodypartBodypartsValues', { key: item.id + '', values });
-
-      delete item.values;
+      parseBodyPartValues(commit, item);
     });
 
     const bodyparts = parse<Bodypart, BodypartApiResponse>(
@@ -166,6 +171,79 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     );
 
     commit('setProductBodyparts', { key: productId, bodyparts });
+  },
+  async loadProductsBodyParts (
+    { commit, getters },
+    { productIds, useCache = true }:
+    {
+      productIds: number[],
+      useCache: boolean
+    }
+  ): Promise<void> {
+    let productIdsForLoad: number[] = [];
+
+    if (!useCache) {
+      productIdsForLoad = productIds;
+    } else {
+      for (const id of productIds) {
+        const productBodyParts = getters['getProductBodyparts'](id);
+
+        if (productBodyParts.length > 0) {
+          continue;
+        }
+
+        productIdsForLoad.push(id);
+      }
+    }
+
+    if (!productIdsForLoad.length) {
+      return;
+    }
+
+    const url = processURLAddress(`${config.budsies.endpoint}/plushies/body-parts`);
+
+    const query = new URLSearchParams();
+
+    for (const id of productIdsForLoad) {
+      query.append('productId[]', id.toString());
+    }
+
+    const result = await TaskQueue.execute({
+      url: `${url}?${query.toString()}`,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    result.result.forEach((item: any) => {
+      parseBodyPartValues(commit, item);
+    });
+
+    const bodyparts = parse<Bodypart, BodypartApiResponse>(
+      result.result,
+      bodypartFactory,
+      isBodypartApiResponse
+    );
+
+    const productBodyPartsDictionary: Dictionary<Bodypart[]> = {};
+
+    for (const bodypart of bodyparts) {
+      if (!productBodyPartsDictionary[bodypart.productId]) {
+        productBodyPartsDictionary[bodypart.productId] = [];
+      }
+
+      productBodyPartsDictionary[bodypart.productId].push(bodypart);
+    }
+
+    for (const key in productBodyPartsDictionary) {
+      if (Object.prototype.hasOwnProperty.call(productBodyPartsDictionary, key)) {
+        const bodypartsList = productBodyPartsDictionary[key];
+        commit('setProductBodyparts', { key, bodypartsList });
+      }
+    }
   },
   async createNewPlushie (
     { commit, state },
