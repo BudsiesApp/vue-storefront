@@ -324,6 +324,7 @@ export default Vue.extend({
     --button-font-size: var(--font-sm);
     --button-font-line-height: 1;
 
+    margin-top: var(--spacer-sm);
     width: 100%;
   }
 
@@ -355,6 +356,7 @@ export default Vue.extend({
     }
 
     ._apply-button {
+      margin-top: 0;
       width: auto;
     }
   }
