@@ -1,6 +1,6 @@
 import rootStore from '@vue-storefront/core/store'
 
-import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check-multistore-local-storage-key.function';
+import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check-multi-store-local-storage-key.function';
 
 import { SN_RAFFLE } from '../types/store-name';
 import { VERIFY_TOKEN } from '../types/action';
@@ -21,35 +21,44 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
     return;
   }
 
-  const isRaffleTokenChanged = checkMultiStoreLocalStorageKey(key, `shop/${SN_RAFFLE}/${RAFFLE_TOKEN}`);
-  const isReferrerTokenChanged = checkMultiStoreLocalStorageKey(key, `shop/${SN_RAFFLE}/${REFERRER_TOKEN}`);
+  const isRaffleTokenChanged = checkMultiStoreLocalStorageKey(key, `${SN_RAFFLE}/${RAFFLE_TOKEN}`);
+  const isReferrerTokenChanged = checkMultiStoreLocalStorageKey(key, `${SN_RAFFLE}/${REFERRER_TOKEN}`);
 
   if (!isRaffleTokenChanged && !isReferrerTokenChanged) {
     return;
   }
 
-  const clearDataFunction = isRaffleTokenChanged ? clearParticipantData : clearReferrerToken;
+  const clearData = () => {
+    if (isRaffleTokenChanged) {
+      clearParticipantData();
+    }
 
-  const storedValue = localStorage[key];
+    if (isReferrerTokenChanged) {
+      clearReferrerToken();
+    }
+  }
 
-  if (!storedValue) {
-    clearDataFunction();
+  const rawValue = localStorage[key];
+
+  if (!rawValue) {
+    clearData();
     return;
   }
 
   const value = JSON.parse(localStorage[key]);
 
   if (!value) {
-    clearDataFunction();
+    clearData();
     return;
   }
 
   if (isRaffleTokenChanged) {
     rootStore.dispatch(`${SN_RAFFLE}/${VERIFY_TOKEN}`, value);
-    return;
   }
 
-  rootStore.commit(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`, value);
+  if (isReferrerTokenChanged) {
+    rootStore.commit(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`, value);
+  }
 }
 
 function addEventListener () {

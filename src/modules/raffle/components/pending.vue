@@ -109,16 +109,6 @@ export default Vue.extend({
       required: true
     }
   },
-  data () {
-    return {
-      sharingData: {
-        url: this.participantData.referralLink,
-        description: this.$t('Hey! Check out these Specialty Commissions from Budsies. You send them a photo of your drawing, ref sheet or artwork, and they make it into a custom stuffed animal. Here is a VIP link:'),
-        twitterDescription: this.$t('Woah! Now you can turn your original characters and drawings into plush @Budsies'),
-        eMailSubject: this.$t('Woah! You can turn your original characters and drawings into plush')
-      }
-    }
-  },
   computed: {
     tickets (): Ticket[] {
       return this.participantData.tickets.filter(
@@ -128,6 +118,19 @@ export default Vue.extend({
     },
     referralLink (): string {
       return this.participantData.referralLink;
+    },
+    sharingData (): {
+      url: string,
+      description: string,
+      twitterDescription: string,
+      eMailSubject: string
+    } {
+      return {
+        url: this.participantData.referralLink,
+        description: this.$t('Hey! Check out these Specialty Commissions from Budsies. You send them a photo of your drawing, ref sheet or artwork, and they make it into a custom stuffed animal. Here is a VIP link:').toString(),
+        twitterDescription: this.$t('Woah! Now you can turn your original characters and drawings into plush @Budsies').toString(),
+        eMailSubject: this.$t('Woah! You can turn your original characters and drawings into plush').toString()
+      }
     }
   },
   methods: {

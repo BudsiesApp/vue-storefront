@@ -90,7 +90,7 @@ export const actions: ActionTree<StoreState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      const message = result.errorMessage || 'Error while raffle registration';
+      const message = result.errorMessage || 'Error during the raffle registration';
       throw new Error(message);
     }
 

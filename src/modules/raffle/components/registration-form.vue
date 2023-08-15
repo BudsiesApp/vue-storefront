@@ -191,12 +191,12 @@ export default Vue.extend({
   },
   methods: {
     async onSubmit (): Promise<void> {
-      if (!this.firstName || !this.lastName || !this.email) {
-        throw new Error('Required fields is missed');
-      }
-
       if (this.isSubmitting) {
         return;
+      }
+
+      if (!this.firstName || !this.lastName || !this.email) {
+        throw new Error('Required fields are missing');
       }
 
       this.isSubmitting = true;
