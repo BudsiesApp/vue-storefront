@@ -45,7 +45,7 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
     return;
   }
 
-  const value = JSON.parse(localStorage[key]);
+  const value = JSON.parse(rawValue);
 
   if (!value) {
     clearData();
