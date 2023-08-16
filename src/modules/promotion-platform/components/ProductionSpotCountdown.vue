@@ -175,7 +175,7 @@ export default (Vue as VueConstructor<Vue & InjectedServices>).extend({
     line-height: 1;
 
     ._timer {
-      color: var(--c-accent, var(--c-danger));
+      color: var(--c-danger);
     }
 
  }

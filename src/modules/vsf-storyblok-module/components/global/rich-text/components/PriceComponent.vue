@@ -73,12 +73,12 @@ export default Vue.extend({
     font-size: 24px;
 
     ._regular-price {
-      color: var(--c-accent, var(--c-warning));
+      color: var(--c-warning);
       margin-right: var(--spacer-xs);
     }
 
     ._final-price {
-      color: var(--c-primary);
+      color: var(--c-accent);
       font-weight: bold;
     }
   }
