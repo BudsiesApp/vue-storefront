@@ -44,7 +44,7 @@ export const RaffleModule: StorefrontModule = async function ({ store }) {
       const participantData = store.getters[`${SN_RAFFLE}/${getters.GET_PARTICIPANT_DATA}`];
 
       if (!participantData || !participantData.participantId) {
-        return;
+        return { cartItem };
       }
 
       cartItem.participantId = participantData.participantId;
