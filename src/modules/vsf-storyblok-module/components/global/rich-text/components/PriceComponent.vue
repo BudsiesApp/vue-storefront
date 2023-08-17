@@ -78,7 +78,7 @@ export default Vue.extend({
     }
 
     ._final-price {
-      color: var(--c-primary);
+      color: var(--c-accent);
       font-weight: bold;
     }
   }
