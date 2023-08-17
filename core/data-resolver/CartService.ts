@@ -78,8 +78,8 @@ const updateItem = async (cartServerToken: string, cartItem: CartItem): Promise<
       body: JSON.stringify({
         cartItem: {
           ...cartItem,
-          quoteId: cartItem.quoteId || cartServerToken
-        }
+          quoteId: cartItem.quoteId || cartServerToken,
+        },
       })
     }
   });
