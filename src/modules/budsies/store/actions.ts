@@ -241,7 +241,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     for (const key in productBodyPartsDictionary) {
       if (Object.prototype.hasOwnProperty.call(productBodyPartsDictionary, key)) {
         const bodypartsList = productBodyPartsDictionary[key];
-        commit('setProductBodyparts', { key, bodypartsList });
+        commit('setProductBodyparts', { key, bodyparts: bodypartsList });
       }
     }
   },
