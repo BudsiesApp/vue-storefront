@@ -140,38 +140,6 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     commit('setProductRushAddons', { key: productId, addons });
   },
-  async loadProductBodyparts (
-    { commit, getters },
-    { productId, useCache = true }
-  ): Promise<void> {
-    if (useCache && getters['getProductBodyparts'](productId).length !== 0) {
-      return;
-    }
-
-    const url = processURLAddress(`${config.budsies.endpoint}/plushies/body-parts`);
-
-    const result = await TaskQueue.execute({
-      url: `${url}?productId=${productId}`,
-      payload: {
-        headers: { 'Accept': 'application/json' },
-        mode: 'cors',
-        method: 'GET'
-      },
-      silent: true
-    });
-
-    result.result.forEach((item: any) => {
-      parseBodyPartValues(commit, item);
-    });
-
-    const bodyparts = parse<Bodypart, BodypartApiResponse>(
-      result.result,
-      bodypartFactory,
-      isBodypartApiResponse
-    );
-
-    commit('setProductBodyparts', { key: productId, bodyparts });
-  },
   async loadProductsBodyParts (
     { commit, getters },
     { productIds, useCache = true }:
