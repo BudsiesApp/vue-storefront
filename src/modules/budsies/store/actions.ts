@@ -140,6 +140,12 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     commit('setProductRushAddons', { key: productId, addons });
   },
+  async loadProductBodyparts (
+    { dispatch },
+    { productId, useCache = true }
+  ): Promise<void> {
+    return dispatch('loadProductsBodyParts', { useCache, productIds: [productId] });
+  },
   async loadProductsBodyParts (
     { commit, getters },
     { productIds, useCache = true }:
