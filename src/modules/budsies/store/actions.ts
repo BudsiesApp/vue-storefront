@@ -212,11 +212,8 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       productBodyPartsDictionary[bodypart.productId].push(bodypart);
     }
 
-    for (const key in productBodyPartsDictionary) {
-      if (Object.prototype.hasOwnProperty.call(productBodyPartsDictionary, key)) {
-        const bodypartsList = productBodyPartsDictionary[key];
-        commit('setProductBodyparts', { key, bodyparts: bodypartsList });
-      }
+    for (const [key, value] of Object.entries(productBodyPartsDictionary)) {
+      commit('setProductBodyparts', { key, bodyparts: value });
     }
   },
   async createNewPlushie (
