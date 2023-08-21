@@ -56,6 +56,21 @@ const getters: GetterTree<BudsiesState, RootState> = {
 
     return result;
   },
+  getProductsBodyPartsByProductIds: (state: BudsiesState) => (ids: string[]): Bodypart[] => {
+    const result: Bodypart[] = [];
+
+    for (const id of ids) {
+      if (!state.productBodyparts[id] || !state.productBodyparts[id].length) {
+        continue;
+      }
+
+      state.productBodyparts[id].forEach((id) => {
+        result.push(state.bodyparts[id]);
+      });
+    }
+
+    return result;
+  },
   getBodypartBodypartsValues: (state: BudsiesState) => (id: string): BodypartValue[] => {
     const result: BodypartValue[] = [];
 
