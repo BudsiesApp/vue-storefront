@@ -165,6 +165,8 @@ export default (Vue as VueConstructor<Vue & TemplateSize>).extend({
 <style lang="scss" scoped>
 .gift-card-template-container {
   height: var(--height);
+  font-size: var(--font-size-base);
+  line-height: 1.34;
 
   .gift-card-template {
     position: relative;
@@ -175,6 +177,7 @@ export default (Vue as VueConstructor<Vue & TemplateSize>).extend({
 
     ._content {
       position: absolute;
+      display: flex;
       top: 0;
       left: 0;
       width: 100%;
@@ -227,7 +230,7 @@ export default (Vue as VueConstructor<Vue & TemplateSize>).extend({
         max-height: 85px;
         overflow: hidden;
         color: var(--c-black);
-        font-size: 0.8em;
+        font-size: var(--font-xs);
         line-height: 1.2;
         padding: 0;
         margin: 0;
