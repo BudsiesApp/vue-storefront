@@ -42,17 +42,10 @@ export default {
   },
   metaInfo () {
     if (this.story) {
+      const meta = this.getMetaData();
       return {
         title: get(this.story, 'content.metatags.title', this.story.name),
-        meta: this.story.content?.metatags?.description
-          ? [
-            {
-              vmid: 'description',
-              name: 'description',
-              content: this.story.content.metatags.description
-            }
-          ]
-          : [],
+        meta,
         link: [
           {
             rel: 'canonical',
@@ -122,6 +115,64 @@ export default {
         : this.getAbsoluteUrlForStory(story.full_slug);
 
       return url.replace(/\/home/, '')
+    },
+    getMetaData () {
+      const storeView = currentStoreView();
+      const data = [
+        this.getMetaItem('og:url', this.getCanonical()),
+        this.getMetaItem('og:type', 'website'),
+        this.getMetaItem('og:site_name', storeView.name)
+      ];
+      const metaTags = this.story.content?.metatags;
+
+      if (!metaTags) {
+        return data;
+      }
+
+      if (metaTags.description) {
+        data.push(
+          this.getMetaItem(
+            'description',
+            metaTags.description
+          )
+        );
+      }
+
+      if (metaTags.og_description) {
+        data.push(
+          this.getMetaItem(
+            'og:description',
+            metaTags.og_description
+          )
+        );
+      }
+
+      if (metaTags.og_title) {
+        data.push(
+          this.getMetaItem(
+            'og:title',
+            metaTags.og_title
+          )
+        );
+      }
+
+      if (metaTags.og_image) {
+        data.push(
+          this.getMetaItem(
+            'og:image',
+            metaTags.og_image
+          )
+        )
+      }
+
+      return data;
+    },
+    getMetaItem (name, content) {
+      return {
+        vmid: name,
+        name,
+        content
+      }
     },
     storeCodeFromSlug (slug) {
       return slug.split(/\/(.+)/)[0]
