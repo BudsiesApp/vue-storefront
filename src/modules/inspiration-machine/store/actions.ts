@@ -4,6 +4,7 @@ import config from 'config';
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
 import RootState from '@vue-storefront/core/types/RootState';
+import Task from '@vue-storefront/core/lib/sync/types/Task';
 
 import { FETCH_EXTRAS, FETCH_THEMES, REQUEST_KIT } from '../types/action';
 import { GET_EXTRAS, GET_THEMES } from '../types/getter';
@@ -88,10 +89,10 @@ export const actions: ActionTree<StoreState, RootState> = {
       characterId: number,
       extrasIds: number[]
     }
-  ): Promise<void> {
+  ): Promise<Task> {
     const url = processURLAddress(`${baseInspirationMachineUrl}/kitRequests`);
 
-    const { result, resultCode } = await TaskQueue.execute({
+    const task = await TaskQueue.execute({
       url,
       payload: {
         headers: {
@@ -105,9 +106,11 @@ export const actions: ActionTree<StoreState, RootState> = {
       silent: false
     });
 
-    if (resultCode !== 200) {
-      const message = result.errorMessage || 'Error during kit requesting';
+    if (task.resultCode !== 200) {
+      const message = task.result.errorMessage || 'Error during kit requesting';
       throw new Error(message);
     }
+
+    return task;
   }
 }

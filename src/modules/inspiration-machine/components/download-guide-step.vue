@@ -52,7 +52,9 @@
 import Vue, { PropType } from 'vue';
 import { SfButton, SfHeading } from '@storefront-ui/vue';
 
+import Task from '@vue-storefront/core/lib/sync/types/Task';
 import { EmailSubmitForm } from 'src/modules/shared';
+
 import { SN_INSPIRATION_MACHINE } from '../types/store-name';
 import { REQUEST_KIT } from '../types/action';
 
@@ -74,14 +76,16 @@ export default Vue.extend({
     EmailSubmitForm
   },
   methods: {
-    async onFormSubmit (email: string): Promise<void> {
-      await this.$store.dispatch(`${SN_INSPIRATION_MACHINE}/${REQUEST_KIT}`, {
+    async onFormSubmit (email: string): Promise<Task> {
+      const task = await this.$store.dispatch(`${SN_INSPIRATION_MACHINE}/${REQUEST_KIT}`, {
         email,
         characterId: this.characterId,
         extraIds: this.extraIds
       });
 
       this.$emit('request-kit-form-submitted');
+
+      return task;
     }
   }
 })
