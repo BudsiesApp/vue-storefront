@@ -29,5 +29,6 @@ export default interface CartItem extends Product {
     upgradeSku: string,
     optionsValues: Record<string, string>
   }[],
-  customerType?: string
+  customerType?: string,
+  participantId?: string
 }

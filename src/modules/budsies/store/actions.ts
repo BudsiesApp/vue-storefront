@@ -2,7 +2,7 @@ import Vue from 'vue';
 import RootState from '@vue-storefront/core/types/RootState'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import { processURLAddress } from '@vue-storefront/core/helpers'
-import { ActionTree } from 'vuex'
+import { ActionTree, Commit } from 'vuex'
 import config from 'config'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
@@ -35,6 +35,7 @@ import isBulkorderQuoteApiResponse from '../models/is-bulkorder-quote-api-respon
 import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory';
 import BulkOrderStatus from '../types/bulk-order-status';
 import BulkOrderInfo from '../types/bulk-order-info';
+import { Dictionary } from '../types/Dictionary.type';
 
 function parse<T, R> (
   items: unknown[],
@@ -55,6 +56,32 @@ function parse<T, R> (
   });
 
   return values;
+}
+
+function parseBodyPartValues (commit: Commit, item: any): void {
+  const values = parse<BodypartValue, BodypartValueApiResponse>(
+    item.values,
+    bodypartValueFactory,
+    isBodypartValueApiResponse
+  );
+
+  if (item.child_bodyparts) {
+    item.child_bodyparts.forEach((childItem: any) => {
+      const childItemValues = parse<BodypartValue, BodypartValueApiResponse>(
+        childItem.values,
+        bodypartValueFactory,
+        isBodypartValueApiResponse
+      );
+
+      commit('setBodypartBodypartsValues', { key: childItem.id + '', values: childItemValues });
+
+      delete childItem.values;
+    })
+  }
+
+  commit('setBodypartBodypartsValues', { key: item.id + '', values });
+
+  delete item.values;
 }
 
 export const actions: ActionTree<BudsiesState, RootState> = {
@@ -120,17 +147,49 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     commit('setProductRushAddons', { key: productId, addons });
   },
   async loadProductBodyparts (
-    { commit, getters },
+    { dispatch },
     { productId, useCache = true }
   ): Promise<void> {
-    if (useCache && getters['getProductBodyparts'](productId).length !== 0) {
+    return dispatch('loadProductsBodyParts', { useCache, productIds: [productId] });
+  },
+  async loadProductsBodyParts (
+    { commit, getters },
+    { productIds, useCache = true }:
+    {
+      productIds: number[],
+      useCache: boolean
+    }
+  ): Promise<void> {
+    let productIdsForLoad: number[] = [];
+
+    if (!useCache) {
+      productIdsForLoad = productIds;
+    } else {
+      for (const id of productIds) {
+        const productBodyParts = getters['getProductBodyparts'](id);
+
+        if (productBodyParts.length > 0) {
+          continue;
+        }
+
+        productIdsForLoad.push(id);
+      }
+    }
+
+    if (!productIdsForLoad.length) {
       return;
     }
 
     const url = processURLAddress(`${config.budsies.endpoint}/plushies/body-parts`);
 
+    const query = new URLSearchParams();
+
+    for (const id of productIdsForLoad) {
+      query.append('productId[]', id.toString());
+    }
+
     const result = await TaskQueue.execute({
-      url: `${url}?productId=${productId}`,
+      url: `${url}?${query.toString()}`,
       payload: {
         headers: { 'Accept': 'application/json' },
         mode: 'cors',
@@ -140,29 +199,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     result.result.forEach((item: any) => {
-      const values = parse<BodypartValue, BodypartValueApiResponse>(
-        item.values,
-        bodypartValueFactory,
-        isBodypartValueApiResponse
-      );
-
-      if (item.child_bodyparts) {
-        item.child_bodyparts.forEach((childItem: any) => {
-          const childItemValues = parse<BodypartValue, BodypartValueApiResponse>(
-            childItem.values,
-            bodypartValueFactory,
-            isBodypartValueApiResponse
-          );
-
-          commit('setBodypartBodypartsValues', { key: childItem.id + '', values: childItemValues });
-
-          delete childItem.values;
-        })
-      }
-
-      commit('setBodypartBodypartsValues', { key: item.id + '', values });
-
-      delete item.values;
+      parseBodyPartValues(commit, item);
     });
 
     const bodyparts = parse<Bodypart, BodypartApiResponse>(
@@ -171,7 +208,19 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       isBodypartApiResponse
     );
 
-    commit('setProductBodyparts', { key: productId, bodyparts });
+    const productBodyPartsDictionary: Dictionary<Bodypart[]> = {};
+
+    for (const bodypart of bodyparts) {
+      if (!productBodyPartsDictionary[bodypart.productId]) {
+        productBodyPartsDictionary[bodypart.productId] = [];
+      }
+
+      productBodyPartsDictionary[bodypart.productId].push(bodypart);
+    }
+
+    for (const [key, value] of Object.entries(productBodyPartsDictionary)) {
+      commit('setProductBodyparts', { key, bodyparts: value });
+    }
   },
   async createNewPlushie (
     { commit, state },
@@ -308,7 +357,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       silent: false
     });
   },
-  async sharePetBirthday (
+  async shareBirthday (
     { state },
     payload: {
       name: string,
@@ -331,7 +380,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw Error('Error while sharing pet birthday ' + result)
+      throw Error('Error while sharing birthday ' + result)
     }
 
     return result;

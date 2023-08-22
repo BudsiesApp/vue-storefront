@@ -6,6 +6,7 @@ export default class Bodypart {
     public readonly isRequired: boolean,
     public readonly maxValues: number,
     public readonly sn: number,
+    public readonly productId: number,
     public readonly isNew = true,
     public readonly detailingFlagText?: string,
     public readonly childrenBodyparts?: Bodypart[]

@@ -15,6 +15,7 @@ function getChildBodyPartsFromData (data: BodypartApiResponse): Bodypart[] | und
       +bodyPart.is_required === 1,
       +bodyPart.max_values,
       +bodyPart.sn,
+      +bodyPart.product_id,
       false
     )
   });
@@ -28,6 +29,7 @@ const factory: ObjectBuilderInterface<Bodypart, BodypartApiResponse> = (data) =>
     +data.is_required === 1,
     +data.max_values,
     +data.sn,
+    +data.product_id,
     false,
     data.detailing_flag_text,
     getChildBodyPartsFromData(data)
