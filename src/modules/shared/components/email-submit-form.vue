@@ -15,7 +15,7 @@
           v-slot="{errors}"
           rules="required|email"
           slim
-          name="E-mail"
+          :name="fieldName"
         >
           <SfInput
             v-model="email"
@@ -28,9 +28,12 @@
           />
         </validation-provider>
 
-        <MSpinnerButton class="_button" :show-spinner="isSubmitting">
+        <SfButton
+          class="_button"
+          :disabled="isSubmitting"
+        >
           {{ buttonText }}
-        </MSpinnerButton>
+        </SfButton>
       </form>
     </validation-observer>
   </div>
@@ -40,11 +43,9 @@
 import { extend, ValidationProvider, ValidationObserver } from 'vee-validate';
 import { email, required } from 'vee-validate/dist/rules';
 import Vue, { PropType } from 'vue';
+import { SfButton, SfInput } from '@storefront-ui/vue';
 
-import { SfInput } from '@storefront-ui/vue';
 import Task from '@vue-storefront/core/lib/sync/types/Task';
-
-import MSpinnerButton from 'theme/components/molecules/m-spinner-button.vue';
 
 extend('required', {
   ...required,
@@ -54,10 +55,10 @@ extend('required', {
 extend('email', email);
 
 export default Vue.extend({
-  name: 'MSubscriptionForm',
+  name: 'EmailSubmitForm',
   components: {
+    SfButton,
     SfInput,
-    MSpinnerButton,
     ValidationProvider,
     ValidationObserver
   },
@@ -70,11 +71,7 @@ export default Vue.extend({
       type: String,
       required: true
     },
-    successMessage: {
-      type: String,
-      required: true
-    },
-    subscribeAction: {
+    submitAction: {
       type: Function as PropType<(email: string) => Promise<Task>>,
       required: true
     }
@@ -88,6 +85,9 @@ export default Vue.extend({
   computed: {
     emailInputName (): string {
       return this.name + '-email-input';
+    },
+    fieldName (): string {
+      return 'E-mail';
     }
   },
   methods: {
@@ -99,19 +99,24 @@ export default Vue.extend({
       this.isSubmitting = true;
 
       try {
-        const response = await this.subscribeAction(this.email);
+        const response = await this.submitAction(this.email);
 
         if (response.result.errorMessage) {
-          const validationObserver = this.$refs.validationObserver as InstanceType<typeof ValidationObserver>;
-
-          validationObserver.setErrors({
-            [this.emailInputName]: response.result.errorMessage
-          })
-          return;
+          this.showError(response.result.errorMessage);
         }
+      } catch (error) {
+        const errorMessage = (error as Error).message;
+        this.showError(errorMessage);
       } finally {
         this.isSubmitting = false;
       }
+    },
+    showError (errorMessage: string): void {
+      const validationObserver = this.$refs.validationObserver as InstanceType<typeof ValidationObserver>;
+
+      validationObserver.setErrors({
+        [this.fieldName]: errorMessage
+      })
     }
   }
 });

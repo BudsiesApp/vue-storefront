@@ -114,7 +114,7 @@ export default Vue.extend({
   }
 
   ._section {
-    margin-top: var(--spacer-lg);
+    margin-top: var(--spacer-xl);
 
     &:first-child {
       margin-top: 0;

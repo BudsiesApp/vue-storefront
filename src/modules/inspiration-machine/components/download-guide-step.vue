@@ -25,10 +25,10 @@
     <div class="_request-kit">
       <SfHeading :level="2" :title="$t('Email Address:')" />
 
-      <subscription-form
+      <email-submit-form
         class="_form"
         :button-text="$t('Send My Inspiration Kit')"
-        :subscribe-action="onFormSubmit"
+        :submit-action="onFormSubmit"
         name="request-inspiration-kit-form"
         success-message=""
         layout="vertical"
@@ -50,9 +50,9 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue';
-import { SfButton, SfHeading, SfInput } from '@storefront-ui/vue';
+import { SfButton, SfHeading } from '@storefront-ui/vue';
 
-import { SubscriptionForm } from 'src/modules/shared';
+import { EmailSubmitForm } from 'src/modules/shared';
 import { SN_INSPIRATION_MACHINE } from '../types/store-name';
 import { REQUEST_KIT } from '../types/action';
 
@@ -71,8 +71,7 @@ export default Vue.extend({
   components: {
     SfButton,
     SfHeading,
-    SfInput,
-    SubscriptionForm
+    EmailSubmitForm
   },
   methods: {
     async onFormSubmit (email: string): Promise<void> {

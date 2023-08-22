@@ -7,7 +7,7 @@ import { getCartItemPrice, getProductDefaultDiscount, getProductDefaultPrice, ge
 import ServerError from './types/server-error';
 
 import StreamingVideo from './components/streaming-video.vue';
-import SubscriptionForm from './components/subscription-form.vue';
+import EmailSubmitForm from './components/email-submit-form.vue';
 
 export {
   InjectType,
@@ -21,5 +21,5 @@ export {
   getProductDefaultPrice,
   getProductPriceFromTotals,
   ServerError,
-  SubscriptionForm
+  EmailSubmitForm
 }
