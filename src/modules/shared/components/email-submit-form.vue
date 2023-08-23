@@ -72,7 +72,7 @@ export default Vue.extend({
       required: true
     },
     submitAction: {
-      type: Function as PropType<(email: string) => Promise<Task>>,
+      type: Function as PropType<(email: string) => Promise<void>>,
       required: true
     }
   },
@@ -99,11 +99,7 @@ export default Vue.extend({
       this.isSubmitting = true;
 
       try {
-        const response = await this.submitAction(this.email);
-
-        if (response.result.errorMessage) {
-          this.showError(response.result.errorMessage);
-        }
+        await this.submitAction(this.email);
       } catch (error) {
         const errorMessage = (error as Error).message;
         this.showError(errorMessage);

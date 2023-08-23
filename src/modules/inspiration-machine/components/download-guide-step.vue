@@ -76,16 +76,18 @@ export default Vue.extend({
     EmailSubmitForm
   },
   methods: {
-    async onFormSubmit (email: string): Promise<Task> {
-      const task = await this.$store.dispatch(`${SN_INSPIRATION_MACHINE}/${REQUEST_KIT}`, {
+    async onFormSubmit (email: string): Promise<void> {
+      const response = await this.$store.dispatch(`${SN_INSPIRATION_MACHINE}/${REQUEST_KIT}`, {
         email,
         characterId: this.characterId,
         extraIds: this.extraIds
       });
 
-      this.$emit('request-kit-form-submitted');
+      if (response.result.errorMessage) {
+        throw new Error(response.result.errorMessage);
+      }
 
-      return task;
+      this.$emit('request-kit-form-submitted');
     }
   }
 })

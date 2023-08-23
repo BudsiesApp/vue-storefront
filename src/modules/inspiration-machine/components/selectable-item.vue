@@ -17,7 +17,13 @@
     <div class="_checkmark" v-if="showCheckmark" />
 
     <div class="_image-container">
-      <img class="_image" :src="option.icon" :alt="option.name">
+      <base-image
+        class="_image"
+        :src="option.icon"
+        :aspect-ratio="1"
+        :alt="option.name"
+        width="400px"
+      />
     </div>
 
     <div
@@ -32,6 +38,8 @@
 <script lang="ts">
 import Vue, { PropType } from 'vue';
 import { SfHeading } from '@storefront-ui/vue';
+
+import { BaseImage } from 'src/modules/budsies';
 
 import { SelectableItem } from '../types/selectable-item.interface';
 
@@ -60,6 +68,7 @@ export default Vue.extend({
     }
   },
   components: {
+    BaseImage,
     SfHeading
   },
   computed: {
@@ -99,7 +108,11 @@ export default Vue.extend({
 </script>
 
 <style lang="scss" scoped>
+@import "~@storefront-ui/shared/styles/helpers/breakpoints";
+
 .inspiration-machine-selectable-item {
+  --heading-padding: 0;
+
   display: inline-block;
   box-sizing: border-box;
   background-color: var(--c-secondary);
@@ -108,6 +121,7 @@ export default Vue.extend({
   cursor: pointer;
   text-align: center;
   height: 100%;
+  width: 100%;
   position: relative;
 
   ._input {
@@ -121,16 +135,12 @@ export default Vue.extend({
     width: 100%;
     overflow: hidden;
     display: flex;
-    margin-top: var(--spacer-base);
+    margin-top: var(--spacer-sm);
     border: 4px solid transparent;
-
-    ._image {
-      width: 100%;
-    }
   }
 
   ._description {
-    margin-top: var(--spacer-base);
+    margin-top: var(--spacer-sm);
   }
 
   ._checkmark {
@@ -152,6 +162,13 @@ export default Vue.extend({
 
     ._checkmark {
       background: url("../assets/checkmark-checked.png");
+    }
+  }
+
+  @include for-desktop {
+    ._image-container,
+    ._description {
+      margin-top: var(--spacer-base);
     }
   }
 }
