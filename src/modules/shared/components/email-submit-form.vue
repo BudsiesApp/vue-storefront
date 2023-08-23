@@ -134,11 +134,5 @@ export default Vue.extend({
       margin-top: var(--spacer-sm);
     }
   }
-
-  .m-spinner-button {
-    margin-left: var(--spacer-base);
-    --button-font-size: var(--font-xs);
-    --button-padding: calc(var(--spacer-base) * 0.56) var(--spacer-base);
-  }
 }
 </style>
