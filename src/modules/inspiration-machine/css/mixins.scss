@@ -1,0 +1,19 @@
+@import "~@storefront-ui/shared/styles/helpers/breakpoints";
+
+@mixin selectable-items-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  row-gap: var(--spacer-sm);
+  column-gap: var(--spacer-sm);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media(min-width: $tablet-min) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  @include for-desktop {
+    row-gap: var(--spacer-base);
+    column-gap: var(--spacer-base);
+  }
+}
