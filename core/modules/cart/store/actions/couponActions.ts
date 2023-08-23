@@ -18,16 +18,17 @@ const couponActions = {
   },
   async applyCoupon ({ getters, dispatch, commit }, couponCode) {
     if (couponCode && getters.canSyncTotals) {
-      const { result } = await CartService.applyCoupon(couponCode)
+      const task = await CartService.applyCoupon(couponCode)
 
-      if (result) {
+      if (task.result) {
         await dispatch('syncTotals', { forceServerSync: true })
 
         // 'getCurrentCartHash' has been changed (it's based on cart items data)
         // so we need to update it in vuex and StorageManager
         commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
       }
-      return result
+
+      return task;
     }
   }
 }
