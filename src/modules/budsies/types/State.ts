@@ -3,6 +3,7 @@ import RushAddon from '../models/rush-addon.model'
 import BodypartValue from '../models/bodypart-value.model'
 import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
+import Hospital from './hospital.interface'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -15,5 +16,6 @@ export interface BudsiesState {
   productBodyparts: Dictionary<string[]>,
   plushieShortcode: Dictionary<string>,
   customerEmail: string | undefined,
-  breeds: string[]
+  breeds: string[],
+  hospitals: Hospital[]
 }
