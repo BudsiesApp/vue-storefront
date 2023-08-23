@@ -158,7 +158,7 @@ export const actions: ActionTree<StoreState, RootState> = {
     });
 
     if (resultCode !== 200) {
-      throw new Error(`Error while fetch participant by id`);
+      throw new Error(`Raffle token verification error`);
     }
 
     if (result.status === TokenStatusValue.NOT_FOUND) {

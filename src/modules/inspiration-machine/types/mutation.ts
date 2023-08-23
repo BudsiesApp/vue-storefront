@@ -1,0 +1,4 @@
+import { SN_INSPIRATION_MACHINE } from './store-name';
+
+export const SET_EXTRAS = SN_INSPIRATION_MACHINE + '/SET_EXTRAS';
+export const SET_THEMES = SN_INSPIRATION_MACHINE + '/SET_THEMES';
