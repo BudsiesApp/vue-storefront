@@ -31,6 +31,7 @@ import { ProductId } from './models/product.id';
 import fillProductWithAdditionalFields from './helpers/fill-product-with-additional-fields.function';
 import BodypartOption from './types/bodypart-option';
 import PlushieWizardEvents from './types/plushie-wizard-events';
+import Hospital from './types/hospital.interface';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
 
@@ -74,5 +75,6 @@ export {
   ProductId,
   BodypartOption,
   PlushieWizardEvents,
-  ProductStructuredData
+  ProductStructuredData,
+  Hospital
 }

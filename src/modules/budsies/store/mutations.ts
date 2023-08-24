@@ -6,6 +6,7 @@ import BodypartValue from '../models/bodypart-value.model';
 import Bodypart from '../models/bodypart.model';
 import { BudsiesState } from '../types/State'
 import * as types from './mutation-types';
+import Hospital from '../types/hospital.interface';
 
 export const mutations: MutationTree<BudsiesState> = {
   setAddon (state: BudsiesState, { key, addon }: { key: string, addon: ExtraPhotoAddon }) {
@@ -68,5 +69,8 @@ export const mutations: MutationTree<BudsiesState> = {
   },
   [types.CUSTOMER_EMAIL_SET] (state: BudsiesState, { email }: { email: string }) {
     Vue.set(state, 'customerEmail', email);
+  },
+  [types.HOSPITALS_SET] (state, hospitals: Hospital[]): void {
+    state.hospitals = hospitals;
   }
 }

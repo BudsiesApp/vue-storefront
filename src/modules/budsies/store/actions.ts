@@ -30,6 +30,7 @@ import BodypartApiResponse from '../models/bodypart-api-response.interface'
 import Task from 'core/lib/sync/types/Task'
 import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function'
 import { Dictionary } from '../types/Dictionary.type';
+import Hospital from '../types/hospital.interface';
 
 function parse<T, R> (
   items: unknown[],
@@ -513,5 +514,39 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     if (resultCode !== 200) {
       throw new Error(`Error while send plushie reminders request: ${result}`);
     }
+  },
+  async fetchHospitalsList (
+    { commit, getters },
+    payload: {
+      useCache: boolean
+    } = {
+      useCache: true
+    }
+  ): Promise<Hospital[]> {
+    const hospitals = getters['getHospitals'];
+
+    if (hospitals.length && payload.useCache) {
+      return hospitals;
+    }
+
+    const url = processURLAddress(`${config.budsies.endpoint}/hospitals`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    if (resultCode !== 200) {
+      throw new Error('Error while hospitals list fetching');
+    }
+
+    commit(types.HOSPITALS_SET, result);
+
+    return result;
   }
 }

@@ -122,6 +122,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
     }
 
     return customerEmail;
+  },
+  getHospitals: (state) => {
+    return state.hospitals;
   }
 }
 
