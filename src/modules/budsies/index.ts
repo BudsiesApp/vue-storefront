@@ -35,6 +35,10 @@ import Hospital from './types/hospital.interface';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
 
+if (typeof URLSearchParams === 'undefined') {
+  (global as any).URLSearchParams = require('url').URLSearchParams;
+}
+
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
   store.registerModule('budsies', budsiesStore);
