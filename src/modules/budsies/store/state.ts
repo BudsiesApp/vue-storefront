@@ -15,5 +15,6 @@ export const state: BudsiesState = {
   bulkorderInfo: undefined,
   bulkorderQuotes: {},
   bulkordersQuotes: {},
-  customerTypes: undefined
+  customerTypes: undefined,
+  hospitals: []
 }

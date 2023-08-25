@@ -9,6 +9,7 @@ import { Dictionary } from '../types/Dictionary.type';
 import * as types from './mutation-types';
 import BulkorderQuote from '../models/bulkorder-quote.model';
 import BulkOrderInfo from '../types/bulk-order-info';
+import Hospital from '../types/hospital.interface';
 
 export const mutations: MutationTree<BudsiesState> = {
   setAddon (state: BudsiesState, { key, addon }: { key: string, addon: ExtraPhotoAddon }) {
@@ -87,5 +88,8 @@ export const mutations: MutationTree<BudsiesState> = {
   },
   [types.CUSTOMER_TYPES_SET] (state: BudsiesState, customerTypes: Dictionary<string> | undefined) {
     Vue.set(state, 'customerTypes', customerTypes);
+  },
+  [types.HOSPITALS_SET] (state, hospitals: Hospital[]): void {
+    state.hospitals = hospitals;
   }
 }

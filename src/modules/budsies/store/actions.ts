@@ -36,6 +36,7 @@ import bulkorderQuoteFactory from '../factories/bulkorder-quote.factory';
 import BulkOrderStatus from '../types/bulk-order-status';
 import BulkOrderInfo from '../types/bulk-order-info';
 import { Dictionary } from '../types/Dictionary.type';
+import Hospital from '../types/hospital.interface';
 
 function parse<T, R> (
   items: unknown[],
@@ -645,6 +646,40 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     commit(types.CUSTOMER_TYPES_SET, result);
+
+    return result;
+  },
+  async fetchHospitalsList (
+    { commit, getters },
+    payload: {
+      useCache: boolean
+    } = {
+      useCache: true
+    }
+  ): Promise<Hospital[]> {
+    const hospitals = getters['getHospitals'];
+
+    if (hospitals.length && payload.useCache) {
+      return hospitals;
+    }
+
+    const url = processURLAddress(`${config.budsies.endpoint}/hospitals`);
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    if (resultCode !== 200) {
+      throw new Error('Error while hospitals list fetching');
+    }
+
+    commit(types.HOSPITALS_SET, result);
 
     return result;
   }

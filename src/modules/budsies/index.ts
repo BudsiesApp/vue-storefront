@@ -35,8 +35,13 @@ import BulkorderQuote from './models/bulkorder-quote.model';
 import BulkorderQuoteProductId from './types/bulkorder-quote-product-id';
 import BulkOrderStatus from './types/bulk-order-status';
 import BulkOrderInfo from './types/bulk-order-info';
+import Hospital from './types/hospital.interface';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
+
+if (typeof URLSearchParams === 'undefined') {
+  (global as any).URLSearchParams = require('url').URLSearchParams;
+}
 
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
@@ -82,5 +87,6 @@ export {
   BulkOrderInfo,
   BulkorderQuoteProductId,
   BulkOrderStatus,
-  ProductStructuredData
+  ProductStructuredData,
+  Hospital
 }

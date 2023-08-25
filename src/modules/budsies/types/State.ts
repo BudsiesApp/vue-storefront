@@ -5,6 +5,7 @@ import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
 import BulkorderQuote from '../models/bulkorder-quote.model'
 import BulkOrderInfo from './bulk-order-info'
+import Hospital from './hospital.interface'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -21,5 +22,6 @@ export interface BudsiesState {
   bulkorderInfo: BulkOrderInfo | undefined,
   bulkorderQuotes: Dictionary<BulkorderQuote>,
   bulkordersQuotes: Dictionary<number[]>,
-  customerTypes?: Dictionary<string>
+  customerTypes?: Dictionary<string>,
+  hospitals: Hospital[]
 }
