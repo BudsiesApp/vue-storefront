@@ -1,12 +1,12 @@
 import { Store } from 'vuex';
 import VueGtm from 'vue-gtm';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+import { getBundleOptionsValues, getSelectedBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { Order } from '@vue-storefront/core/modules/order/types/Order';
 import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import { SearchQuery } from 'storefront-query-builder';
 
-import { getBundleOptionsValues, getSelectedBundleOptions } from 'core/modules/catalog/helpers/bundleOptions';
 import getCookieByName from 'src/modules/shared/helpers/get-cookie-by-name.function';
 import CartEvents from 'src/modules/shared/types/cart-events';
 import { PlushieWizardEvents } from 'src/modules/budsies';
