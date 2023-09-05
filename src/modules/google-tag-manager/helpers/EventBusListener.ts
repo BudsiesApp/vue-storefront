@@ -6,6 +6,7 @@ import { Order } from '@vue-storefront/core/modules/order/types/Order';
 import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import { SearchQuery } from 'storefront-query-builder';
 
+import { getBundleOptionsValues, getSelectedBundleOptions } from 'core/modules/catalog/helpers/bundleOptions';
 import getCookieByName from 'src/modules/shared/helpers/get-cookie-by-name.function';
 import CartEvents from 'src/modules/shared/types/cart-events';
 import { PlushieWizardEvents } from 'src/modules/budsies';
@@ -198,7 +199,9 @@ export default class EventBusListener {
       transactionIsNewCustomer: isNewCustomer,
       transactionItemsPrices: order.products.map((product) => product.price).join(),
       transactionItemsQuantities: order.products.map((product) => product.qty).join(),
-      transactionSKUs: order.products.map((product) => product.sku).join(),
+      transactionSKUs: order.products.map(
+        (product) => this.getComposedSku(product as Product)
+      ).join(),
       transactionValue: orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount
     });
 
@@ -224,7 +227,7 @@ export default class EventBusListener {
       name: product.name,
       price: product.price,
       quantity: product.qty,
-      id: product.sku
+      id: this.getComposedSku(product)
     };
   }
 
@@ -234,7 +237,20 @@ export default class EventBusListener {
       name: product.name,
       price: product.price,
       quantity: product.qty,
-      sku: product.sku
+      sku: this.getComposedSku(product)
     };
+  }
+
+  private getComposedSku (product: Product) {
+    const selectedBundleOptions = getSelectedBundleOptions(product);
+    const selectedBundleOptionsValues = getBundleOptionsValues(selectedBundleOptions, product.bundle_options || []);
+
+    let sku = product.sku;
+
+    for (const value of selectedBundleOptionsValues) {
+      sku += `-${value.sku}`;
+    }
+
+    return sku;
   }
 }
