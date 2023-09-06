@@ -96,7 +96,13 @@ declare namespace DataResolver {
     getProfile: () => Promise<Task>,
     getOrdersHistory: (pageSize?: number, currentPage?: number) => Promise<Task>,
     changePassword: (passwordData: PasswordData) => Promise<Task>,
-    refreshToken: (refreshToken: string) => Promise<string>
+    refreshToken: (refreshToken: string) => Promise<string>,
+    passwordResetConfirm: (data: {
+      id: string,
+      token: string,
+      password: string,
+      confirmation: string
+    }) => Promise<Task>
   }
 
   interface CartService {

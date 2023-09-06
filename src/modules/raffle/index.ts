@@ -1,3 +1,4 @@
+import config from 'config';
 import { isServer } from '@vue-storefront/core/helpers';
 import { StorefrontModule } from '@vue-storefront/core/lib/modules';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
@@ -21,6 +22,10 @@ import RaffleModalPreviousWinningTickets from './components/modal-previous-winni
 import RaffleWinner from './components/winner.vue';
 
 export const RaffleModule: StorefrontModule = async function ({ store }) {
+  if (!config.budsies.enableRaffle) {
+    return;
+  }
+
   StorageManager.init(SN_RAFFLE);
   store.registerModule(SN_RAFFLE, raffleStore);
 

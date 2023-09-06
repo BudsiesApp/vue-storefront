@@ -25,7 +25,10 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     uploadMethod: clientItem.uploadMethod ? clientItem.uploadMethod : undefined,
     giftcard_options: clientItem.giftcard_options ? clientItem.giftcard_options : undefined,
     upgradeOptionValues: clientItem.upgradeOptionValues,
-    participantId: clientItem.participantId ? clientItem.participantId : undefined
+    participantId: clientItem.participantId ? clientItem.participantId : undefined,
+    participantName: clientItem.participantName ? clientItem.participantName : undefined,
+    parentName: clientItem.parentName ? clientItem.parentName : undefined,
+    hospitalId: clientItem.hospitalId ? clientItem.hospitalId : undefined
   } as any as CartItem
 
   if (updateIds && serverItem.quote_id && serverItem.item_id) {

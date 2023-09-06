@@ -108,6 +108,22 @@ const refreshToken = async (refreshToken: string): Promise<string> =>
   }).then(resp => resp.json())
     .then(resp => resp.result)
 
+const passwordResetConfirm = async (data: {
+  id: string,
+  token: string,
+  password: string,
+  confirmation: string
+}): Promise<Task> =>
+  TaskQueue.execute({
+    url: processLocalizedURLAddress(getApiEndpointUrl(config.users, 'endpoint')) + '/password-reset-confirm',
+    payload: {
+      method: 'POST',
+      mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }
+  })
+
 export const UserService: DataResolver.UserService = {
   resetPassword,
   createPassword,
@@ -117,5 +133,6 @@ export const UserService: DataResolver.UserService = {
   getProfile,
   getOrdersHistory,
   changePassword,
-  refreshToken
+  refreshToken,
+  passwordResetConfirm
 }

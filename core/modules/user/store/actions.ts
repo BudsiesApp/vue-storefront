@@ -408,6 +408,14 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     state.current.addresses.splice(addressIndex, 1);
+  },
+  async passwordResetConfirm (context, payload): Promise<void> {
+    const result = await UserService.passwordResetConfirm(payload);
+
+    if (result.code !== 200) {
+      const errorMessage = result.result.errorMessage || 'Error while password reset confirmation';
+      throw new Error(errorMessage);
+    }
   }
 }
 

@@ -39,7 +39,8 @@ const actions: ActionTree<StockState, RootState> = {
         qty: result ? result.qty : 0,
         status: getStatus(result, 'ok'),
         isManageStock: result.manage_stock,
-        onlineCheckTaskId: task_id
+        onlineCheckTaskId: task_id,
+        isInStock: result.is_in_stock
       }
     }
 

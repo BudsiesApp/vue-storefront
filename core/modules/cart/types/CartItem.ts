@@ -30,5 +30,8 @@ export default interface CartItem extends Product {
     optionsValues: Record<string, string>
   }[],
   customerType?: string,
-  participantId?: string
+  participantId?: string,
+  participantName?: string,
+  parentName?: string,
+  hospitalId?: number
 }
