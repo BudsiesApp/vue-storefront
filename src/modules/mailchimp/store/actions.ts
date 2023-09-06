@@ -22,7 +22,7 @@ function getMailchimpDataFromRoute (route: Route): {
     isMailchimp: query.utm_source
       ? query.utm_source.includes('mailchimp')
       : false,
-    landingPage: route.fullPath
+    landingPage: window.location.href
   }
 }
 

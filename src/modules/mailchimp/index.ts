@@ -18,7 +18,7 @@ export const MailchimpModule: StorefrontModule = function ({ store, router }) {
   }
 
   StorageManager.init(SN_MAILCHIMP);
-  store.dispatch(SYNCHRONIZE, router);
+  store.dispatch(`${SN_MAILCHIMP}/${SYNCHRONIZE}`, router);
   store.subscribe(cacheHandlerFactory());
   syncLocalStorageChange.addEventListener();
 
