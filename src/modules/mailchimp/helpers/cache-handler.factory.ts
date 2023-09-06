@@ -9,24 +9,24 @@ import { CAMPAIGN_ID, LANDING_PAGE } from '../types/local-storage-key';
 export function cacheHandlerFactory () {
   return (mutation: MutationPayload) => {
     const type = mutation.type;
-    const raffleStorage = StorageManager.get(SN_MAILCHIMP);
+    const mailchimpStorage = StorageManager.get(SN_MAILCHIMP);
 
     if (type.endsWith(types.SET_CAMPAIGN_ID)) {
       if (!mutation.payload) {
-        raffleStorage.removeItem(CAMPAIGN_ID);
+        mailchimpStorage.removeItem(CAMPAIGN_ID);
         return;
       }
 
-      raffleStorage.setItem(CAMPAIGN_ID, mutation.payload);
+      mailchimpStorage.setItem(CAMPAIGN_ID, mutation.payload);
     }
 
     if (type.endsWith(types.SET_LANDING_PAGE)) {
       if (!mutation.payload) {
-        raffleStorage.removeItem(LANDING_PAGE);
+        mailchimpStorage.removeItem(LANDING_PAGE);
         return;
       }
 
-      raffleStorage.setItem(LANDING_PAGE, mutation.payload);
+      mailchimpStorage.setItem(LANDING_PAGE, mutation.payload);
     }
   }
 }
