@@ -99,8 +99,8 @@ export const Shipping = {
         if (!shipping && this.shippingMethods && this.shippingMethods.length > 0) {
           shipping = this.shippingMethods[0]
         }
-        this.shipping.shippingMethod = shipping.method_code
-        this.shipping.shippingCarrier = shipping.carrier_code
+        this.shipping.shippingMethod = shipping ? shipping.method_code : undefined;
+        this.shipping.shippingCarrier = shipping ? shipping.carrier_code : undefined;
       }
     },
     onAfterShippingSet (receivedData) {
