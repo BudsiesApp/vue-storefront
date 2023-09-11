@@ -17,5 +17,8 @@ export const getters: GetterTree<GiftCardState, any> = {
     const currentStoreTemplateIds = state.giftCardTemplateIdsByStoreId[storeId] || [];
 
     return currentStoreTemplateIds.map((id) => state.giftCardTemplate[id]);
+  },
+  isGiftCardProcessing (state): boolean {
+    return state.isGiftCardProcessing;
   }
 }
