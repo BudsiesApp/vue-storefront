@@ -4,6 +4,7 @@ import BodypartValue from '../models/bodypart-value.model'
 import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
 import Hospital from './hospital.interface'
+import { StoreRating } from './store-rating.interface'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -17,5 +18,6 @@ export interface BudsiesState {
   plushieShortcode: Dictionary<string>,
   customerEmail: string | undefined,
   breeds: string[],
-  hospitals: Hospital[]
+  hospitals: Hospital[],
+  storeRating: StoreRating | undefined
 }
