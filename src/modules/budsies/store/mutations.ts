@@ -7,6 +7,7 @@ import Bodypart from '../models/bodypart.model';
 import { BudsiesState } from '../types/State'
 import * as types from './mutation-types';
 import Hospital from '../types/hospital.interface';
+import { StoreRating } from '../types/store-rating.interface';
 
 export const mutations: MutationTree<BudsiesState> = {
   setAddon (state: BudsiesState, { key, addon }: { key: string, addon: ExtraPhotoAddon }) {
@@ -72,5 +73,8 @@ export const mutations: MutationTree<BudsiesState> = {
   },
   [types.HOSPITALS_SET] (state, hospitals: Hospital[]): void {
     state.hospitals = hospitals;
+  },
+  [types.STORE_RATING_SET] (state, storeRating: StoreRating): void {
+    Vue.set(state, 'storeRating', storeRating);
   }
 }
