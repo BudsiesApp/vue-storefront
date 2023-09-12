@@ -37,6 +37,7 @@ import BulkOrderStatus from '../types/bulk-order-status';
 import BulkOrderInfo from '../types/bulk-order-info';
 import { Dictionary } from '../types/Dictionary.type';
 import Hospital from '../types/hospital.interface';
+import { StoreRating } from '../types/store-rating.interface';
 
 function parse<T, R> (
   items: unknown[],
@@ -680,6 +681,44 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     commit(types.HOSPITALS_SET, result);
+
+    return result;
+  },
+  async fetchStoreRating (
+    { commit, getters },
+    {
+      storeId,
+      useCache = true
+    }: {
+      storeId: string,
+      useCache: boolean
+    }
+  ): Promise<StoreRating> {
+    const storeRating = getters['getStoreRating'];
+
+    if (useCache && storeRating) {
+      return storeRating;
+    }
+
+    const url = processURLAddress(
+      `${config.budsies.endpoint}/stores/ratings?storeId=${storeId}`
+    );
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    if (resultCode !== 200) {
+      throw new Error('Error while store rating fetching');
+    }
+
+    commit(types.STORE_RATING_SET, result.storeRating);
 
     return result;
   }

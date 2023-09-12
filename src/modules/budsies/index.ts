@@ -36,6 +36,7 @@ import BulkorderQuoteProductId from './types/bulkorder-quote-product-id';
 import BulkOrderStatus from './types/bulk-order-status';
 import BulkOrderInfo from './types/bulk-order-info';
 import Hospital from './types/hospital.interface';
+import { StoreRating } from './types/store-rating.interface';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
 
@@ -88,5 +89,6 @@ export {
   BulkorderQuoteProductId,
   BulkOrderStatus,
   ProductStructuredData,
-  Hospital
+  Hospital,
+  StoreRating
 }
