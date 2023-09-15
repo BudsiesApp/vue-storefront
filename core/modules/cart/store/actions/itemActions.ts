@@ -109,7 +109,7 @@ const itemActions = {
 
     if (getters.isCartSyncEnabled && cartItem.server_item_id) {
       const diffLog = await dispatch('sync', { forceClientState: true })
-      cartHooksExecutors.afterRemoveFromCart(diffLog)
+      cartHooksExecutors.afterRemoveFromCart({ diffLog, cartItem });
       return diffLog
     }
 
