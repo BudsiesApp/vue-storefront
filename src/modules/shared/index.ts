@@ -1,10 +1,12 @@
 import isVue from './is-vue.typeguard';
 import { AspectRatio } from './types/aspect-ratio.value';
+import CartEvents from './types/cart-events';
 import { InjectType } from './types/inject-type';
 import { VideoProvider } from './types/video-provider.value';
 import CustomerImage from './types/customer-image.interface';
 import { getCartItemPrice, getProductDefaultDiscount, getProductDefaultPrice, getProductPriceFromTotals } from './helpers/price';
 import ServerError from './types/server-error';
+import * as ProductEvent from './types/product-events';
 
 import StreamingVideo from './components/streaming-video.vue';
 import EmailSubmitForm from './components/email-submit-form.vue';
@@ -21,5 +23,7 @@ export {
   getProductDefaultPrice,
   getProductPriceFromTotals,
   ServerError,
-  EmailSubmitForm
+  EmailSubmitForm,
+  ProductEvent,
+  CartEvents
 }

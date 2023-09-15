@@ -93,6 +93,44 @@ export function getProductDefaultDiscount (product, format = true) {
   return format ? `-${discount}%` : discount;
 }
 
+export function getCartItemDiscount (product, format = true, inPercent = true) {
+  const defaultDiscount = format ? '' : 0;
+  if (!product) {
+    return defaultDiscount;
+  }
+
+  const productPriceData = getProductPriceData(product, calculateCartItemBundleOptionsPrice);
+  const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
+    value: undefined,
+    product
+  };
+
+  EventBus.$emit(UPDATE_CART_ITEM_DISCOUNT_PRICE_DATA_EVENT_ID, productDiscountPriceData);
+
+  const price = getProductPrice(product, productDiscountPriceData, productPriceData)
+
+  if (!price.special || price.regular === price.special) {
+    return defaultDiscount;
+  }
+
+  if (!inPercent) {
+    return price.regular - price.special;
+  }
+
+  const discount = Math.round((1 - price.special / price.regular) * 100);
+
+  return format ? `-${discount}%` : discount;
+}
+
+export function getFinalPrice ({
+  special, regular
+}: {
+  special: number,
+  regular: number
+}): number {
+  return special && special < regular ? special : regular;
+}
+
 function getProductPrice (product, productDiscountPriceData: UpdateProductDiscountPriceEventData, productPriceData: ProductPriceData, customOptions = {}) {
   const productDiscountPrice = productDiscountPriceData.value
     ? productDiscountPriceData.value * (product.qty || 1)
