@@ -1,4 +1,4 @@
-import { currentStoreView } from 'core/lib/multistore';
+import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import Product from 'core/modules/catalog/types/Product';
 
 import { prepareProductCategories } from './prepare-product-categories.function';

@@ -9,7 +9,7 @@ import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
 import { getCartItemPrice } from 'src/modules/shared';
 import { prepareCartItemData } from './prepare-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
-import { getFinalPrice } from 'src/modules/shared/helpers/price';
+import { getFinalPrice, getProductDefaultPrice } from 'src/modules/shared/helpers/price';
 import { DEFAULT_CURRENCY } from '../types/default-currency';
 
 export default class StoreMutationsListener {
@@ -58,7 +58,7 @@ export default class StoreMutationsListener {
       pageCategory: 'product-detail'
     });
 
-    const price = getCartItemPrice(product, {}, false);
+    const price = getProductDefaultPrice(product, {}, false);
 
     this.gtm.trackEvent({
       event: GoogleTagManagerEvents.VIEW_ITEM,

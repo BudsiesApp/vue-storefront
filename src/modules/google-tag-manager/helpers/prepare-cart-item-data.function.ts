@@ -11,7 +11,7 @@ export function prepareCartItemData (cartItem: CartItem) {
   return {
     ...baseData,
     item_variant: getComposedSku(cartItem),
-    discount: getCartItemDiscount(cartItem, false),
+    discount: getCartItemDiscount(cartItem, false, false),
     price: getFinalPrice(price)
   }
 }

@@ -9,7 +9,7 @@ export function prepareProductItemData (product: Product) {
 
   return {
     ...baseData,
-    discount: getProductDefaultDiscount(product, false),
+    discount: getProductDefaultDiscount(product, false, false),
     price: getFinalPrice(price)
   }
 }

@@ -68,7 +68,7 @@ function formatPrice (value) {
   return value ? price(value) : ''
 }
 
-export function getProductDefaultDiscount (product, format = true) {
+export function getProductDefaultDiscount (product, format = true, inPercent = true) {
   const defaultDiscount = format ? '' : 0;
   if (!product) {
     return defaultDiscount;
@@ -86,6 +86,10 @@ export function getProductDefaultDiscount (product, format = true) {
 
   if (!price.special || price.regular === price.special) {
     return defaultDiscount;
+  }
+
+  if (!inPercent) {
+    return price.regular - price.special;
   }
 
   const discount = Math.round((1 - price.special / price.regular) * 100);

@@ -1,4 +1,4 @@
-import { getBundleOptionsValues, getSelectedBundleOptions } from 'core/modules/catalog/helpers/bundleOptions';
+import { getBundleOptionsValues, getSelectedBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions';
 import Product from 'core/modules/catalog/types/Product';
 
 export function getComposedSku (product: Product) {
