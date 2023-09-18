@@ -16,10 +16,8 @@ import CartItem from 'core/modules/cart/types/CartItem';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
 import ShippingDetails from 'core/modules/checkout/types/ShippingDetails';
 
-import { getComposedSku } from './get-composed-sku.function';
 import { prepareCartItemData } from './prepare-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
-import { prepareProductCategories } from './prepare-product-categories.function';
 import { DEFAULT_CURRENCY } from '../types/default-currency';
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
 import { trackEcommerceEventFactory } from './track-ecommerce-event.factory';
@@ -235,13 +233,6 @@ export default class EventBusListener {
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.ADD_PAYMENT_INFO,
       ecommerce: data
-    });
-  }
-
-  private onCheckoutAfterPersonalDetailsEventHandler () {
-    this.gtm.trackEvent({
-      event: GoogleTagManagerEvents.CHECKOUT_SECTION_CHANGE,
-      [`${GoogleTagManagerEvents.CHECKOUT_SECTION_CHANGE}.sectionName`]: 'opcLogin'
     });
   }
 
