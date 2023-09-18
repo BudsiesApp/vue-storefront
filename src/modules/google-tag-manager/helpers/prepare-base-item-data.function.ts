@@ -10,6 +10,7 @@ export function prepareBaseItemData (product: Product) {
     affiliation: storeView.name,
     item_id: product.sku,
     item_name: product.name,
-    item_category: prepareProductCategories(product)
+    item_category: prepareProductCategories(product),
+    quantity: product.qty
   }
 }

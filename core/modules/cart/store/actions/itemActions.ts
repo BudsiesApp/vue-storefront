@@ -44,7 +44,10 @@ const itemActions = {
     commit(types.CART_ADDING_ITEM, { isAdding: true })
     const result = await dispatch('addItems', { productsToAdd: prepareProductsToAdd(cartItem), forceServerSilence })
     commit(types.CART_ADDING_ITEM, { isAdding: false })
-    cartHooksExecutors.afterAddToCart(result)
+    cartHooksExecutors.afterAddToCart({
+      diffLog: result,
+      cartItem: prepareProductsToAdd(cartItem)
+    });
 
     throwServerErrorFromDiffLog(result);
 

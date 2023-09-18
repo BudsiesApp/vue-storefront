@@ -1,11 +1,8 @@
 import Vue from 'vue'
 import VueGtm from 'vue-gtm'
 import { Store } from 'vuex'
-import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import { isServer } from '@vue-storefront/core/helpers'
 import VueRouter from 'vue-router'
-
-import Product from 'core/modules/catalog/types/Product'
 
 import EventBusListener from '../helpers/EventBusListener'
 import StoreMutationsListener from '../helpers/StoreMutationsListener'

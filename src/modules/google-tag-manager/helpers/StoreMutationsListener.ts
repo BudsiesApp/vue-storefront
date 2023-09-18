@@ -6,11 +6,6 @@ import { CART_ADD_ITEM } from '@vue-storefront/core/modules/cart/store/mutation-
 import CartItem from 'core/modules/cart/types/CartItem';
 
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
-import { getCartItemPrice } from 'src/modules/shared';
-import { prepareCartItemData } from './prepare-cart-item-data.function';
-import { prepareProductItemData } from './prepare-product-item-data.function';
-import { getFinalPrice, getProductDefaultPrice } from 'src/modules/shared/helpers/price';
-import { DEFAULT_CURRENCY } from '../types/default-currency';
 
 export default class StoreMutationsListener {
   public constructor (private store: Store<any>, private gtm: typeof VueGtm) {}
@@ -29,19 +24,6 @@ export default class StoreMutationsListener {
   }
 
   private onCartAddMutationListener (payload: {product: CartItem}): void {
-    const price = getCartItemPrice(payload.product, {}, false);
-
-    this.gtm.trackEvent({
-      event: GoogleTagManagerEvents.ADD_TO_CART,
-      ecommerce: {
-        currency: this.store.state.cart.platformTotals?.quote_currency_code || DEFAULT_CURRENCY,
-        value: getFinalPrice(price),
-        items: [
-          prepareCartItemData(payload.product)
-        ]
-      }
-    });
-
     this.gtm.trackEvent({
       event: GoogleTagManagerEvents.ADD_TO_CART_DEPRECATED,
       'addToCart.productID': payload.product.id,
@@ -56,19 +38,6 @@ export default class StoreMutationsListener {
 
     this.gtm.trackEvent({
       pageCategory: 'product-detail'
-    });
-
-    const price = getProductDefaultPrice(product, {}, false);
-
-    this.gtm.trackEvent({
-      event: GoogleTagManagerEvents.VIEW_ITEM,
-      ecommerce: {
-        currency: DEFAULT_CURRENCY,
-        value: getFinalPrice(price),
-        items: [
-          prepareProductItemData(product)
-        ]
-      }
     });
 
     this.gtm.trackEvent({

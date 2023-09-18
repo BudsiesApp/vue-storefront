@@ -10,7 +10,7 @@ import { SearchQuery } from 'storefront-query-builder';
 import getCookieByName from 'src/modules/shared/helpers/get-cookie-by-name.function';
 import CartEvents from 'src/modules/shared/types/cart-events';
 import { PlushieWizardEvents } from 'src/modules/budsies';
-import { ProductEvent, getCartItemPrice } from 'src/modules/shared';
+import { PriceHelper, ProductEvent } from 'src/modules/shared';
 
 import CartItem from 'core/modules/cart/types/CartItem';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
@@ -22,11 +22,19 @@ import { prepareProductItemData } from './prepare-product-item-data.function';
 import { prepareProductCategories } from './prepare-product-categories.function';
 import { DEFAULT_CURRENCY } from '../types/default-currency';
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
+import { trackEcommerceEventFactory } from './track-ecommerce-event.factory';
 
 const shareasaleSSCIDCookieName = 'shareasaleMagentoSSCID';
 
 export default class EventBusListener {
-  public constructor (private store: Store<any>, private gtm: typeof VueGtm) {}
+  private trackEcommerceEvent;
+
+  public constructor (
+    private store: Store<any>,
+    private gtm: typeof VueGtm
+  ) {
+    this.trackEcommerceEvent = trackEcommerceEventFactory(gtm);
+  }
 
   public initEventBusListeners (): void {
     EventBus.$on(
@@ -67,22 +75,6 @@ export default class EventBusListener {
     });
     EventBus.$on(CartEvents.MAKE_ANOTHER_FROM_CART, this.onMakeAnotherFromCartEventHandler.bind(this))
 
-    cartHooks.afterRemoveFromCart(({ cartItem }) => {
-      const price = getCartItemPrice(cartItem, {}, false);
-      const finalPrice = price.special && price.special < price.regular
-        ? price.special
-        : price.regular;
-
-      this.gtm.trackEvent({
-        event: GoogleTagManagerEvents.REMOVE_FORM_CART,
-        ecommerce: {
-          currency: DEFAULT_CURRENCY,
-          value: finalPrice,
-          items: [prepareCartItemData(cartItem)]
-        }
-      })
-    });
-
     EventBus.$on(
       ProductEvent.PRODUCT_CARD_CLICK,
       ({
@@ -95,7 +87,7 @@ export default class EventBusListener {
         categoryId: string
       }
       ) => {
-        this.gtm.trackEvent({
+        this.trackEcommerceEvent({
           event: GoogleTagManagerEvents.SELECT_ITEM,
           ecommerce: {
             item_list_id: categoryId,
@@ -109,7 +101,7 @@ export default class EventBusListener {
     EventBus.$on(
       CartEvents.CART_VIEWED,
       ({ products, platformTotals }: {products: CartItem[], platformTotals: any}) => {
-        this.gtm.trackEvent({
+        this.trackEcommerceEvent({
           event: GoogleTagManagerEvents.VIEW_CART,
           ecommerce: {
             currency: platformTotals?.quote_currency_code || DEFAULT_CURRENCY,
@@ -132,7 +124,7 @@ export default class EventBusListener {
         categoryId: string
       }
       ) => {
-        this.gtm.trackEvent({
+        this.trackEcommerceEvent({
           event: GoogleTagManagerEvents.VIEW_ITEM_LIST,
           ecommerce: {
             item_list_name: categoryName,
@@ -141,7 +133,66 @@ export default class EventBusListener {
           }
         })
       }
-    )
+    );
+
+    EventBus.$on(
+      ProductEvent.PRODUCT_PAGE_SHOW,
+      this.onProductPageShowEventHandler.bind(this)
+    );
+
+    cartHooks.afterAddToCart(this.onAfterAddToCartHookHandler.bind(this));
+    cartHooks.afterRemoveFromCart(this.onAfterRemoveFromCartHookHandler.bind(this));
+  }
+
+  private onProductPageShowEventHandler (product: Product): void {
+    const price = PriceHelper.getProductDefaultPrice(product, {}, false);
+
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.VIEW_ITEM,
+      ecommerce: {
+        currency: DEFAULT_CURRENCY,
+        value: PriceHelper.getFinalPrice(price),
+        items: [
+          prepareProductItemData(product)
+        ]
+      }
+    });
+  }
+
+  private onAfterAddToCartHookHandler ({
+    cartItem
+  }: {
+    cartItem: CartItem
+  }) {
+    const price = PriceHelper.getCartItemPrice(cartItem, {}, false);
+
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.ADD_TO_CART,
+      ecommerce: {
+        currency: this.store.state.cart.platformTotals?.quote_currency_code || DEFAULT_CURRENCY,
+        value: PriceHelper.getFinalPrice(price),
+        items: [
+          prepareCartItemData(cartItem)
+        ]
+      }
+    });
+  }
+
+  private onAfterRemoveFromCartHookHandler ({
+    cartItem
+  }: {
+    cartItem: CartItem
+  }) {
+    const price = PriceHelper.getCartItemPrice(cartItem, {}, false);
+
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.REMOVE_FORM_CART,
+      ecommerce: {
+        currency: DEFAULT_CURRENCY,
+        value: PriceHelper.getFinalPrice(price),
+        items: [prepareCartItemData(cartItem)]
+      }
+    })
   }
 
   private async loadProducts (productsSkus: string[]): Promise<void> {
@@ -169,7 +220,7 @@ export default class EventBusListener {
       items: cartItems.map((product) => prepareCartItemData(product as CartItem))
     }
 
-    this.gtm.trackEvent({
+    this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.ADD_PAYMENT_INFO,
       ecommerce: data
     })
@@ -187,7 +238,7 @@ export default class EventBusListener {
       items: cartItems.map((product) => prepareCartItemData(product as CartItem))
     }
 
-    this.gtm.trackEvent({
+    this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.ADD_SHIPPING_INFO,
       ecommerce: data
     })
@@ -204,7 +255,7 @@ export default class EventBusListener {
       items: cartItems.map((product) => prepareCartItemData(product as CartItem))
     }
 
-    this.gtm.trackEvent({
+    this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.BEGIN_CHECKOUT,
       ecommerce: data
     })
@@ -296,21 +347,26 @@ export default class EventBusListener {
     isNewCustomer: boolean
   }): Promise<void> {
     const { name } = currentStoreView();
+    const paymentDetails = order.paymentDetails;
 
     const data = {
       affiliation: name || '',
-      currency: order.paymentDetails.order_currency_code,
+      currency: paymentDetails.order_currency_code,
       transaction_id: confirmation.magentoOrderId,
-      value: order.paymentDetails.base_grand_total,
-      coupon: order.paymentDetails.coupon_code,
-      shipping: order.paymentDetails.base_shipping_amount,
-      tax: order.paymentDetails.base_tax_amount,
+      value: paymentDetails.base_grand_total,
+      coupon: paymentDetails.coupon_code,
+      shipping: paymentDetails.base_shipping_amount,
+      tax: paymentDetails.base_tax_amount,
       items: order.products.map((product) => prepareCartItemData(product as CartItem)),
-      shareasale_sscid: getCookieByName(shareasaleSSCIDCookieName),
-      is_new_customer: isNewCustomer
+      custom_fields: {
+        shareasale_sscid: getCookieByName(shareasaleSSCIDCookieName),
+        is_new_customer: isNewCustomer,
+        subtotal_value: paymentDetails.base_grand_total - paymentDetails.base_shipping_amount - paymentDetails.base_tax_amount,
+        affiliate_total: paymentDetails.base_subtotal - paymentDetails.base_discount_amount
+      }
     }
 
-    this.gtm.trackEvent({
+    this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.PURCHASE,
       ecommerce: data
     });
