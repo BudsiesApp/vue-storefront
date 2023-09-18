@@ -118,7 +118,7 @@ const itemActions = {
 
     const diffLog = createDiffLog()
       .pushClientParty({ status: 'no-item', sku: product.sku })
-    cartHooksExecutors.afterRemoveFromCart(diffLog)
+    cartHooksExecutors.afterRemoveFromCart({ diffLog, cartItem });
     return diffLog
   },
   async updateClientAndServerItem ({ dispatch }, { product, forceClientState = false, forceUpdateServerItem = false }) {
