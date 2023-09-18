@@ -5,7 +5,6 @@ import { isServer } from '@vue-storefront/core/helpers'
 import VueRouter from 'vue-router'
 
 import EventBusListener from '../helpers/EventBusListener'
-import StoreMutationsListener from '../helpers/StoreMutationsListener'
 
 export const isEnabled = (gtmId: string | null) => {
   return typeof gtmId === 'string' && gtmId.length > 0 && !isServer
@@ -31,8 +30,5 @@ export function afterRegistration (config, store: Store<any>, router: VueRouter)
 
     const eventBusListener = new EventBusListener(store, GTM);
     eventBusListener.initEventBusListeners();
-
-    const storeMutationsListener = new StoreMutationsListener(store, GTM);
-    storeMutationsListener.initStoreMutationsListener();
   }
 }

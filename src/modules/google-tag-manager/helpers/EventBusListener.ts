@@ -56,12 +56,7 @@ export default class EventBusListener {
     EventBus.$on('checkout-after-shippingDetails', this.onCheckoutAfterShippingDetailsEventHandler.bind(this));
     EventBus.$on(
       CartEvents.GO_TO_CHECKOUT_FROM_CART,
-      () => {
-        this.sendBeginCheckoutEvent();
-        this.gtm.trackEvent({
-          event: GoogleTagManagerEvents.GO_TO_CHECKOUT_FROM_CART
-        });
-      }
+      this.sendBeginCheckoutEvent.bind(this)
     );
     EventBus.$on('user-after-loggedin', () => {
       this.gtm.trackEvent({
@@ -208,42 +203,6 @@ export default class EventBusListener {
     )
   }
 
-  private sendAddPaymentInfoEvent (paymentDetails: PaymentDetails): void {
-    const platformTotals = this.store.state.cart.platformTotals;
-    const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
-
-    const data = {
-      currency: platformTotals.quote_currency_code,
-      value: platformTotals.base_grand_total,
-      coupon: platformTotals.coupon_code,
-      payment_type: paymentDetails.paymentMethod,
-      items: cartItems.map((product) => prepareCartItemData(product as CartItem))
-    }
-
-    this.trackEcommerceEvent({
-      event: GoogleTagManagerEvents.ADD_PAYMENT_INFO,
-      ecommerce: data
-    })
-  }
-
-  private sendAddShippingInfoEvent (shippingDetails: ShippingDetails): void {
-    const platformTotals = this.store.state.cart.platformTotals;
-    const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
-
-    const data = {
-      currency: platformTotals.quote_currency_code,
-      value: platformTotals.base_grand_total,
-      coupon: platformTotals.coupon_code,
-      shipping_tier: shippingDetails.shippingMethod,
-      items: cartItems.map((product) => prepareCartItemData(product as CartItem))
-    }
-
-    this.trackEcommerceEvent({
-      event: GoogleTagManagerEvents.ADD_SHIPPING_INFO,
-      ecommerce: data
-    })
-  }
-
   private sendBeginCheckoutEvent (): void {
     const platformTotals = this.store.state.cart.platformTotals;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
@@ -262,18 +221,20 @@ export default class EventBusListener {
   }
 
   private onCheckoutAfterPaymentDetailsEventHandler (paymentDetails: PaymentDetails) {
-    this.sendAddPaymentInfoEvent(paymentDetails);
+    const platformTotals = this.store.state.cart.platformTotals;
+    const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
 
-    const event = GoogleTagManagerEvents.CHECKOUT_SECTION_CHANGE;
-    const eventParamName = `${event}.sectionName`;
+    const data = {
+      currency: platformTotals.quote_currency_code,
+      value: platformTotals.base_grand_total,
+      coupon: platformTotals.coupon_code,
+      payment_type: paymentDetails.paymentMethod,
+      items: cartItems.map((product) => prepareCartItemData(product as CartItem))
+    };
 
-    this.gtm.trackEvent({
-      event,
-      [eventParamName]: 'opcBilling'
-    });
-    this.gtm.trackEvent({
-      event,
-      [eventParamName]: 'opcPayment'
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.ADD_PAYMENT_INFO,
+      ecommerce: data
     });
   }
 
@@ -285,18 +246,20 @@ export default class EventBusListener {
   }
 
   private onCheckoutAfterShippingDetailsEventHandler (shippingDetails: ShippingDetails) {
-    this.sendAddShippingInfoEvent(shippingDetails);
+    const platformTotals = this.store.state.cart.platformTotals;
+    const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
 
-    const event = GoogleTagManagerEvents.CHECKOUT_SECTION_CHANGE;
-    const eventParamName = `${event}.sectionName`;
+    const data = {
+      currency: platformTotals.quote_currency_code,
+      value: platformTotals.base_grand_total,
+      coupon: platformTotals.coupon_code,
+      shipping_tier: shippingDetails.shippingMethod,
+      items: cartItems.map((product) => prepareCartItemData(product as CartItem))
+    };
 
-    this.gtm.trackEvent({
-      event,
-      [eventParamName]: 'opcShipping'
-    });
-    this.gtm.trackEvent({
-      event,
-      [eventParamName]: 'opcShippingMethod'
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.ADD_SHIPPING_INFO,
+      ecommerce: data
     });
   }
 
@@ -337,41 +300,6 @@ export default class EventBusListener {
     })
   }
 
-  private async sendPurchaseEvent ({
-    order,
-    confirmation,
-    isNewCustomer
-  }: {
-    order: Order,
-    confirmation?: any,
-    isNewCustomer: boolean
-  }): Promise<void> {
-    const { name } = currentStoreView();
-    const paymentDetails = order.paymentDetails;
-
-    const data = {
-      affiliation: name || '',
-      currency: paymentDetails.order_currency_code,
-      transaction_id: confirmation.magentoOrderId,
-      value: paymentDetails.base_grand_total,
-      coupon: paymentDetails.coupon_code,
-      shipping: paymentDetails.base_shipping_amount,
-      tax: paymentDetails.base_tax_amount,
-      items: order.products.map((product) => prepareCartItemData(product as CartItem)),
-      custom_fields: {
-        shareasale_sscid: getCookieByName(shareasaleSSCIDCookieName),
-        is_new_customer: isNewCustomer,
-        subtotal_value: paymentDetails.base_grand_total - paymentDetails.base_shipping_amount - paymentDetails.base_tax_amount,
-        affiliate_total: paymentDetails.base_subtotal - paymentDetails.base_discount_amount
-      }
-    }
-
-    this.trackEcommerceEvent({
-      event: GoogleTagManagerEvents.PURCHASE,
-      ecommerce: data
-    });
-  }
-
   private async onOrderAfterPlacedEventHandler ({ order, confirmation }: {order: Order, confirmation?: any}) {
     if (!confirmation) {
       return;
@@ -400,53 +328,26 @@ export default class EventBusListener {
       await this.loadProducts(productsToLoadSkus);
     }
 
-    const productsWithCategories = order.products.map((product) => ({
-      ...product,
-      category: productBySkuDictionary[product.sku].category
-    }))
-
-    const transactionProductsData = productsWithCategories.map((product) => this.prepareTransactionProduct(product as Product));
-    const purchaseProductsData = productsWithCategories.map((product) => this.preparePurchaseProduct(product as Product));
-
-    this.sendPurchaseEvent({ order, confirmation, isNewCustomer });
-
-    this.gtm.trackEvent({
-      pageCategory: 'order-success'
-    });
-
-    this.gtm.trackEvent({
-      transactionId: confirmation.magentoOrderId,
-      transactionAffiliation: storeName,
-      transactionTotal: orderPaymentDetails.base_grand_total,
-      transactionTax: orderPaymentDetails.base_tax_amount,
-      transactionShipping: orderPaymentDetails.base_shipping_amount,
-      transactionProducts: transactionProductsData,
-      ecommerce: {
-        purchase: {
-          actionField: {
-            affiliation: storeName,
-            coupon: couponCode,
-            id: confirmation.magentoOrderId,
-            revenue: orderPaymentDetails.base_grand_total,
-            shipping: orderPaymentDetails.base_shipping_amount,
-            tax: orderPaymentDetails.base_tax_amount
-          },
-          products: purchaseProductsData
-        }
+    const data = {
+      affiliation: storeName,
+      currency: orderPaymentDetails.order_currency_code,
+      transaction_id: confirmation.magentoOrderId,
+      value: orderPaymentDetails.base_grand_total,
+      coupon: couponCode,
+      shipping: orderPaymentDetails.base_shipping_amount,
+      tax: orderPaymentDetails.base_tax_amount,
+      items: order.products.map((product) => prepareCartItemData(product as CartItem)),
+      custom_fields: {
+        shareasale_sscid: getCookieByName(shareasaleSSCIDCookieName),
+        is_new_customer: isNewCustomer,
+        subtotal_value: orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount,
+        affiliate_total: orderPaymentDetails.base_subtotal - orderPaymentDetails.base_discount_amount
       }
-    });
+    }
 
-    this.gtm.trackEvent({
-      shareasaleSSCID: getCookieByName(shareasaleSSCIDCookieName),
-      transactionAffiliateTotal: orderPaymentDetails.base_subtotal - orderPaymentDetails.base_discount_amount,
-      transactionCurrency: orderPaymentDetails.order_currency_code,
-      transactionIsNewCustomer: isNewCustomer,
-      transactionItemsPrices: order.products.map((product) => product.price).join(),
-      transactionItemsQuantities: order.products.map((product) => product.qty).join(),
-      transactionSKUs: order.products.map(
-        (product) => getComposedSku(product as Product)
-      ).join(),
-      transactionValue: orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.PURCHASE,
+      ecommerce: data
     });
 
     this.gtm.trackEvent({
@@ -454,26 +355,5 @@ export default class EventBusListener {
       customerFullName: `${orderPersonalDetails.firstName} ${orderPersonalDetails.lastName}`,
       customerId: currentUser ? currentUser.id : ''
     });
-  }
-
-  private preparePurchaseProduct (product: Product) {
-    return {
-      category: prepareProductCategories(product),
-      coupon: '',
-      name: product.name,
-      price: product.price,
-      quantity: product.qty,
-      id: getComposedSku(product)
-    };
-  }
-
-  private prepareTransactionProduct (product: Product) {
-    return {
-      category: prepareProductCategories(product),
-      name: product.name,
-      price: product.price,
-      quantity: product.qty,
-      sku: getComposedSku(product)
-    };
   }
 }
