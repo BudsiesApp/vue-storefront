@@ -50,7 +50,6 @@ export default class EventBusListener {
 
     EventBus.$on('order-after-placed', this.onOrderAfterPlacedEventHandler.bind(this));
     EventBus.$on('checkout-after-paymentDetails', this.onCheckoutAfterPaymentDetailsEventHandler.bind(this));
-    EventBus.$on('checkout-after-personalDetails', this.onCheckoutAfterPersonalDetailsEventHandler.bind(this));
     EventBus.$on('checkout-after-shippingDetails', this.onCheckoutAfterShippingDetailsEventHandler.bind(this));
     EventBus.$on(
       CartEvents.GO_TO_CHECKOUT_FROM_CART,
