@@ -1,5 +1,5 @@
 enum CartEvents {
-  GO_TO_CHECKOUT_FROM_CART = 'goToCheckoutFromCart',
+  BEGIN_CHECKOUT = 'beginCheckout',
   MAKE_ANOTHER_FROM_CART = 'makeAnotherFromCart',
   CART_VIEWED = 'cartViewed'
 }

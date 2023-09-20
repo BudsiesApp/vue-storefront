@@ -52,7 +52,7 @@ export default class EventBusListener {
     EventBus.$on('checkout-after-paymentDetails', this.onCheckoutAfterPaymentDetailsEventHandler.bind(this));
     EventBus.$on('checkout-after-shippingDetails', this.onCheckoutAfterShippingDetailsEventHandler.bind(this));
     EventBus.$on(
-      CartEvents.GO_TO_CHECKOUT_FROM_CART,
+      CartEvents.BEGIN_CHECKOUT,
       this.sendBeginCheckoutEvent.bind(this)
     );
     EventBus.$on('user-after-loggedin', () => {

@@ -46,7 +46,7 @@ const itemActions = {
     commit(types.CART_ADDING_ITEM, { isAdding: false })
     cartHooksExecutors.afterAddToCart({
       diffLog: result,
-      cartItem: prepareProductsToAdd(cartItem)
+      cartItem: cartItem
     });
 
     throwServerErrorFromDiffLog(result);
