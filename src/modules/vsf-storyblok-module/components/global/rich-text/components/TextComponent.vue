@@ -119,12 +119,14 @@ export default Vue.extend({
 
       const textStyle = this.item.marks.find((mark) => mark.type === 'textStyle');
 
-      if (!textStyle) {
-        return result;
+      if (textStyle?.attrs?.color) {
+        result.color = textStyle.attrs.color;
       }
 
-      if (textStyle.attrs?.color) {
-        result.color = textStyle.attrs.color;
+      const highlightStyle = this.item.marks.find((mark) => mark.type === 'highlight');
+
+      if (highlightStyle?.attrs?.color) {
+        result.backgroundColor = highlightStyle?.attrs?.color;
       }
 
       return result;
@@ -355,6 +357,30 @@ export default Vue.extend({
 
     .-underline {
         text-decoration: underline;
+    }
+
+    .-highlight {
+      display: inline-block;
+      line-height: 1;
+    }
+
+    .-superscript {
+      vertical-align: super;
+      font-size: var(--font-xs);
+    }
+
+    .-subscript {
+      vertical-align: sub;
+      font-size: var(--font-xs);
+    }
+
+    .-code {
+      display: inline-block;
+      padding: var(--spacer-2xs) var(--spacer-xs);
+      line-height: 1;
+      color: var(--c-blockquote);
+      border: 1px solid var(--c-blockquote-border);
+      border-radius: 4px;
     }
 }
 </style>

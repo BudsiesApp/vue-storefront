@@ -8,7 +8,7 @@ export default interface RichTextItem {
   rootElementAttributes?: any,
   rootElementId?: string,
   marks?: {
-    type: 'link' | 'strike' | 'italic' | 'bold' | 'underline' | 'styled' | 'textStyle',
+    type: 'link' | 'strike' | 'italic' | 'bold' | 'underline' | 'styled' | 'textStyle' | 'highlight' | 'code',
     attrs?: {
       href?: string,
       target?: '_blank' | '_current',
