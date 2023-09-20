@@ -80,7 +80,13 @@ const actions: ActionTree<UserState, RootState> = {
    * Login user and return user profile and current token
    */
   async register (context, { password, ...customer }) {
-    return UserService.register(customer, password)
+    const task = await UserService.register(customer, password);
+
+    if (task.code === 200) {
+      EventBus.$emit('user-after-register');
+    }
+
+    return task;
   },
 
   /**
