@@ -241,6 +241,10 @@ const actions: ActionTree<ProductState, RootState> = {
       skipCache
     })
 
+    if (!product) {
+      return;
+    }
+
     setRequestCacheTags({ products: [product] })
 
     if (setCurrent) {
