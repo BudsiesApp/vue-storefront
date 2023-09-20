@@ -17104,10 +17104,9 @@ vue-meta@^2.3.3:
   dependencies:
     deepmerge "^4.2.2"
 
-vue-multiselect@^2.1:
+"vue-multiselect@https://github.com/BudsiesApp/vue-multiselect.git#cfcbdc69801438d2d7196905832367e3e19dbaf7":
   version "2.1.6"
-  resolved "https://registry.yarnpkg.com/vue-multiselect/-/vue-multiselect-2.1.6.tgz#5be5d811a224804a15c43a4edbb7485028a89c7f"
-  integrity sha512-s7jmZPlm9FeueJg1RwJtnE9KNPtME/7C8uRWSfp9/yEN4M8XcS/d+bddoyVwVnvFyRh9msFo0HWeW0vTL8Qv+w==
+  resolved "https://github.com/BudsiesApp/vue-multiselect.git#cfcbdc69801438d2d7196905832367e3e19dbaf7"
 
 vue-no-ssr@^0.2.2:
   version "0.2.2"

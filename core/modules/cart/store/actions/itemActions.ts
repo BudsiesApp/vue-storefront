@@ -44,7 +44,10 @@ const itemActions = {
     commit(types.CART_ADDING_ITEM, { isAdding: true })
     const result = await dispatch('addItems', { productsToAdd: prepareProductsToAdd(cartItem), forceServerSilence })
     commit(types.CART_ADDING_ITEM, { isAdding: false })
-    cartHooksExecutors.afterAddToCart(result)
+    cartHooksExecutors.afterAddToCart({
+      diffLog: result,
+      cartItem: cartItem
+    });
 
     throwServerErrorFromDiffLog(result);
 
@@ -109,13 +112,13 @@ const itemActions = {
 
     if (getters.isCartSyncEnabled && cartItem.server_item_id) {
       const diffLog = await dispatch('sync', { forceClientState: true })
-      cartHooksExecutors.afterRemoveFromCart(diffLog)
+      cartHooksExecutors.afterRemoveFromCart({ diffLog, cartItem });
       return diffLog
     }
 
     const diffLog = createDiffLog()
       .pushClientParty({ status: 'no-item', sku: product.sku })
-    cartHooksExecutors.afterRemoveFromCart(diffLog)
+    cartHooksExecutors.afterRemoveFromCart({ diffLog, cartItem });
     return diffLog
   },
   async updateClientAndServerItem ({ dispatch }, { product, forceClientState = false, forceUpdateServerItem = false }) {
