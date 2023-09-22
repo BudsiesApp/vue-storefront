@@ -376,7 +376,8 @@ export default Vue.extend({
 
     .-code {
       display: inline-block;
-      padding: var(--spacer-2xs) var(--spacer-xs);
+      font-family: monospace;
+      padding: var(--spacer-xs) var(--spacer-sm);
       line-height: 1;
       color: var(--c-blockquote);
       border: 1px solid var(--c-blockquote-border);
