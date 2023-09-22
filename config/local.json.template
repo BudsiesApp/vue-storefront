@@ -868,7 +868,7 @@
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/braintree",
     "applePay": {
       "displayName": "${DEFAULT_STORE_NAME}",
-      "label": "Budsies Co LLC"
+      "label": "Budsies PR LLC"
     }
   },
   "affirm": {
