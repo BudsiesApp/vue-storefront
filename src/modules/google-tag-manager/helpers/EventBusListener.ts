@@ -152,7 +152,7 @@ export default class EventBusListener {
     code?: number
   }): void {
     this.trackEcommerceEvent({
-      event: GoogleTagManagerEvents.ORDER_ERROR,
+      event: GoogleTagManagerEvents.PURCHASE_ERROR,
       ecommerce: {
         error,
         code: code || undefined,
