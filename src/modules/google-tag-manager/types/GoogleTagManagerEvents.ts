@@ -15,7 +15,8 @@ enum GoogleTagManagerEvents {
   BEGIN_CHECKOUT = 'begin_checkout',
   PURCHASE = 'purchase',
   ADD_TO_CART = 'add_to_cart',
-  VIEW_ITEM = 'view_item'
+  VIEW_ITEM = 'view_item',
+  ORDER_ERROR = 'order_error'
 }
 
 export default GoogleTagManagerEvents;

@@ -15,6 +15,7 @@ import { PriceHelper, ProductEvent } from 'src/modules/shared';
 import CartItem from 'core/modules/cart/types/CartItem';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
 import ShippingDetails from 'core/modules/checkout/types/ShippingDetails';
+import { ORDER_ERROR_EVENT } from '@vue-storefront/core/modules/checkout';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
@@ -132,8 +133,34 @@ export default class EventBusListener {
       this.onProductPageShowEventHandler.bind(this)
     );
 
+    EventBus.$on(
+      ORDER_ERROR_EVENT,
+      this.onOrderErrorEventHandler.bind(this)
+    )
+
     cartHooks.afterAddToCart(this.onAfterAddToCartHookHandler.bind(this));
     cartHooks.afterRemoveFromCart(this.onAfterRemoveFromCartHookHandler.bind(this));
+  }
+
+  private onOrderErrorEventHandler ({
+    order,
+    error,
+    code
+  }: {
+    order: Order,
+    error: string,
+    code?: number
+  }): void {
+    this.trackEcommerceEvent({
+      event: GoogleTagManagerEvents.ORDER_ERROR,
+      ecommerce: {
+        error,
+        code: code || undefined,
+        items: order.products.map(
+          (cartItem) => prepareCartItemData(cartItem as CartItem)
+        )
+      }
+    });
   }
 
   private onProductPageShowEventHandler (product: Product): void {

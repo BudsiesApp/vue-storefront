@@ -14,6 +14,7 @@ import config from 'config'
 import { orderHooksExecutors } from '../hooks'
 import * as entities from '@vue-storefront/core/lib/store/entities'
 import { prepareOrder, optimizeOrder, notifications } from './../helpers'
+import { ProcessOrderError } from '../types/ProcessOrderError'
 
 const actions: ActionTree<OrderState, RootState> = {
   /**
@@ -84,7 +85,7 @@ const actions: ActionTree<OrderState, RootState> = {
       return task
     }
     EventBus.$emit('notification-progress-stop')
-    throw new Error(task.result);
+    throw new ProcessOrderError(task.result, task.resultCode);
   },
   handlePlacingOrderFailed ({ commit, dispatch }, { newOrder, currentOrderHash }) {
     const order = { ...newOrder, transmited: false }
