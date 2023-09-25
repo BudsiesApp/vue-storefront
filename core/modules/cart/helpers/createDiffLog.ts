@@ -1,6 +1,6 @@
 import { Notification, ServerResponse, Party } from '@vue-storefront/core/modules/cart/types/DiffLog'
 
-export class DiffLog {
+class DiffLog {
   public items: Party[]
   public serverResponses: ServerResponse[]
   public clientNotifications: Notification[]
