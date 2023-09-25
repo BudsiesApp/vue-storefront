@@ -149,13 +149,13 @@ export default class EventBusListener {
   }: {
     order: Order,
     error: string,
-    code?: number
+    code: number
   }): void {
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.PURCHASE_ERROR,
       ecommerce: {
         error,
-        code: code || undefined,
+        code,
         items: order.products.map(
           (cartItem) => prepareCartItemData(cartItem as CartItem)
         )
