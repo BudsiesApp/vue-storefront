@@ -6,6 +6,7 @@ import { Logger } from '@vue-storefront/core/lib/logger'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { ORDER_ERROR_EVENT } from '../../types/OrderErrorEvent'
+import { ProcessOrderError } from 'core/modules/order/types/ProcessOrderError'
 
 const actions: ActionTree<CheckoutState, RootState> = {
   async placeOrder ({ dispatch }, { order }) {
@@ -17,10 +18,26 @@ const actions: ActionTree<CheckoutState, RootState> = {
         await dispatch('cart/clear', { sync: false }, { root: true })
         await dispatch('dropPassword')
       } else if (result.resultCode !== 404) {
-        EventBus.$emit(ORDER_ERROR_EVENT, { order, error: result.result });
+        EventBus.$emit(
+          ORDER_ERROR_EVENT,
+          {
+            order,
+            error: result.result,
+            code: result.resultCode
+          }
+        );
       }
     } catch (e) {
-      EventBus.$emit(ORDER_ERROR_EVENT, { order, error: (e as Error).message });
+      const error = e as ProcessOrderError;
+
+      EventBus.$emit(
+        ORDER_ERROR_EVENT,
+        {
+          order,
+          error: error.message,
+          code: error.code
+        }
+      );
       Logger.error(e, 'checkout')()
     }
   },
