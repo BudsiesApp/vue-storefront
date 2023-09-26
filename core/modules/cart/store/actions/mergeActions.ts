@@ -203,14 +203,17 @@ const mergeActions = {
   },
   async mergeServerItem({ dispatch, getters }, { clientItems, serverItem, forceClientState, dryRun }) {
     const diffLog = createDiffLog()
-    const clientItem = clientItems.find(itm => productsEquals(itm, serverItem))
+    const clientItem: CartItem | undefined = clientItems.find(itm => productsEquals(itm, serverItem))
 
     if (
       clientItem &&
       isClientItemHasRequiredServerItemFields(clientItem)
     ) return diffLog
 
-    if (!isClientItemHasRequiredServerItemFields(clientItem)) {
+    if (
+      clientItem &&
+      !isClientItemHasRequiredServerItemFields(clientItem)
+    ) {
       await dispatch('updateClientItem', {clientItem, serverItem});
       return diffLog;
     }
