@@ -1,5 +1,6 @@
 import isVue from './is-vue.typeguard';
 import { AspectRatio } from './types/aspect-ratio.value';
+import { BEFORE_FETCH } from './types/before-fetch.event';
 import CartEvents from './types/cart-events';
 import { InjectType } from './types/inject-type';
 import { VideoProvider } from './types/video-provider.value';
@@ -27,5 +28,6 @@ export {
   EmailSubmitForm,
   ProductEvent,
   CartEvents,
-  PriceHelper
+  PriceHelper,
+  BEFORE_FETCH
 }

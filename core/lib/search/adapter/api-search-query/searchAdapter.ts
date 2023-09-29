@@ -8,6 +8,8 @@ import HttpQuery from '@vue-storefront/core/types/search/HttpQuery'
 import { SearchResponse } from '@vue-storefront/core/types/search/SearchResponse'
 import config from 'config'
 import getApiEndpointUrl from '@vue-storefront/core/helpers/getApiEndpointUrl';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+import { BEFORE_FETCH } from 'src/modules/shared'
 
 export class SearchAdapter {
   public entities: any
@@ -82,14 +84,21 @@ export class SearchAdapter {
     }
     url = url + '/' + encodeURIComponent(Request.index) + '/' + encodeURIComponent(Request.type) + '/_search'
     url = url + '?' + queryString.stringify(httpQuery)
-    return fetch(url, { method: config.elasticsearch.queryMethod,
-      mode: 'cors',
+
+    const mode: RequestMode = 'cors';
+    const payload = {
+      method: config.elasticsearch.queryMethod,
+      mode,
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       body: config.elasticsearch.queryMethod === 'POST' ? JSON.stringify(rawQueryObject) : null
-    })
+    };
+
+    EventBus.$emit(BEFORE_FETCH, payload);
+
+    return fetch(url, payload)
       .then(resp => { return resp.json() })
       .catch(error => {
         throw new Error('FetchError in request to API: ' + error.toString())

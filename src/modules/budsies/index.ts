@@ -33,12 +33,18 @@ import BodypartOption from './types/bodypart-option';
 import PlushieWizardEvents from './types/plushie-wizard-events';
 import Hospital from './types/hospital.interface';
 import { StoreRating } from './types/store-rating.interface';
+import { getAppVersion } from './helpers/get-app-version.function';
+
+import { BEFORE_FETCH } from 'src/modules/shared';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
+import { debugDataFactory } from './helpers/debug-data.factory';
 
 if (typeof URLSearchParams === 'undefined') {
   (global as any).URLSearchParams = require('url').URLSearchParams;
 }
+
+const debugData = debugDataFactory();
 
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
@@ -48,6 +54,13 @@ export const BudsiesModule: StorefrontModule = async function ({ store }) {
     once('__VUE_BUDSIES__', () => {
       Vue.use(VueCookies);
     })
+
+    EventBus.$on(BEFORE_FETCH, (payload: any) => {
+      const { instanceId, appVersion } = debugData.getDebugData();
+
+      payload.headers['instance-id'] = instanceId;
+      payload.headers['app-version'] = appVersion;
+    });
 
     await store.dispatch('budsies/synchronize');
 
@@ -82,5 +95,7 @@ export {
   PlushieWizardEvents,
   ProductStructuredData,
   Hospital,
-  StoreRating
+  StoreRating,
+  getAppVersion,
+  debugData
 }
