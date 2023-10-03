@@ -81,8 +81,7 @@
     "protocol_ssr": "https"
   },
   "app": {
-    "vsfVersion": "1.0.0",
-    "themeVersion": "1.0.0"
+    "version": "1.0.0"
   },
   "storyblok": {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/vsf-storyblok-extension",

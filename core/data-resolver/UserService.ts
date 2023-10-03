@@ -6,7 +6,7 @@ import Task from '@vue-storefront/core/lib/sync/types/Task'
 import { processLocalizedURLAddress } from '@vue-storefront/core/helpers'
 import config from 'config'
 import getApiEndpointUrl from '@vue-storefront/core/helpers/getApiEndpointUrl';
-import { BEFORE_FETCH } from 'src/modules/shared';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared';
 
 const headers = {
   'Accept': 'application/json, text/plain, */*',
@@ -110,7 +110,7 @@ const refreshToken = async (refreshToken: string): Promise<string> => {
     body: JSON.stringify({ refreshToken })
   };
 
-  EventBus.$emit(BEFORE_FETCH, payload);
+  EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
   return fetch(processLocalizedURLAddress(
     getApiEndpointUrl(config.users, 'refresh_endpoint')),
     payload

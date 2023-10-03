@@ -9,7 +9,7 @@ import { SearchResponse } from '@vue-storefront/core/types/search/SearchResponse
 import config from 'config'
 import getApiEndpointUrl from '@vue-storefront/core/helpers/getApiEndpointUrl';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
-import { BEFORE_FETCH } from 'src/modules/shared'
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
 
 export class SearchAdapter {
   public entities: any
@@ -96,7 +96,7 @@ export class SearchAdapter {
       body: config.elasticsearch.queryMethod === 'POST' ? JSON.stringify(rawQueryObject) : null
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return fetch(url, payload)
       .then(resp => { return resp.json() })

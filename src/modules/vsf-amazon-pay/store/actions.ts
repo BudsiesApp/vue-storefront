@@ -7,7 +7,7 @@ import rootStore from '@vue-storefront/core/store'
 import * as types from './mutation-types'
 import * as states from './order-states'
 import { cacheStorage } from '../'
-import { BEFORE_FETCH } from 'src/modules/shared'
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
 
 // it's a good practice for all actions to return Promises with effect of their execution
 export const actions: ActionTree<AmazonPayState, any> = {
@@ -72,7 +72,7 @@ export const actions: ActionTree<AmazonPayState, any> = {
       }
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
       fetch(url, payload).then(resp => {
@@ -100,7 +100,7 @@ export const actions: ActionTree<AmazonPayState, any> = {
       body: JSON.stringify({ orderReferenceAttributes })
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
       fetch(url, payload).then(resp => {
@@ -152,7 +152,7 @@ export const actions: ActionTree<AmazonPayState, any> = {
       }
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
       fetch(url, payload).then(resp => {
@@ -194,7 +194,7 @@ export const actions: ActionTree<AmazonPayState, any> = {
       })
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
       fetch(url, payload).then(resp => {
@@ -220,7 +220,7 @@ export const actions: ActionTree<AmazonPayState, any> = {
       }
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
       fetch(url, payload).then(resp => {

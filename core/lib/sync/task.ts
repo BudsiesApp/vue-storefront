@@ -17,7 +17,7 @@ import { onlineHelper } from '@vue-storefront/core/helpers'
 import { hasResponseError, getResponseMessage } from '@vue-storefront/core/lib/sync/helpers'
 import queryString from 'query-string'
 
-import { BEFORE_FETCH } from 'src/modules/shared'
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
 
 export function _prepareTask (task) {
   const taskId = entities.uniqueEntityId(task) // timestamp as a order id is not the best we can do but it's enough
@@ -90,7 +90,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
   let silentMode = false
   Logger.info('Executing sync task ' + url, 'sync', task)()
 
-  EventBus.$emit(BEFORE_FETCH, payload);
+  EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
   return fetch(url, payload).then((response) => {
     const contentType = response.headers.get('content-type')

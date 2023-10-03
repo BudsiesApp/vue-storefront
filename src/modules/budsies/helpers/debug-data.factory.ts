@@ -1,9 +1,9 @@
+import config from 'config';
 import { v4 as uuidv4 } from 'uuid';
 
 import { isServer } from '@vue-storefront/core/helpers';
 import { getStorageName } from '@vue-storefront/core/lib/storage-manager';
 
-import { getAppVersion } from './get-app-version.function';
 import { getItemsFromStorageFactory } from './sync-local-storage-change.factory';
 import { SN_BUDSIES } from '../store/mutation-types';
 import { INSTANCE_ID } from '../types/local-storage-key';
@@ -28,7 +28,7 @@ export function debugDataFactory () {
   function getDebugData () {
     return {
       instanceId,
-      appVersion: getAppVersion()
+      appVersion: config.app.version
     }
   }
 

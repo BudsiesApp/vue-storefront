@@ -33,9 +33,8 @@ import BodypartOption from './types/bodypart-option';
 import PlushieWizardEvents from './types/plushie-wizard-events';
 import Hospital from './types/hospital.interface';
 import { StoreRating } from './types/store-rating.interface';
-import { getAppVersion } from './helpers/get-app-version.function';
 
-import { BEFORE_FETCH } from 'src/modules/shared';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
 import { debugDataFactory } from './helpers/debug-data.factory';
@@ -55,7 +54,7 @@ export const BudsiesModule: StorefrontModule = async function ({ store }) {
       Vue.use(VueCookies);
     })
 
-    EventBus.$on(BEFORE_FETCH, (payload: any) => {
+    EventBus.$on(BEFORE_STORE_BACKEND_API_REQUEST, (payload: any) => {
       const { instanceId, appVersion } = debugData.getDebugData();
 
       payload.headers['instance-id'] = instanceId;
@@ -96,6 +95,5 @@ export {
   ProductStructuredData,
   Hospital,
   StoreRating,
-  getAppVersion,
   debugData
 }

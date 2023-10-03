@@ -1,6 +1,6 @@
 import isVue from './is-vue.typeguard';
 import { AspectRatio } from './types/aspect-ratio.value';
-import { BEFORE_FETCH } from './types/before-fetch.event';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from './types/before-store-backend-api-request.event';
 import CartEvents from './types/cart-events';
 import { InjectType } from './types/inject-type';
 import { VideoProvider } from './types/video-provider.value';
@@ -29,5 +29,5 @@ export {
   ProductEvent,
   CartEvents,
   PriceHelper,
-  BEFORE_FETCH
+  BEFORE_STORE_BACKEND_API_REQUEST
 }

@@ -21,7 +21,7 @@ import omit from 'lodash-es/omit'
 import { storeProductToCache } from '@vue-storefront/core/modules/catalog/helpers/search';
 import { prepareProducts } from '@vue-storefront/core/modules/catalog/helpers/prepare';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
-import { BEFORE_FETCH } from 'src/modules/shared'
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
 
 // it's a good practice for all actions to return Promises with effect of their execution
 export const actions: ActionTree<UrlState, any> = {
@@ -163,7 +163,7 @@ export const actions: ActionTree<UrlState, any> = {
         })
       };
 
-      EventBus.$emit(BEFORE_FETCH, payload);
+      EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
       let response: any = await fetch(
         requestUrl,

@@ -6,7 +6,7 @@ import CampaignsGetAPIResponse from './types/CampaignsGetAPIResponse';
 import CampaignContent from './types/CampaignContent.model';
 import { Dictionary } from '../budsies';
 import ImageBanner from './types/ImageBanner.model';
-import { BEFORE_FETCH } from '../shared';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from '../shared';
 
 function parseResponseData (responseData: any): CampaignsGetAPIResponse {
   const campaignData = responseData.result.campaignContent;
@@ -86,7 +86,7 @@ export const PromotionPlatformService = {
       mode
     }
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     const response = await fetch(url, payload);
 
@@ -108,7 +108,7 @@ export const PromotionPlatformService = {
       mode
     };
 
-    EventBus.$emit(BEFORE_FETCH, payload);
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     const response = await fetch(url, payload);
 
