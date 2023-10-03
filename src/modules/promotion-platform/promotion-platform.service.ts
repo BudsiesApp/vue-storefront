@@ -1,10 +1,12 @@
 import config from 'config';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { processURLAddress } from '@vue-storefront/core/helpers';
 
 import CampaignsGetAPIResponse from './types/CampaignsGetAPIResponse';
 import CampaignContent from './types/CampaignContent.model';
 import { Dictionary } from '../budsies';
 import ImageBanner from './types/ImageBanner.model';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from '../shared';
 
 function parseResponseData (responseData: any): CampaignsGetAPIResponse {
   const campaignData = responseData.result.campaignContent;
@@ -77,11 +79,16 @@ export const PromotionPlatformService = {
       url += `?${queryString}`;
     }
 
-    const response = await fetch(url, {
+    const mode: RequestMode = 'cors';
+    const payload = {
       method: 'POST',
       headers: { 'Accept': 'application/json' },
-      mode: 'cors'
-    });
+      mode
+    }
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
+
+    const response = await fetch(url, payload);
 
     const responseData = await response.json();
 
@@ -94,11 +101,16 @@ export const PromotionPlatformService = {
       url += `&token=${userToken}`;
     }
 
-    const response = await fetch(url, {
+    const mode: RequestMode = 'cors';
+    const payload = {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
-      mode: 'cors'
-    });
+      mode
+    };
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
+
+    const response = await fetch(url, payload);
 
     const responseData = await response.json();
 

@@ -20,6 +20,8 @@ import * as types from './mutation-types'
 import omit from 'lodash-es/omit'
 import { storeProductToCache } from '@vue-storefront/core/modules/catalog/helpers/search';
 import { prepareProducts } from '@vue-storefront/core/modules/catalog/helpers/prepare';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
 
 // it's a good practice for all actions to return Promises with effect of their execution
 export const actions: ActionTree<UrlState, any> = {
@@ -133,34 +135,39 @@ export const actions: ActionTree<UrlState, any> = {
     const groupToken = context.rootState.user.groupToken || null
     try {
       const requestUrl = `${adjustMultistoreApiUrl(processURLAddress(config.urlModule.map_endpoint))}`
+      const mode: RequestMode = 'cors';
+      const payload = {
+        method: 'POST',
+        mode,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url,
+          includeFields: null, // send `includeFields: null || undefined` to fetch all fields
+          excludeFields: [],
+          options: {
+            prefetchGroupProducts: true,
+            assignProductConfiguration: true,
+            populateRequestCacheTags: false,
+            setProductErrors: false,
+            fallbackToDefaultWhenNoAvailable: true,
+            separateSelectedVariant: false,
+            setConfigurableProductOptions: config.cart.setConfigurableProductOptions,
+            filterUnavailableVariants: config.products.filterUnavailableVariants
+          },
+          filters: { sku: params.childSku },
+          groupId,
+          groupToken
+        })
+      };
+
+      EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
+
       let response: any = await fetch(
         requestUrl,
-        {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            url,
-            includeFields: null, // send `includeFields: null || undefined` to fetch all fields
-            excludeFields: [],
-            options: {
-              prefetchGroupProducts: true,
-              assignProductConfiguration: true,
-              populateRequestCacheTags: false,
-              setProductErrors: false,
-              fallbackToDefaultWhenNoAvailable: true,
-              separateSelectedVariant: false,
-              setConfigurableProductOptions: config.cart.setConfigurableProductOptions,
-              filterUnavailableVariants: config.products.filterUnavailableVariants
-            },
-            filters: { sku: params.childSku },
-            groupId,
-            groupToken
-          })
-        }
+        payload
       )
       if (!response.ok) {
         return null
