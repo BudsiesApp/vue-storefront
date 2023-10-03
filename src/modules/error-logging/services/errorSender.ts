@@ -27,8 +27,8 @@ export async function sendErrorMessage (
     _trace_id: traceId,
     _file: errorMessage.file,
     _line: errorMessage.line,
-    appVersion,
-    instanceId
+    _appVersion: appVersion,
+    _instanceId: instanceId
   }
 
   const response = await fetch(
