@@ -57,8 +57,8 @@ export const BudsiesModule: StorefrontModule = async function ({ store }) {
     EventBus.$on(BEFORE_STORE_BACKEND_API_REQUEST, (payload: any) => {
       const { instanceId, appVersion } = debugData.getDebugData();
 
-      payload.headers['instance-id'] = instanceId;
-      payload.headers['app-version'] = appVersion;
+      payload.headers['x-instance-id'] = instanceId;
+      payload.headers['x-app-version'] = appVersion;
     });
 
     await store.dispatch('budsies/synchronize');
