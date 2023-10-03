@@ -1,3 +1,4 @@
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { AmazonPayState } from '../types/AmazonPayState'
 import { ActionTree } from 'vuex'
 import config from 'config'
@@ -6,6 +7,7 @@ import rootStore from '@vue-storefront/core/store'
 import * as types from './mutation-types'
 import * as states from './order-states'
 import { cacheStorage } from '../'
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
 
 // it's a good practice for all actions to return Promises with effect of their execution
 export const actions: ActionTree<AmazonPayState, any> = {
@@ -61,14 +63,19 @@ export const actions: ActionTree<AmazonPayState, any> = {
     let encodeAccessToken = encodeURIComponent(state.userToken.token)
     let url = `${config.amazonPay.endpoint.GetOrderReferenceDetails}?orderReferenceId=${state.orderReferenceId}&accessToken=${encodeAccessToken}`
 
+    const mode: RequestMode = 'cors';
+    const payload = {
+      method: 'GET',
+      mode,
+      headers: {
+        'Accept': 'application/json'
+      }
+    };
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
+
     return new Promise((resolve, reject) => {
-      fetch(url, {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json'
-        }
-      }).then(resp => {
+      fetch(url, payload).then(resp => {
         if (resp.ok) {
           resolve(resp.json())
         } else {
@@ -82,16 +89,21 @@ export const actions: ActionTree<AmazonPayState, any> = {
   setOrderReferenceDetails ({ state }, orderReferenceAttributes): Promise<Response> {
     let url = `${config.amazonPay.endpoint.SetOrderReferenceDetails}?orderReferenceId=${state.orderReferenceId}`
 
+    const mode: RequestMode = 'cors';
+    const payload = {
+      method: 'POST',
+      mode,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ orderReferenceAttributes })
+    };
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
+
     return new Promise((resolve, reject) => {
-      fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ orderReferenceAttributes })
-      }).then(resp => {
+      fetch(url, payload).then(resp => {
         if (resp.ok) {
           resolve(resp.json())
         } else {
@@ -131,15 +143,19 @@ export const actions: ActionTree<AmazonPayState, any> = {
     commit(types.SET_ORDER_STATE, states.OPEN)
 
     let url = `${config.amazonPay.endpoint.ConfirmOrderReference}?orderReferenceId=${state.orderReferenceId}`
+    const mode: RequestMode = 'cors';
+    const payload = {
+      method: 'POST',
+      mode,
+      headers: {
+        'Accept': 'application/json'
+      }
+    };
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
-      fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json'
-        }
-      }).then(resp => {
+      fetch(url, payload).then(resp => {
         if (resp.ok) {
           resolve(resp.json())
         } else {
@@ -162,22 +178,26 @@ export const actions: ActionTree<AmazonPayState, any> = {
     })
 
     let url = `${config.amazonPay.endpoint.Authorize}?orderReferenceId=${state.orderReferenceId}`
+    const mode: RequestMode = 'cors';
+    const payload = {
+      method: 'POST',
+      mode,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        AuthorizationAmount: {
+          Amount,
+          CurrencyCode
+        }
+      })
+    };
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
-      fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          AuthorizationAmount: {
-            Amount,
-            CurrencyCode
-          }
-        })
-      }).then(resp => {
+      fetch(url, payload).then(resp => {
         if (resp.ok) {
           resolve(resp.json())
         } else {
@@ -191,15 +211,19 @@ export const actions: ActionTree<AmazonPayState, any> = {
   cancelOrderReference ({ state, commit }): Promise<Response> {
     commit(types.SET_ORDER_STATE, states.CANCELED)
     let url = `${config.amazonPay.endpoint.CancelOrderReference}?orderReferenceId=${state.orderReferenceId}`
+    const mode: RequestMode = 'cors';
+    const payload = {
+      method: 'POST',
+      mode,
+      headers: {
+        'Accept': 'application/json'
+      }
+    };
+
+    EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
     return new Promise((resolve, reject) => {
-      fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Accept': 'application/json'
-        }
-      }).then(resp => {
+      fetch(url, payload).then(resp => {
         if (resp.ok) {
           resolve(resp.json())
         } else {

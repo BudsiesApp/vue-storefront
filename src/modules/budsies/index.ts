@@ -38,11 +38,16 @@ import BulkOrderInfo from './types/bulk-order-info';
 import Hospital from './types/hospital.interface';
 import { StoreRating } from './types/store-rating.interface';
 
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared';
+
 import ProductStructuredData from './components/ProductStructuredData.vue';
+import { debugDataFactory } from './helpers/debug-data.factory';
 
 if (typeof URLSearchParams === 'undefined') {
   (global as any).URLSearchParams = require('url').URLSearchParams;
 }
+
+const debugData = debugDataFactory();
 
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
@@ -52,6 +57,13 @@ export const BudsiesModule: StorefrontModule = async function ({ store }) {
     once('__VUE_BUDSIES__', () => {
       Vue.use(VueCookies);
     })
+
+    EventBus.$on(BEFORE_STORE_BACKEND_API_REQUEST, (payload: any) => {
+      const { instanceId, appVersion } = debugData.getDebugData();
+
+      payload.headers['x-instance-id'] = instanceId;
+      payload.headers['x-app-version'] = appVersion;
+    });
 
     await store.dispatch('budsies/synchronize');
 
@@ -90,5 +102,6 @@ export {
   BulkOrderStatus,
   ProductStructuredData,
   Hospital,
-  StoreRating
+  StoreRating,
+  debugData
 }

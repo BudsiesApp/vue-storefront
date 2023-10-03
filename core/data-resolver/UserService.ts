@@ -1,3 +1,4 @@
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { DataResolver } from './types/DataResolver';
 import { UserProfile } from '@vue-storefront/core/modules/user/types/UserProfile'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
@@ -5,6 +6,7 @@ import Task from '@vue-storefront/core/lib/sync/types/Task'
 import { processLocalizedURLAddress } from '@vue-storefront/core/helpers'
 import config from 'config'
 import getApiEndpointUrl from '@vue-storefront/core/helpers/getApiEndpointUrl';
+import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared';
 
 const headers = {
   'Accept': 'application/json, text/plain, */*',
@@ -99,14 +101,22 @@ const changePassword = async (passwordData: DataResolver.PasswordData): Promise<
     }
   })
 
-const refreshToken = async (refreshToken: string): Promise<string> =>
-  fetch(processLocalizedURLAddress(getApiEndpointUrl(config.users, 'refresh_endpoint')), {
+const refreshToken = async (refreshToken: string): Promise<string> => {
+  const mode: RequestMode = 'cors';
+  const payload = {
     method: 'POST',
-    mode: 'cors',
+    mode,
     headers,
     body: JSON.stringify({ refreshToken })
-  }).then(resp => resp.json())
+  };
+
+  EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
+  return fetch(processLocalizedURLAddress(
+    getApiEndpointUrl(config.users, 'refresh_endpoint')),
+    payload
+    ).then(resp => resp.json())
     .then(resp => resp.result)
+}
 
 const passwordResetConfirm = async (data: {
   id: string,
