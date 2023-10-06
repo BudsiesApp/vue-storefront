@@ -46,7 +46,6 @@ const connectActions = {
     const cartToken = getters.getCartToken;
     const isCartEmpty = !getters.getCartItems.length;
     const shouldMergeCart = cartToken && !isCartEmpty;
-    const isUserInCheckout = rootGetters['checkout/isUserInCheckout'];
     const userToken = rootGetters['user/getToken'];
 
     const cartActionPromise = shouldMergeCart
@@ -63,7 +62,7 @@ const connectActions = {
 
       let diffLog;
 
-      if (shouldMergeCart && !isUserInCheckout) {
+      if (shouldMergeCart) {
         diffLog = await dispatch('pullServerCart');
       } else {
         diffLog = await dispatch('sync', { forceClientState, dryRun: !config.cart.serverMergeByDefault })
