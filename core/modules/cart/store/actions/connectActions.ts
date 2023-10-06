@@ -63,7 +63,7 @@ const connectActions = {
 
       let diffLog;
 
-      if (shouldMergeCart && !isUserInCheckout) {
+      if (shouldMergeCart) {
         diffLog = await dispatch('pullServerCart');
       } else {
         diffLog = await dispatch('sync', { forceClientState, dryRun: !config.cart.serverMergeByDefault })
