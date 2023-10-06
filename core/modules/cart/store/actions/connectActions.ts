@@ -46,7 +46,6 @@ const connectActions = {
     const cartToken = getters.getCartToken;
     const isCartEmpty = !getters.getCartItems.length;
     const shouldMergeCart = cartToken && !isCartEmpty;
-    const isUserInCheckout = rootGetters['checkout/isUserInCheckout'];
     const userToken = rootGetters['user/getToken'];
 
     const cartActionPromise = shouldMergeCart
