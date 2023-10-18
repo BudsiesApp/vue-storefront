@@ -1,6 +1,7 @@
 import config from 'config';
 
 import ErrorMessage from '../type/ErrorMessage';
+import { debugData } from 'src/modules/budsies';
 
 const FACILITY_NAME = 'store-ui-app-js-error';
 const GELF_ACCEPTED_STATUS = 202;
@@ -12,7 +13,9 @@ export async function sendErrorMessage (
   clientIp: string,
   traceId: string
 ): Promise<void> {
-  const data = {
+  const { instanceId, appVersion } = debugData.getDebugData();
+
+  const data: Record<string, string | undefined | number> = {
     version: GELF_SPEC_VERSION,
     host: window.location.hostname,
     short_message: errorMessage.shortMessage,
@@ -23,7 +26,9 @@ export async function sendErrorMessage (
     _client_ip: clientIp,
     _trace_id: traceId,
     _file: errorMessage.file,
-    _line: errorMessage.line
+    _line: errorMessage.line,
+    _appVersion: appVersion,
+    _instanceId: instanceId
   }
 
   const response = await fetch(

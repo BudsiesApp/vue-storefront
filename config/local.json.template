@@ -80,6 +80,9 @@
     },
     "protocol_ssr": "https"
   },
+  "app": {
+    "version": "${APPVERSION}"
+  },
   "storyblok": {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/vsf-storyblok-extension",
     "settings": {
