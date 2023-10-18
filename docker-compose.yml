@@ -84,6 +84,7 @@ volumes:
 networks:
   reverseproxy:
       name: webdevelopmentreverseproxy_default
+      external: true
 #  vue-storefront-api:
 #    external:
 #      name: vue-storefront-api_default
