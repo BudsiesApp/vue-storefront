@@ -3,8 +3,11 @@ import { isServer } from '@vue-storefront/core/helpers';
 import { StorefrontModule } from '@vue-storefront/core/lib/modules';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 
-import { usePersistedEmail, usePersistedFirstName, usePersistedLastName } from './composables/use-persisted-customer-data';
+import { usePersistedEmail } from './composables/use-persisted-email';
 import { usePersistedPhoneNumber } from './composables/use-persisted-customer-phone-number';
+import { usePersistedFirstName } from './composables/use-persisted-first-name';
+import { usePersistedLastName } from './composables/use-persisted-last-name';
+import { usePersistedShippingCountry } from './composables/use-persisted-shipping-country';
 import { LAST_USED_CUSTOMER_EMAIL, LAST_USED_CUSTOMER_FIRST_NAME, LAST_USED_CUSTOMER_LAST_NAME, LAST_USED_CUSTOMER_PHONE_NUMBER, LAST_USED_CUSTOMER_SHIPPING_COUNTRY } from './types/getter';
 import { SET_LAST_USED_CUSTOMER_EMAIL, SET_LAST_USED_CUSTOMER_FIRST_NAME, SET_LAST_USED_CUSTOMER_LAST_NAME, SET_LAST_USED_CUSTOMER_PHONE_NUMBER, SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY } from './types/mutation';
 import { SN_PERSISTED_CUSTOMER_DATA } from './types/store-name';
@@ -48,5 +51,6 @@ export {
   usePersistedEmail,
   usePersistedFirstName,
   usePersistedLastName,
-  usePersistedPhoneNumber
+  usePersistedPhoneNumber,
+  usePersistedShippingCountry
 }

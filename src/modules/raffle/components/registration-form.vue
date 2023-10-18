@@ -137,14 +137,12 @@ import { extend, ValidationProvider, ValidationObserver } from 'vee-validate';
 import { email, required } from 'vee-validate/dist/rules';
 
 import i18n from '@vue-storefront/i18n'
+import { usePersistedEmail, usePersistedFirstName, usePersistedLastName } from 'src/modules/persisted-customer-data';
 
 import { SfButton, SfHeading, SfInput } from '@storefront-ui/vue';
 
-import { LAST_USED_CUSTOMER_EMAIL, LAST_USED_CUSTOMER_FIRST_NAME, LAST_USED_CUSTOMER_LAST_NAME, SET_LAST_USED_CUSTOMER_EMAIL, SET_LAST_USED_CUSTOMER_FIRST_NAME, SET_LAST_USED_CUSTOMER_LAST_NAME, SN_PERSISTED_CUSTOMER_DATA } from 'src/modules/persisted-customer-data';
-
 import { SN_RAFFLE } from '../types/store-name';
 import { REGISTER } from '../types/action';
-import { usePersistedEmail, usePersistedFirstName, usePersistedLastName } from 'src/modules/persisted-customer-data/composables/use-persisted-customer-data';
 
 extend('required', {
   ...required,
