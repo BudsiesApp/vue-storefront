@@ -115,7 +115,12 @@ const synchronizeActions = {
   },
   async pullServerCart ({ dispatch }): Promise<any> {
     await dispatch('clear', { disconnect: false, sync: false });
-    return dispatch('sync', {});
+    const diffLog = await dispatch('sync', {});
+
+    await dispatch('syncTotals', { forceServerSync: true });
+
+    return diffLog;
+
   }
 }
 
