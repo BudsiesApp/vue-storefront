@@ -141,7 +141,6 @@ export function formatProductLink (
       name: product.type_id + '-product', // we should use here localizedDispatcherRouteName?
       params: {
         parentSku: product.parentSku ? product.parentSku : product.sku,
-        slug: product.slug,
         childSku: product.sku
       }
     }
