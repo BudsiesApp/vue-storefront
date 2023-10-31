@@ -212,6 +212,8 @@ export const Payment = {
         document.getElementById('checkout-order-review-additional-container').innerHTML = '<div id="checkout-order-review-additional">&nbsp;</div>' // reset
       }
 
+      this.payment.paymentMethod = this.$store.getters['checkout/getPaymentDetails'].paymentMethod;
+
       // Let anyone listening know that we've changed payment method, usually a payment extension.
       if (this.payment.paymentMethod) {
         this.$bus.$emit('checkout-payment-method-changed', this.payment.paymentMethod)
