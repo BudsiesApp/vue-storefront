@@ -269,7 +269,6 @@ export const actions: ActionTree<BudsiesState, RootState> = {
   async synchronize ({ commit, dispatch }) {
     const budsiesStorage = StorageManager.get(types.SN_BUDSIES);
     const cartStorage = StorageManager.get('cart');
-    const customerEmail = await budsiesStorage.getItem('customer-email');
     const cartTokenFromLocalStorage = await cartStorage.getItem('current-cart-token');
     let cartTokenFromCookies = Vue.$cookies.get(getCartTokenCookieKey());
 
@@ -288,11 +287,6 @@ export const actions: ActionTree<BudsiesState, RootState> = {
         },
         { root: true }
       )
-    }
-
-    if (customerEmail) {
-      commit(types.CUSTOMER_EMAIL_SET, { email: customerEmail })
-      Logger.info('Customer Email received from cache.', 'cache', customerEmail)()
     }
 
     EventBus.$emit('budsies-store-synchronized');

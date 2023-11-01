@@ -68,9 +68,6 @@ export const mutations: MutationTree<BudsiesState> = {
   setPlushieShortcode (state: BudsiesState, { key, shortcode }: { key: string, shortcode: string }) {
     Vue.set(state.plushieShortcode, key, shortcode);
   },
-  [types.CUSTOMER_EMAIL_SET] (state: BudsiesState, { email }: { email: string }) {
-    Vue.set(state, 'customerEmail', email);
-  },
   [types.HOSPITALS_SET] (state, hospitals: Hospital[]): void {
     state.hospitals = hospitals;
   },
