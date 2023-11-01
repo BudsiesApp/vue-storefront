@@ -132,11 +132,12 @@
 </template>
 
 <script lang="ts">
+import { defineComponent, ref } from '@vue/composition-api';
 import { extend, ValidationProvider, ValidationObserver } from 'vee-validate';
 import { email, required } from 'vee-validate/dist/rules';
-import Vue from 'vue';
 
 import i18n from '@vue-storefront/i18n'
+import { usePersistedEmail, usePersistedFirstName, usePersistedLastName } from 'src/modules/persisted-customer-data';
 
 import { SfButton, SfHeading, SfInput } from '@storefront-ui/vue';
 
@@ -153,7 +154,7 @@ extend('email', {
   message: 'Please, provide the correct email address'
 });
 
-export default Vue.extend({
+export default defineComponent({
   name: 'RaffleRegistrationForm',
   components: {
     SfButton,
@@ -172,11 +173,22 @@ export default Vue.extend({
       required: true
     }
   },
+  setup () {
+    const email = ref<string | undefined>(undefined);
+    const firstName = ref<string | undefined>(undefined);
+    const lastName = ref<string | undefined>(undefined);
+
+    return {
+      email,
+      firstName,
+      lastName,
+      ...usePersistedEmail(email),
+      ...usePersistedFirstName(firstName),
+      ...usePersistedLastName(lastName)
+    }
+  },
   data () {
     return {
-      firstName: undefined,
-      lastName: undefined,
-      email: undefined,
       isSubmitting: false
     }
   },
@@ -198,6 +210,10 @@ export default Vue.extend({
       if (!this.firstName || !this.lastName || !this.email) {
         throw new Error('Required fields are missing');
       }
+
+      this.persistLastUsedCustomerEmail(this.email);
+      this.persistLastUsedCustomerFirstName(this.firstName);
+      this.persistLastUsedCustomerLastName(this.lastName);
 
       this.isSubmitting = true;
 

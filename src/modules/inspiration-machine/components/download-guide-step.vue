@@ -29,6 +29,7 @@
         class="_form"
         :button-text="$t('Send My Inspiration Kit')"
         :submit-action="onFormSubmit"
+        :prefilled-email="prefilledEmail"
         name="request-inspiration-kit-form"
         success-message=""
         layout="vertical"
@@ -49,16 +50,16 @@
 </template>
 
 <script lang="ts">
-import Vue, { PropType } from 'vue';
 import { SfButton, SfHeading } from '@storefront-ui/vue';
+import { PropType, defineComponent, ref } from '@vue/composition-api';
 
-import Task from '@vue-storefront/core/lib/sync/types/Task';
 import { EmailSubmitForm } from 'src/modules/shared';
+import { usePersistedEmail } from 'src/modules/persisted-customer-data';
 
 import { SN_INSPIRATION_MACHINE } from '../types/store-name';
 import { REQUEST_KIT } from '../types/action';
 
-export default Vue.extend({
+export default defineComponent({
   name: 'InspirationMachineDownloadGuideStep',
   props: {
     characterId: {
@@ -75,8 +76,19 @@ export default Vue.extend({
     SfHeading,
     EmailSubmitForm
   },
+  setup () {
+    const prefilledEmail = ref<string | undefined>(undefined);
+    const { persistLastUsedCustomerEmail } = usePersistedEmail(prefilledEmail);
+
+    return {
+      prefilledEmail,
+      persistLastUsedCustomerEmail
+    }
+  },
   methods: {
     async onFormSubmit (email: string): Promise<void> {
+      this.persistLastUsedCustomerEmail(email);
+
       const response = await this.$store.dispatch(`${SN_INSPIRATION_MACHINE}/${REQUEST_KIT}`, {
         email,
         characterId: this.characterId,
