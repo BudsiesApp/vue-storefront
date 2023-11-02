@@ -37,6 +37,7 @@ services:
       - ERROR_LOGGING_SERVICE_URL
       
       - GTM_ID
+      - GOOGLE_ANALYTICS_TRACKING_ID
       
       - AFFIRM_PUBLIC_KEY
       - AFFIRM_CDN

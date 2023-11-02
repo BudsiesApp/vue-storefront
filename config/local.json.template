@@ -863,7 +863,7 @@
   },
   "theme": "${STORE_THEME}",
   "analytics": {
-    "id": false
+    "id": "${GOOGLE_ANALYTICS_TRACKING_ID}"
   },
   "braintree" : {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/braintree",
