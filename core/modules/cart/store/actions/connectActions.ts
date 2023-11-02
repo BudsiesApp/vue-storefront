@@ -41,35 +41,35 @@ const connectActions = {
       await dispatch('applyCoupon', coupon)
     }
   },
-  async connect ({ getters, rootGetters, dispatch, commit }, { guestCart = false, forceClientState = false }) {
-    if (!getters.isCartSyncEnabled) return
+  async mergeGuestAndCustomer({ commit, dispatch, getters }): Promise<void> {
     const cartToken = getters.getCartToken;
     const isCartEmpty = !getters.getCartItems.length;
     const shouldMergeCart = cartToken && !isCartEmpty;
-    const userToken = rootGetters['user/getToken'];
 
-    const cartActionPromise = shouldMergeCart
-      ? CartService.mergeGuestAndCustomer()
-      : CartService.getCartToken(guestCart, forceClientState);
+    if (!shouldMergeCart) {
+      return;
+    }
 
-    const { result, resultCode } = await cartActionPromise;
+    const {result, resultCode} = await CartService.mergeGuestAndCustomer();
 
     if (resultCode === 200) {
-      shouldMergeCart
-        ? Logger.info('Customer and guest carts are merged.', 'cart', result)()
-        : Logger.info('Server cart token created.', 'cart', result)()
-      commit(types.CART_LOAD_CART_SERVER_TOKEN, result)
+      Logger.info('Customer and guest carts are merged.', 'cart', result)();
+      commit(types.CART_LOAD_CART_SERVER_TOKEN, result);
+      await dispatch('pullServerCart');
+    }
+  },
+  async connect ({ getters, rootGetters, dispatch, commit }, { guestCart = false, forceClientState = false }) {
+    if (!getters.isCartSyncEnabled) return
+    const userToken = rootGetters['user/getToken'];
 
-      let diffLog;
+    const { result, resultCode } = await CartService.getCartToken(guestCart, forceClientState);
 
-      if (shouldMergeCart) {
-        diffLog = await dispatch('pullServerCart');
-      } else {
-        diffLog = await dispatch('sync', { forceClientState, dryRun: !config.cart.serverMergeByDefault })
-      }
+    if (resultCode === 200) {
+      Logger.info('Server cart token created.', 'cart', result)();
+      commit(types.CART_LOAD_CART_SERVER_TOKEN, result);
 
       EventBus.$emit('cart-connected', {cartId: result, userToken});
-      return diffLog;
+      return dispatch('sync', { forceClientState, dryRun: !config.cart.serverMergeByDefault });
     }
 
     if (resultCode === 401 && getters.bypassCounter < config.queues.maxCartBypassAttempts) {

@@ -67,6 +67,7 @@ const actions: ActionTree<UserState, RootState> = {
     if (resp.code === 200) {
       try {
         commit(types.USER_TOKEN_CHANGED, { newToken: resp.result, meta: resp.meta }) // TODO: handle the "Refresh-token" header
+        await dispatch('cart/mergeGuestAndCustomer', undefined, {root: true});
         await dispatch('sessionAfterAuthorized', { refresh: true, useCache: false })
       } catch (err) {
         await dispatch('clearCurrentUser')
