@@ -273,7 +273,6 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     commit('setPlushieShortcode', { key: plushieId, shortcode: result.result });
   },
   async synchronize ({ commit, dispatch }) {
-    const budsiesStorage = StorageManager.get(types.SN_BUDSIES);
     const cartStorage = StorageManager.get('cart');
     const cartTokenFromLocalStorage = await cartStorage.getItem('current-cart-token');
     let cartTokenFromCookies = Vue.$cookies.get(getCartTokenCookieKey());
