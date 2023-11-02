@@ -77,6 +77,8 @@
         <div class="_agreement">
           {{ $t('You agree to receive email marketing from Budsies regarding our products and services.') }}
         </div>
+
+        <a class="truevault-polaris-privacy-notice" target="_blank" href="https://privacy.budsies.com/privacy-policy#california-privacy-notice" noreferrer noopener hidden>California Privacy Notice</a>
       </validation-observer>
     </form>
 
@@ -336,6 +338,11 @@ export default Vue.extend({
     margin-top: var(--spacer-base);
     font-size: var(--font-xs);
     text-align: center;
+  }
+
+  .truevault-polaris-privacy-notice {
+    margin-top: var(--spacer-sm);
+    display: inline-block;
   }
 
   @include for-desktop() {
