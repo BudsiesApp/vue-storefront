@@ -100,9 +100,26 @@ const actions: ActionTree<CheckoutState, RootState> = {
   async addPaymentMethod ({ commit }, paymentMethod) {
     commit(types.CHECKOUT_ADD_PAYMENT_METHOD, paymentMethod)
   },
-  async replacePaymentMethods ({ commit }, paymentMethods) {
+  async replacePaymentMethods ({ commit, state }, paymentMethods) {
     EventBus.$emit('before-replace-payment-methods', paymentMethods);
-    commit(types.CHECKOUT_SET_PAYMENT_METHODS, paymentMethods)
+
+    if (paymentMethods.length === 1) {
+      commit(
+        types.CHECKOUT_UPDATE_PAYMENT_DETAILS,
+        { paymentMethod: paymentMethods[0].code }
+      );
+    }
+
+    const selectedPaymentMethod = state.paymentDetails.paymentMethod;
+
+    const isSelectedPaymentMethodAvailable = selectedPaymentMethod &&
+      !!paymentMethods.find((method: any) => method.code === selectedPaymentMethod);
+
+    if (!isSelectedPaymentMethodAvailable) {
+      commit(types.CHECKOUT_UPDATE_PAYMENT_DETAILS, {paymentMethod: ''});
+    }
+
+    commit(types.CHECKOUT_SET_PAYMENT_METHODS, paymentMethods);
   },
   async addShippingMethod ({ commit }, shippingMethod) {
     commit(types.CHECKOUT_ADD_SHIPPING_METHOD, shippingMethod)
