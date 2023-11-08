@@ -1,6 +1,28 @@
 import { entities } from 'config'
 import { Category, ChildrenData } from '../types/Category'
 
+export function getIdFromSlug(slug?: string): number | undefined {
+  if (!slug) {
+    return;
+  }
+
+  const parts = slug.split('-');
+
+  if (parts.length <= 1) {
+    return;
+  }
+
+  const rawId = parts[parts.length - 1];
+
+  const id = Number.parseInt(rawId);
+
+  if (Number.isNaN(id)) {
+    return;
+  }
+
+  return id;
+}
+
 export const compareByLabel = (a, b) => {
   if (a.label < b.label) {
     return -1
