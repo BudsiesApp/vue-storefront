@@ -4,34 +4,20 @@ import RootState from '@vue-storefront/core/types/RootState';
 import { UrlState } from '@vue-storefront/core/modules/url/types/UrlState';
 import { AsyncDataLoader } from '@vue-storefront/core/lib/async-data-loader';
 import { isServer } from '@vue-storefront/core/helpers';
+import { UrlRewrite } from './store/types/url-rewrite.interface';
 
 export const mappingFallbackForUrlRewrite = async (
   { dispatch, rootGetters }: ActionContext<UrlState, RootState>,
   { url }: { url: string }
 ): Promise<LocalizedRoute | undefined> => {
-  if (!url) {
-    return;
-  }
-
-  url = url.replace(/^[/]+|[/]+$/g, '');
-
-  if (!url) {
-    return;
-  }
-
-  const urlRewriteForRequestPath = await dispatch('urlRewrite/loadUrlRewrite', { requestPath: url }, { root: true });
+  const urlRewriteForRequestPath: UrlRewrite = await dispatch('urlRewrite/loadUrlRewrite', { requestPath: url }, { root: true });
 
   if (!urlRewriteForRequestPath) {
     return;
   }
 
-  const targetPath = urlRewriteForRequestPath.target_path.replace(/^[/]+|[/]+$/g, '');
-
-  if (url === targetPath) {
-    return;
-  }
-
-  const redirectCode = urlRewriteForRequestPath.rewrite_options === 'RP' ? 301 : 302;
+  const targetPath = urlRewriteForRequestPath.targetPath;
+  const redirectCode = urlRewriteForRequestPath.redirectCode;
 
   if (!isServer) {
     return {

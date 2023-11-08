@@ -1,4 +1,4 @@
-export interface UrlRewrite {
+export interface UrlRewriteApiResponse {
   id: number,
   idPath: string,
   request_path: string,
