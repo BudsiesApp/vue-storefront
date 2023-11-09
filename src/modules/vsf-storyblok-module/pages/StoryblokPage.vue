@@ -40,6 +40,11 @@ export default {
   components: {
     Breadcrumbs
   },
+  provide () {
+    return {
+      storyName: this.story.name
+    }
+  },
   metaInfo () {
     if (this.story) {
       const meta = this.getMetaData();

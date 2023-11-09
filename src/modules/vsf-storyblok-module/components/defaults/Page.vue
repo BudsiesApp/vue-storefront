@@ -1,5 +1,9 @@
 <template>
   <div data-testid="storyblok-page">
+    <page-breadcrumbs
+      :page-data="itemData"
+    />
+
     <sb-rich-text :text="itemData.description" v-if="itemData.description" />
     <sb-render
       v-for="(child) in itemData.body"
@@ -14,8 +18,13 @@ import { Blok } from '..';
 import ComponentWidthCalculator from '../../component-width-calculator.service';
 import PageData from '../../types/page-data.interface';
 
+import PageBreadcrumbs from './page/Breadcrumbs.vue';
+
 export default Blok.extend({
   name: 'PageBlok',
+  components: {
+    PageBreadcrumbs
+  },
   provide () {
     return {
       'componentWidthCalculator': new ComponentWidthCalculator({
