@@ -42,7 +42,7 @@ export default {
   },
   provide () {
     return {
-      storyName: this.story.name
+      storyName: this.story?.name
     }
   },
   metaInfo () {
