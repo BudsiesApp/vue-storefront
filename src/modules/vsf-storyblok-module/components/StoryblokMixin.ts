@@ -5,6 +5,7 @@ import { KEY } from '..'
 import { StoryblokState } from '../types/State'
 import { loadScript, getStoryblokQueryParams } from '../helpers'
 import get from 'lodash-es/get'
+import { resolveParentData } from '../helpers/resolve-parent-data.function'
 
 export default {
   name: 'Storyblok',
@@ -108,11 +109,14 @@ export default {
       const StoryblokBridge = window['StoryblokBridge'];
 
       const storyblokInstance = new StoryblokBridge({
-        resolveRelations: ['block_reference.reference']
+        resolveRelations: ['block_reference.reference', 'page.parent']
       });
 
       storyblokInstance.on(['input', 'published', 'change'], (event: any) => {
         if (event.action === 'input') {
+          if (event.story?.content?.parent) {
+            event.story.content.parent = resolveParentData(event.story.content.parent)
+          }
           this.$store.commit(`${KEY}/updateStory`, { key: event.story.id, story: event.story })
         } else if (!(event).slugChanged) {
           window.location.reload()
