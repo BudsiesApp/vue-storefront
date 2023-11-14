@@ -12,7 +12,7 @@ import fetch from 'isomorphic-fetch'
 import { processURLAddress } from '@vue-storefront/core/helpers'
 
 import { loadScript } from '../../helpers'
-import { resolveParentData } from '../../helpers/resolve-parent-data.function'
+import { resolveParentDataFactory } from '../../helpers/resolve-parent-data.factory'
 
 export default {
   name: 'StoryblokCms',
@@ -68,7 +68,7 @@ export default {
       storyblokInstance.on(['input', 'published', 'change'], (event) => {
         if (event.action === 'input') {
           if (event.story?.content?.parent) {
-            event.story.content.parent = resolveParentData(event.story.content.parent)
+            event.story.content.parent = resolveParentDataFactory()(event.story.content.parent)
           }
 
           this.updateValue(event.story)
@@ -78,3 +78,4 @@ export default {
   }
 }
 </script>
+../../helpers/resolve-parent-data.factory
