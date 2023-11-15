@@ -20,17 +20,13 @@
 </template>
 
 <script lang="ts">
-import Vue, { PropType, VueConstructor } from 'vue';
+import Vue, { PropType } from 'vue';
 
 import PageData from '../../types/page-data.interface';
 
 import { ParentData } from 'src/modules/vsf-storyblok-module/types/parent-data.interface';
 
-interface InjectedServices {
-  storyName: string
-}
-
-export default (Vue as VueConstructor<Vue & InjectedServices>).extend({
+export default Vue.extend({
   name: 'PageBreadcrumbs',
   props: {
     story: {
