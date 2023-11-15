@@ -1,12 +1,12 @@
 import { StorefrontModule } from '@vue-storefront/core/lib/modules';
 
-import { getUrlRewriteRouteData } from './helpers/get-url-rewrite-route-data.function';
 import { urlRewriteStore } from './store'
+import { mappingFallbackForUrlRewrite } from './mappingFallback';
 
 export const UrlRewriteModule: StorefrontModule = function ({ store }) {
   store.registerModule('urlRewrite', urlRewriteStore);
 }
 
 export {
-  getUrlRewriteRouteData
+  mappingFallbackForUrlRewrite
 }
