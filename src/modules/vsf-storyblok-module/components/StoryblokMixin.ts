@@ -5,7 +5,7 @@ import { KEY } from '..'
 import { StoryblokState } from '../types/State'
 import { loadScript, getStoryblokQueryParams } from '../helpers'
 import get from 'lodash-es/get'
-import { resolveParentDataFactory } from '../helpers/resolve-parent-data.factory'
+import { resolveParentData } from '../helpers/resolve-parent-data.function'
 
 export default {
   name: 'Storyblok',
@@ -115,7 +115,7 @@ export default {
       storyblokInstance.on(['input', 'published', 'change'], (event: any) => {
         if (event.action === 'input') {
           if (event.story?.content?.parent) {
-            event.story.content.parent = resolveParentDataFactory()(event.story.content.parent);
+            event.story.content.parent = resolveParentData(event.story.content.parent);
           }
           this.$store.commit(`${KEY}/updateStory`, { key: event.story.id, story: event.story })
         } else if (!(event).slugChanged) {
