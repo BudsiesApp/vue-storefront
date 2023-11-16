@@ -49,6 +49,7 @@ export const mappingFallbackForUrlRewrite = async (
 
   const ssrRedirectFullPath = `/${targetPath}/${query}`;
 
+  // serverPrefetch case, AsyncDataLoader is not used
   if (ssrContext) {
     (ssrContext.server.response as Response).redirect(
       redirectCode,
