@@ -21,9 +21,9 @@ export function resolveParentData (storyParent: any): ParentData | undefined {
   let parent = storyParent;
 
   while (parent) {
-    const nextParent = getStoryParent(parent);
-
     parents.push(parent);
+
+    const nextParent = getStoryParent(parent);
 
     if (!nextParent || resolvedParents.has(nextParent.full_slug)) {
       parent = undefined;
@@ -35,27 +35,21 @@ export function resolveParentData (storyParent: any): ParentData | undefined {
     parent = nextParent;
   }
 
-  for (let i = parents.length - 1; i >= 0; i--) {
-    const parent = parents[i];
+  let previousParentData;
+  let parentData;
 
-    const parentData = {
+  while (parents.length > 0) {
+    const parent = parents.pop();
+
+    parentData = {
       slug: parent.full_slug,
       name: parent.name,
       id: parent.id,
-      parent: parent.parent
+      parent: previousParentData
     };
 
-    parents[i] = parentData;
-
-    const hasChild = i > 0;
-
-    if (!hasChild) {
-      break;
-    }
-
-    const child = parents[i - 1];
-    child.parent = parentData;
+    previousParentData = parentData;
   }
 
-  return parents[0];
+  return parentData;
 }

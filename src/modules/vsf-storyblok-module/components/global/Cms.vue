@@ -78,5 +78,3 @@ export default {
   }
 }
 </script>
-../../helpers/resolve-parent-data.factory
-../../helpers/resolve-parent-data.function
