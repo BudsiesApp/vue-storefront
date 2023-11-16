@@ -44,7 +44,7 @@ export default Vue.extend({
     parents (): ParentData[] {
       const parents: ParentData[] = [];
       if (!this.pageData.parent) {
-        return [];
+        return parents;
       }
 
       let parent: ParentData | undefined = this.pageData.parent;
