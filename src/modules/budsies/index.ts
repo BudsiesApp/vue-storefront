@@ -38,6 +38,7 @@ import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
 import { debugDataFactory } from './helpers/debug-data.factory';
+import { PrivacyPolicyPlugin } from './helpers/privacy-policy.plugin';
 
 if (typeof URLSearchParams === 'undefined') {
   (global as any).URLSearchParams = require('url').URLSearchParams;
@@ -48,6 +49,8 @@ const debugData = debugDataFactory();
 export const BudsiesModule: StorefrontModule = async function ({ store }) {
   StorageManager.init(types.SN_BUDSIES);
   store.registerModule('budsies', budsiesStore);
+
+  Vue.use(PrivacyPolicyPlugin);
 
   if (!isServer) {
     once('__VUE_BUDSIES__', () => {
