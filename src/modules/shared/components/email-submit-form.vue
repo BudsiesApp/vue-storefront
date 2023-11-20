@@ -47,8 +47,6 @@ import { email, required } from 'vee-validate/dist/rules';
 import Vue, { PropType } from 'vue';
 import { SfButton, SfInput } from '@storefront-ui/vue';
 
-import Task from '@vue-storefront/core/lib/sync/types/Task';
-
 extend('required', {
   ...required,
   message: 'Field is required'
@@ -76,6 +74,10 @@ export default Vue.extend({
     submitAction: {
       type: Function as PropType<(email: string) => Promise<void>>,
       required: true
+    },
+    prefilledEmail: {
+      type: String,
+      default: undefined
     }
   },
   data () {
@@ -115,6 +117,18 @@ export default Vue.extend({
       validationObserver.setErrors({
         [this.fieldName]: errorMessage
       })
+    }
+  },
+  watch: {
+    prefilledEmail: {
+      handler (val: string | undefined) {
+        if (!val) {
+          return;
+        }
+
+        this.email = this.prefilledEmail;
+      },
+      immediate: true
     }
   }
 });
