@@ -5,7 +5,7 @@
       :key="parent.id"
     >
       <router-link
-        :to="`/${parent.slug}/`"
+        :to="parent.slug ? `/${parent.slug}/` : '/'"
       >
         {{ parent.name }}
       </router-link>
@@ -50,6 +50,10 @@ export default Vue.extend({
       let parent: ParentData | undefined = this.pageData.parent;
 
       while (parent) {
+        if (parent.slug === 'home') {
+          parent.slug = '';
+        }
+
         parents.push(parent);
         parent = parent.parent;
       }
