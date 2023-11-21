@@ -35,7 +35,7 @@
           {{ buttonText }}
         </SfButton>
 
-        <a class="truevault-polaris-privacy-notice" target="_blank" :href="$privacyPolicy.californiaPrivacyNoticeUrl" noreferrer noopener hidden>California Privacy Notice</a>
+        <california-privacy-notice-link />
       </form>
     </validation-observer>
   </div>
@@ -149,11 +149,6 @@ export default Vue.extend({
     ._button {
       margin-top: var(--spacer-sm);
     }
-  }
-
-  .truevault-polaris-privacy-notice:not([hidden]) {
-    margin-top: var(--spacer-sm);
-    display: inline-block;
   }
 }
 </style>

@@ -95,13 +95,13 @@
   "budsies": {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/budsies",
     "magentoDomain": "https://${MAGENTO_DOMAIN}",
-    "enableRaffle": false,
-    "privacyPolicy": {
-      "url": "${PRIVACY_POLICY_URL}",
-      "californiaPrivacyNoticeUrl": "${PRIVACY_POLICY_URL}#california-privacy-notice",
-      "financialIncentiveNoticeUrl": "${PRIVACY_POLICY_URL}#financial-incentive",
-      "optOutUrl": "${PRIVACY_OPT_OUT_URL}"
-    }
+    "enableRaffle": false
+  },
+  "privacyPolicy": {
+    "url": "${PRIVACY_POLICY_URL}",
+    "californiaPrivacyNoticeUrl": "${PRIVACY_POLICY_URL}#california-privacy-notice",
+    "financialIncentiveNoticeUrl": "${PRIVACY_POLICY_URL}#financial-incentive",
+    "optOutUrl": "${PRIVACY_OPT_OUT_URL}"
   },
   "initialResources": [
     {

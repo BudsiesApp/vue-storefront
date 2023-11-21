@@ -1,20 +1,19 @@
 import Vue from 'vue';
-import config from 'config';
 
-const PrivacyPolicyPlugin = {
+const PrivacyPolicyPluginFactory = (config: any) => ({
   install () {
     if (!Vue.prototype.$privacyPolicy) {
       Object.defineProperties(Vue.prototype, {
         $privacyPolicy: {
           get: function () {
-            return config.budsies.privacyPolicy;
+            return config.privacyPolicy;
           }
         }
       })
     }
   }
-}
+})
 
 export {
-  PrivacyPolicyPlugin
+  PrivacyPolicyPluginFactory
 }

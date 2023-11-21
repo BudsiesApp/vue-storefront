@@ -78,7 +78,7 @@
           {{ $t('You agree to receive email marketing from Budsies regarding our products and services.') }}
         </div>
 
-        <a class="truevault-polaris-privacy-notice" target="_blank" :href="$privacyPolicy.californiaPrivacyNoticeUrl" noreferrer noopener hidden>California Privacy Notice</a>
+        <california-privacy-notice-link />
       </validation-observer>
     </form>
 
@@ -354,11 +354,6 @@ export default defineComponent({
     margin-top: var(--spacer-base);
     font-size: var(--font-xs);
     text-align: center;
-  }
-
-  .truevault-polaris-privacy-notice:not([hidden]) {
-    margin-top: var(--spacer-sm);
-    display: inline-block;
   }
 
   @include for-desktop() {
