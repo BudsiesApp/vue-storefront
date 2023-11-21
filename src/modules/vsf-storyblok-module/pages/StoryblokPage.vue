@@ -2,7 +2,7 @@
   <div>
     <div class="bg-cl-secondary py25 pl20" v-if="story && story.name">
       <div class="container">
-        <breadcrumbs :with-homepage="true" :routes="[]" :active-route="story.name" />
+        <page-breadcrumbs :story="story" />
       </div>
     </div>
 
@@ -25,11 +25,11 @@
 import get from 'lodash-es/get'
 import config from 'config'
 
-import { SfBreadcrumbs as Breadcrumbs } from '@storefront-ui/vue'
 import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import getHostFromHeaders from '@vue-storefront/core/helpers/get-host-from-headers.function';
 
 import { getSettings } from '../helpers'
+import PageBreadcrumbs from '../components/defaults/PageBreadcrumbs.vue';
 import StoryblokMixin from '../components/StoryblokMixin'
 
 const PROTOCOL = 'https://';
@@ -38,7 +38,7 @@ export default {
   name: 'StoryblokPage',
   mixins: [StoryblokMixin],
   components: {
-    Breadcrumbs
+    PageBreadcrumbs
   },
   metaInfo () {
     if (this.story) {
