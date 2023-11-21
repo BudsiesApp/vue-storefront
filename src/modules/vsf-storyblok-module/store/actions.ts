@@ -8,6 +8,8 @@ import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import { processURLAddress } from '@vue-storefront/core/helpers'
 import qs from 'qs'
 
+import { resolveParentData } from '../helpers/resolve-parent-data.function'
+
 const fetchStory = async url => {
   const { result: story }: any = await TaskQueue.execute({
     url,
@@ -59,10 +61,14 @@ export const actions: ActionTree<StoryblokState, RootState> = {
     const loadingPromise = (this['$storyblokClient'] as StoryblokClient).get(`cdn/stories/${id}`, {
       token: previewToken,
       language: lang,
-      resolve_relations: 'block_reference.reference',
+      resolve_relations: ['block_reference.reference', 'page.parent'],
       version: 'draft'
     }).then((result) => {
       const story: Record<string, any> = result.data?.story;
+
+      if (story.content?.parent) {
+        story.content.parent = resolveParentData(story.content.parent)
+      }
 
       commit('setStory', { key: id, story })
 
