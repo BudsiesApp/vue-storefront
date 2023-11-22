@@ -1,11 +1,11 @@
-import Vue from 'vue';
+import CaliforniaPrivacyNoticeLink from './components/california-privacy-notice-link.vue';
+import NoticeOfFinancialIncentiveLink from './components/notice-of-financial-incentive-link.vue';
+import OptOutLink from './components/opt-out-link.vue';
+import PrivacyPolicyLink from './components/privacy-policy-link.vue';
 
-import { StorefrontModule } from '@vue-storefront/core/lib/modules'
-
-import { registerComponents } from './helpers/register-components.function'
-import { PrivacyPolicyPluginFactory } from './helpers/privacy-policy.plugin';
-
-export const TrueVaultModule: StorefrontModule = function ({ appConfig }) {
-  registerComponents();
-  Vue.use(PrivacyPolicyPluginFactory(appConfig));
+export {
+  CaliforniaPrivacyNoticeLink,
+  NoticeOfFinancialIncentiveLink,
+  OptOutLink,
+  PrivacyPolicyLink
 }

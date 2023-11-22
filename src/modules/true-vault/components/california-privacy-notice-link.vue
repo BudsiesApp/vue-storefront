@@ -3,7 +3,7 @@
     <a
       class="truevault-polaris-privacy-notice"
       target="_blank"
-      :href="$privacyPolicy.californiaPrivacyNoticeUrl"
+      :href="url"
       noreferrer
       noopener
       hidden
@@ -14,6 +14,7 @@
 </template>
 
 <script lang="ts">
+import config from 'config';
 import Vue from 'vue';
 
 export default Vue.extend({
@@ -22,6 +23,11 @@ export default Vue.extend({
     text: {
       type: String,
       default: 'California Privacy Notice'
+    }
+  },
+  computed: {
+    url (): string {
+      return config.privacyPolicy.californiaPrivacyNoticeUrl;
     }
   }
 });

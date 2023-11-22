@@ -2,7 +2,8 @@
   <span class="notice-of-financial-incentive-link">
     <a
       class="truevault-polaris-privacy-notice"
-      :href="$privacyPolicy.financialIncentiveNoticeUrl"
+      :href="url"
+      target="_blank"
       noreferrer
       noopener
       hidden
@@ -13,10 +14,16 @@
 </template>
 
 <script lang="ts">
+import config from 'config';
 import Vue from 'vue';
 
 export default Vue.extend({
-  name: 'NoticeOfFinancialIncentiveLink'
+  name: 'NoticeOfFinancialIncentiveLink',
+  computed: {
+    url (): string {
+      return config.privacyPolicy.financialIncentiveNoticeUrl;
+    }
+  }
 })
 </script>
 

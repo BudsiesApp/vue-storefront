@@ -1,6 +1,6 @@
 <template>
   <a
-    :href="$privacyPolicy.url"
+    :href="url"
     target="_blank"
   >
     {{ $t('Privacy Policy') }}
@@ -8,9 +8,15 @@
 </template>
 
 <script lang="ts">
+import config from 'config';
 import Vue from 'vue';
 
 export default Vue.extend({
-  name: 'PrivacyPolicyLink'
+  name: 'PrivacyPolicyLink',
+  computed: {
+    url (): string {
+      return config.privacyPolicy.url;
+    }
+  }
 });
 </script>

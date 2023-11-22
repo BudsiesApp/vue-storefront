@@ -4,7 +4,7 @@
       v-show="isMounted"
       class="_link"
       :class="{'truevault-polaris-optout': isMounted}"
-      :href="$privacyPolicy.optOutUrl"
+      :href="url"
       target="_blank"
       noreferrer
       noopener
@@ -20,6 +20,7 @@
 </template>
 
 <script lang="ts">
+import config from 'config';
 import Vue from 'vue';
 
 export default Vue.extend({
@@ -27,6 +28,11 @@ export default Vue.extend({
   data () {
     return {
       isMounted: false
+    }
+  },
+  computed: {
+    url (): string {
+      return config.privacyPolicy.optOutUrl;
     }
   },
   async mounted () {
