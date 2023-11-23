@@ -5,13 +5,16 @@ import { prepareBaseItemData } from './prepare-base-item-data.function';
 import { getComposedSku } from './get-composed-sku.function';
 
 export function prepareCartItemData (cartItem: CartItem) {
-  const price = getCartItemPrice(cartItem, {}, false);
+  const totalPrice = getCartItemPrice(cartItem, {}, false);
+  const finalTotalPrice = getFinalPrice(totalPrice);
+  const itemPrice = finalTotalPrice / cartItem.qty;
+
   const baseData = prepareBaseItemData(cartItem);
 
   return {
     ...baseData,
     item_variant: getComposedSku(cartItem),
     discount: getCartItemDiscount(cartItem, false, false),
-    price: getFinalPrice(price)
+    price: itemPrice
   }
 }
