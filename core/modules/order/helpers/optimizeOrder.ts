@@ -1,25 +1,15 @@
 import config from 'config'
-import omit from 'lodash-es/omit'
 import { Order } from '@vue-storefront/core/modules/order/types/Order'
+import { OptimizedOrder } from '../types/OptimizedOrder'
 
-const optimizeOrder = (order: Order): Order => {
+const optimizeOrder = (order: Order): OptimizedOrder | Order => {
   if (config.entities.optimize && config.entities.optimizeShoppingCart) {
     return {
       ...order,
-      products: order.products.map(product => omit(
-        product,
-        [
-          'configurable_options',
-          'configurable_children',
-          'bundle_options',
-          'custom_options',
-          'totals',
-          'stock',
-          'bodyparts',
-          'upgradeOptionValues'
-        ]
+      products: order.products.map(product => ({
+        server_item_id: product.server_item_id as number
+      })
       )
-      ) as Order['products']
     }
   }
 
