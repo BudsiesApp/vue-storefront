@@ -24,13 +24,12 @@ const actions: ActionTree<OrderState, RootState> = {
    */
   async placeOrder ({ commit, getters, dispatch }, newOrder: Order) {
     // Check if order is already processed/processing
-    const optimizedOrder = optimizeOrder(newOrder)
-    const currentOrderHash = sha3_224(JSON.stringify(optimizedOrder))
+    const currentOrderHash = sha3_224(JSON.stringify(newOrder))
     const isAlreadyProcessed = getters.getSessionOrderHashes.includes(currentOrderHash)
     if (isAlreadyProcessed) return
     commit(types.ORDER_ADD_SESSION_STAMPS, newOrder)
     commit(types.ORDER_ADD_SESSION_ORDER_HASH, currentOrderHash)
-    const preparedOrder = prepareOrder(optimizedOrder)
+    const preparedOrder = prepareOrder(newOrder)
 
     EventBus.$emit('order-before-placed', { order: preparedOrder })
     const order = orderHooksExecutors.beforePlaceOrder(preparedOrder)
@@ -53,7 +52,7 @@ const actions: ActionTree<OrderState, RootState> = {
   },
   async processOrder ({ commit, dispatch }, { newOrder, currentOrderHash }) {
     const order = { ...newOrder, transmited: true }
-    const task = await OrderService.placeOrder(order)
+    const task = await OrderService.placeOrder(optimizeOrder(newOrder))
 
     if (task.resultCode === 404) {
       commit(types.ORDER_REMOVE_SESSION_ORDER_HASH, currentOrderHash);
