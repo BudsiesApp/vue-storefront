@@ -7,6 +7,7 @@ import Task from '@vue-storefront/core/lib/sync/types/Task'
 import Review from '@vue-storefront/core/modules/review/types/Review';
 import { SearchQuery } from 'storefront-query-builder';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
+import { OptimizedOrder } from '@vue-storefront/core/modules/order/types/OptimizedOrder';
 
 declare namespace DataResolver {
 
@@ -120,7 +121,7 @@ declare namespace DataResolver {
   }
 
   interface OrderService {
-    placeOrder: (order: Order) => Promise<Task>
+    placeOrder: (order: Order | OptimizedOrder) => Promise<Task>
   }
 
   interface StockService {

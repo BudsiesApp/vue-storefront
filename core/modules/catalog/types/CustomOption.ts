@@ -10,7 +10,8 @@ export interface CustomOption {
   type: string,
   price?: number,
   price_type?: string,
-  values?: OptionValue[]
+  values?: OptionValue[],
+  sku: string
 }
 
 export interface OptionValue {
@@ -18,7 +19,8 @@ export interface OptionValue {
   price: number,
   price_type: string,
   sort_order: number,
-  title: string
+  title: string,
+  sku: string
 }
 
 export type InputValue = string | number | number[]

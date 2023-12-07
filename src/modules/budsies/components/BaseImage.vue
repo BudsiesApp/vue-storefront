@@ -13,6 +13,12 @@
     v-on="$listeners"
   >
     <component :is="'style'" type="text/css" v-if="placeholderPaddings.length">
+      <template v-if="largestPlaceholderPadding">
+        .base-image.{{ componentClass }} ._placeholder[{{ cssScopeId }}] {
+        padding-top: {{ largestPlaceholderPadding }};
+        }
+      </template>
+
       <template v-for="item in placeholderPaddings">
         @media (max-width: {{ item.breakpoint }}px) {
         .base-image.{{ componentClass }} ._placeholder[{{ cssScopeId }}] {
@@ -218,6 +224,14 @@ export default Vue.extend({
       }
 
       return result;
+    },
+    largestPlaceholderPadding (): string | undefined {
+      if (!this.placeholderPaddings.length) {
+        return;
+      }
+
+      // this list sorted from largest breakpoint
+      return this.placeholderPaddings[0].padding;
     },
     hasOverlay (): boolean {
       return !!this.$slots.default;

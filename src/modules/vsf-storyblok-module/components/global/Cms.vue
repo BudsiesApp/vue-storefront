@@ -10,7 +10,9 @@
 import config from 'config'
 import fetch from 'isomorphic-fetch'
 import { processURLAddress } from '@vue-storefront/core/helpers'
+
 import { loadScript } from '../../helpers'
+import { resolveParentData } from '../../helpers/resolve-parent-data.function'
 
 export default {
   name: 'StoryblokCms',
@@ -60,11 +62,15 @@ export default {
       const StoryblokBridge = window['StoryblokBridge'];
 
       const storyblokInstance = new StoryblokBridge({
-        resolveRelations: ['block_reference.reference']
+        resolveRelations: ['block_reference.reference', 'page.parent']
       });
 
       storyblokInstance.on(['input', 'published', 'change'], (event) => {
         if (event.action === 'input') {
+          if (event.story?.content?.parent) {
+            event.story.content.parent = resolveParentData(event.story.content.parent)
+          }
+
           this.updateValue(event.story)
         }
       })
