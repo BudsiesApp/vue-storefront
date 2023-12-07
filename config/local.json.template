@@ -278,7 +278,7 @@
       "categoriesDynamicPrefetchLevel": 2,
       "categoriesDynamicPrefetch": false,
       "validSearchOptionsFromRouteParams": [
-        "url-key",
+        "url_key",
         "slug",
         "id"
       ]
