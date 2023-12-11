@@ -97,6 +97,12 @@
     "magentoDomain": "https://${MAGENTO_DOMAIN}",
     "enableRaffle": false
   },
+  "privacyPolicy": {
+    "url": "${PRIVACY_POLICY_URL}",
+    "californiaPrivacyNoticeUrl": "${PRIVACY_POLICY_URL}#california-privacy-notice",
+    "financialIncentiveNoticeUrl": "${PRIVACY_POLICY_URL}#financial-incentive",
+    "optOutUrl": "${PRIVACY_OPT_OUT_URL}"
+  },
   "initialResources": [
     {
       "filters": [
@@ -749,7 +755,7 @@
   },
   "theme": "${STORE_THEME}",
   "analytics": {
-    "id": false
+    "id": "${GOOGLE_ANALYTICS_TRACKING_ID}"
   },
   "braintree" : {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/braintree",
