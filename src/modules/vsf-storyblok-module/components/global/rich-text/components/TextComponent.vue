@@ -19,7 +19,7 @@
 <script lang="ts">
 import { v4 as uuidv4 } from 'uuid';
 import Vue, { PropType } from 'vue';
-import { getProductDefaultPrice } from 'src/modules/shared';
+import { StatisticValuesMetricValue, getProductDefaultPrice } from 'src/modules/shared';
 import { SearchQuery } from 'storefront-query-builder'
 import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
@@ -32,7 +32,8 @@ type priceType = 'regular' | 'special';
 
 enum DirectiveType {
   PRODUCT_PRICE = 'productPrice',
-  PRODUCT_SPECIFIC_PRICE = 'productSpecificPrice'
+  PRODUCT_SPECIFIC_PRICE = 'productSpecificPrice',
+  ORDERED_PLUSHIES_COUNT = 'orderedPlushiesCount'
 }
 
 interface DirectiveSpecification {
@@ -53,6 +54,10 @@ interface ProductPriceDirective {
   isColorful: boolean
 }
 
+interface OrderedPlushiesCountDirective {
+  type: DirectiveType.ORDERED_PLUSHIES_COUNT
+}
+
 interface ProcessedTextPart {
   id: string,
   text: string,
@@ -62,7 +67,7 @@ interface ProcessedTextPart {
   props?: Record<string, any>
 }
 
-type Directive = ProductSpecificPriceDirective | ProductPriceDirective
+type Directive = ProductSpecificPriceDirective | ProductPriceDirective | OrderedPlushiesCountDirective
 type TextPart = string | Directive;
 
 const directivesRegexp = /\{\{(.*?)\}\}/gi;
@@ -177,6 +182,12 @@ export default Vue.extend({
         return directive
       }
 
+      if (directiveName === DirectiveType.ORDERED_PLUSHIES_COUNT) {
+        return {
+          type: DirectiveType.ORDERED_PLUSHIES_COUNT
+        }
+      }
+
       throw new Error('Unknown directive type: ' + directiveName);
     },
     parseDirectiveText (directive: string): DirectiveSpecification {
@@ -207,9 +218,38 @@ export default Vue.extend({
         }
       )
     },
+    getDirectivesDataLoadingPromises (directives: Directive[]): Promise<any>[] {
+      const promises = [];
+
+      const productSkusUsedInDirectives = this.getProductSkusUsedInDirectives(directives);
+      const productsToLoadSkus: string[] = [];
+
+      productSkusUsedInDirectives.forEach((sku) => {
+        if (!this.productBySkuDictionary[sku]) {
+          productsToLoadSkus.push(sku);
+        }
+      });
+
+      if (productsToLoadSkus.length) {
+        promises.push(this.loadProducts(productsToLoadSkus))
+      }
+
+      if (directives.find((value) => value.type === DirectiveType.ORDERED_PLUSHIES_COUNT)) {
+        promises.push(this.$store.dispatch(
+          'budsies/fetchStatisticValuesMetric',
+          { metric: StatisticValuesMetricValue.ORDERED_PLUSHIES_COUNT })
+        );
+      }
+
+      return promises;
+    },
     getProductSkusUsedInDirectives (directives: Directive[]): string[] {
       const productSkusSet = new Set<string>();
       directives.forEach((directive) => {
+        if (directive.type === DirectiveType.ORDERED_PLUSHIES_COUNT) {
+          return;
+        }
+
         if (directive.productSku) {
           productSkusSet.add(directive.productSku)
         }
@@ -220,17 +260,10 @@ export default Vue.extend({
       const parts = this.getPartsFromText(text);
       const directives = (parts.filter((part) => typeof part !== 'string')) as Directive[];
 
-      const productSkusUsedInDirectives = this.getProductSkusUsedInDirectives(directives);
-      const productsToLoadSkus: string[] = [];
+      const loadingPromises = this.getDirectivesDataLoadingPromises(directives);
 
-      productSkusUsedInDirectives.forEach((sku) => {
-        if (!this.productBySkuDictionary[sku]) {
-          productsToLoadSkus.push(sku);
-        }
-      })
-
-      if (productsToLoadSkus.length) {
-        await this.loadProducts(productsToLoadSkus);
+      if (loadingPromises.length) {
+        await Promise.all(loadingPromises);
       }
 
       this.textParts = this.processTextParts(parts);
@@ -259,10 +292,25 @@ export default Vue.extend({
           processedTextParts.push(
             this.processProductPriceDirective(textPart)
           );
+        } else if (textPart.type === DirectiveType.ORDERED_PLUSHIES_COUNT) {
+          processedTextParts.push(
+            this.processOrderedPlushiesCountDirective()
+          );
         }
       }
 
       return processedTextParts;
+    },
+    processOrderedPlushiesCountDirective (): ProcessedTextPart {
+      const metricValue = this.$store.getters['budsies/getStatisticValuesMetric'][StatisticValuesMetricValue.ORDERED_PLUSHIES_COUNT];
+
+      return {
+        id: uuidv4(),
+        text: metricValue,
+        classes: this.classes,
+        styles: this.styles,
+        component: 'span'
+      }
     },
     processProductPriceDirective (textPart: ProductPriceDirective): ProcessedTextPart {
       const { regular, special } = getProductDefaultPrice(

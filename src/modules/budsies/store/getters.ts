@@ -1,4 +1,4 @@
-import { Getter, GetterTree } from 'vuex'
+import { GetterTree } from 'vuex'
 import RootState from '@vue-storefront/core/types/RootState'
 import { BudsiesState } from '../types/State'
 import ExtraPhotoAddon from '../models/extra-photo-addon.model'
@@ -128,6 +128,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
   },
   getStoreRating: (state) => {
     return state.storeRating;
+  },
+  getStatisticValuesMetric: (state) => {
+    return state.statisticValuesMetric;
   }
 }
 
