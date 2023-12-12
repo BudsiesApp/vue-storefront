@@ -62,6 +62,27 @@ export const getDefaultBundleOptions = (product: Product): SelectedBundleOption[
   });
 }
 
+export const getDefaultProductLinkForRequiredBundleOptionsDictionary = (
+  product: Product
+): Record<string, BundleOptionsProductLink> => {
+  const allBundleOptions: BundleOption[] = product.bundle_options || [];
+  const requiredBundleOptions = allBundleOptions.filter((option) => option.required);
+  const dictionary: Record<string, BundleOptionsProductLink> = {};
+
+  for (const bundleOption of requiredBundleOptions) {
+    const productLinks = bundleOption.product_links || [];
+    const defaultLink = productLinks.find((productLink) => productLink.is_default) || productLinks[0];
+
+    if (!defaultLink) {
+      continue;
+    }
+
+    dictionary[bundleOption.option_id] = defaultLink;
+  }
+
+  return dictionary;
+}
+
 export const getDefaultProductLinkFromBundleOption = (
   bundleOption: BundleOption
 ): BundleOptionsProductLink | undefined => {
