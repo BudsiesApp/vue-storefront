@@ -9,7 +9,7 @@ import { Logger } from '@vue-storefront/core/lib/logger'
 
 type CustomProductUrlFunction = (product: any) => string | LocalizedRoute;
 
-const geBlanketProductUrl: CustomProductUrlFunction = (product: any) => {
+const getBlanketProductUrl: CustomProductUrlFunction = (product: any) => {
   return {
     name: product.category_ids.includes(115) ? 'renaissance-blankets' : 'cut-out-blankets',
     query: {
@@ -18,9 +18,19 @@ const geBlanketProductUrl: CustomProductUrlFunction = (product: any) => {
   }
 };
 
+const getPhrasePillowProductUrl: CustomProductUrlFunction = (product: any) => {
+  return {
+    name: 'phrase-pillow-customize',
+    query: {
+      front_design: product.sku
+    }
+  }
+}
+
 const customProductUrlFunctionsForCategories: Record<number, CustomProductUrlFunction> = {
-  114: geBlanketProductUrl,
-  115: geBlanketProductUrl
+  80: getPhrasePillowProductUrl,
+  114: getBlanketProductUrl,
+  115: getBlanketProductUrl
 }
 
 export function parametrizeRouteData (routeData: LocalizedRoute, query: { [id: string]: any } | string, storeCodeInPath: string): LocalizedRoute {
