@@ -19,7 +19,7 @@
 <script lang="ts">
 import { v4 as uuidv4 } from 'uuid';
 import Vue, { PropType } from 'vue';
-import { StatisticValuesMetricValue, getProductDefaultPrice } from 'src/modules/shared';
+import { StatisticValuesMetric, getProductDefaultPrice } from 'src/modules/shared';
 import { SearchQuery } from 'storefront-query-builder'
 import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
@@ -237,7 +237,7 @@ export default Vue.extend({
       if (directives.find((value) => value.type === DirectiveType.ORDERED_PLUSHIES_COUNT)) {
         promises.push(this.$store.dispatch(
           'budsies/fetchStatisticValuesMetric',
-          { metric: StatisticValuesMetricValue.ORDERED_PLUSHIES_COUNT })
+          { metric: StatisticValuesMetric.ORDERED_PLUSHIES_COUNT })
         );
       }
 
@@ -302,7 +302,7 @@ export default Vue.extend({
       return processedTextParts;
     },
     processOrderedPlushiesCountDirective (): ProcessedTextPart {
-      const metricValue = this.$store.getters['budsies/getStatisticValuesMetric'][StatisticValuesMetricValue.ORDERED_PLUSHIES_COUNT];
+      const metricValue = this.$store.getters['budsies/getStatisticValuesMetric'][StatisticValuesMetric.ORDERED_PLUSHIES_COUNT];
 
       return {
         id: uuidv4(),

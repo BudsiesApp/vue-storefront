@@ -1,4 +1,4 @@
-import { StatisticValuesMetricValue } from 'src/modules/shared'
+import { StatisticValuesMetric } from 'src/modules/shared'
 
 import ExtraPhotoAddon from '../models/extra-photo-addon.model'
 import RushAddon from '../models/rush-addon.model'
@@ -22,5 +22,5 @@ export interface BudsiesState {
   breeds: string[],
   hospitals: Hospital[],
   storeRating: StoreRating | undefined,
-  statisticValuesMetric: Record<StatisticValuesMetricValue, string | number | undefined>
+  statisticValuesMetric: Record<StatisticValuesMetric, string | number | undefined>
 }

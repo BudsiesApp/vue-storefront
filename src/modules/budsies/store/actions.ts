@@ -32,7 +32,7 @@ import { Dictionary } from '../types/Dictionary.type';
 import Hospital from '../types/hospital.interface';
 import { StoreRating } from '../types/store-rating.interface';
 import { StatisticValue } from '../types/statistic-value.interface';
-import { StatisticValuesMetricValue } from 'src/modules/shared';
+import { StatisticValuesMetric } from 'src/modules/shared';
 
 function parse<T, R> (
   items: unknown[],
@@ -588,7 +588,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       metric,
       useCache = true
     }: {
-      metric: StatisticValuesMetricValue,
+      metric: StatisticValuesMetric,
       useCache: boolean
     }
   ): Promise<Pick<StatisticValue, 'value'>> {
