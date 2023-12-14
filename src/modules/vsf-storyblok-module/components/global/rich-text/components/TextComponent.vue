@@ -223,7 +223,7 @@ export default Vue.extend({
         }
       )
     },
-    async loadDirectivesRelatedData (directives: Directive[]): Promise<void> {
+    loadDirectivesRelatedData (directives: Directive[]): void | Promise<any[]> {
       const promises = [];
 
       const productSkusUsedInDirectives = this.getProductSkusUsedInDirectives(directives);
@@ -246,7 +246,11 @@ export default Vue.extend({
         );
       }
 
-      await Promise.all(promises);
+      if (!promises.length) {
+        return;
+      }
+
+      return Promise.all(promises);
     },
     getProductSkusUsedInDirectives (directives: Directive[]): string[] {
       const productSkusSet = new Set<string>();
@@ -265,7 +269,11 @@ export default Vue.extend({
       const parts = this.getPartsFromText(text);
       const directives = (parts.filter((part) => typeof part !== 'string')) as Directive[];
 
-      await this.loadDirectivesRelatedData(directives);
+      const promise = this.loadDirectivesRelatedData(directives);
+
+      if (promise) {
+        await promise;
+      }
 
       this.textParts = this.processTextParts(parts);
     },
