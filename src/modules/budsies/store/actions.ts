@@ -580,5 +580,25 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     commit(types.STORE_RATING_SET, result.storeRating);
 
     return result;
+  },
+  async reorder (context, payload: { orderId: number }) {
+    const url = `${config.budsies.endpoint}/order/reorder?token={{token}}&cartId={{cartId}}`;
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+
+    if (resultCode !== 200) {
+      throw Error('Error while reorder:' + result);
+    }
+
+    return result;
   }
 }
