@@ -6,6 +6,7 @@ import RushAddon from '../models/rush-addon.model'
 import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartOption from '../types/bodypart-option'
+import { StatisticValuesMetric } from 'src/modules/shared'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -129,8 +130,8 @@ const getters: GetterTree<BudsiesState, RootState> = {
   getStoreRating: (state) => {
     return state.storeRating;
   },
-  getStatisticValuesMetric: (state) => {
-    return state.statisticValuesMetric;
+  getStatisticValueByMetric: (state) => (metric: StatisticValuesMetric) => {
+    return state.statisticValuesMetric[metric];
   }
 }
 

@@ -592,7 +592,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       useCache: boolean
     }
   ): Promise<Pick<StatisticValue, 'value'>> {
-    const cachedMetric: Pick<StatisticValue, 'value'> = getters['getStatisticValuesMetric'][metric];
+    const cachedMetric: Pick<StatisticValue, 'value'> = getters.getStatisticValueByMetric(metric);
 
     if (useCache && cachedMetric) {
       return cachedMetric;

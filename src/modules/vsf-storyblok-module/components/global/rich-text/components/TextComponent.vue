@@ -67,11 +67,16 @@ interface ProcessedTextPart {
   props?: Record<string, any>
 }
 
-type Directive = ProductSpecificPriceDirective | ProductPriceDirective | OrderedPlushiesCountDirective
+type ProductDependentDirective = ProductSpecificPriceDirective | ProductPriceDirective
+type Directive = ProductDependentDirective | OrderedPlushiesCountDirective
 type TextPart = string | Directive;
 
 const directivesRegexp = /\{\{(.*?)\}\}/gi;
 const directiveSpecificationRegexp = /(.*)\((.*)\)/i;
+
+function isProductDependentDirective (directive: Directive): directive is ProductDependentDirective {
+  return !!(directive as ProductDependentDirective).productSku;
+}
 
 export default Vue.extend({
   name: 'StoryblokRichTextTextComponent',
@@ -218,7 +223,7 @@ export default Vue.extend({
         }
       )
     },
-    getDirectivesDataLoadingPromises (directives: Directive[]): Promise<any>[] {
+    async loadDirectivesRelatedData (directives: Directive[]): Promise<void> {
       const promises = [];
 
       const productSkusUsedInDirectives = this.getProductSkusUsedInDirectives(directives);
@@ -241,12 +246,12 @@ export default Vue.extend({
         );
       }
 
-      return promises;
+      await Promise.all(promises);
     },
     getProductSkusUsedInDirectives (directives: Directive[]): string[] {
       const productSkusSet = new Set<string>();
       directives.forEach((directive) => {
-        if (directive.type === DirectiveType.ORDERED_PLUSHIES_COUNT) {
+        if (!isProductDependentDirective(directive)) {
           return;
         }
 
@@ -260,11 +265,7 @@ export default Vue.extend({
       const parts = this.getPartsFromText(text);
       const directives = (parts.filter((part) => typeof part !== 'string')) as Directive[];
 
-      const loadingPromises = this.getDirectivesDataLoadingPromises(directives);
-
-      if (loadingPromises.length) {
-        await Promise.all(loadingPromises);
-      }
+      await this.loadDirectivesRelatedData(directives);
 
       this.textParts = this.processTextParts(parts);
     },
@@ -302,7 +303,9 @@ export default Vue.extend({
       return processedTextParts;
     },
     processOrderedPlushiesCountDirective (): ProcessedTextPart {
-      const metricValue = this.$store.getters['budsies/getStatisticValuesMetric'][StatisticValuesMetric.ORDERED_PLUSHIES_COUNT];
+      const metricValue = this.$store.getters['budsies/getStatisticValueByMetric'](
+        StatisticValuesMetric.ORDERED_PLUSHIES_COUNT
+      );
 
       return {
         id: uuidv4(),
