@@ -24,6 +24,8 @@ import { SearchQuery } from 'storefront-query-builder'
 import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 
+import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
+
 import RichTextItem from '../../../../types/rich-text-item.interface';
 
 import PriceComponent from './PriceComponent.vue';
@@ -32,7 +34,8 @@ type priceType = 'regular' | 'special';
 
 enum DirectiveType {
   PRODUCT_PRICE = 'productPrice',
-  PRODUCT_SPECIFIC_PRICE = 'productSpecificPrice'
+  PRODUCT_SPECIFIC_PRICE = 'productSpecificPrice',
+  ORDERED_PLUSHIES_COUNT = 'orderedPlushiesCount'
 }
 
 interface DirectiveSpecification {
@@ -53,6 +56,10 @@ interface ProductPriceDirective {
   isColorful: boolean
 }
 
+interface OrderedPlushiesCountDirective {
+  type: DirectiveType.ORDERED_PLUSHIES_COUNT
+}
+
 interface ProcessedTextPart {
   id: string,
   text: string,
@@ -62,11 +69,16 @@ interface ProcessedTextPart {
   props?: Record<string, any>
 }
 
-type Directive = ProductSpecificPriceDirective | ProductPriceDirective
+type ProductDependentDirective = ProductSpecificPriceDirective | ProductPriceDirective
+type Directive = ProductDependentDirective | OrderedPlushiesCountDirective
 type TextPart = string | Directive;
 
 const directivesRegexp = /\{\{(.*?)\}\}/gi;
 const directiveSpecificationRegexp = /(.*)\((.*)\)/i;
+
+function isProductDependentDirective (directive: Directive): directive is ProductDependentDirective {
+  return directive.hasOwnProperty('productSku');
+}
 
 export default Vue.extend({
   name: 'StoryblokRichTextTextComponent',
@@ -177,6 +189,12 @@ export default Vue.extend({
         return directive
       }
 
+      if (directiveName === DirectiveType.ORDERED_PLUSHIES_COUNT) {
+        return {
+          type: DirectiveType.ORDERED_PLUSHIES_COUNT
+        }
+      }
+
       throw new Error('Unknown directive type: ' + directiveName);
     },
     parseDirectiveText (directive: string): DirectiveSpecification {
@@ -207,9 +225,42 @@ export default Vue.extend({
         }
       )
     },
+    loadDirectivesRelatedData (directives: Directive[]): void | Promise<any[]> {
+      const promises = [];
+
+      const productSkusUsedInDirectives = this.getProductSkusUsedInDirectives(directives);
+      const productsToLoadSkus: string[] = [];
+
+      productSkusUsedInDirectives.forEach((sku) => {
+        if (!this.productBySkuDictionary[sku]) {
+          productsToLoadSkus.push(sku);
+        }
+      });
+
+      if (productsToLoadSkus.length) {
+        promises.push(this.loadProducts(productsToLoadSkus))
+      }
+
+      if (directives.find((value) => value.type === DirectiveType.ORDERED_PLUSHIES_COUNT)) {
+        promises.push(this.$store.dispatch(
+          'budsies/fetchStatisticValuesByMetric',
+          { metric: StatisticMetric.ORDERED_PLUSHIES_COUNT })
+        );
+      }
+
+      if (!promises.length) {
+        return;
+      }
+
+      return Promise.all(promises);
+    },
     getProductSkusUsedInDirectives (directives: Directive[]): string[] {
       const productSkusSet = new Set<string>();
       directives.forEach((directive) => {
+        if (!isProductDependentDirective(directive)) {
+          return;
+        }
+
         if (directive.productSku) {
           productSkusSet.add(directive.productSku)
         }
@@ -220,17 +271,10 @@ export default Vue.extend({
       const parts = this.getPartsFromText(text);
       const directives = (parts.filter((part) => typeof part !== 'string')) as Directive[];
 
-      const productSkusUsedInDirectives = this.getProductSkusUsedInDirectives(directives);
-      const productsToLoadSkus: string[] = [];
+      const promise = this.loadDirectivesRelatedData(directives);
 
-      productSkusUsedInDirectives.forEach((sku) => {
-        if (!this.productBySkuDictionary[sku]) {
-          productsToLoadSkus.push(sku);
-        }
-      })
-
-      if (productsToLoadSkus.length) {
-        await this.loadProducts(productsToLoadSkus);
+      if (promise) {
+        await promise;
       }
 
       this.textParts = this.processTextParts(parts);
@@ -259,10 +303,27 @@ export default Vue.extend({
           processedTextParts.push(
             this.processProductPriceDirective(textPart)
           );
+        } else if (textPart.type === DirectiveType.ORDERED_PLUSHIES_COUNT) {
+          processedTextParts.push(
+            this.processOrderedPlushiesCountDirective()
+          );
         }
       }
 
       return processedTextParts;
+    },
+    processOrderedPlushiesCountDirective (): ProcessedTextPart {
+      const metricValue = this.$store.getters['budsies/getStatisticValueByMetric'](
+        StatisticMetric.ORDERED_PLUSHIES_COUNT
+      );
+
+      return {
+        id: uuidv4(),
+        text: metricValue,
+        classes: this.classes,
+        styles: this.styles,
+        component: 'span'
+      }
     },
     processProductPriceDirective (textPart: ProductPriceDirective): ProcessedTextPart {
       const { regular, special } = getProductDefaultPrice(
