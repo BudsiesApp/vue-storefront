@@ -15,7 +15,7 @@ export const state: BudsiesState = {
   breeds: [],
   hospitals: [],
   storeRating: undefined,
-  statisticValuesMetric: {
+  statisticValues: {
     [StatisticMetric.ORDERED_PLUSHIES_COUNT]: undefined
   }
 }

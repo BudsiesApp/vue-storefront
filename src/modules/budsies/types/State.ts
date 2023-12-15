@@ -21,5 +21,5 @@ export interface BudsiesState {
   breeds: string[],
   hospitals: Hospital[],
   storeRating: StoreRating | undefined,
-  statisticValuesMetric: Record<StatisticMetric, string | number | undefined>
+  statisticValues: Record<StatisticMetric, string | number | undefined>
 }

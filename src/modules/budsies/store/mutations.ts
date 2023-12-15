@@ -76,6 +76,6 @@ export const mutations: MutationTree<BudsiesState> = {
     Vue.set(state, 'storeRating', storeRating);
   },
   [types.METRIC_SET] (state, statisticValue: StatisticValue): void {
-    Vue.set(state.statisticValuesMetric, statisticValue.metric, statisticValue.value);
+    Vue.set(state.statisticValues, statisticValue.metric, statisticValue.value);
   }
 }

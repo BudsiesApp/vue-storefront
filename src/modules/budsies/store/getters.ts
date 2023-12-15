@@ -131,7 +131,7 @@ const getters: GetterTree<BudsiesState, RootState> = {
     return state.storeRating;
   },
   getStatisticValueByMetric: (state) => (metric: StatisticMetric) => {
-    return state.statisticValuesMetric[metric];
+    return state.statisticValues[metric];
   }
 }
 
