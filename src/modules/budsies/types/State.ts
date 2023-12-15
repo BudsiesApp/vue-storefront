@@ -1,5 +1,3 @@
-import { StatisticValuesMetric } from 'src/modules/shared'
-
 import ExtraPhotoAddon from '../models/extra-photo-addon.model'
 import RushAddon from '../models/rush-addon.model'
 import BodypartValue from '../models/bodypart-value.model'
@@ -7,6 +5,7 @@ import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
 import Hospital from './hospital.interface'
 import { StoreRating } from './store-rating.interface'
+import { StatisticMetric } from './statistic-metric'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -22,5 +21,5 @@ export interface BudsiesState {
   breeds: string[],
   hospitals: Hospital[],
   storeRating: StoreRating | undefined,
-  statisticValuesMetric: Record<StatisticValuesMetric, string | number | undefined>
+  statisticValuesMetric: Record<StatisticMetric, string | number | undefined>
 }

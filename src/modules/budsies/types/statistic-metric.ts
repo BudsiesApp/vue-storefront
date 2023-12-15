@@ -1,3 +1,3 @@
-export enum StatisticValuesMetric {
+export enum StatisticMetric {
   ORDERED_PLUSHIES_COUNT = 'orderedPlushiesCount'
 }

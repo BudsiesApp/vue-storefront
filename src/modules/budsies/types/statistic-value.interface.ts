@@ -1,6 +1,6 @@
-import { StatisticValuesMetric } from 'src/modules/shared';
+import { StatisticMetric } from './statistic-metric';
 
 export interface StatisticValue {
-  metric: StatisticValuesMetric,
+  metric: StatisticMetric,
   value: string | number
 }

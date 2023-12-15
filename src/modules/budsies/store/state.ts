@@ -1,6 +1,5 @@
-import { StatisticValuesMetric } from 'src/modules/shared'
-
 import { BudsiesState } from '../types/State'
+import { StatisticMetric } from '../types/statistic-metric'
 
 export const state: BudsiesState = {
   extraPhotoAddons: {},
@@ -17,6 +16,6 @@ export const state: BudsiesState = {
   hospitals: [],
   storeRating: undefined,
   statisticValuesMetric: {
-    [StatisticValuesMetric.ORDERED_PLUSHIES_COUNT]: undefined
+    [StatisticMetric.ORDERED_PLUSHIES_COUNT]: undefined
   }
 }

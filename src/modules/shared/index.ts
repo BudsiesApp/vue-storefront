@@ -8,7 +8,6 @@ import CustomerImage from './types/customer-image.interface';
 import { getCartItemPrice, getProductDefaultDiscount, getProductDefaultPrice, getProductPriceFromTotals } from './helpers/price';
 import ServerError from './types/server-error';
 import * as ProductEvent from './types/product-events';
-import { StatisticValuesMetric } from './types/statistic-values-metric';
 import * as PriceHelper from './helpers/price';
 
 import StreamingVideo from './components/streaming-video.vue';
@@ -30,6 +29,5 @@ export {
   ProductEvent,
   CartEvents,
   PriceHelper,
-  BEFORE_STORE_BACKEND_API_REQUEST,
-  StatisticValuesMetric
+  BEFORE_STORE_BACKEND_API_REQUEST
 }

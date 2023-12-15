@@ -19,10 +19,12 @@
 <script lang="ts">
 import { v4 as uuidv4 } from 'uuid';
 import Vue, { PropType } from 'vue';
-import { StatisticValuesMetric, getProductDefaultPrice } from 'src/modules/shared';
+import { getProductDefaultPrice } from 'src/modules/shared';
 import { SearchQuery } from 'storefront-query-builder'
 import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+
+import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
 
 import RichTextItem from '../../../../types/rich-text-item.interface';
 
@@ -75,7 +77,7 @@ const directivesRegexp = /\{\{(.*?)\}\}/gi;
 const directiveSpecificationRegexp = /(.*)\((.*)\)/i;
 
 function isProductDependentDirective (directive: Directive): directive is ProductDependentDirective {
-  return !!(directive as ProductDependentDirective).productSku;
+  return directive.hasOwnProperty('productSku');
 }
 
 export default Vue.extend({
@@ -241,8 +243,8 @@ export default Vue.extend({
 
       if (directives.find((value) => value.type === DirectiveType.ORDERED_PLUSHIES_COUNT)) {
         promises.push(this.$store.dispatch(
-          'budsies/fetchStatisticValuesMetric',
-          { metric: StatisticValuesMetric.ORDERED_PLUSHIES_COUNT })
+          'budsies/fetchStatisticValuesByMetric',
+          { metric: StatisticMetric.ORDERED_PLUSHIES_COUNT })
         );
       }
 
@@ -312,7 +314,7 @@ export default Vue.extend({
     },
     processOrderedPlushiesCountDirective (): ProcessedTextPart {
       const metricValue = this.$store.getters['budsies/getStatisticValueByMetric'](
-        StatisticValuesMetric.ORDERED_PLUSHIES_COUNT
+        StatisticMetric.ORDERED_PLUSHIES_COUNT
       );
 
       return {
