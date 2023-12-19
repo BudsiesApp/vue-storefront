@@ -1,4 +1,5 @@
 import { BudsiesState } from '../types/State'
+import { StatisticMetric } from '../types/statistic-metric'
 
 export const state: BudsiesState = {
   extraPhotoAddons: {},
@@ -13,5 +14,8 @@ export const state: BudsiesState = {
   customerEmail: undefined,
   breeds: [],
   hospitals: [],
-  storeRating: undefined
+  storeRating: undefined,
+  statisticValues: {
+    [StatisticMetric.ORDERED_PLUSHIES_COUNT]: undefined
+  }
 }
