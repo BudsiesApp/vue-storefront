@@ -619,5 +619,19 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     commit(types.METRIC_SET, result[0]);
 
     return result;
+  },
+  reorder (context, payload: { orderId: number }) {
+    const url = `${config.budsies.endpoint}/order/reorder?token={{token}}&cartId={{cartId}}`;
+
+    return TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: true
+    });
   }
 }
