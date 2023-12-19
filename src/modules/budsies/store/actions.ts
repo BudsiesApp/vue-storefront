@@ -581,10 +581,10 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     return result;
   },
-  async reorder (context, payload: { orderId: number }) {
+  reorder (context, payload: { orderId: number }) {
     const url = `${config.budsies.endpoint}/order/reorder?token={{token}}&cartId={{cartId}}`;
 
-    const { result, resultCode } = await TaskQueue.execute({
+    return TaskQueue.execute({
       url,
       payload: {
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -592,13 +592,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
         method: 'POST',
         body: JSON.stringify(payload)
       },
-      silent: false
+      silent: true
     });
-
-    if (resultCode !== 200) {
-      throw Error('Error while reorder:' + result);
-    }
-
-    return result;
   }
 }
