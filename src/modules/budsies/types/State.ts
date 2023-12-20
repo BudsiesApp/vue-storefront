@@ -7,6 +7,7 @@ import BulkorderQuote from '../models/bulkorder-quote.model'
 import BulkOrderInfo from './bulk-order-info'
 import Hospital from './hospital.interface'
 import { StoreRating } from './store-rating.interface'
+import { StatisticMetric } from './statistic-metric'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -25,5 +26,6 @@ export interface BudsiesState {
   bulkordersQuotes: Dictionary<number[]>,
   customerTypes?: Dictionary<string>,
   hospitals: Hospital[],
-  storeRating: StoreRating | undefined
+  storeRating: StoreRating | undefined,
+  statisticValues: Record<StatisticMetric, string | number | undefined>
 }

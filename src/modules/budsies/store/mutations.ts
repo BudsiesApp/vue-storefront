@@ -11,6 +11,7 @@ import BulkorderQuote from '../models/bulkorder-quote.model';
 import BulkOrderInfo from '../types/bulk-order-info';
 import Hospital from '../types/hospital.interface';
 import { StoreRating } from '../types/store-rating.interface';
+import { StatisticValue } from '../types/statistic-value.interface';
 
 export const mutations: MutationTree<BudsiesState> = {
   setAddon (state: BudsiesState, { key, addon }: { key: string, addon: ExtraPhotoAddon }) {
@@ -92,5 +93,8 @@ export const mutations: MutationTree<BudsiesState> = {
   },
   [types.STORE_RATING_SET] (state, storeRating: StoreRating): void {
     Vue.set(state, 'storeRating', storeRating);
+  },
+  [types.METRIC_SET] (state, statisticValue: StatisticValue): void {
+    Vue.set(state.statisticValues, statisticValue.metric, statisticValue.value);
   }
 }

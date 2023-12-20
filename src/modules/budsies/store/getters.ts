@@ -1,4 +1,4 @@
-import { Getter, GetterTree } from 'vuex'
+import { GetterTree } from 'vuex'
 import RootState from '@vue-storefront/core/types/RootState'
 import { BudsiesState } from '../types/State'
 import ExtraPhotoAddon from '../models/extra-photo-addon.model'
@@ -9,6 +9,7 @@ import BodypartOption from '../types/bodypart-option'
 import BulkorderQuote from '../models/bulkorder-quote.model'
 import { Dictionary } from '../types/Dictionary.type'
 import BulkOrderInfo from '../types/bulk-order-info'
+import { StatisticMetric } from '../types/statistic-metric'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -150,6 +151,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
   },
   getStoreRating: (state) => {
     return state.storeRating;
+  },
+  getStatisticValueByMetric: (state) => (metric: StatisticMetric) => {
+    return state.statisticValues[metric];
   }
 }
 
