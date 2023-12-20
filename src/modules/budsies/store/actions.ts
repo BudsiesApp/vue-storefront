@@ -18,7 +18,6 @@ import rushAddonFactory from '../factories/rush-addon.factory'
 import RushAddon from '../models/rush-addon.model'
 import RushAddonApiResponse from '../models/rush-addon-api-response.interface'
 import isRushAddonApiResponse from '../models/is-rush-addon-api-response.typeguard'
-import { Logger } from '@vue-storefront/core/lib/logger'
 import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartValueApiResponse from '../models/bodypart-value-api-response.interface'
@@ -32,6 +31,8 @@ import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function
 import { Dictionary } from '../types/Dictionary.type';
 import Hospital from '../types/hospital.interface';
 import { StoreRating } from '../types/store-rating.interface';
+import { StatisticValue } from '../types/statistic-value.interface';
+import { StatisticMetric } from '../types/statistic-metric';
 
 function parse<T, R> (
   items: unknown[],
@@ -580,5 +581,57 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     commit(types.STORE_RATING_SET, result.storeRating);
 
     return result;
+  },
+  async fetchStatisticValuesByMetric (
+    { commit, getters },
+    {
+      metric,
+      useCache = true
+    }: {
+      metric: StatisticMetric,
+      useCache: boolean
+    }
+  ): Promise<Pick<StatisticValue, 'value'>> {
+    const cachedMetric: Pick<StatisticValue, 'value'> = getters.getStatisticValueByMetric(metric);
+
+    if (useCache && cachedMetric) {
+      return cachedMetric;
+    }
+
+    const url = processURLAddress(
+      `${config.budsies.endpoint}/statistic-values?metric=${metric}`
+    );
+
+    const { result, resultCode } = await TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        method: 'GET'
+      },
+      silent: true
+    });
+
+    if (resultCode !== 200 || !result[0]) {
+      throw new Error(`Error while statistic value for metric '${metric}' fetch`);
+    }
+
+    commit(types.METRIC_SET, result[0]);
+
+    return result;
+  },
+  reorder (context, payload: { orderId: number }) {
+    const url = `${config.budsies.endpoint}/order/reorder?token={{token}}&cartId={{cartId}}`;
+
+    return TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(payload)
+      },
+      silent: true
+    });
   }
 }

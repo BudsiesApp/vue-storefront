@@ -5,6 +5,7 @@ import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
 import Hospital from './hospital.interface'
 import { StoreRating } from './store-rating.interface'
+import { StatisticMetric } from './statistic-metric'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
@@ -19,5 +20,6 @@ export interface BudsiesState {
   customerEmail: string | undefined,
   breeds: string[],
   hospitals: Hospital[],
-  storeRating: StoreRating | undefined
+  storeRating: StoreRating | undefined,
+  statisticValues: Record<StatisticMetric, string | number | undefined>
 }

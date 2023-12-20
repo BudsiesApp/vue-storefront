@@ -1,4 +1,4 @@
-import { Getter, GetterTree } from 'vuex'
+import { GetterTree } from 'vuex'
 import RootState from '@vue-storefront/core/types/RootState'
 import { BudsiesState } from '../types/State'
 import ExtraPhotoAddon from '../models/extra-photo-addon.model'
@@ -6,6 +6,7 @@ import RushAddon from '../models/rush-addon.model'
 import Bodypart from '../models/bodypart.model'
 import BodypartValue from '../models/bodypart-value.model'
 import BodypartOption from '../types/bodypart-option'
+import { StatisticMetric } from '../types/statistic-metric'
 
 const getters: GetterTree<BudsiesState, RootState> = {
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
@@ -128,6 +129,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
   },
   getStoreRating: (state) => {
     return state.storeRating;
+  },
+  getStatisticValueByMetric: (state) => (metric: StatisticMetric) => {
+    return state.statisticValues[metric];
   }
 }
 
