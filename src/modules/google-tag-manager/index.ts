@@ -18,7 +18,8 @@ export const GoogleTagManagerModule: StorefrontModule = function ({ store, route
         id: appConfig.googleTagManager.id,
         debug: appConfig.googleTagManager.debug,
         vueRouter: router,
-        trackOnNextTick: true
+        trackOnNextTick: true,
+        defer: true
       })
     })
   } else {
