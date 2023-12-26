@@ -90,7 +90,7 @@ export default {
   output: {
     path: path.resolve(__dirname, '../../dist'),
     publicPath: '/dist/',
-    filename: '[name].[hash].js'
+    filename: '[name].[contenthash].js'
   },
   resolveLoader: {
     modules: [
