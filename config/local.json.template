@@ -134,6 +134,32 @@
       "type": "script",
       "onload": true,
       "rel": "prefetch"
+    },
+    {
+      "filters": [
+        "filepond",
+        "vue-slick-carousel",
+        "vue2-datepicker",
+        "jquery",
+        "vue-multiselect",
+        "croppie",
+        "braintree-web"
+      ],
+      "type": "script",
+      "onload": true,
+      "rel": "prefetch"
+    },
+    {
+      "filters": [
+        "affirm-icon",
+        "desktop-only",
+        "mobile-only",
+        "footer-socials",
+        "footer-socials-mobile",
+        "logo-footer"
+      ],
+      "type": "image",
+      "rel": "preload"
     }
   ],
   "staticPages": {
