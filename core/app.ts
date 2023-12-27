@@ -6,12 +6,9 @@ import { isServer } from '@vue-storefront/core/helpers'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import i18n from '@vue-storefront/i18n'
 import VueRouter from 'vue-router'
-import VueLazyload from 'vue-lazyload'
 import Vuelidate from 'vuelidate'
 import Meta from 'vue-meta'
 import { sync } from 'vuex-router-sync'
-import VueObserveVisibility from 'vue-observe-visibility'
-import { getApolloProvider } from './scripts/resolvers/resolveGraphQL'
 // TODO simplify by removing global mixins, plugins and filters - it can be done in normal 'vue' way
 import { registerTheme } from '@vue-storefront/core/lib/themes'
 import { themeEntry } from 'theme/index.js'
@@ -29,7 +26,6 @@ import { coreHooksExecutors } from '@vue-storefront/core/hooks'
 import { registerClientModules } from 'src/modules/client'
 import initialStateFactory from '@vue-storefront/core/helpers/initialStateFactory'
 import { createRouter, createRouterProxy } from '@vue-storefront/core/helpers/router'
-import { checkForIntlPolyfill } from '@vue-storefront/i18n/intl'
 
 const stateFactory = initialStateFactory(store.state)
 
@@ -70,11 +66,9 @@ const createApp = async (ssrContext, config, storeCode = null): Promise<{app: Vu
   // @deprecated from 2.0
   once('__VUE_EXTEND__', () => {
     Vue.use(Vuelidate)
-    Vue.use(VueLazyload, { attempt: 2, preLoad: 1.5 })
     Vue.use(Meta, {
       ssrAppId: 1
     })
-    Vue.use(VueObserveVisibility)
 
     Object.keys(corePlugins).forEach(key => {
       Vue.use(corePlugins[key])
@@ -96,9 +90,6 @@ const createApp = async (ssrContext, config, storeCode = null): Promise<{app: Vu
     render: h => h(themeEntry)
   }
 
-  const apolloProvider = await getApolloProvider()
-  if (apolloProvider) Object.assign(vueOptions, { provider: apolloProvider })
-
   const app = new Vue(vueOptions)
 
   const appContext = {
@@ -111,7 +102,6 @@ const createApp = async (ssrContext, config, storeCode = null): Promise<{app: Vu
   registerModules(enabledModules, appContext)
   registerTheme(globalConfig.theme, app, routerProxy, store, globalConfig, ssrContext)
 
-  await checkForIntlPolyfill(storeView)
 
   coreHooksExecutors.afterAppInit()
   // @deprecated from 2.0
