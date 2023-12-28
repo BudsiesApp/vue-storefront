@@ -138,7 +138,7 @@ function initSSRRequestContext (app, req, res, config): Context {
 
       return `
         ${options}
-        <script src="https://polaris.truevaultcdn.com/static/polaris.js"></script>
+        <script src="https://polaris.truevaultcdn.com/static/polaris.js" defer></script>
       `
     }
   };
