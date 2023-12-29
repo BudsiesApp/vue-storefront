@@ -1,12 +1,24 @@
 <template>
   <div class="streaming-video" :style="styles">
+    <div
+      v-if="isYouTubeVideo"
+      class="_embed-container"
+    >
+      <lite-youtube
+        class="_youtube-facade"
+        :videoid="videoId"
+        :params="youTubeVideoParams"
+        v-if="isYouTubeFacadeLoaded"
+      />
+    </div>
+
     <iframe
       class="_embed-container"
       :src="embedUrl"
       frameborder="0"
       allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
       allowfullscreen
-      v-if="embedUrl"
+      v-else-if="embedUrl"
     />
   </div>
 </template>
@@ -15,6 +27,8 @@
 import Vue, { PropType } from 'vue';
 import { AspectRatio } from '../types/aspect-ratio.value';
 import { VideoProvider } from '../types/video-provider.value';
+
+import('lite-youtube-embed/src/lite-yt-embed.css');
 
 export default Vue.extend({
   name: 'StreamingVideo',
@@ -40,7 +54,30 @@ export default Vue.extend({
       default: false
     }
   },
+  data () {
+    return {
+      isYouTubeFacadeLoaded: false
+    }
+  },
+  async beforeMount () {
+    if (!this.isYouTubeVideo) {
+      return;
+    }
+
+    await import('lite-youtube-embed');
+
+    this.isYouTubeFacadeLoaded = true
+  },
   computed: {
+    isYouTubeVideo (): boolean {
+      return this.provider === VideoProvider.youtube;
+    },
+    youTubeVideoParams (): string {
+      return 'modestbranding=1' +
+          '&rel=0' +
+          '&controls=' + (this.displayControls ? 1 : 0) +
+          '&autoplay=' + (this.autoPlay ? 1 : 0);
+    },
     styles (): Record<string, string> {
       const result: Record<string, string> = {};
 
@@ -68,15 +105,6 @@ export default Vue.extend({
       return result;
     },
     embedUrl (): string | undefined {
-      if (this.provider === VideoProvider.youtube) {
-        return '//www.youtube.com/embed/' +
-          this.videoId +
-          '?modestbranding=1' +
-          '&rel=0' +
-          '&controls=' + (this.displayControls ? 1 : 0) +
-          '&autoplay=' + (this.autoPlay ? 1 : 0);
-      }
-
       if (this.provider === VideoProvider.vimeo) {
         return '//player.vimeo.com/video/' + this.videoId;
       }
@@ -116,6 +144,10 @@ export default Vue.extend({
     height: 100%;
     border: 0;
     box-sizing: border-box;
+  }
+
+  ._youtube-facade {
+    max-width: 100%;
   }
 }
 </style>

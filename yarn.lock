@@ -11152,6 +11152,11 @@ listr@^0.14.2, listr@^0.14.3:
     p-map "^2.0.0"
     rxjs "^6.3.3"
 
+lite-youtube-embed@0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/lite-youtube-embed/-/lite-youtube-embed-0.3.0.tgz#95423358d7f55e2c053eef8a0ca42742f1e1e0ef"
+  integrity sha512-3DUqE1C4s/+a8PVM4ik8anBsmHOW0zUavPyFQWugBulKyQpbZFE+/268Aq/pDNW7hRQJXkXpk4QjdSCpwf7Cvg==
+
 load-json-file@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/load-json-file/-/load-json-file-1.1.0.tgz#956905708d58b4bab4c2261b04f59f31c99374c0"
