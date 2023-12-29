@@ -75,8 +75,7 @@ export default Vue.extend({
     youTubeVideoParams (): string {
       return 'modestbranding=1' +
           '&rel=0' +
-          '&controls=' + (this.displayControls ? 1 : 0) +
-          '&autoplay=' + (this.autoPlay ? 1 : 0);
+          '&controls=' + (this.displayControls ? 1 : 0);
     },
     styles (): Record<string, string> {
       const result: Record<string, string> = {};
