@@ -5,10 +5,11 @@
       class="_embed-container"
     >
       <lite-youtube
+        autoload
         class="_youtube-facade"
         :videoid="videoId"
         :params="youTubeVideoParams"
-        v-if="isYouTubeFacadeLoaded"
+        v-if="showYouTubeFacade"
       />
     </div>
 
@@ -27,8 +28,6 @@
 import Vue, { PropType } from 'vue';
 import { AspectRatio } from '../types/aspect-ratio.value';
 import { VideoProvider } from '../types/video-provider.value';
-
-import('lite-youtube-embed/src/lite-yt-embed.css');
 
 export default Vue.extend({
   name: 'StreamingVideo',
@@ -56,7 +55,8 @@ export default Vue.extend({
   },
   data () {
     return {
-      isYouTubeFacadeLoaded: false
+      isYouTubeFacadeLoaded: false,
+      isMounted: false
     }
   },
   async beforeMount () {
@@ -64,9 +64,13 @@ export default Vue.extend({
       return;
     }
 
-    await import('lite-youtube-embed');
+    await import('@justinribeiro/lite-youtube');
 
     this.isYouTubeFacadeLoaded = true
+  },
+  async mounted () {
+    await this.$nextTick();
+    this.isMounted = true;
   },
   computed: {
     isYouTubeVideo (): boolean {
@@ -125,6 +129,9 @@ export default Vue.extend({
       }
 
       return undefined;
+    },
+    showYouTubeFacade (): boolean {
+      return this.isMounted && this.isYouTubeFacadeLoaded;
     }
   }
 });

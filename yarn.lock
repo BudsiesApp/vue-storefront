@@ -1505,6 +1505,11 @@
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.3.1.tgz#b50a781709c81e10701004214340f25475a171a0"
   integrity sha512-zMM9Ds+SawiUkakS7y94Ymqx+S0ORzpG3frZirN3l+UlXUmSUR7hF4wxCVqW+ei94JzV5kt0uXBcoOEAuiydrw==
 
+"@justinribeiro/lite-youtube@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@justinribeiro/lite-youtube/-/lite-youtube-1.5.0.tgz#c8f5b1e9bc6980defb725bf84d84a957deea1b92"
+  integrity sha512-TU92RKtz9BI9PRYrVwDIUsnFadLZtqRKWl1ZOdbxb7roJDb8Dd/xURllAsLEmCg6oJNyhXlVa5RsnUc0EKd8Cw==
+
 "@lerna/add@3.20.0":
   version "3.20.0"
   resolved "https://registry.yarnpkg.com/@lerna/add/-/add-3.20.0.tgz#bea7edf36fc93fb72ec34cb9ba854c48d4abf309"
@@ -11151,11 +11156,6 @@ listr@^0.14.2, listr@^0.14.3:
     listr-verbose-renderer "^0.5.0"
     p-map "^2.0.0"
     rxjs "^6.3.3"
-
-lite-youtube-embed@0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/lite-youtube-embed/-/lite-youtube-embed-0.3.0.tgz#95423358d7f55e2c053eef8a0ca42742f1e1e0ef"
-  integrity sha512-3DUqE1C4s/+a8PVM4ik8anBsmHOW0zUavPyFQWugBulKyQpbZFE+/268Aq/pDNW7hRQJXkXpk4QjdSCpwf7Cvg==
 
 load-json-file@^1.0.0:
   version "1.1.0"
