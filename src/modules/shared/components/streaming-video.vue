@@ -58,6 +58,9 @@ export default Vue.extend({
         case AspectRatio.A16_10:
           height = 10 / 16;
           break;
+        case AspectRatio.A9_16:
+          height = 16 / 9;
+          break;
         case AspectRatio.A16_9:
         default:
           height = 9 / 16;
