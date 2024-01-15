@@ -1,5 +1,6 @@
 export enum VideoProvider {
   youtube = 'youtube',
+  youtubeShorts = 'youtube_shorts',
   vimeo = 'vimeo',
   twitch = 'twitch',
   dailymotion = 'dailymotion',
