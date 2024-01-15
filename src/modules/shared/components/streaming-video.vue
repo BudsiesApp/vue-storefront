@@ -27,6 +27,7 @@
       frameborder="0"
       allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
       allowfullscreen
+      loading="lazy"
       v-else-if="embedUrl"
     />
   </div>
@@ -108,6 +109,9 @@ export default Vue.extend({
           break;
         case AspectRatio.A16_10:
           height = 10 / 16;
+          break;
+        case AspectRatio.A9_16:
+          height = 16 / 9;
           break;
         case AspectRatio.A16_9:
         default:
