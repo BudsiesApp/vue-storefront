@@ -1,5 +1,26 @@
 <template>
-  <div class="streaming-video" :style="styles">
+  <div
+    class="streaming-video"
+    :class="{
+      '-you-tube': isYouTubeVideo,
+      '-short': isYouTubeShortsVideo
+    }"
+    :style="styles"
+  >
+    <div
+      v-if="isYouTubeVideo"
+      class="_embed-container"
+    >
+      <lite-youtube
+        autoload
+        class="_youtube-facade"
+        :videoid="videoId"
+        :params="youTubeVideoParams"
+        :short="isYouTubeShortsVideo"
+        v-if="showYouTubeFacade"
+      />
+    </div>
+
     <iframe
       class="_embed-container"
       :src="embedUrl"
@@ -7,7 +28,7 @@
       allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
       allowfullscreen
       loading="lazy"
-      v-if="embedUrl"
+      v-else-if="embedUrl"
     />
   </div>
 </template>
@@ -41,7 +62,38 @@ export default Vue.extend({
       default: false
     }
   },
+  data () {
+    return {
+      isYouTubeFacadeLoaded: false,
+      isMounted: false
+    }
+  },
+  async beforeMount () {
+    if (!this.isYouTubeVideo) {
+      return;
+    }
+
+    await import('@justinribeiro/lite-youtube');
+
+    this.isYouTubeFacadeLoaded = true
+  },
+  async mounted () {
+    await this.$nextTick();
+    this.isMounted = true;
+  },
   computed: {
+    isYouTubeVideo (): boolean {
+      return [VideoProvider.youtube, VideoProvider.youtubeShorts].includes(this.provider);
+    },
+    isYouTubeShortsVideo (): boolean {
+      return this.provider === VideoProvider.youtubeShorts;
+    },
+    youTubeVideoParams (): string {
+      return 'modestbranding=1' +
+          '&rel=0' +
+          '&controls=' + (this.displayControls ? 1 : 0) +
+          '&autoplay=' + (this.autoPlay ? 1 : 0);
+    },
     styles (): Record<string, string> {
       const result: Record<string, string> = {};
 
@@ -72,15 +124,6 @@ export default Vue.extend({
       return result;
     },
     embedUrl (): string | undefined {
-      if (this.provider === VideoProvider.youtube) {
-        return '//www.youtube.com/embed/' +
-          this.videoId +
-          '?modestbranding=1' +
-          '&rel=0' +
-          '&controls=' + (this.displayControls ? 1 : 0) +
-          '&autoplay=' + (this.autoPlay ? 1 : 0);
-      }
-
       if (this.provider === VideoProvider.vimeo) {
         return '//player.vimeo.com/video/' + this.videoId;
       }
@@ -102,6 +145,9 @@ export default Vue.extend({
       }
 
       return undefined;
+    },
+    showYouTubeFacade (): boolean {
+      return this.isMounted && this.isYouTubeFacadeLoaded;
     }
   }
 });
@@ -120,6 +166,24 @@ export default Vue.extend({
     height: 100%;
     border: 0;
     box-sizing: border-box;
+  }
+
+  ._youtube-facade {
+    max-width: 100%;
+    height: 100%;
+    padding-bottom: 0;
+  }
+
+  &.-you-tube {
+    padding-top: calc(100% / (16 / 9));
+  }
+
+  @media (max-width: 40em) {
+    &.-you-tube {
+      &.-short {
+        padding-top: calc(100% / (9 / 16));
+      }
+    }
   }
 }
 </style>
