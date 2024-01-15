@@ -1,5 +1,12 @@
 <template>
-  <div class="streaming-video" :style="styles">
+  <div
+    class="streaming-video"
+    :class="{
+      '-you-tube': isYouTubeVideo,
+      '-short': isYouTubeShortsVideo
+    }"
+    :style="styles"
+  >
     <div
       v-if="isYouTubeVideo"
       class="_embed-container"
@@ -9,6 +16,7 @@
         class="_youtube-facade"
         :videoid="videoId"
         :params="youTubeVideoParams"
+        :short="isYouTubeShortsVideo"
         v-if="showYouTubeFacade"
       />
     </div>
@@ -74,12 +82,16 @@ export default Vue.extend({
   },
   computed: {
     isYouTubeVideo (): boolean {
-      return this.provider === VideoProvider.youtube;
+      return [VideoProvider.youtube, VideoProvider.youtubeShorts].includes(this.provider);
+    },
+    isYouTubeShortsVideo (): boolean {
+      return this.provider === VideoProvider.youtubeShorts;
     },
     youTubeVideoParams (): string {
       return 'modestbranding=1' +
           '&rel=0' +
-          '&controls=' + (this.displayControls ? 1 : 0);
+          '&controls=' + (this.displayControls ? 1 : 0) +
+          '&autoplay=' + (this.autoPlay ? 1 : 0);
     },
     styles (): Record<string, string> {
       const result: Record<string, string> = {};
@@ -154,6 +166,20 @@ export default Vue.extend({
 
   ._youtube-facade {
     max-width: 100%;
+    height: 100%;
+    padding-bottom: 0;
+  }
+
+  &.-you-tube {
+    padding-top: calc(100% / (16 / 9));
+  }
+
+  @media (max-width: 40em) {
+    &.-you-tube {
+      &.-short {
+        padding-top: calc(100% / (9 / 16));
+      }
+    }
   }
 }
 </style>
