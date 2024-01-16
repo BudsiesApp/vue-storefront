@@ -94,6 +94,10 @@
   },
   "budsies": {
     "endpoint": "https://${VSF_API_DOMAIN}/api/ext/budsies",
+    "budsiesStoreDomain": "${BUDSIES_STORE_DOMAIN}",
+    "petsiesStoreDomain": "${PETSIES_STORE_DOMAIN}",
+    "waggablesStoreDomain": "${WAGGABLES_STORE_DOMAIN}",
+    "bulkordersStoreDomain": "${BULKORDERS_STORE_DOMAIN}",
     "magentoDomain": "https://${MAGENTO_DOMAIN}",
     "enableRaffle": false
   },
