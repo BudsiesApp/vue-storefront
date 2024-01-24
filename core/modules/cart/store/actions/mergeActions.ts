@@ -11,10 +11,36 @@ import {
 } from '@vue-storefront/core/modules/cart/helpers'
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import productChecksum from '@vue-storefront/core/modules/cart/helpers/productChecksum';
+import { SearchQuery } from 'storefront-query-builder'
+
 import { cartHooksExecutors } from './../../hooks'
 import ServerItem from '../../types/Servertem'
 import { DiffLog } from '../../helpers/createDiffLog'
 import { isClientItemHasRequiredServerItemFields } from '../../helpers/is-client-item-has-required-server-item-fields.function'
+import {updateClientItemProductData} from '../../helpers/update-client-item-product-data.function';
+
+async function loadServerItemsProducts(serverItems: any[], dispatch) {
+  const productSearchQuery = new SearchQuery()
+      .applyFilter(
+        {
+          key: 'sku',
+          value: {
+            'in': serverItems.map((item) => item.sku)
+          }
+        }
+      );
+
+    await dispatch(
+      'product/findProducts',
+      {
+        query: productSearchQuery,
+        size: serverItems.length
+      },
+      {
+        root: true
+      }
+    )
+}
 
 const mergeActions = {
   async updateClientItem({ dispatch }, { clientItem, serverItem }) {
@@ -37,6 +63,15 @@ const mergeActions = {
 
     await dispatch('updateItem', { product: productWithChecksum })
     EventBus.$emit('cart-after-itemchanged', { item: cartItem })
+  },
+  async updateClientItemProductData({dispatch, rootGetters}, clientItem) {
+    const product = rootGetters['product/getProductBySkuDictionary'][clientItem.sku];
+    const clientItemWithProductData = updateClientItemProductData(clientItem, product);
+
+    await dispatch('updateItem', { product: clientItemWithProductData })
+
+    EventBus.$emit('cart-after-itemchanged', { item: clientItemWithProductData })
+    return clientItemWithProductData;
   },
   async processUpdateServerItemResponse(
     { commit, dispatch, rootGetters },
@@ -203,7 +238,11 @@ const mergeActions = {
   },
   async mergeServerItem({ dispatch, getters }, { clientItems, serverItem, forceClientState, dryRun }) {
     const diffLog = createDiffLog()
-    const clientItem: CartItem | undefined = clientItems.find(itm => productsEquals(itm, serverItem))
+    let clientItem: CartItem | undefined = clientItems.find(itm => productsEquals(itm, serverItem))
+
+    if (clientItem) {
+      clientItem = await dispatch('updateClientItemProductData', clientItem);
+    }
 
     if (
       clientItem &&
@@ -249,6 +288,8 @@ const mergeActions = {
   async mergeServerItems({ dispatch }, { serverItems, clientItems, forceClientState, dryRun }) {
     const diffLog = createDiffLog()
     const definedServerItems = serverItems.filter(serverItem => serverItem)
+
+    await loadServerItemsProducts(definedServerItems, dispatch);
 
     for (const serverItem of definedServerItems) {
       try {
