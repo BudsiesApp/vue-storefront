@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import Vuex from 'vuex'
+import Vuex, { Store } from 'vuex'
 import RootState from '@vue-storefront/core/types/RootState'
 import { once } from '@vue-storefront/core/helpers'
 import actions from './actions'
@@ -23,12 +23,21 @@ const state: any = {
   userTokenInvalidateLock: 0
 }
 
-let rootStore = new Vuex.Store<RootState>({
-  // TODO: refactor it to return just the constructor to avoid event-bus and i18n shenanigans; challenge: the singleton management OR add i18n and eventBus here to rootStore instance?  modules: {
-  state,
-  actions,
-  getters,
-  mutations
-})
+let rootStore: Store<RootState> = createStore();
+
+function createStore() {
+  rootStore = new Vuex.Store<RootState>({
+    // TODO: refactor it to return just the constructor to avoid event-bus and i18n shenanigans; challenge: the singleton management OR add i18n and eventBus here to rootStore instance?  modules: {
+    state,
+    actions,
+    getters,
+    mutations
+  });
+
+  return rootStore;
+}
+
+
+export {createStore};
 
 export default rootStore

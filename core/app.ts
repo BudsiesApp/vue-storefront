@@ -18,14 +18,15 @@ import * as coreMixins from '@vue-storefront/core/mixins'
 import * as coreFilters from '@vue-storefront/core/filters'
 import * as corePlugins from '@vue-storefront/core/compatibility/plugins'
 import { once } from '@vue-storefront/core/helpers'
-import store from '@vue-storefront/core/store'
+import store, { createStore } from '@vue-storefront/core/store'
 import { enabledModules } from './modules-entry'
 import globalConfig from 'config'
-import { injectReferences } from '@vue-storefront/core/lib/modules'
+import { clearData, injectReferences } from '@vue-storefront/core/lib/modules'
 import { coreHooksExecutors } from '@vue-storefront/core/hooks'
 import { registerClientModules } from 'src/modules/client'
 import initialStateFactory from '@vue-storefront/core/helpers/initialStateFactory'
 import { createRouter, createRouterProxy } from '@vue-storefront/core/helpers/router'
+import { createManager } from './lib/router-manager'
 
 const stateFactory = initialStateFactory(store.state)
 
@@ -40,6 +41,9 @@ once('__VUE_EXTEND_RR__', () => {
 })
 
 const createApp = async (ssrContext, config, storeCode = null): Promise<{app: Vue, router: VueRouter, store: Store<RootState>, initialState: RootState}> => {
+  createStore();
+  createManager();
+  clearData();
   router = createRouter()
   routerProxy = createRouterProxy(router)
   // sync router with vuex 'router' store
@@ -97,6 +101,7 @@ const createApp = async (ssrContext, config, storeCode = null): Promise<{app: Vu
     ssrContext
   }
 
+  clearData();
   injectReferences(app, store, routerProxy, globalConfig)
   registerClientModules()
   registerModules(enabledModules, appContext)

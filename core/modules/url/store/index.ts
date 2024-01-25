@@ -8,7 +8,7 @@ import { mutations } from './mutations'
 export const urlStore: Module<UrlState, any> = {
   namespaced: true,
   actions,
-  state,
+  state: () => state,
   getters,
   mutations
 }

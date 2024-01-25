@@ -16,6 +16,11 @@ export type StorefrontModule = (
 let refs: any = {}
 let registeredModules: StorefrontModule[] = []
 
+function clearData () {
+  refs = {};
+  registeredModules = []
+}
+
 function injectReferences (app: any, store: Store<any>, router: VueRouter, config: any): void {
   refs.app = app
   refs.store = store
@@ -40,4 +45,4 @@ function isModuleRegistered (name: string): boolean {
   return registeredModules.some(m => m.name === name)
 }
 
-export { refs, injectReferences, registerModule, isModuleRegistered }
+export { refs, clearData, injectReferences, registerModule, isModuleRegistered }
