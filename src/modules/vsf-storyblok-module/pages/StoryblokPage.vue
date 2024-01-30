@@ -29,7 +29,8 @@ import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import getHostFromHeaders from '@vue-storefront/core/helpers/get-host-from-headers.function';
 
 import { getSettings } from '../helpers'
-import PageBreadcrumbs from '../components/defaults/PageBreadcrumbs.vue';
+import { hydrateInPreviewOnly } from '../helpers/hydrate-in-preview-only.function';
+
 import StoryblokMixin from '../components/StoryblokMixin'
 
 const PROTOCOL = 'https://';
@@ -38,7 +39,7 @@ export default {
   name: 'StoryblokPage',
   mixins: [StoryblokMixin],
   components: {
-    PageBreadcrumbs
+    PageBreadcrumbs: hydrateInPreviewOnly(() => import('../components/defaults/PageBreadcrumbs.vue'))
   },
   metaInfo () {
     if (this.story) {
