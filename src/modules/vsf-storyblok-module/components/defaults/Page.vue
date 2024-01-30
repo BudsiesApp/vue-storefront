@@ -1,8 +1,10 @@
 <template>
   <div data-testid="storyblok-page">
     <sb-rich-text :text="itemData.description" v-if="itemData.description" />
+
     <sb-render
       v-for="(child) in itemData.body"
+      :parent-scope-id="scopeId"
       :item="child"
       :key="child._uid"
     />
@@ -30,6 +32,9 @@ export default Blok.extend({
   computed: {
     itemData (): PageData {
       return this.item as unknown as PageData;
+    },
+    scopeId (): string {
+      return (this.$options as any)._scopeId;
     }
   }
 

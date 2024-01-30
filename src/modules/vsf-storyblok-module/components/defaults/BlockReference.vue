@@ -12,6 +12,7 @@
         class="_item"
         :item="child"
         :key="child._uid"
+        :parent-scope-id="scopeId"
         @content-change="onChildContentChange"
       />
     </div>
@@ -35,6 +36,9 @@ export default EmptyChildrenState.extend({
     },
     showBlockReference (): boolean {
       return !this.isAllChildrenEmpty;
+    },
+    scopeId (): string {
+      return (this.$options as any)._scopeId;
     }
   }
 });
