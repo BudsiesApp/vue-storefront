@@ -14,6 +14,7 @@ import { LinkType } from './types/link-type.value'
 import { SizeValue } from './types/size.value'
 import isUrlExternal from './helpers/is-url-external'
 import getUrlFromLink from './helpers/get-url-from-link'
+import { hydrateInPreviewOnly } from './helpers/hydrate-in-preview-only.function'
 import { Blok } from './components'
 
 export const KEY = 'storyblok'
@@ -37,5 +38,6 @@ export {
   LinkType,
   VideoUrlField,
   isUrlExternal,
-  getUrlFromLink
+  getUrlFromLink,
+  hydrateInPreviewOnly
 }
