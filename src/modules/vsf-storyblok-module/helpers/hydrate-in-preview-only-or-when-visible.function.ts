@@ -4,11 +4,11 @@ import {
 
 import { getStoryblokQueryParams } from '../helpers';
 
-export function hydrateInPreviewOnly (componentOrFactory: Vue | (() => any)) {
+export function hydrateInPreviewOrWhenVisible (componentOrFactory: Vue | (() => any)) {
   return makeHydrationBlocker(componentOrFactory, {
     beforeCreate () {
       const { id } = getStoryblokQueryParams(this.$route)
-      this.never = !id;
+      this.whenVisible = true;
 
       if (id) {
         this.hydrate();

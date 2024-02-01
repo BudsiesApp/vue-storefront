@@ -4,9 +4,6 @@ import RichTextItem from '../types/rich-text-item.interface'
 import { components } from '../components/index';
 import getHeaderId from './get-header-id';
 import RichTextTextComponent from '../components/global/rich-text/components/TextComponent.vue';
-import { hydrateInPreviewOnly } from './hydrate-in-preview-only.function';
-import { AsyncComponent } from 'vue';
-import { AsyncComponentPromise } from 'vue/types/options';
 
 const genericComponentTag = 'sb-rich-text-generic-component';
 
@@ -87,14 +84,11 @@ export default function getRichTextItemData (data: any): RichTextItem {
     case 'text':
       const id = uuidv4();
       const link = data.marks?.find((mark: any) => mark.type === 'link');
-      const hasDirective = data.text.includes('{{');
 
       if (!link) {
         return {
           id,
-          component: hasDirective
-            ? RichTextTextComponent
-            : hydrateInPreviewOnly(() => import('../components/global/rich-text/components/TextComponent.vue')),
+          component: RichTextTextComponent,
           content: data.content,
           attrs: data.attrs,
           marks: data.marks,

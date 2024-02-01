@@ -1,13 +1,15 @@
+import { hydrateInPreviewOrWhenVisible } from '../helpers/hydrate-in-preview-only-or-when-visible.function'
+
 export const components = {
   debug: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Debug.vue'),
   page: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Page.vue'),
-  block: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Block.vue'),
-  category_description: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Block.vue'),
-  product_description: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Block.vue'),
-  block_reference: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/BlockReference.vue'),
-  grid: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Grid.vue'),
-  column: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Column.vue'),
-  page_section: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/PageSection.vue'),
+  block: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Block.vue')),
+  category_description: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Block.vue')),
+  product_description: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Block.vue')),
+  block_reference: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/BlockReference.vue')),
+  grid: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Grid.vue')),
+  column: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Column.vue')),
+  page_section: hydrateInPreviewOrWhenVisible(() => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/PageSection.vue')),
   tile: () => import(/* webpackChunkName: "vsf-storyblok" */ './defaults/Tile.vue')
 }
 
