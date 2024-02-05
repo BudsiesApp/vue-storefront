@@ -2345,13 +2345,13 @@
   dependencies:
     type-detect "4.0.8"
 
-"@storefront-ui/shared@0.7.11", "@storefront-ui/shared@https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/shared?b144136a796b6b0fe5a30ddb85dfb4b7a6407b2b":
+"@storefront-ui/shared@0.7.11", "@storefront-ui/shared@https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/shared?cedb7343459229039ac213133a4a51a6763fd66f":
   version "0.7.11"
-  resolved "https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/shared?b144136a796b6b0fe5a30ddb85dfb4b7a6407b2b#e3df0e53ad782b02b29f23bd8d2e4306ba9f453d"
+  resolved "https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/shared?cedb7343459229039ac213133a4a51a6763fd66f#2e69ba1e9f3828a6c5aa32e85acec2dda86405a7"
 
-"@storefront-ui/vue@https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/vue?b144136a796b6b0fe5a30ddb85dfb4b7a6407b2b":
+"@storefront-ui/vue@https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/vue?cedb7343459229039ac213133a4a51a6763fd66f":
   version "0.7.11"
-  resolved "https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/vue?b144136a796b6b0fe5a30ddb85dfb4b7a6407b2b#9afd250b163620aff4119b75d510b6e1f130127a"
+  resolved "https://gitpkg.now.sh/BudsiesApp/storefront-ui/packages/vue?cedb7343459229039ac213133a4a51a6763fd66f#9c5fbebf9c84d55240bae231148355b6d5797564"
   dependencies:
     "@glidejs/glide" "^3.3.0"
     "@storefront-ui/shared" "0.7.11"
