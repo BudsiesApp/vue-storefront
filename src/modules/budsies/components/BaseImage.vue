@@ -294,7 +294,7 @@ export default Vue.extend({
 
     &.-loading {
       ._placeholder {
-        background-color: #fafafa;
+        background-color: var(--image-placeholder-background-color, #fafafa);
       }
     }
   }
