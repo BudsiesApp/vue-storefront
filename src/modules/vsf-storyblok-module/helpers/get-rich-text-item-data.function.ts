@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import RichTextItem from '../types/rich-text-item.interface'
 import { components } from '../components/index';
 import getHeaderId from './get-header-id';
+import RichTextTextComponent from '../components/global/rich-text/components/TextComponent.vue';
 
 const genericComponentTag = 'sb-rich-text-generic-component';
 
@@ -87,7 +88,7 @@ export default function getRichTextItemData (data: any): RichTextItem {
       if (!link) {
         return {
           id,
-          component: 'sb-rich-text-text-component',
+          component: RichTextTextComponent,
           content: data.content,
           attrs: data.attrs,
           marks: data.marks,

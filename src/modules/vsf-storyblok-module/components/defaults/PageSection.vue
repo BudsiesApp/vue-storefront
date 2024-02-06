@@ -11,6 +11,7 @@
       <sb-render
         v-for="(_item) in childItems"
         :key="_item._uid"
+        :parent-scope-id="scopeId"
         class="box _item"
         :item="_item"
         @content-change="onChildContentChange"
@@ -85,6 +86,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
       }
 
       return result;
+    },
+    scopeId (): string {
+      return (this.$options as any)._scopeId;
     }
   }
 });

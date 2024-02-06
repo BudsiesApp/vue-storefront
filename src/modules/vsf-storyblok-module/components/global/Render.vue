@@ -2,6 +2,7 @@
   <component
     v-if="component"
     v-editable="item"
+    v-bind="scopeIdAttribute"
     :is="component"
     :item="item"
     v-on="$listeners"
@@ -19,12 +20,23 @@ export default {
     },
     components: function () {
       return components
+    },
+    scopeIdAttribute () {
+      if (!this.parentScopeId) {
+        return {};
+      }
+
+      return { [`${this.parentScopeId}`]: true }
     }
   },
   props: {
     item: {
       type: Object,
       required: true
+    },
+    parentScopeId: {
+      type: String,
+      default: undefined
     }
   }
 }

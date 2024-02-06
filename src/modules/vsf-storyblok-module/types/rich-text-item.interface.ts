@@ -1,6 +1,9 @@
+import Vue from 'vue';
+import { ExtendedVue } from 'vue/types/vue';
+
 export default interface RichTextItem {
   id: string,
-  component: string,
+  component: string | ExtendedVue<Vue, any, any, any, any>,
   rootTagName?: string,
   text?: string,
   content?: any[],
