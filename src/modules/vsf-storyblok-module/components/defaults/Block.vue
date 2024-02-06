@@ -8,6 +8,7 @@
       v-for="(child) in itemData.body"
       :item="child"
       :key="child._uid"
+      :parent-scope-id="scopeId"
       @content-change="onChildContentChange"
     />
   </div>
@@ -52,6 +53,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
     },
     showBlock (): boolean {
       return !this.isAllChildrenEmpty;
+    },
+    scopeId (): string {
+      return (this.$options as any)._scopeId;
     }
   }
 });

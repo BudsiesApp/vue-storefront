@@ -29,8 +29,9 @@ import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import getHostFromHeaders from '@vue-storefront/core/helpers/get-host-from-headers.function';
 
 import { getSettings } from '../helpers'
-import PageBreadcrumbs from '../components/defaults/PageBreadcrumbs.vue';
+
 import StoryblokMixin from '../components/StoryblokMixin'
+import PageBreadcrumbs from '../components/defaults/PageBreadcrumbs.vue';
 
 const PROTOCOL = 'https://';
 
