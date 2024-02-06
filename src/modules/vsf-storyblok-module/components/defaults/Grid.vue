@@ -14,7 +14,12 @@
       :class="getItemCssClasses(_item)"
       :style="itemStyles"
     >
-      <sb-render class="_component box" :item="_item" @content-change="onChildContentChange" />
+      <sb-render
+        class="_component box"
+        :item="_item"
+        :parent-scope-id="scopeId"
+        @content-change="onChildContentChange"
+      />
     </div>
   </div>
 </template>
@@ -108,6 +113,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
     },
     verticalAlignment (): string | undefined {
       return this.itemData.vertical_alignment;
+    },
+    scopeId (): string {
+      return (this.$options as any)._scopeId;
     }
   },
   methods: {
