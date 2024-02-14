@@ -78,7 +78,8 @@ export default interface Product {
   parentId?: number | string,
   meta_title?: string | null,
   meta_description?: string | null,
-  landing_page_url?: string | null
+  landing_page_url?: string | null,
+  disabled_upgrades?: number[]
 }
 
 export interface ProductLink {
