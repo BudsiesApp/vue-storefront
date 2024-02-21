@@ -7,6 +7,7 @@ export default interface LinkField {
   fieldtype: string,
   cached_url: string,
   anchor?: string,
+  target?: string,
   story?: {
     name: string,
     id: number,
