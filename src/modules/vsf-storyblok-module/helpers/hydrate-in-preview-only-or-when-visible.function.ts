@@ -13,6 +13,13 @@ export function hydrateInPreviewOrWhenVisible (componentOrFactory: Vue | (() => 
       if (id) {
         this.hydrate();
       }
+    },
+    render (h) {
+      return h(this.Nonce, {
+        attrs: { ...this.$attrs },
+        on: this.$listeners,
+        scopedSlots: this.$scopedSlots
+      }, this.$slots.default);
     }
   });
 }
