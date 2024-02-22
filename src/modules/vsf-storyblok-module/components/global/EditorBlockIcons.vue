@@ -19,9 +19,9 @@ import Vue, { PropType } from 'vue'
 
 import desktopOnlyIcon from '../../assets/icons/desktop-only.svg';
 import mobileOnlyIcon from '../../assets/icons/mobile-only.svg';
-import { getStoryblokQueryParams } from '../../helpers'
 import ItemData from '../../types/item-data.interface'
 import { Display } from '../../types/display.value';
+import { isStoryblokPreview } from '../../helpers/is-storyblok-preview.function';
 
 interface IconItem {
   id: string,
@@ -40,8 +40,7 @@ export default Vue.extend({
   },
   computed: {
     isStoryblokPreview (): boolean {
-      const { id } = getStoryblokQueryParams(this.$route)
-      return !!id
+      return isStoryblokPreview();
     },
     displayIconItem (): IconItem | undefined {
       switch (this.item.display) {
