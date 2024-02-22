@@ -1,8 +1,8 @@
 import Vue, { PropType } from 'vue';
-import { getStoryblokQueryParams } from '../helpers'
 import convertDisplayValueToClass from '../helpers/convert-display-value-to-class';
 import ItemData from '../types/item-data.interface';
 import { SpacingSettingsFieldName } from '../types/spacing-setting-field-name.value';
+import { isStoryblokPreview } from '../helpers/is-storyblok-preview.function';
 
 let instanceId = 0;
 
@@ -25,8 +25,7 @@ export default Vue.extend({
   },
   computed: {
     isStoryblokPreview (): boolean {
-      const { id } = getStoryblokQueryParams(this.$route)
-      return !!id
+      return isStoryblokPreview();
     },
     cssClasses (): string[] {
       const result: string[] = [];
