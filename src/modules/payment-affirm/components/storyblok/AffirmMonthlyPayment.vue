@@ -28,7 +28,8 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
   } as unknown as InjectType<InjectedServices>,
   data: function () {
     return {
-      product: undefined as Product | undefined
+      product: undefined as Product | undefined,
+      shouldRefreshAffirmUi: false
     }
   },
   computed: {
@@ -48,6 +49,17 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
   created: async function (): Promise<void> {
     await this.loadData()
   },
+  mounted (): void {
+    const affirm = (this.window as any).affirm;
+
+    if (!affirm?.ui?.ready) {
+      return;
+    }
+
+    affirm.ui.ready(() => {
+      this.onAffirmUiReady();
+    });
+  },
   methods: {
     async loadData () {
       if (!this.itemData.product) {
@@ -64,6 +76,16 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
           skipCache: false
         }
       )
+    },
+    onAffirmUiReady (): void {
+      if (!this.shouldRefreshAffirmUi) {
+        return;
+      }
+
+      this.shouldRefreshAffirmUi = false;
+
+      const affirm = (this.window as any).affirm;
+      affirm.ui.refresh();
     }
   },
   watch: {
@@ -78,6 +100,11 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
 
         this.$nextTick(() => {
           const affirm = (this.window as any).affirm;
+
+          if (!affirm.ui.refresh) {
+            this.shouldRefreshAffirmUi = true;
+            return;
+          }
 
           affirm.ui.refresh();
         })
