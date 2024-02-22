@@ -2,15 +2,15 @@ import {
   makeHydrationBlocker
 } from 'vue-lazy-hydration/src/utils/hydration-blocker';
 
-import { getStoryblokQueryParams } from '../helpers';
+import { isStoryblokPreview } from './is-storyblok-preview.function';
 
 export function hydrateInPreviewOrWhenVisible (componentOrFactory: Vue | (() => any)) {
   return makeHydrationBlocker(componentOrFactory, {
     beforeCreate () {
-      const { id } = getStoryblokQueryParams(this.$route)
+      const isPreview = isStoryblokPreview();
       this.whenVisible = true;
 
-      if (id) {
+      if (isPreview) {
         this.hydrate();
       }
     },
