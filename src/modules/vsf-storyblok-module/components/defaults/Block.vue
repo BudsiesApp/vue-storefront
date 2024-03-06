@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts">
-import { InjectType } from 'src/modules/shared';
+import { BreakpointValue, InjectType } from 'src/modules/shared';
 import { VueConstructor } from 'vue';
 
 import BlockData from '../../types/block-data.interface';
@@ -35,11 +35,11 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
     let widthCalculator = this.componentWidthCalculator;
     if (!widthCalculator) {
       widthCalculator = new ComponentWidthCalculator({
-        xsmall: 479,
-        small: 767,
-        medium: 1023,
-        large: 1199,
-        xlarge: 2730
+        xsmall: BreakpointValue.X_SMALL,
+        small: BreakpointValue.SMALL,
+        medium: BreakpointValue.MEDIUM,
+        large: BreakpointValue.LARGE,
+        xlarge: BreakpointValue.X_LARGE
       });
     }
 
@@ -52,7 +52,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
       return this.item as unknown as BlockData;
     },
     showBlock (): boolean {
-      return !this.isAllChildrenEmpty;
+      return !this.isAllChildrenEmpty ||
+        (this.itemData.body.length > Object.values(this.childrenItemsEmptyState).length) ||
+        this.isStoryblokPreview;
     },
     scopeId (): string {
       return (this.$options as any)._scopeId;
