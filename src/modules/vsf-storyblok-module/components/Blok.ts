@@ -20,13 +20,11 @@ export default Vue.extend({
   },
   data () {
     return {
-      instanceId: ''
+      instanceId: '',
+      isStoryblokPreview: false
     }
   },
   computed: {
-    isStoryblokPreview (): boolean {
-      return isStoryblokPreview();
-    },
     cssClasses (): string[] {
       const result: string[] = [];
 
@@ -109,6 +107,9 @@ export default Vue.extend({
   },
   beforeDestroy () {
     this.onComponentContentUpdate(false);
+  },
+  mounted () {
+    this.isStoryblokPreview = isStoryblokPreview();
   },
   methods: {
     onComponentContentUpdate (hasContent: boolean) {

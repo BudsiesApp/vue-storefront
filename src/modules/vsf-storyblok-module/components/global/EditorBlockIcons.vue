@@ -38,10 +38,12 @@ export default Vue.extend({
       required: true
     }
   },
+  data: () => {
+    return {
+      isStoryblokPreview: false
+    };
+  },
   computed: {
-    isStoryblokPreview (): boolean {
-      return isStoryblokPreview();
-    },
     displayIconItem (): IconItem | undefined {
       switch (this.item.display) {
         case Display.MOBILE_HIDDEN:
@@ -72,6 +74,9 @@ export default Vue.extend({
     showIcons (): boolean {
       return !!this.iconsList.length && this.isStoryblokPreview;
     }
+  },
+  mounted () {
+    this.isStoryblokPreview = isStoryblokPreview();
   }
 })
 </script>
