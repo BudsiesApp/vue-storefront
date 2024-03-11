@@ -51,7 +51,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
   },
   computed: {
     showPageSection (): boolean {
-      return !this.isAllChildrenEmpty;
+      return !this.isAllChildrenEmpty ||
+        (this.itemData.items.length > Object.values(this.childrenItemsEmptyState).length) ||
+        this.isStoryblokPreview;
     },
     childItems (): any[] {
       const result = [];

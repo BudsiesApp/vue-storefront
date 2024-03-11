@@ -51,7 +51,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
       return this.item as ColumnData;
     },
     showColumn (): boolean {
-      return !this.isAllChildrenEmpty;
+      return !this.isAllChildrenEmpty ||
+        (this.itemData.items.length > Object.values(this.childrenItemsEmptyState).length) ||
+        this.isStoryblokPreview;
     },
     scopeId (): string {
       return (this.$options as any)._scopeId;

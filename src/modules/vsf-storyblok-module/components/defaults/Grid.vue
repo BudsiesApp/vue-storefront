@@ -109,7 +109,9 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
       return this.itemData.is_cards_mode === true;
     },
     showGrid (): boolean {
-      return !this.isAllChildrenEmpty;
+      return !this.isAllChildrenEmpty ||
+        (this.itemData.items.length > Object.values(this.childrenItemsEmptyState).length) ||
+        this.isStoryblokPreview;
     },
     verticalAlignment (): string | undefined {
       return this.itemData.vertical_alignment;

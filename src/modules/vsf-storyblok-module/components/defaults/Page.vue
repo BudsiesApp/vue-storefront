@@ -12,6 +12,8 @@
 </template>
 
 <script lang="ts">
+import { BreakpointValue } from 'src/modules/shared';
+
 import { Blok } from '..';
 import ComponentWidthCalculator from '../../component-width-calculator.service';
 import PageData from '../../types/page-data.interface';
@@ -21,11 +23,11 @@ export default Blok.extend({
   provide () {
     return {
       'componentWidthCalculator': new ComponentWidthCalculator({
-        xsmall: 479,
-        small: 767,
-        medium: 1023,
-        large: 1199,
-        xlarge: 2730
+        xsmall: BreakpointValue.X_SMALL,
+        small: BreakpointValue.SMALL,
+        medium: BreakpointValue.MEDIUM,
+        large: BreakpointValue.LARGE,
+        xlarge: BreakpointValue.X_LARGE
       })
     }
   },
