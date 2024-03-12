@@ -13,8 +13,10 @@ import VideoUrlField from './types/video-url-field.interface'
 import { LinkType } from './types/link-type.value'
 import { SizeValue } from './types/size.value'
 import isUrlExternal from './helpers/is-url-external'
+import getHeaderId from './helpers/get-header-id'
 import getUrlFromLink from './helpers/get-url-from-link'
 import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only-or-when-visible.function'
+import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
 import { Blok } from './components'
 
 export const KEY = 'storyblok'
@@ -39,5 +41,7 @@ export {
   VideoUrlField,
   isUrlExternal,
   getUrlFromLink,
-  hydrateInPreviewOrWhenVisible
+  hydrateInPreviewOrWhenVisible,
+  getHeaderId,
+  isStoryblokPreview
 }
