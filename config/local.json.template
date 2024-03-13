@@ -366,7 +366,8 @@
         "stock.max_sale_qty",
         "product_links",
         "video_url",
-        "thumbnail"
+        "thumbnail",
+        "disabled_upgrades"
       ]
     },
     "productListWithChildren": {
@@ -395,7 +396,8 @@
         "stock.max_sale_qty",
         "product_links",
         "video_url",
-        "thumbnail"
+        "thumbnail",
+        "disabled_upgrades"
       ]
     },
     "review": {
