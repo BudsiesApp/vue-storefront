@@ -79,7 +79,7 @@ export default interface Product {
   meta_title?: string | null,
   meta_description?: string | null,
   landing_page_url?: string | null,
-  disabled_upgrades?: number[]
+  disabled_upgrades?: string[]
 }
 
 export interface ProductLink {
