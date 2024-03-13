@@ -233,7 +233,7 @@ export function getProductDefaultPrice (product, customOptions, format = true) {
   }
 
   return {
-    regular: formatPrice(productPrice.regular),
+    regular: productPrice.regular ? formatPrice(productPrice.regular) : '',
     special: formatPrice(productPrice.special)
   }
 }
