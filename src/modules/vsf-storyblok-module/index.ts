@@ -16,6 +16,7 @@ import isUrlExternal from './helpers/is-url-external'
 import getHeaderId from './helpers/get-header-id'
 import getUrlFromLink from './helpers/get-url-from-link'
 import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only-or-when-visible.function'
+import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
 import { Blok } from './components'
 
 export const KEY = 'storyblok'
@@ -41,5 +42,6 @@ export {
   isUrlExternal,
   getUrlFromLink,
   hydrateInPreviewOrWhenVisible,
-  getHeaderId
+  getHeaderId,
+  isStoryblokPreview
 }

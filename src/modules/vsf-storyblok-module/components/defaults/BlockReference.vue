@@ -35,7 +35,9 @@ export default EmptyChildrenState.extend({
       return this.itemData.reference.content.body || [];
     },
     showBlockReference (): boolean {
-      return !this.isAllChildrenEmpty;
+      return !this.isAllChildrenEmpty ||
+        (this.childItems.length > Object.values(this.childrenItemsEmptyState).length) ||
+        this.isStoryblokPreview;
     },
     scopeId (): string {
       return (this.$options as any)._scopeId;
