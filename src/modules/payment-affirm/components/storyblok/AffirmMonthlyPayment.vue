@@ -13,6 +13,7 @@ import { VueConstructor } from 'vue';
 import { isServer } from '@vue-storefront/core/helpers';
 import { InjectType, getProductDefaultPrice } from 'src/modules/shared';
 import { Blok } from 'src/modules/vsf-storyblok-module/components'
+import { getFinalPrice } from 'src/modules/shared/helpers/price';
 
 import Product from 'core/modules/catalog/types/Product';
 import AffirmMonthlyPaymentData from './interfaces/affirm-monthly-payment-data.interface';
@@ -42,7 +43,7 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
 
       const price = getProductDefaultPrice(this.product, {}, false);
 
-      return (price.special ? price.special : price.regular) * 100;
+      return getFinalPrice(price) * 100;
     }
   },
   created: async function (): Promise<void> {
