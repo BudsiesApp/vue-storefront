@@ -5,21 +5,41 @@ interface BaseProductLink {
   qty?: number
 }
 
-export const calculateProductLinkPrice = ({ price = 0, priceInclTax = 0, originalPriceInclTax = 0, specialPrice = 0, qty = 1 }) => {
-  const product = {
+export const calculateProductLinkPrice = (
+  {
+    price = 0,
+    priceInclTax = 0,
+    originalPriceInclTax = 0,
+    specialPrice = null,
+    qty = 1
+  }: {
+    price?: number,
+    priceInclTax?: number,
+    originalPriceInclTax?: number,
+    specialPrice: number | null | undefined,
+    qty?: number
+  }
+) => {
+  const productPrice: {
+    price: number,
+    priceInclTax: number,
+    originalPriceInclTax: number,
+    specialPrice: number | null
+  } = {
     price: 0,
     priceInclTax: 0,
     originalPriceInclTax: 0,
-    specialPrice: 0
+    specialPrice: null
   }
   const qtyNum = typeof qty === 'string' ? parseInt(qty) : qty
   if (qtyNum >= 0) {
-    product.price += price * qtyNum
-    product.priceInclTax += priceInclTax * qtyNum
-    product.originalPriceInclTax += originalPriceInclTax * qtyNum
-    product.specialPrice += specialPrice * qtyNum
+    productPrice.price += price * qtyNum
+    productPrice.priceInclTax += priceInclTax * qtyNum
+    productPrice.originalPriceInclTax += originalPriceInclTax * qtyNum
+    productPrice.specialPrice = specialPrice !== null ? specialPrice * qtyNum : null
   }
-  return product
+
+  return productPrice
 }
 
 export const getProductLinkPrice = (productLinks: BaseProductLink[]) => productLinks
@@ -28,7 +48,7 @@ export const getProductLinkPrice = (productLinks: BaseProductLink[]) => productL
       price: 0,
       priceInclTax: 0,
       originalPriceInclTax: 0,
-      specialPrice: 0,
+      specialPrice: null,
     }
     const product = productLink.product || defaultProductPrices;
 
@@ -40,12 +60,21 @@ export const getProductLinkPrice = (productLinks: BaseProductLink[]) => productL
       qty: productLink.qty
     })
   })
-  .reduce(
-    (priceDelta, currentPriceDelta) => ({
-      price: currentPriceDelta.price + priceDelta.price,
-      priceInclTax: currentPriceDelta.priceInclTax + priceDelta.priceInclTax,
-      originalPriceInclTax: currentPriceDelta.originalPriceInclTax + priceDelta.originalPriceInclTax,
-      specialPrice: currentPriceDelta.specialPrice + priceDelta.specialPrice
-    }),
+  .reduce((
+    priceDelta: {
+      price: number,
+      priceInclTax: number,
+      originalPriceInclTax: number,
+      specialPrice: number
+    },
+    currentPriceDelta
+  ) => ({
+    price: currentPriceDelta.price + priceDelta.price,
+    priceInclTax: currentPriceDelta.priceInclTax + priceDelta.priceInclTax,
+    originalPriceInclTax: currentPriceDelta.originalPriceInclTax + priceDelta.originalPriceInclTax,
+    specialPrice: currentPriceDelta.specialPrice !== null
+      ? currentPriceDelta.specialPrice + priceDelta.specialPrice
+      : currentPriceDelta.priceInclTax + priceDelta.specialPrice
+  }),
     { price: 0, priceInclTax: 0, originalPriceInclTax: 0, specialPrice: 0 }
   )

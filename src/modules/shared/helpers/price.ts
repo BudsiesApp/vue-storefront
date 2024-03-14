@@ -5,7 +5,6 @@ import { price } from '@vue-storefront/core/filters';
 import { getCustomOptionValues, getCustomOptionPriceDelta } from '@vue-storefront/core/modules/catalog/helpers/customOption'
 import { getBundleOptionsValues, getBundleOptionPrice, getDefaultBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
-import { SelectedBundleOption } from '@vue-storefront/core/modules/catalog/types/BundleOption';
 
 import { UPDATE_CART_ITEM_DISCOUNT_PRICE_DATA_EVENT_ID, UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID } from 'src/modules/shared/types/discount-price/events';
 import UpdateProductDiscountPriceEventData from 'src/modules/shared/types/discount-price/update-product-discount-price-event-data.interface';
@@ -13,7 +12,12 @@ import UpdateProductDiscountPriceEventData from 'src/modules/shared/types/discou
 interface ProductPriceData {
   originalPriceInclTax: number,
   priceInclTax: number,
-  specialPrice: number
+  specialPrice: number | null
+}
+
+export interface ProductPrice {
+  regular: number,
+  special: number | null
 }
 
 function calculateCartItemBundleOptionsPrice (product) {
@@ -28,9 +32,9 @@ function calculateCartItemBundleOptionsPrice (product) {
 
 function calculateProductDefaultBundleOptionsPrice (product) {
   return {
-    priceInclTax: product.price_incl_tax || product.priceInclTax || 0,
-    originalPriceInclTax: product.original_price_incl_tax || product.originalPriceInclTax || 0,
-    specialPrice: product.special_price || product.specialPrice || 0
+    priceInclTax: product.price_incl_tax || 0,
+    originalPriceInclTax: product.original_price_incl_tax || 0,
+    specialPrice: product.special_price
   };
 }
 
@@ -38,7 +42,7 @@ function getProductPriceData (product, bundleOptionsPriceCalculationFunction: (p
   let productPriceData: ProductPriceData = {
     originalPriceInclTax: 0,
     priceInclTax: 0,
-    specialPrice: 0
+    specialPrice: null
   }
 
   if (isBundleProduct(product)) {
@@ -47,9 +51,9 @@ function getProductPriceData (product, bundleOptionsPriceCalculationFunction: (p
     productPriceData.priceInclTax = product.giftcard_options.price_amount;
     productPriceData.originalPriceInclTax = product.giftcard_options.price_amount;
   } else {
-    productPriceData.priceInclTax = product.price_incl_tax || product.priceInclTax || 0
-    productPriceData.originalPriceInclTax = product.original_price_incl_tax || product.originalPriceInclTax || 0
-    productPriceData.specialPrice = product.special_price || product.specialPrice || 0
+    productPriceData.priceInclTax = product.price_incl_tax || 0;
+    productPriceData.originalPriceInclTax = product.original_price_incl_tax || 0;
+    productPriceData.specialPrice = product.special_price;
   }
 
   return productPriceData;
@@ -64,8 +68,8 @@ function calculateCustomOptionsPriceDelta (product, customOptions) {
   return priceDelta.priceInclTax;
 }
 
-function formatPrice (value) {
-  return value ? price(value) : ''
+export function formatPrice (value: number | null) {
+  return value !== null ? price(value) : ''
 }
 
 export function getProductDefaultDiscount (product, format = true, inPercent = true) {
@@ -84,7 +88,7 @@ export function getProductDefaultDiscount (product, format = true, inPercent = t
 
   const price = getProductPrice(product, productDiscountPriceData, productPriceData);
 
-  if (!price.special || price.regular === price.special) {
+  if (price.special === null || price.regular === price.special) {
     return defaultDiscount;
   }
 
@@ -113,7 +117,7 @@ export function getCartItemDiscount (product, format = true, inPercent = true) {
 
   const price = getProductPrice(product, productDiscountPriceData, productPriceData)
 
-  if (!price.special || price.regular === price.special) {
+  if (price.special === null || price.regular === price.special) {
     return defaultDiscount;
   }
 
@@ -128,11 +132,27 @@ export function getCartItemDiscount (product, format = true, inPercent = true) {
 
 export function getFinalPrice ({
   special, regular
-}: {
-  special: number,
-  regular: number
-}): number {
-  return special && special < regular ? special : regular;
+}: ProductPrice): number {
+  return special !== null && special < regular ? special : regular;
+}
+
+export function getTotalPriceForProductPrices (
+  productPrices: ProductPrice[]
+): ProductPrice {
+  let totalRegularPrice = 0;
+  let totalSpecialPrice = 0;
+
+  productPrices.forEach((price) => {
+    totalRegularPrice += price.regular;
+    totalSpecialPrice += price.special !== null
+      ? price.special
+      : price.regular;
+  });
+
+  return {
+    regular: totalRegularPrice,
+    special: totalSpecialPrice >= totalRegularPrice ? null : totalSpecialPrice
+  }
 }
 
 function getProductPrice (product, productDiscountPriceData: UpdateProductDiscountPriceEventData, productPriceData: ProductPriceData, customOptions = {}) {
@@ -144,16 +164,24 @@ function getProductPrice (product, productDiscountPriceData: UpdateProductDiscou
   let originalPriceInclTax = productPriceData.originalPriceInclTax;
   let specialPrice = productPriceData.specialPrice;
 
-  const isSpecialPrice = !!productDiscountPrice || (specialPrice && priceInclTax && originalPriceInclTax)
   const priceDelta = calculateCustomOptionsPriceDelta(product, customOptions)
 
-  const special = productDiscountPrice || (priceInclTax + priceDelta) * product.qty || priceInclTax
   const original = (originalPriceInclTax + priceDelta) * product.qty || originalPriceInclTax
   const regular = (priceInclTax + priceDelta) * product.qty || product.regular_price || priceInclTax
+  let special = productDiscountPrice || (priceInclTax + priceDelta) * product.qty || priceInclTax
+
+  const isSpecialPrice = (!!productDiscountPrice ||
+   (specialPrice && priceInclTax && originalPriceInclTax) ||
+    specialPrice === 0) &&
+    special < original;
+
+  if (!special && isSpecialPrice) {
+    special = 0;
+  }
 
   return {
     regular: isSpecialPrice ? original : regular,
-    special: isSpecialPrice ? special : 0
+    special: isSpecialPrice ? special : null
   }
 }
 
@@ -161,7 +189,7 @@ export function getCartItemPrice (product, customOptions, format = true) {
   if (!product) {
     return {
       regular: format ? '' : 0,
-      special: format ? '' : 0
+      special: format ? '' : null
     }
   }
 
@@ -189,7 +217,7 @@ export function getProductDefaultPrice (product, customOptions, format = true) {
   if (!product) {
     return {
       regular: format ? '' : 0,
-      special: format ? '' : 0
+      special: format ? '' : null
     }
   }
 
@@ -208,7 +236,7 @@ export function getProductDefaultPrice (product, customOptions, format = true) {
   }
 
   return {
-    regular: formatPrice(productPrice.regular),
+    regular: productPrice.regular ? formatPrice(productPrice.regular) : '',
     special: formatPrice(productPrice.special)
   }
 }
