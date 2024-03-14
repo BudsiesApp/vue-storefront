@@ -164,17 +164,20 @@ function getProductPrice (product, productDiscountPriceData: UpdateProductDiscou
   let originalPriceInclTax = productPriceData.originalPriceInclTax;
   let specialPrice = productPriceData.specialPrice;
 
-  const isSpecialPrice = !!productDiscountPrice || (specialPrice && priceInclTax && originalPriceInclTax) || specialPrice === 0
   const priceDelta = calculateCustomOptionsPriceDelta(product, customOptions)
 
+  const original = (originalPriceInclTax + priceDelta) * product.qty || originalPriceInclTax
+  const regular = (priceInclTax + priceDelta) * product.qty || product.regular_price || priceInclTax
   let special = productDiscountPrice || (priceInclTax + priceDelta) * product.qty || priceInclTax
+
+  const isSpecialPrice = (!!productDiscountPrice ||
+   (specialPrice && priceInclTax && originalPriceInclTax) ||
+    specialPrice === 0) &&
+    special < original;
 
   if (!special && isSpecialPrice) {
     special = 0;
   }
-
-  const original = (originalPriceInclTax + priceDelta) * product.qty || originalPriceInclTax
-  const regular = (priceInclTax + priceDelta) * product.qty || product.regular_price || priceInclTax
 
   return {
     regular: isSpecialPrice ? original : regular,

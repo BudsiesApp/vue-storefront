@@ -65,7 +65,9 @@ export const getProductLinkPrice = (productLinks: BaseProductLink[]) => productL
       price: currentPriceDelta.price + priceDelta.price,
       priceInclTax: currentPriceDelta.priceInclTax + priceDelta.priceInclTax,
       originalPriceInclTax: currentPriceDelta.originalPriceInclTax + priceDelta.originalPriceInclTax,
-      specialPrice: currentPriceDelta.specialPrice !== null ? currentPriceDelta.specialPrice + priceDelta.specialPrice! : priceDelta.specialPrice! + currentPriceDelta.priceInclTax
+      specialPrice: currentPriceDelta.specialPrice !== null
+        ? currentPriceDelta.specialPrice + priceDelta.specialPrice!
+        : priceDelta.specialPrice! + currentPriceDelta.priceInclTax
     }),
     { price: 0, priceInclTax: 0, originalPriceInclTax: 0, specialPrice: 0 }
   )
