@@ -60,14 +60,21 @@ export const getProductLinkPrice = (productLinks: BaseProductLink[]) => productL
       qty: productLink.qty
     })
   })
-  .reduce(
-    (priceDelta, currentPriceDelta) => ({
-      price: currentPriceDelta.price + priceDelta.price,
-      priceInclTax: currentPriceDelta.priceInclTax + priceDelta.priceInclTax,
-      originalPriceInclTax: currentPriceDelta.originalPriceInclTax + priceDelta.originalPriceInclTax,
-      specialPrice: currentPriceDelta.specialPrice !== null
-        ? currentPriceDelta.specialPrice + priceDelta.specialPrice!
-        : currentPriceDelta.priceInclTax + priceDelta.specialPrice!
-    }),
+  .reduce((
+    priceDelta: {
+      price: number,
+      priceInclTax: number,
+      originalPriceInclTax: number,
+      specialPrice: number
+    },
+    currentPriceDelta
+  ) => ({
+    price: currentPriceDelta.price + priceDelta.price,
+    priceInclTax: currentPriceDelta.priceInclTax + priceDelta.priceInclTax,
+    originalPriceInclTax: currentPriceDelta.originalPriceInclTax + priceDelta.originalPriceInclTax,
+    specialPrice: currentPriceDelta.specialPrice !== null
+      ? currentPriceDelta.specialPrice + priceDelta.specialPrice
+      : currentPriceDelta.priceInclTax + priceDelta.specialPrice
+  }),
     { price: 0, priceInclTax: 0, originalPriceInclTax: 0, specialPrice: 0 }
   )
