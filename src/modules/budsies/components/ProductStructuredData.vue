@@ -10,6 +10,7 @@ import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import { getThumbnailPath, productThumbnailPath } from '@vue-storefront/core/helpers';
 
 import { getProductDefaultPrice } from 'src/modules/shared';
+import { getFinalPrice } from 'src/modules/shared/helpers/price';
 
 export default Vue.extend({
   name: 'ProductStructuredData',
@@ -24,9 +25,7 @@ export default Vue.extend({
       const storeView = currentStoreView();
 
       const price = getProductDefaultPrice(this.product, {}, false);
-      const finalPrice = price.special && price.special < price.regular
-        ? price.special
-        : price.regular;
+      const finalPrice = getFinalPrice(price);
 
       const data = {
         '@context': 'https://schema.org/',

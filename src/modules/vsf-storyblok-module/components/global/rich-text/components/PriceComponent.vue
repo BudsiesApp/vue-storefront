@@ -16,7 +16,7 @@
 <script lang="ts">
 import Vue, { PropType } from 'vue'
 
-import { price as priceFormatter } from '@vue-storefront/core/filters';
+import { formatPrice, getFinalPrice } from 'src/modules/shared/helpers/price';
 
 export default Vue.extend({
   name: 'StoryblokRichTextPriceComponent',
@@ -26,7 +26,7 @@ export default Vue.extend({
       required: true
     },
     specialPrice: {
-      type: Number as PropType<number | undefined>,
+      type: Number as PropType<number | null>,
       default: undefined
     },
     isPromo: {
@@ -40,21 +40,19 @@ export default Vue.extend({
   },
   computed: {
     finalPrice (): number {
-      return this.specialPrice ? this.specialPrice : this.regularPrice;
+      return getFinalPrice({
+        special: this.specialPrice || null,
+        regular: this.regularPrice
+      });
     },
     formattedFinalPrice (): string {
-      return this.formatPrice(this.finalPrice)
+      return formatPrice(this.finalPrice);
     },
     formattedRegularPrice (): string {
-      return this.formatPrice(this.regularPrice);
+      return formatPrice(this.regularPrice);
     },
     showRegularPrice (): boolean {
-      return !!this.specialPrice && this.isPromo;
-    }
-  },
-  methods: {
-    formatPrice (value: number): string {
-      return value ? priceFormatter(value) : ''
+      return this.specialPrice !== null && this.isPromo;
     }
   }
 })
