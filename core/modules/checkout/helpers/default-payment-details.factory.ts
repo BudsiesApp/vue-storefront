@@ -8,7 +8,7 @@ export default function getDefaultPaymentDetails () {
     apartmentNumber: '',
     city: '',
     state: '',
-    region_id: 0,
+    region_id: null,
     zipCode: '',
     phoneNumber: '',
     taxId: '',
