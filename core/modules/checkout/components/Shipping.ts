@@ -60,6 +60,7 @@ export const Shipping = {
         lastName: address.lastname,
         country: address.country_id,
         state: address.region.region ? address.region.region : '',
+        region_id: address.region.region_id,
         city: address.city,
         streetAddress: address.street[0],
         apartmentNumber: address.street[1],

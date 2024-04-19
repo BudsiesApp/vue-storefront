@@ -7,7 +7,7 @@ export default function getDefaultShippingDetails () {
     apartmentNumber: '',
     city: '',
     state: '',
-    region_id: 0,
+    region_id: null,
     zipCode: '',
     phoneNumber: '',
     shippingMethod: ''

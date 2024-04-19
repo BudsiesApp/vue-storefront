@@ -6,7 +6,7 @@ export default interface PaymentDetails {
   streetAddress: string,
   apartmentNumber: string,
   city: string,
-  region_id: number | string,
+  region_id: number | null,
   state: string,
   zipCode: string,
   phoneNumber: string,
