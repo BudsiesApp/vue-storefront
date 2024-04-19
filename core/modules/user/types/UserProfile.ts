@@ -11,6 +11,7 @@ export interface UserProfile {
       city: string,
       region?: {
         region: string | null,
+        region_id: number | null,
         [k: string]: any
       },
       country_id: string | null,

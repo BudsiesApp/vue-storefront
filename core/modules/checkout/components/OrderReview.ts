@@ -37,6 +37,12 @@ export const OrderReview = {
       this.$bus.$emit('notification-progress-start', i18n.t('Registering the account ...'))
 
       try {
+        const region = this.getShippingDetails.state || this.getShippingDetails.region_id ? {
+          region: {
+            region: this.getShippingDetails.state || null,
+            region_id: this.getShippingDetails.region_id || null
+          }
+        } : {};
         const result = await this.$store.dispatch('user/register', {
           email: this.getPersonalDetails.emailAddress,
           password: this.getPersonalDetails.password,
@@ -47,7 +53,7 @@ export const OrderReview = {
             lastname: this.getShippingDetails.lastName,
             street: [this.getShippingDetails.streetAddress, this.getShippingDetails.apartmentNumber],
             city: this.getShippingDetails.city,
-            ...(this.getShippingDetails.state ? { region: { region: this.getShippingDetails.state } } : {}),
+            ...region,
             country_id: this.getShippingDetails.country,
             postcode: this.getShippingDetails.zipCode,
             ...(this.getShippingDetails.phoneNumber ? { telephone: this.getShippingDetails.phoneNumber } : {}),

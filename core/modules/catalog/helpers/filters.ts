@@ -1,14 +1,40 @@
 import Product from '@vue-storefront/core/modules/catalog/types/Product'
 import { ProductConfiguration } from '@vue-storefront/core/modules/catalog/types/ProductConfiguration'
 
+interface ProductVariant {
+  id: number,
+  label: string,
+  type: string
+}
+
 const getAvailableFiltersByProduct = (product: Product) => {
-  let filtersMap = {}
+  let filtersMap: Record<string, ProductVariant[]> = {}
   if (product && product.configurable_options) {
     product.configurable_options.forEach(configurableOption => {
       const type = configurableOption.attribute_code
-      const filterVariants = configurableOption.values.map(({ value_index, label }) => {
-        return { id: value_index, label, type }
-      })
+
+      if (!type || !configurableOption.values) {
+        return;
+      }
+
+      const filterVariants: ProductVariant[] = [];
+
+      configurableOption.values.forEach(({ value_index, label }) => {
+        if (!product.configurable_children) {
+          return;
+        }
+
+        const variantProduct = product.configurable_children.find(
+          (child) => child[type] === value_index
+        );
+
+        if (!variantProduct || !variantProduct.stock.is_in_stock) {
+          return;
+        }
+
+        filterVariants.push({ id: value_index, label, type })
+      });
+
       filtersMap[type] = filterVariants
     })
   }
@@ -34,4 +60,4 @@ const getSelectedFiltersByProduct = (product: Product, configuration: ProductCon
   return selectedFilters
 }
 
-export { getAvailableFiltersByProduct, getSelectedFiltersByProduct }
+export { getAvailableFiltersByProduct, getSelectedFiltersByProduct, ProductVariant }
