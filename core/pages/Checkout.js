@@ -282,7 +282,7 @@ export default {
         addressInformation: {
           billingAddress: {
             region: this.payment.state,
-            region_id: this.payment.region_id ? this.payment.region_id : 0,
+            region_id: this.payment.region_id ? this.payment.region_id : null,
             country_id: this.payment.country,
             street: [this.payment.streetAddress, this.payment.apartmentNumber],
             company: this.payment.company,
@@ -315,7 +315,7 @@ export default {
       if (!this.isVirtualCart) {
         this.order.addressInformation.shippingAddress = {
           region: this.shipping.state,
-          region_id: this.shipping.region_id ? this.shipping.region_id : 0,
+          region_id: this.shipping.region_id ? this.shipping.region_id : null,
           country_id: this.shipping.country,
           street: [this.shipping.streetAddress, this.shipping.apartmentNumber],
           company: '',

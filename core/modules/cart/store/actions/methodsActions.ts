@@ -85,7 +85,7 @@ const methodsActions = {
       // build address data with what we have
       const address = (shippingDetails) ? {
         region: shippingDetails.state,
-        region_id: shippingDetails.region_id ? shippingDetails.region_id : 0,
+        region_id: shippingDetails.region_id ? shippingDetails.region_id : null,
         country_id: shippingDetails.country,
         street: [shippingDetails.streetAddress1, shippingDetails.streetAddress2],
         postcode: shippingDetails.zipCode,
