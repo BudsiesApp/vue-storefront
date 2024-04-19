@@ -69,6 +69,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { PropType } from 'vue/types/options';
+import { v1 as uuidv1 } from 'uuid';
 
 import ImageAspectRatioSpec from '../types/image-aspect-ratio-spec.interface';
 import ImageSourceItem from '../types/image-source-item.interface';
@@ -77,8 +78,6 @@ interface PaddingSpec {
   breakpoint: number,
   padding: string
 }
-
-let instanceId = 0;
 
 export default Vue.extend({
   name: 'BaseImage',
@@ -116,8 +115,7 @@ export default Vue.extend({
     };
   },
   created: function (): void {
-    this.instanceId = instanceId.toString();
-    instanceId += 1;
+    this.instanceId = uuidv1();
   },
   computed: {
     componentClass (): string {
