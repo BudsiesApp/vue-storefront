@@ -1,7 +1,9 @@
 import { RawLocation } from 'vue-router';
-import { NavigationItemData } from './navigation-item-data.interface';
+import { NavigationColumn } from './navigation-column.interface';
 
-export type NavigationItem = Pick<NavigationItemData, 'link_text' | 'sub_items'> & {
-  classes: string[],
-  url: string | RawLocation
+export interface NavigationItem {
+  url: string | RawLocation,
+  title: string,
+  items: NavigationColumn[],
+  classes: string[]
 }

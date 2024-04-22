@@ -19,8 +19,8 @@ import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only
 import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
 import { Blok } from './components'
 import { useStoryblokPageLayout } from './composables/use-storyblok-page-layout'
-import { NavigationColumnData } from './types/navigation-column-data.interface'
-import { NavigationItemData } from './types/navigation-item-data.interface'
+import { NavigationColumn } from './types/navigation-column.interface'
+import { NavigationItem } from './types/navigation-item.interface'
 
 export const KEY = 'storyblok'
 
@@ -42,8 +42,9 @@ export {
   LinkField,
   LinkType,
   VideoUrlField,
-  NavigationColumnData,
-  NavigationItemData,
+  NavigationColumn,
+  NavigationItem,
+
   isUrlExternal,
   getUrlFromLink,
   hydrateInPreviewOrWhenVisible,
