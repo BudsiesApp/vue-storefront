@@ -18,6 +18,9 @@ import getUrlFromLink from './helpers/get-url-from-link'
 import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only-or-when-visible.function'
 import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
 import { Blok } from './components'
+import { useStoryblokPageLayout } from './composables/use-storyblok-page-layout'
+import { NavigationColumnData } from './types/navigation-column-data.interface'
+import { NavigationItemData } from './types/navigation-item-data.interface'
 
 export const KEY = 'storyblok'
 
@@ -39,9 +42,12 @@ export {
   LinkField,
   LinkType,
   VideoUrlField,
+  NavigationColumnData,
+  NavigationItemData,
   isUrlExternal,
   getUrlFromLink,
   hydrateInPreviewOrWhenVisible,
   getHeaderId,
-  isStoryblokPreview
+  isStoryblokPreview,
+  useStoryblokPageLayout
 }
