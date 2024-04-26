@@ -8,7 +8,6 @@ import { NavigationItemData } from '../types/navigation-item-data.interface';
 import { StoryblokState, StoryblokStory } from '../types/State';
 import { NavigationItem } from '../types/navigation-item.interface';
 import { NavigationColumn } from '../types/navigation-column.interface';
-import getUrlFromLink from '../helpers/get-url-from-link';
 import { isStoryblokPreview } from '../helpers/is-storyblok-preview.function';
 import convertDisplayValueToClass from '../helpers/convert-display-value-to-class';
 
@@ -42,9 +41,7 @@ function toNavigationItem (data: NavigationItemData): NavigationItem {
   }
 
   return {
-    title: data.link_text,
-    url: getUrlFromLink(data.link_url),
-    classes: getClasses(data),
+    ...data,
     items: data.sub_items.map(toNavigationColumn)
   }
 }

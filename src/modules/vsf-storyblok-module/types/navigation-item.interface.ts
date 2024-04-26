@@ -1,9 +1,6 @@
-import { RawLocation } from 'vue-router';
 import { NavigationColumn } from './navigation-column.interface';
+import { NavigationItemData } from './navigation-item-data.interface';
 
-export interface NavigationItem {
-  url: string | RawLocation,
-  title: string,
-  items: NavigationColumn[],
-  classes: string[]
+export interface NavigationItem extends NavigationItemData {
+  items: NavigationColumn[]
 }
