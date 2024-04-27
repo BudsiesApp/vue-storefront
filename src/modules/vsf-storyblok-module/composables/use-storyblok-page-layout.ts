@@ -1,5 +1,5 @@
 import { Store } from 'vuex';
-import { computed, onMounted, onServerPrefetch } from '@vue/composition-api';
+import { computed, onMounted, onServerPrefetch, Ref } from '@vue/composition-api';
 
 import RootState from '@vue-storefront/core/types/RootState';
 
@@ -48,13 +48,9 @@ function toNavigationItem (data: NavigationItemData): NavigationItem {
 
 export function useStoryblokPageLayout (
   store: Store<RootState & {storyblok: StoryblokState}>,
-  previewPageLayoutStory?: StoryblokStory
+  previewPageLayoutStoryContent: Ref<Record<string, any>>
 ) {
   const storyData = computed<StoryblokStory | undefined>(() => {
-    if (previewPageLayoutStory) {
-      return previewPageLayoutStory;
-    }
-
     return store.state.storyblok.stories[pageLayoutStorySlug];
   });
 
@@ -66,21 +62,33 @@ export function useStoryblokPageLayout (
     return storyData.value.story;
   });
 
-  const headerItems = computed<NavigationItem[]>(() => {
+  const pageLayoutStoryContent = computed<Record<string, any> | undefined>(() => {
+    if (previewPageLayoutStoryContent.value) {
+      return previewPageLayoutStoryContent.value;
+    }
+
     if (!pageLayoutStory.value) {
+      return;
+    }
+
+    return pageLayoutStory.value.content;
+  });
+
+  const headerItems = computed<NavigationItem[]>(() => {
+    if (!pageLayoutStoryContent.value) {
       return [];
     }
 
-    return (pageLayoutStory.value.content.header_items as NavigationItemData[])
+    return (pageLayoutStoryContent.value.header_items as NavigationItemData[])
       .map(toNavigationItem);
   });
 
   const footerItems = computed<NavigationColumn[]>(() => {
-    if (!pageLayoutStory.value) {
+    if (!pageLayoutStoryContent.value) {
       return [];
     }
 
-    return (pageLayoutStory.value.content.footer_items as NavigationColumnData[])
+    return (pageLayoutStoryContent.value.footer_items as NavigationColumnData[])
       .map(toNavigationColumn);
   });
 
@@ -101,10 +109,18 @@ export function useStoryblokPageLayout (
   }
 
   onServerPrefetch(() => {
+    if (previewPageLayoutStoryContent.value) {
+      return;
+    }
+
     return loadStory();
   });
 
   onMounted(() => {
+    if (previewPageLayoutStoryContent.value) {
+      return;
+    }
+
     loadStory();
   });
 
