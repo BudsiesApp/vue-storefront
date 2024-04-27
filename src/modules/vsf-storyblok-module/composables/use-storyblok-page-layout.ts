@@ -28,7 +28,8 @@ function toNavigationColumn (data: NavigationColumnData): NavigationColumn {
   return {
     title: data.title,
     items: data.items.map(toNavigationItem),
-    classes: getClasses(data)
+    classes: getClasses(data),
+    maxRows: data.max_rows
   }
 }
 
