@@ -107,7 +107,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     { commit, state },
     { productId }
   ): Promise<void> {
-    const url = processURLAddress(`${config.budsies.endpoint}/printed-products/extra-photos-addons`);
+    const url = processURLAddress(`${config.budsies.endpoint}/plushies/extra-photos-upgrades`);
 
     const result = await TaskQueue.execute({
       url: `${url}?productId=${productId}`,
