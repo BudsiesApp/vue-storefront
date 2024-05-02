@@ -6,7 +6,7 @@ export default interface ShippingDetails {
   apartmentNumber: string,
   city: string,
   state: string,
-  region_id: number | string,
+  region_id: number | null,
   zipCode: string,
   phoneNumber: string,
   shippingMethod: string
