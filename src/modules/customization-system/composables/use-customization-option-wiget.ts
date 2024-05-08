@@ -11,6 +11,7 @@ export function useCustomizationOptionWidget (
   selectedOptionValuesIds: Ref<string[]>,
   { emit }: SetupContext
 ) {
+  // TODO: move to the form component
   const optionValues = computed<OptionValue[]>(() => {
     return customization.value.optionData?.values.filter((value) => {
       const forActivatedOptionValueIds = value.availabilityRules?.forActivatedOptionValueIds;
@@ -24,6 +25,7 @@ export function useCustomizationOptionWidget (
       })
     }) || [];
   });
+
   const selectedOption = computed<string | string[] | undefined>({
     get: () => {
       return value.value?.value
