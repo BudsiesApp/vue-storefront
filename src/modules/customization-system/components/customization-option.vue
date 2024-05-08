@@ -15,8 +15,9 @@
       :name="customization.name"
     >
       <component
-        :is="widgetComponent"
+        :is-disabled="isDisabled"
         :error="errors[0]"
+        :is="widgetComponent"
         :values="optionValues"
         v-model="selectedOption"
       />
@@ -35,6 +36,8 @@ import { OptionValue } from '../types/option-value.interface';
 import { getFieldAnchorName } from 'theme/helpers/use-form-validation';
 import { WidgetType } from '../types/widget-type';
 
+import CheckboxWidget from './checkbox-widget.vue';
+
 extend('required', {
   ...required,
   message: 'The {_field_} field is required'
@@ -43,12 +46,17 @@ extend('required', {
 export default defineComponent({
   name: 'CustomizationOption',
   components: {
+    CheckboxWidget,
     ValidationProvider
   },
   props: {
     customization: {
       type: Object as PropType<Customization>,
       required: true
+    },
+    isDisabled: {
+      type: Boolean,
+      default: false
     },
     selectedOptionValuesIds: {
       type: Array as PropType<string[]>,
