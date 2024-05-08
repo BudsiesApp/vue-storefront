@@ -9,7 +9,7 @@ export function useCustomizationOptionWidget (
   value: Ref<CustomizationStateItem | undefined>,
   customization: Ref<Customization>,
   selectedOptionValuesIds: Ref<string[]>,
-  context: SetupContext
+  { emit }: SetupContext
 ) {
   const optionValues = computed<OptionValue[]>(() => {
     return customization.value.optionData?.values.filter((value) => {
@@ -29,7 +29,7 @@ export function useCustomizationOptionWidget (
       return value.value?.value
     },
     set: (newValue: string | string[] | undefined) => {
-      context.emit('input', {
+      emit('input', {
         customizationId: customization.value.id,
         value: newValue
       })
