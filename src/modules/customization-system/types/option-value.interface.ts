@@ -4,7 +4,7 @@ import { GalleryImage } from './gallery-image.interface';
 
 export interface OptionValue {
   id: string,
-  bundleOptionItemId: number,
+  bundleOptionItemId?: number,
   sku?: string,
   name?: string,
   description?: string,

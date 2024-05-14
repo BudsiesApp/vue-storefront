@@ -9,7 +9,11 @@ export function useListWidget (
   { emit }: SetupContext
 ) {
   const inputType = computed<ListWidgetInputType>(() => {
-    return maxValuesCount.value && maxValuesCount.value > 1
+    if (!maxValuesCount.value) {
+      return ListWidgetInputType.CHECKBOX;
+    }
+
+    return maxValuesCount.value > 1
       ? ListWidgetInputType.CHECKBOX
       : ListWidgetInputType.RADIO;
   });
@@ -31,8 +35,15 @@ export function useListWidget (
 
       return selectedValue.value;
     },
-    set: (newValue) => {
-      emit('input', newValue);
+    set: (value) => {
+      const isCheckbox = inputType.value === ListWidgetInputType.CHECKBOX;
+
+      if (isCheckbox) {
+        handleCheckboxInput(value)
+        return;
+      }
+
+      handleRadioInput(value);
     }
   });
 
@@ -44,6 +55,34 @@ export function useListWidget (
 
     return typeof selectedValue.value === 'string' &&
       selectedValue.value === option.id;
+  }
+
+  function handleCheckboxInput (value: string | string[] | undefined): void {
+    if (!value) {
+      emit('input', []);
+      return;
+    }
+
+    if (!Array.isArray(value)) {
+      value = [value]
+    }
+
+    if (
+      maxValuesCount.value &&
+      value.length > maxValuesCount.value
+    ) {
+      return
+    }
+
+    emit('input', value);
+  }
+
+  function handleRadioInput (value: string | string[] | undefined): void {
+    if (Array.isArray(value)) {
+      value = value[0];
+    }
+
+    emit('input', value);
   }
 
   return {

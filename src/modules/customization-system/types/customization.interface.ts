@@ -11,7 +11,7 @@ export interface Customization {
   type: CustomizationType,
   sn: number,
   isEnabled: boolean,
-  bundleOptionId: number,
+  bundleOptionId?: number,
   availabilityRules: AvailabilityRules,
   optionData?: OptionData,
   variants?: OptionVariant[]

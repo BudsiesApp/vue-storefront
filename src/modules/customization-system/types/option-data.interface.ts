@@ -11,5 +11,8 @@ export interface OptionData {
   isRequired: boolean,
   type: OptionType,
   displayWidget: WidgetType,
-  values: OptionValue[]
+  values: OptionValue[],
+  widgetConfig?: {
+    shape: 'round' | 'square'
+  }
 }
