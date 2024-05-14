@@ -4,6 +4,7 @@ import { useCustomizationOptionWidget } from './composables/use-customization-op
 import { Customization } from './types/customization.interface';
 import { CustomizationStateItem } from './types/customization-state-item.interface'
 import { ListWidgetInputType } from './types/list-widget-input-type';
+import { OptionType } from './types/option-type';
 import { OptionValue } from './types/option-value.interface';
 import { WidgetType } from './types/widget-type';
 import { useListWidget } from './composables/use-list-widget';
@@ -12,6 +13,7 @@ export {
   Customization,
   CustomizationStateItem,
   ListWidgetInputType,
+  OptionType,
   OptionValue,
   WidgetType,
   useCustomizationOptionValidation,

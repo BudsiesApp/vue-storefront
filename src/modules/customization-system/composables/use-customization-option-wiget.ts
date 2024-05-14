@@ -2,6 +2,7 @@ import { computed, Ref, SetupContext } from '@vue/composition-api';
 import { CustomizationStateItem } from '../types/customization-state-item.interface';
 
 import { Customization } from '../types/customization.interface';
+import { OptionType } from '../types/option-type';
 import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
 
@@ -39,7 +40,11 @@ export function useCustomizationOptionWidget (
   });
   const widgetComponent = computed<string>(() => {
     if (!customization.value.optionData) {
-      throw new Error("Customization 'optionData' is missed");
+      throw new Error("Customization 'optionData' is missing");
+    }
+
+    if (customization.value.optionData.type === OptionType.PRODUCTION_TIME) {
+      return 'ProductionTimeSelector';
     }
 
     switch (customization.value.optionData.displayWidget) {
