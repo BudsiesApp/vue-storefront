@@ -13,6 +13,7 @@ export interface OptionData {
   displayWidget: WidgetType,
   values: OptionValue[],
   widgetConfig?: {
-    shape: 'round' | 'square'
+    shape?: 'round' | 'square',
+    layout?: 'grid' | 'flex'
   }
 }
