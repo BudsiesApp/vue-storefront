@@ -1,10 +1,10 @@
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
-import { useDefaultValue } from './composables/use-default-value';
 import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useValuesSort } from './composables/use-values-sort';
+import { useDefaultValue } from './helpers/use-default-value';
 
 import { Customization } from './types/customization.interface';
 import { CustomizationStateItem } from './types/customization-state-item.interface'
