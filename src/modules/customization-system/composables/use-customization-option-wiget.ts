@@ -3,30 +3,16 @@ import { CustomizationStateItem } from '../types/customization-state-item.interf
 
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
-import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
+import { OptionValue } from '..';
 
 export function useCustomizationOptionWidget (
   value: Ref<CustomizationStateItem | undefined>,
   customization: Ref<Customization>,
-  selectedOptionValuesIds: Ref<string[]>,
+  values: Ref<OptionValue[]>,
+  productId: Ref<number>,
   { emit }: SetupContext
 ) {
-  // TODO: move to the form component
-  const optionValues = computed<OptionValue[]>(() => {
-    return customization.value.optionData?.values.filter((value) => {
-      const forActivatedOptionValueIds = value.availabilityRules?.forActivatedOptionValueIds;
-
-      if (!forActivatedOptionValueIds || !forActivatedOptionValueIds.length) {
-        return true;
-      }
-
-      return forActivatedOptionValueIds.every((id) => {
-        return selectedOptionValuesIds.value.includes(id);
-      })
-    }) || [];
-  });
-
   const selectedOption = computed<string | string[] | undefined>({
     get: () => {
       return value.value?.value
@@ -38,42 +24,103 @@ export function useCustomizationOptionWidget (
       })
     }
   });
-  const widgetComponent = computed<string>(() => {
+  const maxValuesCount = computed<number | undefined>(() => {
+    if (!customization.value.optionData) {
+      throw new Error("Customization 'optionData' is missing");
+    }
+
+    return customization.value.optionData.maxValuesCount;
+  });
+  const widget = computed<{
+    component: string,
+    props?: Record<string, any>
+  }>(() => {
     if (!customization.value.optionData) {
       throw new Error("Customization 'optionData' is missing");
     }
 
     if (customization.value.optionData.type === OptionType.PRODUCTION_TIME) {
-      return 'ProductionTimeSelector';
+      return {
+        component: 'ProductionTimeSelector',
+        props: {
+          bundleOptionId: customization.bundleOptionId,
+          productId: productId.value,
+          values: values.value
+        }
+      };
     }
 
-    switch (customization.value.optionData.displayWidget) {
+    const widgetConfig = customization.value.optionData.widgetConfig;
+    const displayWidget = customization.value.optionData.displayWidget;
+
+    const listWidgetsProps = {
+      layout: widgetConfig?.layout,
+      maxValuesCount: maxValuesCount.value,
+      shape: widgetConfig?.shape,
+      values: values.value
+    };
+
+    switch (displayWidget) {
       case WidgetType.CARDS_LIST:
-        return 'CardsListWidget';
+        return {
+          component: 'CardsListWidget',
+          props: {
+            maxValuesCount: maxValuesCount.value,
+            values: values.value
+          }
+        };
       case WidgetType.CHECKBOX:
-        return 'CheckboxWidget';
+        return {
+          component: 'CheckboxWidget',
+          props: {
+            label: customization.value.title || customization.value.name,
+            values: values.value
+          }
+        };
       case WidgetType.COLORS_LIST:
-        return 'ColorsListWidget';
+        return {
+          component: 'ColorsListWidget',
+          props: listWidgetsProps
+        };
       case WidgetType.DROPDOWN:
-        return 'DropdownWidget';
+        return {
+          component: 'DropdownWidget',
+          props: {
+            values: values.value
+          }
+        };
       case WidgetType.DROPDOWN_FREE_TEXT:
-        return 'DropdownFreeTextWidget';
+        return {
+          component: 'DropdownFreeTextWidget',
+          props: {
+            values: values.value
+          }
+        };
       case WidgetType.IMAGE_UPLOAD:
-        return 'ImageUploadWidget';
       case WidgetType.IMAGE_UPLOAD_LATER:
-        return 'ImageUploadLaterWidget';
+        return {
+          component: 'ImageUploadWidget',
+          props: {
+            allowUploadLater: displayWidget === WidgetType.IMAGE_UPLOAD_LATER,
+            maxValuesCount: maxValuesCount.value,
+            productId: productId.value
+          }
+        };
       case WidgetType.TEXT_AREA:
-        return 'TextAreaWidget';
+        return { component: 'TextAreaWidget' };
       case WidgetType.TEXT_INPUT:
-        return 'TextInputWidget';
+        return { component: 'TextInputWidget' };
       case WidgetType.THUMBNAILS_LIST:
-        return 'ThumbnailsListWidget';
+        return {
+          component: 'ThumbnailsListWidget',
+          props: listWidgetsProps
+        };
     }
   });
 
   return {
-    optionValues,
+    maxValuesCount,
     selectedOption,
-    widgetComponent
+    widget
   }
 }
