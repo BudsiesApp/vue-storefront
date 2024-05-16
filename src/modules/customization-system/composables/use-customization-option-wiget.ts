@@ -86,14 +86,16 @@ export function useCustomizationOptionWidget (
         return {
           component: 'DropdownWidget',
           props: {
-            values: values.value
+            values: values.value,
+            placeholder: widgetConfig?.placeholder
           }
         };
       case WidgetType.DROPDOWN_FREE_TEXT:
         return {
           component: 'DropdownFreeTextWidget',
           props: {
-            values: values.value
+            values: values.value,
+            placeholder: widgetConfig?.placeholder
           }
         };
       case WidgetType.IMAGE_UPLOAD:
@@ -107,9 +109,19 @@ export function useCustomizationOptionWidget (
           }
         };
       case WidgetType.TEXT_AREA:
-        return { component: 'TextAreaWidget' };
+        return {
+          component: 'TextAreaWidget',
+          props: {
+            placeholder: widgetConfig?.placeholder
+          }
+        };
       case WidgetType.TEXT_INPUT:
-        return { component: 'TextInputWidget' };
+        return {
+          component: 'TextInputWidget',
+          props: {
+            placeholder: widgetConfig?.placeholder
+          }
+        };
       case WidgetType.THUMBNAILS_LIST:
         return {
           component: 'ThumbnailsListWidget',

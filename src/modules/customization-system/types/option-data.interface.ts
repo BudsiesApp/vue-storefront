@@ -5,18 +5,19 @@ import { WidgetConfigShape } from './widget-config-shape.type';
 import { WidgetType } from './widget-type';
 
 export interface OptionData {
-  sku?: string,
   description?: string,
-  hint?: string,
-  previewUrl?: string,
-  maxValuesCount: number,
-  hasGalleryImages: boolean,
-  isRequired: boolean,
-  type: OptionType,
   displayWidget: WidgetType,
+  hasGalleryImages: boolean,
+  hint?: string,
+  isRequired: boolean,
+  maxValuesCount: number,
+  previewUrl?: string,
+  sku?: string,
+  type: OptionType,
   values: OptionValue[],
   widgetConfig?: {
-    shape?: WidgetConfigShape,
-    layout?: WidgetConfigLayout
+    layout?: WidgetConfigLayout,
+    placeholder?: string,
+    shape?: WidgetConfigShape
   }
 }

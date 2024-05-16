@@ -1,6 +1,7 @@
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useDefaultValue } from './composables/use-default-value';
+import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useValuesSort } from './composables/use-values-sort';
@@ -10,6 +11,8 @@ import { CustomizationStateItem } from './types/customization-state-item.interfa
 import { ListWidgetInputType } from './types/list-widget-input-type';
 import { OptionType } from './types/option-type';
 import { OptionValue } from './types/option-value.interface';
+import { WidgetConfigLayout } from './types/widget-config-layout.type';
+import { WidgetConfigShape } from './types/widget-config-shape.type';
 import { WidgetType } from './types/widget-type';
 
 export {
@@ -18,10 +21,13 @@ export {
   ListWidgetInputType,
   OptionType,
   OptionValue,
+  WidgetConfigLayout,
+  WidgetConfigShape,
   WidgetType,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
   useDefaultValue,
+  useFilesUpload,
   useListWidget,
   useOptionValuesPrice,
   useValuesSort
