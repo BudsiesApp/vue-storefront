@@ -5,6 +5,7 @@ import { WidgetType } from './widget-type';
 export interface OptionData {
   sku?: string,
   description?: string,
+  hint?: string,
   previewUrl?: string,
   maxValuesCount: number,
   hasGalleryImages: boolean,
