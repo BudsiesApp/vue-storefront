@@ -2,6 +2,7 @@ import { useCustomizationOptionValidation } from './composables/use-customizatio
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useDefaultValue } from './composables/use-default-value';
 import { useListWidget } from './composables/use-list-widget';
+import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useValuesSort } from './composables/use-values-sort';
 
 import { Customization } from './types/customization.interface';
@@ -22,5 +23,6 @@ export {
   useCustomizationOptionWidget,
   useDefaultValue,
   useListWidget,
+  useOptionValuesPrice,
   useValuesSort
 }
