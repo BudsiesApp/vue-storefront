@@ -1,5 +1,7 @@
+import { useAvailableCustomizations } from './composables/use-available-customizations';
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
+import { useCustomizationState } from './composables/use-customization-state';
 import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
@@ -14,6 +16,7 @@ import { OptionValue } from './types/option-value.interface';
 import { WidgetConfigLayout } from './types/widget-config-layout.type';
 import { WidgetConfigShape } from './types/widget-config-shape.type';
 import { WidgetType } from './types/widget-type';
+import { getCustomizationsFromProduct } from './helpers/get-customizations-from-product';
 
 export {
   Customization,
@@ -24,8 +27,12 @@ export {
   WidgetConfigLayout,
   WidgetConfigShape,
   WidgetType,
+
+  getCustomizationsFromProduct,
+  useAvailableCustomizations,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
+  useCustomizationState,
   useDefaultValue,
   useFilesUpload,
   useListWidget,

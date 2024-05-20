@@ -18,12 +18,13 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
     return getFieldAnchorName(customizationValue.title || customizationValue.name);
   });
   const validationRules = computed<Record<string, any>>(() => {
+    const maxValueCount = customization.value.optionData?.maxValuesCount;
     return {
       required: customization.value.optionData?.isRequired,
-      maxValueCount: customization.value.optionData?.maxValuesCount &&
-        customization.value.optionData?.maxValuesCount > 1
+      maxValueCount: maxValueCount &&
+        maxValueCount > 1
         ? {
-          max: customization.value.optionData.maxValuesCount
+          max: maxValueCount
         }
         : false
     }
