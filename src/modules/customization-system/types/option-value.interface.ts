@@ -8,7 +8,7 @@ export interface OptionValue {
   sku?: string,
   name?: string,
   description?: string,
-  previewUrl?: string,
+  thumbnailUrl?: string,
   attachmentUrl?: string,
   color?: string,
   price?: number,

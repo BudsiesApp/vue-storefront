@@ -12,6 +12,7 @@ import config from 'config'
 import { filterChangedProduct, productAfterCustomoptions, productAfterBundleoptions, productAfterPriceupdate, onUserPricesRefreshed } from './events'
 import { isServer } from '@vue-storefront/core/helpers'
 import uniq from 'lodash-es/uniq'
+import { PRODUCT_SET_PRODUCT_BY_SKU } from './store/product/mutation-types'
 
 export const CatalogModule: StorefrontModule = async function ({ store, router, appConfig }) {
   StorageManager.init('categories')
@@ -25,7 +26,10 @@ export const CatalogModule: StorefrontModule = async function ({ store, router, 
   store.registerModule('tax', taxModule)
   store.registerModule('category', categoryModule)
 
-  catalogHooks.afterSetBundleProducts(products => getAttributesFromMetadata(store, products))
+  catalogHooks.afterSetBundleProducts((products) => {
+    products?.forEach((product) => store.commit(`product/${PRODUCT_SET_PRODUCT_BY_SKU}`, product));
+    getAttributesFromMetadata(store, products)
+  });
   catalogHooks.afterSetGroupedProduct(products => getAttributesFromMetadata(store, products))
 
   if (!config.entities.attribute.loadByAttributeMetadata) {

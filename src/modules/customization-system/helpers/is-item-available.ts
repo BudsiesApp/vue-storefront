@@ -15,7 +15,7 @@ export function isItemAvailable (
     return true;
   }
 
-  return forActivatedOptionValueIds.every((id) => {
+  return forActivatedOptionValueIds.some((id) => {
     return selectedOptionValuesIds.includes(id);
   });
 }
