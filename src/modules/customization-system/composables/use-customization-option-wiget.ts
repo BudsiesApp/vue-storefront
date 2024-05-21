@@ -1,6 +1,8 @@
-import { computed, Ref, SetupContext } from '@vue/composition-api';
-import { CustomizationStateItem } from '../types/customization-state-item.interface';
+import { computed, onBeforeUnmount, Ref, SetupContext, watch } from '@vue/composition-api';
 
+import { PRODUCT_SET_BUNDLE_OPTION } from '@vue-storefront/core/modules/catalog/store/product/mutation-types';
+
+import { CustomizationStateItem } from '../types/customization-state-item.interface';
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
 import { WidgetType } from '../types/widget-type';
@@ -11,7 +13,7 @@ export function useCustomizationOptionWidget (
   customization: Ref<Customization>,
   values: Ref<OptionValue[]>,
   productId: Ref<number>,
-  { emit }: SetupContext
+  { emit, root }: SetupContext
 ) {
   const selectedOption = computed<string | string[] | undefined>({
     get: () => {
@@ -43,7 +45,7 @@ export function useCustomizationOptionWidget (
       return {
         component: 'ProductionTimeSelector',
         props: {
-          bundleOptionId: customization.bundleOptionId,
+          bundleOptionId: customization.value.bundleOptionId,
           productId: productId.value,
           values: values.value
         }
@@ -128,6 +130,58 @@ export function useCustomizationOptionWidget (
           props: listWidgetsProps
         };
     }
+  });
+
+  function setBundleOptionValue (
+    optionId: number,
+    optionQty: number,
+    optionSelections: number[]
+  ): void {
+    root.$store.commit(
+      `product/${PRODUCT_SET_BUNDLE_OPTION}`,
+      { optionId, optionQty, optionSelections }
+    )
+  }
+
+  onBeforeUnmount(() => {
+    selectedOption.value = undefined;
+  });
+
+  // watch(values, (newValue) => {
+  //   if (!selectedOption.value) {
+  //     return;
+  //   }
+
+  // });
+
+  watch(selectedOption, (newValue) => {
+    if (!customization.value.bundleOptionId) {
+      return;
+    }
+
+    let selectedValueIds: string[]
+
+    if (!newValue) {
+      selectedValueIds = [];
+    } else {
+      selectedValueIds = Array.isArray(newValue) ? newValue : [newValue];
+    }
+
+    const bundleOptionItemIds: number[] = [];
+
+    selectedValueIds.forEach((id) => {
+      const value = values.value.find((item) => item.id === id);
+
+      if (value && value.bundleOptionItemId) {
+        bundleOptionItemIds.push(value.bundleOptionItemId)
+      }
+    })
+
+    setBundleOptionValue(
+      customization.value.bundleOptionId,
+      1,
+      bundleOptionItemIds
+    )
   });
 
   return {

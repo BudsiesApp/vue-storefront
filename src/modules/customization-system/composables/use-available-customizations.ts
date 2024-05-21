@@ -24,7 +24,13 @@ export function useAvailableCustomizations (
       customizations.value.forEach((customization: Customization) => {
         dictionary[customization.id] =
           customization.optionData?.values.filter(
-            (value) => isItemAvailable(value, selectedOptionValuesIds.value)
+            (value) => {
+              if (!value.isEnabled) {
+                return false;
+              }
+
+              return isItemAvailable(value, selectedOptionValuesIds.value);
+            }
           ) || [];
       });
 
@@ -35,6 +41,10 @@ export function useAvailableCustomizations (
   const availableCustomizations = computed<Customization[]>(() => {
     const filteredCustomizations: Customization[] = customizations.value.filter(
       (customization: Customization) => {
+        if (!customization.isEnabled) {
+          return false;
+        }
+
         const hasAvailableOptionValues =
           customizationAvailableOptionValues.value[customization.id].length > 0 ||
           !customization.optionData ||
