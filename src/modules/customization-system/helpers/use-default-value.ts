@@ -1,4 +1,4 @@
-import { Ref } from '@vue/composition-api';
+import { Ref, watch } from '@vue/composition-api';
 
 import { OptionValue } from '..';
 
@@ -6,21 +6,36 @@ export function useDefaultValue (
   selectedOption: Ref<string | string[] | undefined>,
   values: Ref<OptionValue[]>
 ): void {
-  const defaultValue = values.value.find((value) => value.isDefault);
-  const value = selectedOption.value;
-  const isArray = Array.isArray(value);
+  function setDefaultValue (): void {
+    const defaultValue = values.value.find((value) => value.isDefault);
+    const value = selectedOption.value;
+    const isArray = Array.isArray(value);
 
-  if (!defaultValue) {
-    return;
+    if (!defaultValue) {
+      return;
+    }
+
+    if (isArray && value.length > 0) {
+      return;
+    }
+
+    if (typeof value === 'string' && !!value) {
+      return;
+    }
+
+    selectedOption.value = isArray ? [defaultValue.id] : defaultValue.id;
   }
 
-  if (isArray && value.length > 0) {
-    return;
-  }
+  setDefaultValue();
 
-  if (typeof value === 'string' && !!value) {
-    return;
-  }
+  watch(values, (newValues, oldValues) => {
+    if (!selectedOption.value || !oldValues.length) {
+      return;
+    }
 
-  selectedOption.value = isArray ? [defaultValue.id] : defaultValue.id;
+    if (!newValues.find((value) => value.id === selectedOption.value)) {
+      selectedOption.value = undefined;
+      setDefaultValue();
+    }
+  });
 }

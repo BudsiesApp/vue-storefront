@@ -14,7 +14,6 @@ const ignoreAvailableOptionsCheckFor = [
 
 export function useAvailableCustomizations (
   customizations: Ref<Customization[]>,
-  customizationState: Ref<Record<string, CustomizationStateItem>>,
   selectedOptionValuesIds: ComputedRef<string[]>
 ) {
   const customizationAvailableOptionValues = computed<Record<string, OptionValue[]>>(

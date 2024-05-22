@@ -1,4 +1,4 @@
-import { inject, computed, Ref, SetupContext } from '@vue/composition-api';
+import { inject, computed, Ref, SetupContext, onMounted, nextTick, ref } from '@vue/composition-api';
 
 import { ImageHandlerService, Item } from 'src/modules/file-storage';
 import { CustomerImage } from 'src/modules/shared';
@@ -36,7 +36,7 @@ export function useFilesUpload (
     throw new Error('ImageHandlerService is not defined');
   }
 
-  const initialItems: CustomerImage[] = getInitialItems(value.value, imageHandlerService);
+  let initialItems = ref<CustomerImage[]>([]);
   const allowMultiple = computed<boolean>(() => {
     return !maxValuesCount.value || maxValuesCount.value > 1;
   });
@@ -72,6 +72,12 @@ export function useFilesUpload (
 
     emit('input', value.value.filter((item) => item !== storageItemId));
   }
+
+  onMounted(async () => {
+    await nextTick();
+    // TODO: current version of TS resolve type incorrect
+    (initialItems as any).value = getInitialItems(value.value, imageHandlerService);
+  });
 
   return {
     allowMultiple,

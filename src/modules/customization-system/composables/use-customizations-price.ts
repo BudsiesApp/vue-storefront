@@ -1,9 +1,8 @@
 import { Ref, computed, SetupContext } from '@vue/composition-api';
 
 import { PriceHelper } from 'src/modules/shared';
-import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
-import { CustomizationStateItem, Customization, OptionValue } from '..';
+import { CustomizationStateItem, Customization } from '..';
 import { getLowestPriceForOptionValues } from '../helpers/get-lowest-price-for-option-values';
 import { getCustomizationSelectedValues } from '../helpers/get-customization-selected-values';
 import { getOptionValuePrice } from '../helpers/get-option-value-price';

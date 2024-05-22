@@ -5,8 +5,8 @@ import { PRODUCT_SET_BUNDLE_OPTION } from '@vue-storefront/core/modules/catalog/
 import { CustomizationStateItem } from '../types/customization-state-item.interface';
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
+import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
-import { OptionValue } from '..';
 
 export function useCustomizationOptionWidget (
   value: Ref<CustomizationStateItem | undefined>,
@@ -147,42 +147,41 @@ export function useCustomizationOptionWidget (
     selectedOption.value = undefined;
   });
 
-  // watch(values, (newValue) => {
-  //   if (!selectedOption.value) {
-  //     return;
-  //   }
-
-  // });
-
-  watch(selectedOption, (newValue) => {
-    if (!customization.value.bundleOptionId) {
-      return;
-    }
-
-    let selectedValueIds: string[]
-
-    if (!newValue) {
-      selectedValueIds = [];
-    } else {
-      selectedValueIds = Array.isArray(newValue) ? newValue : [newValue];
-    }
-
-    const bundleOptionItemIds: number[] = [];
-
-    selectedValueIds.forEach((id) => {
-      const value = values.value.find((item) => item.id === id);
-
-      if (value && value.bundleOptionItemId) {
-        bundleOptionItemIds.push(value.bundleOptionItemId)
+  watch(
+    selectedOption,
+    (newValue) => {
+      if (!customization.value.bundleOptionId) {
+        return;
       }
-    })
 
-    setBundleOptionValue(
-      customization.value.bundleOptionId,
-      1,
-      bundleOptionItemIds
-    )
-  });
+      let selectedValueIds: string[]
+
+      if (!newValue) {
+        selectedValueIds = [];
+      } else {
+        selectedValueIds = Array.isArray(newValue) ? newValue : [newValue];
+      }
+
+      const bundleOptionItemIds: number[] = [];
+
+      selectedValueIds.forEach((id) => {
+        const value = values.value.find((item) => item.id === id);
+
+        if (value && value.bundleOptionItemId) {
+          bundleOptionItemIds.push(value.bundleOptionItemId)
+        }
+      })
+
+      setBundleOptionValue(
+        customization.value.bundleOptionId,
+        1,
+        bundleOptionItemIds
+      )
+    },
+    {
+      immediate: true
+    }
+  );
 
   return {
     maxValuesCount,

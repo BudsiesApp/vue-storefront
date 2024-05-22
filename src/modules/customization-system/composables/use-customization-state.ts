@@ -1,4 +1,4 @@
-import { ref, computed, del, set, Ref } from '@vue/composition-api';
+import { ref, computed, del, set, Ref, onMounted } from '@vue/composition-api';
 
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 
@@ -49,7 +49,14 @@ export function useCustomizationState (
     (customizationState.value as unknown as Record<string, CustomizationStateItem>) = customizationStateDictionary;
   }
 
-  fillCustomizationStateFromExistingCartItem();
+  // Need to wait hydration before fill customization state
+  // Otherwise it may lead to nodes mismatch
+  // Because on SSR there is no cart items data
+  // So some of customizations may be hidden on SSR
+  // But became available after fill customization state
+  onMounted(() => {
+    fillCustomizationStateFromExistingCartItem();
+  });
 
   return {
     customizationState,
