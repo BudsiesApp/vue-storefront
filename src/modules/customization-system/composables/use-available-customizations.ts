@@ -1,6 +1,6 @@
 import { Ref, ComputedRef, computed } from '@vue/composition-api';
 
-import { Customization, CustomizationStateItem, OptionValue } from '..';
+import { Customization, OptionValue } from '..';
 import { isItemAvailable } from '../helpers/is-item-available';
 import { WidgetType } from '../types/widget-type';
 

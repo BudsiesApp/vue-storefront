@@ -7,6 +7,7 @@ import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
 import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
+import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationOptionWidget (
   value: Ref<CustomizationStateItem | undefined>,
@@ -15,11 +16,11 @@ export function useCustomizationOptionWidget (
   productId: Ref<number>,
   { emit, root }: SetupContext
 ) {
-  const selectedOption = computed<string | string[] | undefined>({
+  const selectedOption = computed<CustomizationStateItem['value'] | undefined>({
     get: () => {
       return value.value?.value
     },
-    set: (newValue: string | string[] | undefined) => {
+    set: (newValue: CustomizationStateItem['value'] | undefined) => {
       emit('input', {
         customizationId: customization.value.id,
         value: newValue
@@ -151,6 +152,10 @@ export function useCustomizationOptionWidget (
     selectedOption,
     (newValue) => {
       if (!customization.value.bundleOptionId) {
+        return;
+      }
+
+      if (isFileUploadValue(newValue)) {
         return;
       }
 

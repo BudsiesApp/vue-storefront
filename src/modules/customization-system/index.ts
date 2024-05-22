@@ -11,6 +11,8 @@ import { useDefaultValue } from './helpers/use-default-value';
 
 import { Customization } from './types/customization.interface';
 import { CustomizationStateItem } from './types/customization-state-item.interface'
+import { FileUploadValue } from './types/file-upload-value';
+import { isFileUploadValue } from './types/is-file-upload-value.typeguard';
 import { ListWidgetInputType } from './types/list-widget-input-type';
 import { OptionType } from './types/option-type';
 import { OptionValue } from './types/option-value.interface';
@@ -22,6 +24,7 @@ import { getCustomizationsFromProduct } from './helpers/get-customizations-from-
 export {
   Customization,
   CustomizationStateItem,
+  FileUploadValue,
   ListWidgetInputType,
   OptionType,
   OptionValue,
@@ -30,6 +33,7 @@ export {
   WidgetType,
 
   getCustomizationsFromProduct,
+  isFileUploadValue,
   useAvailableCustomizations,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,

@@ -4,6 +4,7 @@ import get from 'lodash-es/get'
 import flow from 'lodash-es/flow'
 import cloneDeep from 'lodash-es/cloneDeep';
 import ServerItem from '../types/Servertem';
+import { isFileUploadValue } from 'src/modules/customization-system';
 
 const replaceNumberToString = obj => {
   Object.keys(obj).forEach(key => {
@@ -28,6 +29,24 @@ export const getProductOptions = (product, optionsName) => {
 }
 
 const getDataToHash = (product: CartItem | ServerItem): any => {
+  if (product.customizationState && product.customizationState.length) {
+    return product.customizationState.map(
+      (customization) => {
+        if (isFileUploadValue(customization.value)) {
+          return Array.isArray(customization.value)
+            ? customization.value.map((item) => item.storageItemId).sort()
+            : customization.value.storageItemId;
+        }
+
+        if (typeof customization.value === 'string') {
+          return customization.value;
+        }
+
+        return customization.value.sort();
+      }
+    ).sort();
+  }
+
   if (product.customerImages && product.customerImages.length) {
     return product.customerImages.map(item => item.id);
   }
@@ -71,6 +90,9 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
   return product.product_option
 }
 
-const productChecksum = (product: CartItem | ServerItem): string => sha3_224(JSON.stringify(getDataToHash(product)))
+const productChecksum = (product: CartItem | ServerItem): string => {
+  console.log(JSON.stringify(getDataToHash(product)))
+  return sha3_224(JSON.stringify(getDataToHash(product)))
+}
 
 export default productChecksum

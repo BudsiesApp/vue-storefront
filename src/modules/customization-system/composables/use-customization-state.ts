@@ -3,6 +3,7 @@ import { ref, computed, del, set, Ref, onMounted } from '@vue/composition-api';
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 
 import { CustomizationStateItem } from '..';
+import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationState (
   existingCartItem: Ref<CartItem | undefined>
@@ -13,6 +14,10 @@ export function useCustomizationState (
     const selectedValues: string[] = [];
 
     customizationStateArray.forEach((state) => {
+      if (isFileUploadValue(state.value)) {
+        return;
+      }
+
       if (Array.isArray(state.value)) {
         selectedValues.push(...state.value);
       } else {
