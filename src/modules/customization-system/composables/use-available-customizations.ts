@@ -2,6 +2,7 @@ import { Ref, ComputedRef, computed } from '@vue/composition-api';
 
 import { Customization, OptionValue } from '..';
 import { isItemAvailable } from '../helpers/is-item-available';
+import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
 
 const ignoreAvailableOptionsCheckFor = [
@@ -59,8 +60,15 @@ export function useAvailableCustomizations (
     });
   });
 
+  const availableOptionCustomizations = computed<Customization[]>(() => {
+    return availableCustomizations.value.filter(
+      (customization) => customization.type === CustomizationType.OPTION
+    );
+  });
+
   return {
     availableCustomizations,
+    availableOptionCustomizations,
     customizationAvailableOptionValues
   }
 }

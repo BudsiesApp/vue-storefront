@@ -1,4 +1,5 @@
 import { useAvailableCustomizations } from './composables/use-available-customizations';
+import { useCustomizationsBusyState } from './composables/use-customizations-busy-state';
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useCustomizationsPrice } from './composables/use-customizations-price';
@@ -7,6 +8,7 @@ import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useValuesSort } from './composables/use-values-sort';
+import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { useDefaultValue } from './helpers/use-default-value';
 
 import { Customization } from './types/customization.interface';
@@ -35,6 +37,7 @@ export {
   getCustomizationsFromProduct,
   isFileUploadValue,
   useAvailableCustomizations,
+  useCustomizationsBusyState,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
   useCustomizationsPrice,
@@ -43,5 +46,6 @@ export {
   useFilesUpload,
   useListWidget,
   useOptionValuesPrice,
-  useValuesSort
+  useValuesSort,
+  useWidgetBusyState
 }
