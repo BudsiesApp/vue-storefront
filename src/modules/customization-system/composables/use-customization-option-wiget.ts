@@ -102,11 +102,9 @@ export function useCustomizationOptionWidget (
           }
         };
       case WidgetType.IMAGE_UPLOAD:
-      case WidgetType.IMAGE_UPLOAD_LATER:
         return {
           component: 'ImageUploadWidget',
           props: {
-            allowUploadLater: displayWidget === WidgetType.IMAGE_UPLOAD_LATER,
             maxValuesCount: maxValuesCount.value,
             productId: productId.value
           }
