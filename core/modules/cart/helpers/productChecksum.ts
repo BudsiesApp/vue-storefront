@@ -90,9 +90,6 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
   return product.product_option
 }
 
-const productChecksum = (product: CartItem | ServerItem): string => {
-  console.log(JSON.stringify(getDataToHash(product)))
-  return sha3_224(JSON.stringify(getDataToHash(product)))
-}
+const productChecksum = (product: CartItem | ServerItem): string => sha3_224(JSON.stringify(getDataToHash(product)))
 
 export default productChecksum
