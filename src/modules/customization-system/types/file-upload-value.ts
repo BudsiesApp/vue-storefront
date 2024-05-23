@@ -1,4 +1,4 @@
 export interface FileUploadValue {
-  storageItemId: string,
-  storageItemUrl: string
+  id: string,
+  url: string
 }

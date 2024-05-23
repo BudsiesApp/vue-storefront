@@ -34,8 +34,8 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
       (customization) => {
         if (isFileUploadValue(customization.value)) {
           return Array.isArray(customization.value)
-            ? customization.value.map((item) => item.storageItemId).sort()
-            : customization.value.storageItemId;
+            ? customization.value.map((item) => item.id).sort()
+            : customization.value.id;
         }
 
         if (typeof customization.value === 'string') {

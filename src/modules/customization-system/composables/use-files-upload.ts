@@ -9,8 +9,8 @@ function getCustomerImageByStorageItemId (
   imageHandlerService: ImageHandlerService
 ): CustomerImage {
   return {
-    id: fileUploadValue.storageItemId,
-    url: imageHandlerService.getOriginalImageUrl(fileUploadValue.storageItemUrl)
+    id: fileUploadValue.id,
+    url: imageHandlerService.getOriginalImageUrl(fileUploadValue.url)
   };
 }
 
@@ -50,8 +50,8 @@ export function useFilesUpload (
 
   function onFileAdded (item: Item): void {
     const fileUploadValue: FileUploadValue = {
-      storageItemId: item.id,
-      storageItemUrl: item.url
+      id: item.id,
+      url: item.url
     };
 
     if (!allowMultiple.value) {
@@ -81,7 +81,7 @@ export function useFilesUpload (
 
     emit(
       'input',
-      value.value.filter((item) => item.storageItemId !== storageItemId)
+      value.value.filter((item) => item.id !== storageItemId)
     );
   }
 
