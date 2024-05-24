@@ -5,7 +5,7 @@ import { OptionValue } from '../types/option-value.interface';
 
 export function getCustomizationSelectedValues (
   customization: Customization,
-  customizationOptionValue: CustomizationOptionValue | undefined
+  customizationOptionValue: CustomizationOptionValue
 ): OptionValue[] | undefined {
   if (
     !customizationOptionValue ||

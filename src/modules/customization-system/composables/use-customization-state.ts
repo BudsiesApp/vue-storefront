@@ -55,7 +55,7 @@ export function useCustomizationState (
     return selectedValues;
   });
 
-  function onCustomizationOptionInput (
+  function updateCustomizationOptionValue (
     {
       customizationId,
       value
@@ -63,7 +63,7 @@ export function useCustomizationState (
       customizationId: string,
       value: CustomizationOptionValue
     }
-  ) {
+  ): void {
     const isOptionValueEmptyArray = Array.isArray(value) && value.length === 0;
 
     if (!value || isOptionValueEmptyArray) {
@@ -72,6 +72,50 @@ export function useCustomizationState (
     }
 
     set(customizationOptionValue.value, customizationId, value);
+  }
+
+  function addCustomizationOptionValue (customizationId: string, optionValueId: string) {
+    const value = customizationOptionValue.value[customizationId];
+
+    if (isFileUploadValue(value)) {
+      return;
+    }
+
+    if (!value || !Array.isArray(value)) {
+      customizationOptionValue.value[customizationId] = optionValueId;
+      return;
+    }
+
+    value.push(optionValueId)
+    set(customizationOptionValue.value, customizationId, value);
+  }
+
+  function removeCustomizationOptionValue (
+    optionValueId: string
+  ): void {
+    if (!selectedOptionValuesIds.value.includes(optionValueId)) {
+      return;
+    }
+
+    // TODO: temporary - current TS version don't handle `value` type right in this case
+    for (const customizationId in (customizationOptionValue.value as unknown as Record<string, CustomizationOptionValue>)) {
+      const value = customizationOptionValue.value[customizationId];
+
+      if (!value || isFileUploadValue(value)) {
+        continue;
+      }
+
+      if (!Array.isArray(value)) {
+        del(customizationOptionValue, customizationId);
+        continue;
+      }
+
+      if (!value.includes(optionValueId)) {
+        continue;
+      }
+
+      set(customizationOptionValue, customizationId, value.filter((id) => id !== optionValueId));
+    }
   }
 
   function fillCustomizationStateFromExistingCartItem () {
@@ -113,9 +157,11 @@ export function useCustomizationState (
   });
 
   return {
+    addCustomizationOptionValue,
     customizationOptionValue,
     customizationState,
+    removeCustomizationOptionValue,
     selectedOptionValuesIds,
-    onCustomizationOptionInput
+    updateCustomizationOptionValue
   }
 }
