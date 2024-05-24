@@ -33,7 +33,13 @@ export function useDefaultValue (
       return;
     }
 
-    if (!newValues.find((value) => value.id === selectedOption.value)) {
+    if (Array.isArray(selectedOption.value)) {
+      return;
+    }
+
+    if (
+      !newValues.find((value) => value.id === selectedOption.value)
+    ) {
       selectedOption.value = undefined;
       setDefaultValue();
     }
