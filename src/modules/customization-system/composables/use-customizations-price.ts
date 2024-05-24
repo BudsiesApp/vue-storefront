@@ -2,14 +2,14 @@ import { Ref, computed, SetupContext } from '@vue/composition-api';
 
 import { PriceHelper } from 'src/modules/shared';
 
-import { CustomizationStateItem, Customization } from '..';
+import { Customization, CustomizationOptionValue } from '..';
 import { getLowestPriceForOptionValues } from '../helpers/get-lowest-price-for-option-values';
 import { getCustomizationSelectedValues } from '../helpers/get-customization-selected-values';
 import { getOptionValuePrice } from '../helpers/get-option-value-price';
 
 export function useCustomizationsPrice (
   customizations: Ref<Customization[]>,
-  customizationState: Ref<Record<string, CustomizationStateItem>>,
+  customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
   { root }: SetupContext
 ) {
   const customizationOptionValuesLowestPrice = computed<Record<string, PriceHelper.ProductPrice | undefined>>(
@@ -46,7 +46,7 @@ export function useCustomizationsPrice (
       }
       const selectedValues = getCustomizationSelectedValues(
         customization,
-        customizationState.value[customization.id]
+        customizationOptionValue.value[customization.id]
       );
       const hasSelections = !!selectedValues && selectedValues.length;
 

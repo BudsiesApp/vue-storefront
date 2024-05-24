@@ -12,6 +12,7 @@ import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { useDefaultValue } from './helpers/use-default-value';
 
 import { Customization } from './types/customization.interface';
+import { CustomizationOptionValue } from './types/customization-option-value';
 import { CustomizationStateItem } from './types/customization-state-item.interface'
 import { FileUploadValue } from './types/file-upload-value';
 import { isFileUploadValue } from './types/is-file-upload-value.typeguard';
@@ -25,6 +26,7 @@ import { getCustomizationsFromProduct } from './helpers/get-customizations-from-
 
 export {
   Customization,
+  CustomizationOptionValue,
   CustomizationStateItem,
   FileUploadValue,
   ListWidgetInputType,

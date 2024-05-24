@@ -2,18 +2,45 @@ import { ref, computed, del, set, Ref, onMounted } from '@vue/composition-api';
 
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 
-import { CustomizationStateItem } from '..';
+import { CustomizationOptionValue, CustomizationStateItem } from '..';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationState (
   existingCartItem: Ref<CartItem | undefined>
 ) {
-  const customizationState = ref<Record<string, CustomizationStateItem>>({});
+  const customizationOptionValue = ref<Record<string, CustomizationOptionValue>>({});
+  const customizationState = computed<CustomizationStateItem[]>(() => {
+    const items: CustomizationStateItem[] = [];
+
+    for (const customizationId of Object.keys(customizationOptionValue.value)) {
+      const value = customizationOptionValue.value[customizationId];
+
+      if (!value) {
+        continue;
+      }
+
+      if (!Array.isArray(value)) {
+        items.push({
+          customizationId,
+          value
+        });
+        continue;
+      }
+
+      for (const item of value) {
+        items.push({
+          customizationId,
+          value: item
+        });
+      }
+    }
+
+    return items;
+  });
   const selectedOptionValuesIds = computed<string[]>(() => {
-    const customizationStateArray = Object.values(customizationState.value);
     const selectedValues: string[] = [];
 
-    customizationStateArray.forEach((state) => {
+    customizationState.value.forEach((state) => {
       if (isFileUploadValue(state.value)) {
         return;
       }
@@ -28,15 +55,23 @@ export function useCustomizationState (
     return selectedValues;
   });
 
-  function onCustomizationOptionInput (option: CustomizationStateItem) {
-    const isOptionValueEmptyArray = Array.isArray(option.value) && option.value.length === 0;
+  function onCustomizationOptionInput (
+    {
+      customizationId,
+      value
+    }: {
+      customizationId: string,
+      value: CustomizationOptionValue
+    }
+  ) {
+    const isOptionValueEmptyArray = Array.isArray(value) && value.length === 0;
 
-    if (!option.value || isOptionValueEmptyArray) {
-      del(customizationState.value, option.customizationId);
+    if (!value || isOptionValueEmptyArray) {
+      del(customizationOptionValue.value, customizationId);
       return;
     }
 
-    set(customizationState.value, option.customizationId, option);
+    set(customizationOptionValue.value, customizationId, value);
   }
 
   function fillCustomizationStateFromExistingCartItem () {
@@ -44,14 +79,28 @@ export function useCustomizationState (
       return;
     }
 
-    const customizationStateDictionary: Record<string, CustomizationStateItem> = {};
+    const customizationOptionValueDictionary: Record<string, CustomizationOptionValue> = {};
 
     existingCartItem.value.customizationState.forEach((item) => {
-      customizationStateDictionary[item.customizationId] = item;
+      const dictionaryItem = customizationOptionValueDictionary[item.customizationId];
+
+      if (!dictionaryItem) {
+        customizationOptionValueDictionary[item.customizationId] = item.value;
+        return;
+      }
+
+      if (Array.isArray(dictionaryItem)) {
+        // @ts-ignore
+        dictionaryItem.push(item.value);
+        return;
+      }
+
+      // @ts-ignore
+      customizationOptionValueDictionary[item.customizationId] = [dictionaryItem, item.value];
     });
 
     // TODO: temporary - current TS version don't handle `value` type right in this case
-    (customizationState.value as unknown as Record<string, CustomizationStateItem>) = customizationStateDictionary;
+    (customizationOptionValue.value as unknown as Record<string, CustomizationOptionValue>) = customizationOptionValueDictionary;
   }
 
   // Need to wait hydration before fill customization state
@@ -64,6 +113,7 @@ export function useCustomizationState (
   });
 
   return {
+    customizationOptionValue,
     customizationState,
     selectedOptionValuesIds,
     onCustomizationOptionInput

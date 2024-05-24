@@ -2,7 +2,7 @@ import { computed, onBeforeUnmount, Ref, SetupContext, watch } from '@vue/compos
 
 import { PRODUCT_SET_BUNDLE_OPTION } from '@vue-storefront/core/modules/catalog/store/product/mutation-types';
 
-import { CustomizationStateItem } from '../types/customization-state-item.interface';
+import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
 import { OptionValue } from '../types/option-value.interface';
@@ -10,17 +10,17 @@ import { WidgetType } from '../types/widget-type';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationOptionWidget (
-  value: Ref<CustomizationStateItem | undefined>,
+  value: Ref<CustomizationOptionValue>,
   customization: Ref<Customization>,
   values: Ref<OptionValue[]>,
   productId: Ref<number>,
   { emit, root }: SetupContext
 ) {
-  const selectedOption = computed<CustomizationStateItem['value'] | undefined>({
+  const selectedOption = computed<CustomizationOptionValue>({
     get: () => {
-      return value.value?.value
+      return value.value
     },
-    set: (newValue: CustomizationStateItem['value'] | undefined) => {
+    set: (newValue: CustomizationOptionValue) => {
       emit('input', {
         customizationId: customization.value.id,
         value: newValue
