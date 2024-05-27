@@ -18,13 +18,13 @@ export function useCustomizationOptionWidget (
 ) {
   const selectedOption = computed<CustomizationOptionValue>({
     get: () => {
-      return value.value
+      return value.value;
     },
     set: (newValue: CustomizationOptionValue) => {
       emit('input', {
         customizationId: customization.value.id,
         value: newValue
-      })
+      });
     }
   });
   const maxValuesCount = computed<number | undefined>(() => {
