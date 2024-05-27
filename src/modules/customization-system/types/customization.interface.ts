@@ -4,15 +4,15 @@ import { OptionData } from './option-data.interface';
 import { OptionVariant } from './option-variant.interface';
 
 export interface Customization {
+  availabilityRules: AvailabilityRules,
+  bundleOptionId?: number,
   id: string,
+  isEnabled: boolean,
   parentId?: string,
   name: string,
+  optionData?: OptionData,
+  sn: number,
   title?: string,
   type: CustomizationType,
-  sn: number,
-  isEnabled: boolean,
-  bundleOptionId?: number,
-  availabilityRules: AvailabilityRules,
-  optionData?: OptionData,
   variants?: OptionVariant[]
 }

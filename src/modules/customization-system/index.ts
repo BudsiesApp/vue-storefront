@@ -3,6 +3,7 @@ import { useCustomizationsBusyState } from './composables/use-customizations-bus
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useCustomizationsPrice } from './composables/use-customizations-price';
+import { useCustomizationProductDescription } from './composables/use-customization-product-description';
 import { useCustomizationState } from './composables/use-customization-state';
 import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
@@ -44,6 +45,7 @@ export {
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
   useCustomizationsPrice,
+  useCustomizationProductDescription,
   useCustomizationState,
   useDefaultValue,
   useFilesUpload,
