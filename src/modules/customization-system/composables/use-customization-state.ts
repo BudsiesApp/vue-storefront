@@ -19,20 +19,10 @@ export function useCustomizationState (
         continue;
       }
 
-      if (!Array.isArray(value)) {
-        items.push({
-          customizationId,
-          value
-        });
-        continue;
-      }
-
-      for (const item of value) {
-        items.push({
-          customizationId,
-          value: item
-        });
-      }
+      items.push({
+        customizationId,
+        value
+      });
     }
 
     return items;
@@ -59,10 +49,7 @@ export function useCustomizationState (
     {
       customizationId,
       value
-    }: {
-      customizationId: string,
-      value: CustomizationOptionValue
-    }
+    }: CustomizationStateItem
   ): void {
     const isOptionValueEmptyArray = Array.isArray(value) && value.length === 0;
 
@@ -126,21 +113,7 @@ export function useCustomizationState (
     const customizationOptionValueDictionary: Record<string, CustomizationOptionValue> = {};
 
     existingCartItem.value.customizationState.forEach((item) => {
-      const dictionaryItem = customizationOptionValueDictionary[item.customizationId];
-
-      if (!dictionaryItem) {
-        customizationOptionValueDictionary[item.customizationId] = item.value;
-        return;
-      }
-
-      if (Array.isArray(dictionaryItem)) {
-        // @ts-ignore
-        dictionaryItem.push(item.value);
-        return;
-      }
-
-      // @ts-ignore
-      customizationOptionValueDictionary[item.customizationId] = [dictionaryItem, item.value];
+      customizationOptionValueDictionary[item.customizationId] = item.value;
     });
 
     // TODO: temporary - current TS version don't handle `value` type right in this case

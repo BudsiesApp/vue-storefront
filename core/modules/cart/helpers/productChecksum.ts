@@ -33,10 +33,16 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
     return product.customizationState.map(
       (customization) => {
         if (isFileUploadValue(customization.value)) {
-            return customization.value.id;
+          return Array.isArray(customization.value)
+            ? customization.value.map((item) => item.id).sort()
+            : customization.value.id;
         }
 
-        return customization.value;
+        if (typeof customization.value === 'string') {
+          return customization.value;
+        }
+
+        return customization.value.sort();
       }
     ).sort();
   }
