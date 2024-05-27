@@ -49,7 +49,10 @@ export function useCustomizationState (
     {
       customizationId,
       value
-    }: CustomizationStateItem
+    }: {
+      customizationId: string,
+      value: CustomizationOptionValue
+    }
   ): void {
     const isOptionValueEmptyArray = Array.isArray(value) && value.length === 0;
 
