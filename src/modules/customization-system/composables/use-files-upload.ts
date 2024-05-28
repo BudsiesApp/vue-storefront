@@ -1,32 +1,36 @@
-import { inject, computed, Ref, SetupContext } from '@vue/composition-api';
+import { inject, computed, Ref, SetupContext, onMounted, nextTick, ref } from '@vue/composition-api';
 
 import { ImageHandlerService, Item } from 'src/modules/file-storage';
 import { CustomerImage } from 'src/modules/shared';
+import { FileUploadValue } from '../types/file-upload-value';
 
 function getCustomerImageByStorageItemId (
-  storageItemId: string,
+  fileUploadValue: FileUploadValue,
   imageHandlerService: ImageHandlerService
 ): CustomerImage {
   return {
-    id: storageItemId,
-    url: imageHandlerService.getOriginalImageUrl(storageItemId)
+    id: fileUploadValue.id,
+    url: imageHandlerService.getOriginalImageUrl(fileUploadValue.url)
   };
 }
 
-function getInitialItems (value: string | string[] | undefined, imageHandlerService: ImageHandlerService): CustomerImage[] {
+function getInitialItems (
+  value: FileUploadValue | FileUploadValue[] | undefined,
+  imageHandlerService: ImageHandlerService
+): CustomerImage[] {
   if (!value) {
     return [];
   }
 
-  if (typeof value === 'string') {
-    return [getCustomerImageByStorageItemId(value, imageHandlerService)]
+  if (Array.isArray(value)) {
+    return value.map((item) => getCustomerImageByStorageItemId(item, imageHandlerService));
   }
 
-  return value.map((item) => getCustomerImageByStorageItemId(item, imageHandlerService));
+  return [getCustomerImageByStorageItemId(value, imageHandlerService)]
 }
 
 export function useFilesUpload (
-  value: Ref<string | string[] | undefined>,
+  value: Ref<FileUploadValue | FileUploadValue[] | undefined>,
   maxValuesCount: Ref<number | undefined>,
   { emit }: SetupContext
 ) {
@@ -36,7 +40,7 @@ export function useFilesUpload (
     throw new Error('ImageHandlerService is not defined');
   }
 
-  const initialItems: CustomerImage[] = getInitialItems(value.value, imageHandlerService);
+  let initialItems = ref<CustomerImage[]>([]);
   const allowMultiple = computed<boolean>(() => {
     return !maxValuesCount.value || maxValuesCount.value > 1;
   });
@@ -45,20 +49,25 @@ export function useFilesUpload (
   });
 
   function onFileAdded (item: Item): void {
+    const fileUploadValue: FileUploadValue = {
+      id: item.id,
+      url: item.url
+    };
+
     if (!allowMultiple.value) {
-      emit('input', item.id);
+      emit('input', fileUploadValue);
       return;
     }
 
     if (!value.value) {
-      return emit('input', [item.id]);
+      return emit('input', [fileUploadValue]);
     }
 
     if (!Array.isArray(value.value)) {
-      return emit('input', [value.value, item.id]);
+      return emit('input', [value.value, fileUploadValue]);
     }
 
-    emit('input', [...value.value, item.id]);
+    emit('input', [...value.value, fileUploadValue]);
   }
 
   function onFileRemoved (storageItemId: string) {
@@ -70,8 +79,17 @@ export function useFilesUpload (
       return emit('input', []);
     }
 
-    emit('input', value.value.filter((item) => item !== storageItemId));
+    emit(
+      'input',
+      value.value.filter((item) => item.id !== storageItemId)
+    );
   }
+
+  onMounted(async () => {
+    await nextTick();
+    // TODO: current version of TS resolve type incorrect
+    (initialItems as any).value = getInitialItems(value.value, imageHandlerService);
+  });
 
   return {
     allowMultiple,

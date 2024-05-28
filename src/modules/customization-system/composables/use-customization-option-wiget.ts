@@ -1,27 +1,30 @@
-import { computed, Ref, SetupContext } from '@vue/composition-api';
-import { CustomizationStateItem } from '../types/customization-state-item.interface';
+import { computed, onBeforeUnmount, Ref, SetupContext, watch } from '@vue/composition-api';
 
+import { PRODUCT_SET_BUNDLE_OPTION } from '@vue-storefront/core/modules/catalog/store/product/mutation-types';
+
+import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
+import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
-import { OptionValue } from '..';
+import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationOptionWidget (
-  value: Ref<CustomizationStateItem | undefined>,
+  value: Ref<CustomizationOptionValue>,
   customization: Ref<Customization>,
   values: Ref<OptionValue[]>,
   productId: Ref<number>,
-  { emit }: SetupContext
+  { emit, root }: SetupContext
 ) {
-  const selectedOption = computed<string | string[] | undefined>({
+  const selectedOption = computed<CustomizationOptionValue>({
     get: () => {
-      return value.value?.value
+      return value.value;
     },
-    set: (newValue: string | string[] | undefined) => {
+    set: (newValue: CustomizationOptionValue) => {
       emit('input', {
         customizationId: customization.value.id,
         value: newValue
-      })
+      });
     }
   });
   const maxValuesCount = computed<number | undefined>(() => {
@@ -43,7 +46,7 @@ export function useCustomizationOptionWidget (
       return {
         component: 'ProductionTimeSelector',
         props: {
-          bundleOptionId: customization.bundleOptionId,
+          bundleOptionId: customization.value.bundleOptionId,
           productId: productId.value,
           values: values.value
         }
@@ -99,11 +102,9 @@ export function useCustomizationOptionWidget (
           }
         };
       case WidgetType.IMAGE_UPLOAD:
-      case WidgetType.IMAGE_UPLOAD_LATER:
         return {
           component: 'ImageUploadWidget',
           props: {
-            allowUploadLater: displayWidget === WidgetType.IMAGE_UPLOAD_LATER,
             maxValuesCount: maxValuesCount.value,
             productId: productId.value
           }
@@ -129,6 +130,61 @@ export function useCustomizationOptionWidget (
         };
     }
   });
+
+  function setBundleOptionValue (
+    optionId: number,
+    optionQty: number,
+    optionSelections: number[]
+  ): void {
+    root.$store.commit(
+      `product/${PRODUCT_SET_BUNDLE_OPTION}`,
+      { optionId, optionQty, optionSelections }
+    )
+  }
+
+  onBeforeUnmount(() => {
+    selectedOption.value = undefined;
+  });
+
+  watch(
+    selectedOption,
+    (newValue) => {
+      if (!customization.value.bundleOptionId) {
+        return;
+      }
+
+      if (isFileUploadValue(newValue)) {
+        return;
+      }
+
+      let selectedValueIds: string[]
+
+      if (!newValue) {
+        selectedValueIds = [];
+      } else {
+        selectedValueIds = Array.isArray(newValue) ? newValue : [newValue];
+      }
+
+      const bundleOptionItemIds: number[] = [];
+
+      selectedValueIds.forEach((id) => {
+        const value = values.value.find((item) => item.id === id);
+
+        if (value && value.bundleOptionItemId) {
+          bundleOptionItemIds.push(value.bundleOptionItemId)
+        }
+      })
+
+      setBundleOptionValue(
+        customization.value.bundleOptionId,
+        1,
+        bundleOptionItemIds
+      )
+    },
+    {
+      immediate: true
+    }
+  );
 
   return {
     maxValuesCount,

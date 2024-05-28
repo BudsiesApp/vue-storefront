@@ -1,33 +1,9 @@
 import { Ref, computed, SetupContext } from '@vue/composition-api';
 
-import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { PriceHelper } from 'src/modules/shared';
 
+import { getOptionValuePrice } from '../helpers/get-option-value-price';
 import { OptionValue } from '../types/option-value.interface';
-
-function getOptionValuePrice (
-  optionValue: OptionValue,
-  productBySkuDictionary: Record<string, Product>
-): PriceHelper.ProductPrice | undefined {
-  const defaultOptionValuePrice = optionValue.price
-    ? {
-      regular: optionValue.price,
-      special: null
-    }
-    : undefined
-
-  if (!optionValue.sku) {
-    return defaultOptionValuePrice;
-  }
-
-  const product = productBySkuDictionary[optionValue.sku];
-
-  if (!product) {
-    return defaultOptionValuePrice;
-  }
-
-  return PriceHelper.getCartItemPrice(product, {}, false);
-}
 
 export function useOptionValuesPrice (
   values: Ref<OptionValue[]>,

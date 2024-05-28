@@ -8,7 +8,7 @@ export interface OptionValue {
   sku?: string,
   name?: string,
   description?: string,
-  previewUrl?: string,
+  thumbnailUrl?: string,
   attachmentUrl?: string,
   color?: string,
   price?: number,
@@ -17,5 +17,5 @@ export interface OptionValue {
   availabilityRules?: AvailabilityRules,
   actions?: Actions,
   sn: number,
-  galleryImages: GalleryImage[]
+  galleryImages?: GalleryImage[]
 }

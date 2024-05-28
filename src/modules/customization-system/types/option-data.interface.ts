@@ -7,6 +7,7 @@ import { WidgetType } from './widget-type';
 export interface OptionData {
   description?: string,
   displayWidget: WidgetType,
+  hasDetailedDescription: boolean,
   hasGalleryImages: boolean,
   hint?: string,
   isRequired: boolean,
