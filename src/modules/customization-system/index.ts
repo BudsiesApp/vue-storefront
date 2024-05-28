@@ -1,5 +1,6 @@
 import { useAvailableCustomizations } from './composables/use-available-customizations';
 import { useCustomizationsBusyState } from './composables/use-customizations-busy-state';
+import { useCustomizationsGroups } from './composables/use-customizations-groups';
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useCustomizationsPrice } from './composables/use-customizations-price';
@@ -42,6 +43,7 @@ export {
   isFileUploadValue,
   useAvailableCustomizations,
   useCustomizationsBusyState,
+  useCustomizationsGroups,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
   useCustomizationsPrice,
