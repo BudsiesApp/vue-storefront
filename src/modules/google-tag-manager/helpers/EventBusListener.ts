@@ -366,10 +366,7 @@ export default class EventBusListener {
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.PURCHASE,
-      ecommerce: data
-    });
-
-    this.gtm.trackEvent({
+      ecommerce: data,
       customerEmail: orderPersonalDetails.emailAddress,
       customerFullName: `${orderPersonalDetails.firstName} ${orderPersonalDetails.lastName}`,
       customerId: currentUser ? currentUser.id : ''
