@@ -22,10 +22,10 @@ import { isFileUploadValue } from './types/is-file-upload-value.typeguard';
 import { ListWidgetInputType } from './types/list-widget-input-type';
 import { OptionType } from './types/option-type';
 import { OptionValue } from './types/option-value.interface';
-import { WidgetConfigLayout } from './types/widget-config-layout.type';
-import { WidgetConfigShape } from './types/widget-config-shape.type';
+import { WidgetOptionShape } from './types/widget-option-shape.type';
 import { WidgetType } from './types/widget-type';
-import { getCustomizationsFromProduct } from './helpers/get-customizations-from-product';
+import { WidgetOptionAlignment } from './types/widget-option-alignment.type';
+import { WidgetOptions } from './types/widget-options.interface';
 
 export {
   Customization,
@@ -35,11 +35,11 @@ export {
   ListWidgetInputType,
   OptionType,
   OptionValue,
-  WidgetConfigLayout,
-  WidgetConfigShape,
+  WidgetOptionAlignment,
+  WidgetOptions,
+  WidgetOptionShape,
   WidgetType,
 
-  getCustomizationsFromProduct,
   isFileUploadValue,
   useAvailableCustomizations,
   useCustomizationsBusyState,

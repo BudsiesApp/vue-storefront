@@ -53,13 +53,13 @@ export function useCustomizationOptionWidget (
       };
     }
 
-    const widgetConfig = customization.value.optionData.widgetConfig;
+    const widgetOptions = customization.value.optionData.displayWidgetOptions;
     const displayWidget = customization.value.optionData.displayWidget;
 
     const listWidgetsProps = {
-      layout: widgetConfig?.layout,
+      alignment: widgetOptions?.alignment,
       maxValuesCount: maxValuesCount.value,
-      shape: widgetConfig?.shape,
+      shape: widgetOptions?.shape,
       values: values.value
     };
 
@@ -90,7 +90,7 @@ export function useCustomizationOptionWidget (
           component: 'DropdownWidget',
           props: {
             values: values.value,
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.DROPDOWN_FREE_TEXT:
@@ -98,7 +98,7 @@ export function useCustomizationOptionWidget (
           component: 'DropdownFreeTextWidget',
           props: {
             values: values.value,
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.IMAGE_UPLOAD:
@@ -113,14 +113,14 @@ export function useCustomizationOptionWidget (
         return {
           component: 'TextAreaWidget',
           props: {
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.TEXT_INPUT:
         return {
           component: 'TextInputWidget',
           props: {
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.THUMBNAILS_LIST:
