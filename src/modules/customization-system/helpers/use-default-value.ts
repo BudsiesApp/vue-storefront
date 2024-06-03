@@ -4,12 +4,17 @@ import { OptionValue } from '..';
 
 export function useDefaultValue (
   selectedOption: Ref<string | string[] | undefined>,
-  values: Ref<OptionValue[]>
+  values: Ref<OptionValue[]>,
+  isRequired: Ref<boolean>
 ): void {
   function setDefaultValue (): void {
-    const defaultValue = values.value.find((value) => value.isDefault);
+    let defaultValue = values.value.find((value) => value.isDefault);
     const value = selectedOption.value;
     const isArray = Array.isArray(value);
+
+    if (!defaultValue && isRequired.value) {
+      defaultValue = values.value[0];
+    }
 
     if (!defaultValue) {
       return;
@@ -27,6 +32,12 @@ export function useDefaultValue (
   }
 
   setDefaultValue();
+
+  watch(selectedOption, (newValue) => {
+    if (!newValue || !newValue.length) {
+      setDefaultValue();
+    }
+  });
 
   watch(values, (newValues, oldValues) => {
     if (!selectedOption.value || !oldValues.length) {

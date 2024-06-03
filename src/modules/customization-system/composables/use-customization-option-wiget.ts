@@ -42,11 +42,14 @@ export function useCustomizationOptionWidget (
       throw new Error("Customization 'optionData' is missing");
     }
 
+    const isRequired = customization.value.optionData.isRequired;
+
     if (customization.value.optionData.type === OptionType.PRODUCTION_TIME) {
       return {
         component: 'ProductionTimeSelector',
         props: {
           bundleOptionId: customization.value.bundleOptionId,
+          isRequired,
           productId: productId.value,
           values: values.value
         }
@@ -58,6 +61,7 @@ export function useCustomizationOptionWidget (
 
     const listWidgetsProps = {
       alignment: widgetOptions?.alignment,
+      isRequired,
       maxValuesCount: maxValuesCount.value,
       shape: widgetOptions?.shape,
       values: values.value
@@ -68,6 +72,7 @@ export function useCustomizationOptionWidget (
         return {
           component: 'CardsListWidget',
           props: {
+            isRequired,
             maxValuesCount: maxValuesCount.value,
             values: values.value
           }
@@ -76,6 +81,7 @@ export function useCustomizationOptionWidget (
         return {
           component: 'CheckboxWidget',
           props: {
+            isRequired,
             label: customization.value.title || customization.value.name,
             values: values.value
           }
@@ -89,6 +95,7 @@ export function useCustomizationOptionWidget (
         return {
           component: 'DropdownWidget',
           props: {
+            isRequired,
             values: values.value,
             placeholder: widgetOptions?.placeholder
           }
@@ -97,6 +104,7 @@ export function useCustomizationOptionWidget (
         return {
           component: 'DropdownFreeTextWidget',
           props: {
+            isRequired,
             values: values.value,
             placeholder: widgetOptions?.placeholder
           }
