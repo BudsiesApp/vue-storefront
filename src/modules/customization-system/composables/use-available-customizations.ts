@@ -20,9 +20,9 @@ export function useAvailableCustomizations (
     () => {
       const dictionary: Record<string, OptionValue[]> = {};
 
-      customizations.value.forEach((customization: Customization) => {
+      for (const customization of customizations.value) {
         dictionary[customization.id] =
-          customization.optionData?.values.filter(
+          customization.optionData?.values?.filter(
             (value) => {
               if (!value.isEnabled) {
                 return false;
@@ -31,7 +31,7 @@ export function useAvailableCustomizations (
               return isItemAvailable(value, selectedOptionValuesIds.value);
             }
           ) || [];
-      });
+      }
 
       return dictionary;
     }

@@ -42,24 +42,28 @@ export function useCustomizationOptionWidget (
       throw new Error("Customization 'optionData' is missing");
     }
 
+    const isRequired = customization.value.optionData.isRequired;
+
     if (customization.value.optionData.type === OptionType.PRODUCTION_TIME) {
       return {
         component: 'ProductionTimeSelector',
         props: {
           bundleOptionId: customization.value.bundleOptionId,
+          isRequired,
           productId: productId.value,
           values: values.value
         }
       };
     }
 
-    const widgetConfig = customization.value.optionData.widgetConfig;
+    const widgetOptions = customization.value.optionData.displayWidgetOptions;
     const displayWidget = customization.value.optionData.displayWidget;
 
     const listWidgetsProps = {
-      layout: widgetConfig?.layout,
+      alignment: widgetOptions?.alignment,
+      isRequired,
       maxValuesCount: maxValuesCount.value,
-      shape: widgetConfig?.shape,
+      shape: widgetOptions?.shape,
       values: values.value
     };
 
@@ -68,6 +72,7 @@ export function useCustomizationOptionWidget (
         return {
           component: 'CardsListWidget',
           props: {
+            isRequired,
             maxValuesCount: maxValuesCount.value,
             values: values.value
           }
@@ -76,6 +81,7 @@ export function useCustomizationOptionWidget (
         return {
           component: 'CheckboxWidget',
           props: {
+            isRequired,
             label: customization.value.title || customization.value.name,
             values: values.value
           }
@@ -89,16 +95,18 @@ export function useCustomizationOptionWidget (
         return {
           component: 'DropdownWidget',
           props: {
+            isRequired,
             values: values.value,
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.DROPDOWN_FREE_TEXT:
         return {
           component: 'DropdownFreeTextWidget',
           props: {
+            isRequired,
             values: values.value,
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.IMAGE_UPLOAD:
@@ -113,14 +121,14 @@ export function useCustomizationOptionWidget (
         return {
           component: 'TextAreaWidget',
           props: {
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.TEXT_INPUT:
         return {
           component: 'TextInputWidget',
           props: {
-            placeholder: widgetConfig?.placeholder
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.THUMBNAILS_LIST:

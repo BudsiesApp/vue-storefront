@@ -18,7 +18,7 @@ export function useCustomizationsPrice (
       const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
 
       customizations.value.forEach((customization) => {
-        if (!customization.optionData) {
+        if (!customization.optionData?.values) {
           return;
         }
 
@@ -41,7 +41,7 @@ export function useCustomizationsPrice (
         return;
       }
 
-      if (!customization.optionData.values.length) {
+      if (!customization.optionData.values?.length) {
         return;
       }
       const selectedValues = getCustomizationSelectedValues(

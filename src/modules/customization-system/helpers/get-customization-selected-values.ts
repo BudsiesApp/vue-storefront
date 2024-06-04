@@ -22,7 +22,7 @@ export function getCustomizationSelectedValues (
   const selectedValues: OptionValue[] = [];
 
   selectedValuesIds.forEach((id) => {
-    const selectedValue = customization.optionData?.values.find((value) => id === value.id);
+    const selectedValue = customization.optionData?.values?.find((value) => id === value.id);
 
     if (selectedValue) {
       selectedValues.push(selectedValue);

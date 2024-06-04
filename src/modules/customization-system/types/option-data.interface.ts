@@ -1,12 +1,12 @@
 import { OptionType } from './option-type';
 import { OptionValue } from './option-value.interface';
-import { WidgetConfigLayout } from './widget-config-layout.type';
-import { WidgetConfigShape } from './widget-config-shape.type';
+import { WidgetOptions } from './widget-options.interface';
 import { WidgetType } from './widget-type';
 
 export interface OptionData {
   description?: string,
   displayWidget: WidgetType,
+  displayWidgetOptions?: WidgetOptions,
   hasDetailedDescription: boolean,
   hasGalleryImages: boolean,
   hint?: string,
@@ -15,10 +15,5 @@ export interface OptionData {
   previewUrl?: string,
   sku?: string,
   type: OptionType,
-  values: OptionValue[],
-  widgetConfig?: {
-    layout?: WidgetConfigLayout,
-    placeholder?: string,
-    shape?: WidgetConfigShape
-  }
+  values?: OptionValue[]
 }

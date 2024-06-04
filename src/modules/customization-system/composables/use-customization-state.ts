@@ -108,6 +108,11 @@ export function useCustomizationState (
     }
   }
 
+  function resetCustomizationState () {
+    // TODO: temporary - current TS version don't handle `value` type right in this case
+    (customizationOptionValue.value as unknown as Record<string, CustomizationOptionValue>) = {};
+  }
+
   function fillCustomizationStateFromExistingCartItem () {
     if (!existingCartItem.value || !existingCartItem.value.customizationState) {
       return;
@@ -137,6 +142,7 @@ export function useCustomizationState (
     customizationOptionValue,
     customizationState,
     removeCustomizationOptionValue,
+    resetCustomizationState,
     selectedOptionValuesIds,
     updateCustomizationOptionValue
   }
