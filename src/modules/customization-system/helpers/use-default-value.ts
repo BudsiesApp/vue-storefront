@@ -34,7 +34,7 @@ export function useDefaultValue (
   setDefaultValue();
 
   watch(selectedOption, (newValue) => {
-    if (!newValue || !newValue.length) {
+    if (!newValue || (Array.isArray(newValue) && !newValue.length)) {
       setDefaultValue();
     }
   });
