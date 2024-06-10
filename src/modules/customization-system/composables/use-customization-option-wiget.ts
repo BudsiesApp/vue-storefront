@@ -150,10 +150,6 @@ export function useCustomizationOptionWidget (
     )
   }
 
-  onBeforeUnmount(() => {
-    selectedOption.value = undefined;
-  });
-
   watch(
     selectedOption,
     (newValue) => {
