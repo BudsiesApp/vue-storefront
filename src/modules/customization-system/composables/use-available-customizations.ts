@@ -39,6 +39,15 @@ export function useAvailableCustomizations (
       return dictionary;
     }
   );
+  const availableOptionValues = computed<OptionValue[]>(() => {
+    const optionValues: OptionValue[] = [];
+
+    for (const values of Object.values(customizationAvailableOptionValues.value)) {
+      optionValues.push(...values);
+    }
+
+    return optionValues;
+  });
 
   const availableOptionValuesIds = computed<string>(() => {
     let ids = '';
@@ -137,6 +146,7 @@ export function useAvailableCustomizations (
   return {
     availableCustomizations,
     availableOptionCustomizations,
+    availableOptionValues,
     customizationAvailableOptionValues
   }
 }

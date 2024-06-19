@@ -94,6 +94,20 @@ export function useOptionValuesPrice (
     return dictionary;
   });
 
+  const isOptionValuesSamePrice = computed<boolean>(() => {
+    for (const price of Object.values(optionValuePriceDeltaDictionary.value)) {
+      if (!price) {
+        continue;
+      }
+
+      if (PriceHelper.getFinalPrice(price) !== 0) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   function isDefaultOptionValue (optionValue: OptionValue): boolean {
     return !!defaultOptionValue.value && defaultOptionValue.value.id === optionValue.id;
   }
@@ -101,6 +115,7 @@ export function useOptionValuesPrice (
   return {
     defaultOptionValuePrice,
     isDefaultOptionValue,
+    isOptionValuesSamePrice,
     optionValuePriceDictionary,
     optionValuePriceDeltaDictionary,
     formatPrice: PriceHelper.formatPrice

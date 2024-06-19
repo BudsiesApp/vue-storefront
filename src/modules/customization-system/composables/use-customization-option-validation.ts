@@ -1,7 +1,7 @@
 import { computed, Ref, ref, watch } from '@vue/composition-api';
-import { extend } from 'vee-validate';
+import { extend, ValidationProvider } from 'vee-validate';
 import { required } from 'vee-validate/dist/rules';
-import { ValidationRuleSchema } from 'vee-validate/dist/types/types'
+import { ValidationRuleSchema, ValidationResult } from 'vee-validate/dist/types/types'
 
 import { getFieldAnchorName } from 'theme/helpers/use-form-validation';
 
@@ -13,6 +13,7 @@ extend('required', {
 });
 
 export function useCustomizationOptionValidation (customization: Ref<Customization>) {
+  const validationProvider = ref<InstanceType<typeof ValidationProvider> | null>(null);
   const validationRef = computed<string>(() => {
     const customizationValue = customization.value;
     return getFieldAnchorName(customizationValue.title || customizationValue.name);
@@ -67,6 +68,19 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
     }
   });
 
+  async function validateSilent (): Promise<ValidationResult> {
+    if (validationProvider.value) {
+    // TODO: temporary - current TS version don't handle `value` type right in this case
+      return (validationProvider as any).value.validateSilent()
+    }
+
+    return {
+      valid: true,
+      errors: [],
+      failedRules: {}
+    };
+  }
+
   function extendMaxValueCountValidationRule (): void {
     extend('maxValueCount', maxValueCountValidationRule.value);
   }
@@ -79,6 +93,8 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
   );
 
   return {
+    validateSilent,
+    validationProvider,
     validationRef,
     validationRules
   }
