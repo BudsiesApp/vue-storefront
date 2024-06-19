@@ -11,6 +11,7 @@ export interface Customization {
   parentId?: string,
   name: string,
   optionData?: OptionData,
+  showInCart: boolean,
   sn: number,
   title?: string,
   type: CustomizationType,
