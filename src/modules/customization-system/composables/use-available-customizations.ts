@@ -144,6 +144,7 @@ export function useAvailableCustomizations (
   });
 
   return {
+    availableCustomization,
     availableCustomizations,
     availableOptionCustomizations,
     availableOptionValues,

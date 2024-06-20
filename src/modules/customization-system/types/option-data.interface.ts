@@ -13,6 +13,7 @@ export interface OptionData {
   isRequired: boolean,
   maxValuesCount: number,
   previewUrl?: string,
+  showInUrlQuery: boolean,
   sku?: string,
   type: OptionType,
   values?: OptionValue[]
