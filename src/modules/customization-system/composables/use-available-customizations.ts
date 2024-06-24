@@ -1,8 +1,10 @@
 import { Ref, ComputedRef, computed, watch } from '@vue/composition-api';
 
-import { Customization, CustomizationOptionValue, isFileUploadValue, OptionValue } from '..';
+import rootStore from '@vue-storefront/core/store';
+import { RushAddon } from 'src/modules/budsies';
+
+import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType, OptionValue } from '..';
 import { isItemAvailable } from '../helpers/is-item-available';
-import { isProductionTimeCustomizationUnavailable } from '../helpers/is-production-time-customization-unavailable';
 import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
 
@@ -62,6 +64,18 @@ export function useAvailableCustomizations (
     return ids;
   });
 
+  const isProductionTimeCustomizationAvailable = computed<boolean>(() => {
+    const productId = rootStore.getters['product/getCurrentProduct']?.id;
+
+    if (!productId) {
+      return false;
+    }
+
+    const availableAddons: RushAddon[] = rootStore.getters['budsies/getProductRushAddons'](productId);
+
+    return availableAddons.length > 0;
+  });
+
   const availableCustomizations = computed<Customization[]>(() => {
     const filteredCustomizations: Customization[] = customizations.value.filter(
       (customization: Customization) => {
@@ -69,9 +83,9 @@ export function useAvailableCustomizations (
           return false;
         }
 
-        const isProductionTimeUnavailable = isProductionTimeCustomizationUnavailable(
-          customization
-        );
+        const isProductionTimeCustomization = customization.optionData?.type === OptionType.PRODUCTION_TIME;
+        const isProductionTimeUnavailable = isProductionTimeCustomization &&
+          !isProductionTimeCustomizationAvailable.value;
 
         const hasAvailableOptionValues =
           customizationAvailableOptionValues.value[customization.id].length > 0 ||
