@@ -2,6 +2,7 @@ import { Ref, ComputedRef, computed, watch } from '@vue/composition-api';
 
 import { Customization, CustomizationOptionValue, isFileUploadValue, OptionValue } from '..';
 import { isItemAvailable } from '../helpers/is-item-available';
+import { isProductionTimeCustomizationUnavailable } from '../helpers/is-production-time-customization-unavailable';
 import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
 
@@ -68,12 +69,16 @@ export function useAvailableCustomizations (
           return false;
         }
 
+        const isProductionTimeUnavailable = isProductionTimeCustomizationUnavailable(
+          customization
+        );
+
         const hasAvailableOptionValues =
           customizationAvailableOptionValues.value[customization.id].length > 0 ||
           !customization.optionData ||
           ignoreAvailableOptionsCheckFor.includes(customization.optionData.displayWidget);
 
-        return isItemAvailable(customization, selectedOptionValuesIds.value) &&
+        return !isProductionTimeUnavailable && isItemAvailable(customization, selectedOptionValuesIds.value) &&
           hasAvailableOptionValues;
       }
     );
