@@ -1,6 +1,7 @@
 import { Ref, ComputedRef, computed, watch } from '@vue/composition-api';
 
 import rootStore from '@vue-storefront/core/store';
+import Product from 'core/modules/catalog/types/Product';
 import { RushAddon } from 'src/modules/budsies';
 
 import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType, OptionValue } from '..';
@@ -20,7 +21,8 @@ export function useAvailableCustomizations (
   customizations: Ref<Customization[]>,
   selectedOptionValuesIds: ComputedRef<string[]>,
   customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
-  updateCustomizationOptionValue: (payload: { customizationId: string, value: CustomizationOptionValue }) => void
+  updateCustomizationOptionValue: (payload: { customizationId: string, value: CustomizationOptionValue }) => void,
+  product: Ref<Product | undefined>
 ) {
   const customizationAvailableOptionValues = computed<Record<string, OptionValue[]>>(
     () => {
@@ -65,13 +67,11 @@ export function useAvailableCustomizations (
   });
 
   const isProductionTimeCustomizationAvailable = computed<boolean>(() => {
-    const productId = rootStore.getters['product/getCurrentProduct']?.id;
-
-    if (!productId) {
+    if (!product.value) {
       return false;
     }
 
-    const availableAddons: RushAddon[] = rootStore.getters['budsies/getProductRushAddons'](productId);
+    const availableAddons: RushAddon[] = rootStore.getters['budsies/getProductRushAddons'](product.value.id);
 
     return availableAddons.length > 0;
   });
