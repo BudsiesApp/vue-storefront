@@ -13,6 +13,7 @@ import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useSelectedOptionValueUrlQuery } from './composables/use-selected-option-value-url-query';
 import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
+import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
 import { useDefaultValue } from './helpers/use-default-value';
 
 import { Customization } from './types/customization.interface';
@@ -41,6 +42,7 @@ export {
   WidgetOptionShape,
   WidgetType,
 
+  getCustomizationSystemCartItemThumbnail,
   isFileUploadValue,
   useAvailableCustomizations,
   useCustomizationsBusyState,
