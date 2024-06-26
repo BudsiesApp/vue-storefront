@@ -1,4 +1,4 @@
-import { inject, computed, Ref, SetupContext, onMounted, nextTick, ref } from '@vue/composition-api';
+import { inject, computed, Ref, SetupContext, ref, watch } from '@vue/composition-api';
 
 import { ImageHandlerService, Item } from 'src/modules/file-storage';
 import { CustomerImage } from 'src/modules/shared';
@@ -85,11 +85,15 @@ export function useFilesUpload (
     );
   }
 
-  onMounted(async () => {
-    await nextTick();
-    // TODO: current version of TS resolve type incorrect
-    (initialItems as any).value = getInitialItems(value.value, imageHandlerService);
-  });
+  watch(
+    value,
+    () => {
+      (initialItems as any).value = getInitialItems(value.value, imageHandlerService);
+    },
+    {
+      immediate: true
+    }
+  );
 
   return {
     allowMultiple,
