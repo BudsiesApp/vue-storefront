@@ -11,6 +11,7 @@ import { useListWidget } from './composables/use-list-widget';
 import { useOptionValueActions } from './composables/use-option-value-actions';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useProductionTimeSelectorCustomization } from './composables/use-production-time-selector-customization';
+import { useSelectedOptionValueUrlQuery } from './composables/use-selected-option-value-url-query';
 import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { filterCustomizationState } from './helpers/filter-customization-state';
@@ -62,6 +63,7 @@ export {
   useOptionValueActions,
   useOptionValuesPrice,
   useProductionTimeSelectorCustomization,
+  useSelectedOptionValueUrlQuery,
   useValuesSort,
   useWidgetBusyState
 }
