@@ -24,17 +24,7 @@ export function useSelectedOptionValueUrlQuery (
 
     return customizations;
   });
-  const availableOptionValueBySkuDictionary = computed<Record<string, OptionValue>>(() => {
-    const dictionary: Record<string, OptionValue> = {};
 
-    for (const optionValue of availableOptionValues.value) {
-      if (optionValue.sku) {
-        dictionary[optionValue.sku] = optionValue;
-      }
-    }
-
-    return dictionary;
-  });
   const availableOptionValueDictionary = computed<Record<string, OptionValue>>(() => {
     const dictionary: Record<string, OptionValue> = {};
 
@@ -105,9 +95,9 @@ export function useSelectedOptionValueUrlQuery (
           continue;
         }
 
-        const optionValue = availableOptionValueBySkuDictionary.value[sku];
+        const optionValue = customization.optionData.values?.find((value) => value.sku === sku);
 
-        if (optionValue) {
+        if (optionValue && !!availableOptionValueDictionary.value[optionValue.id]) {
           relatedOptionValues.push(optionValue);
         }
       }
