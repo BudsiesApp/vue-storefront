@@ -4,7 +4,7 @@ import rootStore from '@vue-storefront/core/store';
 import Product from 'core/modules/catalog/types/Product';
 import { RushAddon } from 'src/modules/budsies';
 
-import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType, OptionValue } from '..';
+import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType, OptionValue, PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID } from '..';
 import { isItemAvailable } from '../helpers/is-item-available';
 import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
@@ -150,6 +150,15 @@ export function useAvailableCustomizations (
       }
 
       if (typeof optionValue === 'string') {
+        // TODO: temporary until separate option value for "Standard"
+        // production time will be added
+        if (
+          optionValue === PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID &&
+          customization.optionData.type === OptionType.PRODUCTION_TIME
+        ) {
+          continue;
+        }
+
         if (!availableOptionValues.find((item) => item.id === optionValue)) {
           updateCustomizationOptionValue({ customizationId: key, value: undefined });
         }

@@ -6,6 +6,7 @@ import { ValidationRuleSchema, ValidationResult } from 'vee-validate/dist/types/
 import { getFieldAnchorName } from 'theme/helpers/use-form-validation';
 
 import { Customization } from '../types/customization.interface';
+import { OptionType } from '../types/option-type';
 
 extend('required', {
   ...required,
@@ -20,8 +21,13 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
   });
   const validationRules = computed<Record<string, any>>(() => {
     const maxValueCount = customization.value.optionData?.maxValuesCount;
+
+    // TODO: temporary until separate option value for "Standard"
+    // production time will be added
+    const isProductionTimeCustomization = customization.value.optionData?.type === OptionType.PRODUCTION_TIME;
+
     return {
-      required: customization.value.optionData?.isRequired,
+      required: customization.value.optionData?.isRequired || isProductionTimeCustomization,
       maxValueCount: maxValueCount &&
         maxValueCount > 1
         ? {
