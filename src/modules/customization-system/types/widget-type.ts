@@ -4,6 +4,7 @@ export enum WidgetType {
   COLORS_LIST = 'colors_list',
   DROPDOWN = 'dropdown',
   DROPDOWN_FREE_TEXT = 'search_field',
+  EMAIL_INPUT = 'email_input',
   IMAGE_UPLOAD = 'image_upload',
   TEXT_AREA = 'text_area',
   TEXT_INPUT = 'text_input',

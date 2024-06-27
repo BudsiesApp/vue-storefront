@@ -100,6 +100,14 @@ export function useCustomizationOptionWidget (
             placeholder: widgetOptions?.placeholder
           }
         };
+      case WidgetType.EMAIL_INPUT:
+        return {
+          component: 'TextInputWidget',
+          props: {
+            placeholder: widgetOptions?.placeholder,
+            type: 'email'
+          }
+        }
       case WidgetType.DROPDOWN_FREE_TEXT:
         return {
           component: 'DropdownFreeTextWidget',
