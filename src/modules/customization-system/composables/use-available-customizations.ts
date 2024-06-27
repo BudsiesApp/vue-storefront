@@ -82,6 +82,7 @@ export function useAvailableCustomizations (
       return a.sn > b.sn ? 1 : -1;
     });
   });
+  // TODO rename to make it more obvious
   const availableCustomization = computed<Record<string, Customization>>(() => {
     const dictionary: Record<string, Customization> = {};
 
@@ -144,6 +145,7 @@ export function useAvailableCustomizations (
   });
 
   return {
+    availableCustomization,
     availableCustomizations,
     availableOptionCustomizations,
     availableOptionValues,

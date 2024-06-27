@@ -10,6 +10,7 @@ import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValueActions } from './composables/use-option-value-actions';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
+import { useSelectedOptionValueUrlQuery } from './composables/use-selected-option-value-url-query';
 import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
@@ -56,6 +57,7 @@ export {
   useListWidget,
   useOptionValueActions,
   useOptionValuesPrice,
+  useSelectedOptionValueUrlQuery,
   useValuesSort,
   useWidgetBusyState
 }
