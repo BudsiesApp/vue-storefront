@@ -18,7 +18,7 @@ export function useCustomizationStatePreservation (
   productSku: Ref<string | undefined>,
   customizationState: Ref<CustomizationStateItem[]>,
   existingCartItem: Ref<CartItem | undefined>,
-  additionalData?: Ref<Record<string, any> | undefined>
+  additionalData?: Ref<Record<string, any>> | undefined
 ) {
   const mutex = new Mutex();
   const customizationSystemStorage = StorageManager.get(STORAGE_NAME);
@@ -75,8 +75,13 @@ export function useCustomizationStatePreservation (
 
     return customizationSystemStorage.getItem(storageItemKey.value);
   }
+  const watchProperties: Ref<any>[] = [customizationState];
 
-  watch(customizationState, (value) => {
+  if (additionalData) {
+    watchProperties.push(additionalData);
+  }
+
+  watch(watchProperties, (value) => {
     if (!value.length || existingCartItem.value) {
       return;
     }
