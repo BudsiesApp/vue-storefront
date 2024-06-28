@@ -1,4 +1,4 @@
-import { inject, computed, Ref, SetupContext, onMounted, nextTick, ref } from '@vue/composition-api';
+import { inject, computed, Ref, SetupContext, ref, watch, set, del } from '@vue/composition-api';
 
 import { ImageHandlerService, Item } from 'src/modules/file-storage';
 import { CustomerImage } from 'src/modules/shared';
@@ -41,6 +41,8 @@ export function useFilesUpload (
   }
 
   let initialItems = ref<CustomerImage[]>([]);
+  let addedFiles = ref<Record<string, Item>>({});
+
   const allowMultiple = computed<boolean>(() => {
     return !maxValuesCount.value || maxValuesCount.value > 1;
   });
@@ -49,6 +51,16 @@ export function useFilesUpload (
   });
 
   function onFileAdded (item: Item): void {
+    set(addedFiles.value, item.id, item);
+  }
+
+  function onFileProcessed (storageItemId: string) {
+    const item = addedFiles.value[storageItemId];
+
+    if (!item) {
+      return;
+    }
+
     const fileUploadValue: FileUploadValue = {
       id: item.id,
       url: item.url
@@ -71,6 +83,8 @@ export function useFilesUpload (
   }
 
   function onFileRemoved (storageItemId: string) {
+    del(addedFiles.value, storageItemId);
+
     if (!allowMultiple.value) {
       return emit('input', undefined);
     }
@@ -85,17 +99,22 @@ export function useFilesUpload (
     );
   }
 
-  onMounted(async () => {
-    await nextTick();
-    // TODO: current version of TS resolve type incorrect
-    (initialItems as any).value = getInitialItems(value.value, imageHandlerService);
-  });
+  watch(
+    value,
+    () => {
+      (initialItems as any).value = getInitialItems(value.value, imageHandlerService);
+    },
+    {
+      immediate: true
+    }
+  );
 
   return {
     allowMultiple,
     initialItems,
     maxFiles,
     onFileAdded,
+    onFileProcessed,
     onFileRemoved
   }
 }

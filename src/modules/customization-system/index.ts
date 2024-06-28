@@ -6,6 +6,7 @@ import { useCustomizationOptionWidget } from './composables/use-customization-op
 import { useCustomizationsPrice } from './composables/use-customizations-price';
 import { useCustomizationProductDescription } from './composables/use-customization-product-description';
 import { useCustomizationState } from './composables/use-customization-state';
+import { useCustomizationStatePreservation } from './composables/use-customization-state-preservation';
 import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValueActions } from './composables/use-option-value-actions';
@@ -57,6 +58,7 @@ export {
   useCustomizationsPrice,
   useCustomizationProductDescription,
   useCustomizationState,
+  useCustomizationStatePreservation,
   useDefaultValue,
   useFilesUpload,
   useListWidget,
