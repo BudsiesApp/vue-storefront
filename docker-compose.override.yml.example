@@ -1,0 +1,8 @@
+version: '2.0'
+services:
+  app:
+    extra_hosts:
+      - "[api-host]:host-gateway"
+    environment:
+      - CERT_NAME=localdev
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
