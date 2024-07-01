@@ -1,16 +1,22 @@
 import { computed, Ref, ref, watch } from '@vue/composition-api';
 import { extend, ValidationProvider } from 'vee-validate';
-import { required } from 'vee-validate/dist/rules';
+import { email, required } from 'vee-validate/dist/rules';
 import { ValidationRuleSchema, ValidationResult } from 'vee-validate/dist/types/types'
 
 import { getFieldAnchorName } from 'theme/helpers/use-form-validation';
 
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
+import { isEmailCustomization } from '../helpers/is-email-customization';
 
 extend('required', {
   ...required,
   message: 'The \'{_field_}\' field is required'
+});
+
+extend('email', {
+  ...email,
+  message: 'Please, provide the correct email address'
 });
 
 export function useCustomizationOptionValidation (customization: Ref<Customization>) {
@@ -25,8 +31,7 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
     // TODO: temporary until separate option value for "Standard"
     // production time will be added
     const isProductionTimeCustomization = customization.value.optionData?.type === OptionType.PRODUCTION_TIME;
-
-    return {
+    const validationRules: Record<string, any> = {
       required: customization.value.optionData?.isRequired || isProductionTimeCustomization,
       maxValueCount: maxValueCount &&
         maxValueCount > 1
@@ -34,7 +39,13 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
           max: maxValueCount
         }
         : false
+    };
+
+    if (isEmailCustomization(customization.value)) {
+      validationRules.email = true;
     }
+
+    return validationRules;
   });
   const validatedValue = ref<string | string[] | undefined>();
 

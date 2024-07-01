@@ -12,6 +12,7 @@ import { WidgetType } from '../types/widget-type';
 const ignoreAvailableOptionsCheckFor = [
   WidgetType.CHECKBOX,
   WidgetType.DROPDOWN_FREE_TEXT,
+  WidgetType.EMAIL_INPUT,
   WidgetType.IMAGE_UPLOAD,
   WidgetType.TEXT_AREA,
   WidgetType.TEXT_INPUT
