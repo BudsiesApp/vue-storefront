@@ -101,7 +101,7 @@ export function useCustomizationOptionWidget (
             placeholder: widgetOptions?.placeholder
           }
         };
-      case WidgetType.DROPDOWN_FREE_TEXT:
+      case WidgetType.SEARCH_FIELD:
         return {
           component: 'DropdownFreeTextWidget',
           props: {

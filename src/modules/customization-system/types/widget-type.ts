@@ -3,7 +3,7 @@ export enum WidgetType {
   CHECKBOX = 'checkbox',
   COLORS_LIST = 'colors_list',
   DROPDOWN = 'dropdown',
-  DROPDOWN_FREE_TEXT = 'search_field',
+  SEARCH_FIELD = 'search_field',
   IMAGE_UPLOAD = 'image_upload',
   TEXT_AREA = 'text_area',
   TEXT_INPUT = 'text_input',
