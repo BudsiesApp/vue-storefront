@@ -64,6 +64,19 @@ export function useCustomizationState (
     set(customizationOptionValue.value, customizationId, value);
   }
 
+  function replaceCustomizationState (
+    customizationState: CustomizationStateItem[]
+  ): void {
+    const newCustomizationOptionValue: Record<string, CustomizationOptionValue> = {};
+
+    for (const stateItem of customizationState) {
+      newCustomizationOptionValue[stateItem.customizationId] = stateItem.value;
+    }
+
+    // TODO: temporary - current TS version don't handle `value` type right in this case
+    (customizationOptionValue as any).value = newCustomizationOptionValue;
+  }
+
   function addCustomizationOptionValue (customizationId: string, optionValueId: string) {
     const value = customizationOptionValue.value[customizationId];
 
@@ -142,6 +155,7 @@ export function useCustomizationState (
     customizationOptionValue,
     customizationState,
     removeCustomizationOptionValue,
+    replaceCustomizationState,
     resetCustomizationState,
     selectedOptionValuesIds,
     updateCustomizationOptionValue

@@ -39,19 +39,20 @@ export function useCustomizationOptionWidget (
       throw new Error("Customization 'optionData' is missing");
     }
 
+    const widgetOptions = customization.value.optionData.displayWidgetOptions;
+    const displayWidget = customization.value.optionData.displayWidget;
+
     if (customization.value.optionData.type === OptionType.PRODUCTION_TIME) {
       return {
         component: 'ProductionTimeSelector',
         props: {
           bundleOptionId: customization.value.bundleOptionId,
+          placeholder: widgetOptions?.placeholder,
           productId: productId.value,
           values: values.value
         }
       };
     }
-
-    const widgetOptions = customization.value.optionData.displayWidgetOptions;
-    const displayWidget = customization.value.optionData.displayWidget;
 
     const listWidgetsProps = {
       alignment: widgetOptions?.alignment,
