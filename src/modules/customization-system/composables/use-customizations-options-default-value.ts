@@ -1,0 +1,53 @@
+import { Ref, watch } from '@vue/composition-api';
+
+import { getDefaultValue } from '../helpers/get-default-option-value';
+import { CustomizationOptionValue } from '../types/customization-option-value';
+import { CustomizationStateItem } from '../types/customization-state-item.interface';
+import { Customization } from '../types/customization.interface';
+import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
+import { OptionValue } from '../types/option-value.interface';
+
+export function useCustomizationsOptionsDefaultValue (
+  availableCustomizations: Ref<Customization[]>,
+  customizationAvailableOptionValues: Ref<Record<string, OptionValue[]>>,
+  customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
+  updateCustomizationOptionValue: (payload: CustomizationStateItem) => void
+) {
+  function setDefaultValues (): void {
+    for (const customization of availableCustomizations.value) {
+      const selectedOptionValue = customizationOptionValue.value[customization.id];
+      const optionValues = customizationAvailableOptionValues.value[customization.id];
+
+      if (!optionValues || isFileUploadValue(selectedOptionValue) || !customization.optionData) {
+        continue;
+      }
+
+      const defaultValue = getDefaultValue(
+        optionValues,
+        selectedOptionValue,
+        customization.optionData.isRequired
+      );
+
+      if (!defaultValue) {
+        continue;
+      }
+
+      updateCustomizationOptionValue({
+        customizationId: customization.id,
+        value: defaultValue
+      });
+    }
+  }
+
+  watch(
+    customizationAvailableOptionValues,
+    setDefaultValues,
+    {
+      immediate: true
+    }
+  );
+
+  return {
+    setDefaultValues
+  }
+}

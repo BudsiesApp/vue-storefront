@@ -1,6 +1,8 @@
 import { useAvailableCustomizations } from './composables/use-available-customizations';
+import { useCustomizationsBundleOptions } from './composables/use-customizations-bundle-options';
 import { useCustomizationsBusyState } from './composables/use-customizations-busy-state';
 import { useCustomizationsGroups } from './composables/use-customizations-groups';
+import { useCustomizationsOptionsDefaultValue } from './composables/use-customizations-options-default-value';
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useCustomizationsPrice } from './composables/use-customizations-price';
@@ -13,7 +15,6 @@ import { useOptionValuesPrice } from './composables/use-option-values-price';
 import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
-import { useDefaultValue } from './helpers/use-default-value';
 
 import { Customization } from './types/customization.interface';
 import { CustomizationOptionValue } from './types/customization-option-value';
@@ -44,14 +45,15 @@ export {
   getCustomizationSystemCartItemThumbnail,
   isFileUploadValue,
   useAvailableCustomizations,
+  useCustomizationsBundleOptions,
   useCustomizationsBusyState,
   useCustomizationsGroups,
+  useCustomizationsOptionsDefaultValue,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
   useCustomizationsPrice,
   useCustomizationProductDescription,
   useCustomizationState,
-  useDefaultValue,
   useFilesUpload,
   useListWidget,
   useOptionValueActions,
