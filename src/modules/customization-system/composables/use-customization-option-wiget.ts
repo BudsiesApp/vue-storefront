@@ -101,21 +101,21 @@ export function useCustomizationOptionWidget (
             placeholder: widgetOptions?.placeholder
           }
         };
-      case WidgetType.DROPDOWN_FREE_TEXT:
-        return {
-          component: 'DropdownFreeTextWidget',
-          props: {
-            isRequired,
-            values: values.value,
-            placeholder: widgetOptions?.placeholder
-          }
-        };
       case WidgetType.IMAGE_UPLOAD:
         return {
           component: 'ImageUploadWidget',
           props: {
             maxValuesCount: maxValuesCount.value,
             productId: productId.value
+          }
+        };
+      case WidgetType.SEARCH_FIELD:
+        return {
+          component: 'SearchFieldWidget',
+          props: {
+            isRequired,
+            values: values.value,
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.TEXT_AREA:
