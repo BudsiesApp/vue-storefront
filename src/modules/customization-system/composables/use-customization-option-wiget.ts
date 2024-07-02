@@ -111,7 +111,6 @@ export function useCustomizationOptionWidget (
         return {
           component: 'SearchFieldWidget',
           props: {
-            isRequired,
             values: values.value,
             placeholder: widgetOptions?.placeholder
           }
