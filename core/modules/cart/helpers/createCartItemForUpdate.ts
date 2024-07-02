@@ -28,7 +28,8 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     participantId: clientItem.participantId ? clientItem.participantId : undefined,
     participantName: clientItem.participantName ? clientItem.participantName : undefined,
     parentName: clientItem.parentName ? clientItem.parentName : undefined,
-    hospitalId: clientItem.hospitalId ? clientItem.hospitalId : undefined
+    hospitalId: clientItem.hospitalId ? clientItem.hospitalId : undefined,
+    customizationState: clientItem.customizationState
   } as any as CartItem
 
   if (updateIds && serverItem.quote_id && serverItem.item_id) {

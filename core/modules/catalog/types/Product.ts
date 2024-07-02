@@ -1,3 +1,5 @@
+import { Customization } from 'src/modules/customization-system';
+
 import { ProductOption } from './ProductConfiguration';
 import { ConfigurableItemOption } from './ConfigurableOption';
 import { BundleOption, SelectedBundleOption } from './BundleOption';
@@ -79,7 +81,8 @@ export default interface Product {
   meta_title?: string | null,
   meta_description?: string | null,
   landing_page_url?: string | null,
-  disabled_upgrades?: string[]
+  disabled_upgrades?: string[],
+  customizations?: Customization[]
 }
 
 export interface ProductLink {

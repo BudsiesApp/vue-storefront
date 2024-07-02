@@ -367,7 +367,8 @@
         "product_links",
         "video_url",
         "thumbnail",
-        "disabled_upgrades"
+        "disabled_upgrades",
+        "customizations"
       ]
     },
     "productListWithChildren": {
@@ -397,7 +398,8 @@
         "product_links",
         "video_url",
         "thumbnail",
-        "disabled_upgrades"
+        "disabled_upgrades",
+        "customizations"
       ]
     },
     "review": {
