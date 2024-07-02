@@ -11,7 +11,7 @@ import { WidgetType } from '../types/widget-type';
 
 const ignoreAvailableOptionsCheckFor = [
   WidgetType.CHECKBOX,
-  WidgetType.DROPDOWN_FREE_TEXT,
+  WidgetType.SEARCH_FIELD,
   WidgetType.EMAIL_INPUT,
   WidgetType.IMAGE_UPLOAD,
   WidgetType.TEXT_AREA,
@@ -158,6 +158,10 @@ export function useAvailableCustomizations (
           optionValue === PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID &&
           customization.optionData.type === OptionType.PRODUCTION_TIME
         ) {
+          continue;
+        }
+
+        if (customization.optionData.displayWidget === WidgetType.SEARCH_FIELD) {
           continue;
         }
 

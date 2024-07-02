@@ -98,14 +98,6 @@ export function useCustomizationOptionWidget (
             placeholder: widgetOptions?.placeholder,
             type: 'email'
           }
-        }
-      case WidgetType.DROPDOWN_FREE_TEXT:
-        return {
-          component: 'DropdownFreeTextWidget',
-          props: {
-            values: values.value,
-            placeholder: widgetOptions?.placeholder
-          }
         };
       case WidgetType.IMAGE_UPLOAD:
         return {
@@ -113,6 +105,15 @@ export function useCustomizationOptionWidget (
           props: {
             maxValuesCount: maxValuesCount.value,
             productId: productId.value
+          }
+        };
+      case WidgetType.SEARCH_FIELD:
+        return {
+          component: 'SearchFieldWidget',
+          props: {
+            isRequired,
+            values: values.value,
+            placeholder: widgetOptions?.placeholder
           }
         };
       case WidgetType.TEXT_AREA:
