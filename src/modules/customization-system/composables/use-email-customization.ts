@@ -45,11 +45,16 @@ export function useEmailCustomization (
 
   const isMounted = ref<boolean>(false);
 
-  const { hasPrefilledEmail, persistLastUsedCustomerEmail } = usePersistedEmail(emailValue);
+  const {
+    fillLastUsedCustomerEmail,
+    hasPrefilledEmail,
+    persistLastUsedCustomerEmail
+  } = usePersistedEmail(emailValue);
 
   onMounted(async () => {
     await nextTick();
     isMounted.value = true;
+    fillLastUsedCustomerEmail();
   });
 
   function persistCustomerEmail (): void {

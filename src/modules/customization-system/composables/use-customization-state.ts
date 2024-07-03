@@ -65,11 +65,11 @@ export function useCustomizationState (
   }
 
   function replaceCustomizationState (
-    customizationState: CustomizationStateItem[]
+    state: CustomizationStateItem[]
   ): void {
     const newCustomizationOptionValue: Record<string, CustomizationOptionValue> = {};
 
-    for (const stateItem of customizationState) {
+    for (const stateItem of state) {
       newCustomizationOptionValue[stateItem.customizationId] = stateItem.value;
     }
 

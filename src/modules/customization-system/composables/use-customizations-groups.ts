@@ -68,8 +68,22 @@ export function useCustomizationsGroups (
     ).sort((a, b) => a.sn > b.sn ? 1 : -1);
   });
 
+  const commonCustomizationRootGroups = computed<Customization[]>(() => {
+    return customizationRootGroups.value.slice(0, customizationRootGroups.value.length - 1);
+  });
+
+  const lastCustomizationRootGroup = computed<Customization | undefined>(() => {
+    if (!customizationRootGroups.value.length) {
+      return;
+    }
+
+    return customizationRootGroups.value[customizationRootGroups.value.length - 1];
+  });
+
   return {
+    commonCustomizationRootGroups,
     customizationRootGroupCustomizations,
-    customizationRootGroups
+    customizationRootGroups,
+    lastCustomizationRootGroup
   }
 }
