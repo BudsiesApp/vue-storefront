@@ -4,7 +4,7 @@ import get from 'lodash-es/get'
 import flow from 'lodash-es/flow'
 import cloneDeep from 'lodash-es/cloneDeep';
 import ServerItem from '../types/Servertem';
-import { isFileUploadValue } from 'src/modules/customization-system';
+import { getEmailCustomizationState, isFileUploadValue } from 'src/modules/customization-system';
 
 const replaceNumberToString = obj => {
   Object.keys(obj).forEach(key => {
@@ -29,8 +29,15 @@ export const getProductOptions = (product, optionsName) => {
 }
 
 const getDataToHash = (product: CartItem | ServerItem): any => {
-  if (product.customizationState && product.customizationState.length) {
-    return product.customizationState.map(
+  const emailCustomizationState = getEmailCustomizationState((product as any).customizations || [], product.customizationState || []);
+  const customizationState = !emailCustomizationState
+    ? product.customizationState
+    : product.customizationState?.filter(
+      (item) => item.customizationId !== emailCustomizationState.customizationId
+    );
+
+  if (customizationState && customizationState.length) {
+    return customizationState.map(
       (customization) => {
         if (isFileUploadValue(customization.value)) {
           return Array.isArray(customization.value)
