@@ -16,7 +16,6 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     product_option: clientItem.product_option,
     customerImages: clientItem.customerImages ? clientItem.customerImages : undefined,
     plushieId: clientItem.plushieId ? clientItem.plushieId : undefined,
-    email: clientItem.email ? clientItem.email : undefined,
     plushieBreed: clientItem.plushieBreed ? clientItem.plushieBreed : undefined,
     plushieName: clientItem.plushieName ? clientItem.plushieName : undefined,
     plushieDescription: clientItem.plushieDescription ? clientItem.plushieDescription : undefined,
