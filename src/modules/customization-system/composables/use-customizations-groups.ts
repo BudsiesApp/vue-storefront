@@ -68,8 +68,13 @@ export function useCustomizationsGroups (
     ).sort((a, b) => a.sn > b.sn ? 1 : -1);
   });
 
+  function isLastGroup (index: number): boolean {
+    return index === customizationRootGroups.value.length - 1;
+  }
+
   return {
     customizationRootGroupCustomizations,
-    customizationRootGroups
+    customizationRootGroups,
+    isLastGroup
   }
 }
