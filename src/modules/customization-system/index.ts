@@ -1,12 +1,16 @@
 import { useAvailableCustomizations } from './composables/use-available-customizations';
+import { useCustomizationsBundleOptions } from './composables/use-customizations-bundle-options';
 import { useCustomizationsBusyState } from './composables/use-customizations-busy-state';
+import { useCustomizationsFilter } from './composables/use-customizations-filter';
 import { useCustomizationsGroups } from './composables/use-customizations-groups';
+import { useCustomizationsOptionsDefaultValue } from './composables/use-customizations-options-default-value';
 import { useCustomizationOptionValidation } from './composables/use-customization-option-validation';
 import { useCustomizationOptionWidget } from './composables/use-customization-option-wiget';
 import { useCustomizationsPrice } from './composables/use-customizations-price';
 import { useCustomizationProductDescription } from './composables/use-customization-product-description';
 import { useCustomizationState } from './composables/use-customization-state';
 import { useCustomizationStatePreservation } from './composables/use-customization-state-preservation';
+import { useEmailCustomization } from './composables/use-email-customization';
 import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValueActions } from './composables/use-option-value-actions';
@@ -17,7 +21,8 @@ import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { filterCustomizationState } from './helpers/filter-customization-state';
 import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
-import { useDefaultValue } from './helpers/use-default-value';
+import { isEmailCustomization } from './helpers/is-email-customization';
+import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
 
 import { Customization } from './types/customization.interface';
 import { CustomizationOptionValue } from './types/customization-option-value';
@@ -49,17 +54,22 @@ export {
 
   filterCustomizationState,
   getCustomizationSystemCartItemThumbnail,
+  isEmailCustomization,
   isFileUploadValue,
+  requiredCustomizationsFilter,
   useAvailableCustomizations,
+  useCustomizationsBundleOptions,
   useCustomizationsBusyState,
+  useCustomizationsFilter,
   useCustomizationsGroups,
+  useCustomizationsOptionsDefaultValue,
   useCustomizationOptionValidation,
   useCustomizationOptionWidget,
   useCustomizationsPrice,
   useCustomizationProductDescription,
   useCustomizationState,
   useCustomizationStatePreservation,
-  useDefaultValue,
+  useEmailCustomization,
   useFilesUpload,
   useListWidget,
   useOptionValueActions,

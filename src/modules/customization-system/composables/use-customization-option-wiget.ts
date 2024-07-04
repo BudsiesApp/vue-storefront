@@ -1,20 +1,17 @@
-import { computed, onBeforeUnmount, Ref, SetupContext, watch } from '@vue/composition-api';
-
-import { PRODUCT_SET_BUNDLE_OPTION } from '@vue-storefront/core/modules/catalog/store/product/mutation-types';
+import { computed, Ref, SetupContext } from '@vue/composition-api';
 
 import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
 import { OptionType } from '../types/option-type';
 import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
-import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationOptionWidget (
   value: Ref<CustomizationOptionValue>,
   customization: Ref<Customization>,
   values: Ref<OptionValue[]>,
   productId: Ref<number>,
-  { emit, root }: SetupContext
+  { emit }: SetupContext
 ) {
   const selectedOption = computed<CustomizationOptionValue>({
     get: () => {
@@ -42,8 +39,6 @@ export function useCustomizationOptionWidget (
       throw new Error("Customization 'optionData' is missing");
     }
 
-    const isRequired = customization.value.optionData.isRequired;
-
     const widgetOptions = customization.value.optionData.displayWidgetOptions;
     const displayWidget = customization.value.optionData.displayWidget;
 
@@ -52,7 +47,6 @@ export function useCustomizationOptionWidget (
         component: 'ProductionTimeSelector',
         props: {
           bundleOptionId: customization.value.bundleOptionId,
-          isRequired,
           placeholder: widgetOptions?.placeholder,
           productId: productId.value,
           values: values.value
@@ -62,7 +56,6 @@ export function useCustomizationOptionWidget (
 
     const listWidgetsProps = {
       alignment: widgetOptions?.alignment,
-      isRequired,
       maxValuesCount: maxValuesCount.value,
       shape: widgetOptions?.shape,
       values: values.value
@@ -73,7 +66,6 @@ export function useCustomizationOptionWidget (
         return {
           component: 'CardsListWidget',
           props: {
-            isRequired,
             maxValuesCount: maxValuesCount.value,
             values: values.value
           }
@@ -82,7 +74,6 @@ export function useCustomizationOptionWidget (
         return {
           component: 'CheckboxWidget',
           props: {
-            isRequired,
             label: customization.value.title || customization.value.name,
             values: values.value
           }
@@ -96,9 +87,16 @@ export function useCustomizationOptionWidget (
         return {
           component: 'DropdownWidget',
           props: {
-            isRequired,
             values: values.value,
             placeholder: widgetOptions?.placeholder
+          }
+        };
+      case WidgetType.EMAIL_INPUT:
+        return {
+          component: 'TextInputWidget',
+          props: {
+            placeholder: widgetOptions?.placeholder,
+            type: 'email'
           }
         };
       case WidgetType.IMAGE_UPLOAD:
@@ -113,7 +111,6 @@ export function useCustomizationOptionWidget (
         return {
           component: 'SearchFieldWidget',
           props: {
-            isRequired,
             values: values.value,
             placeholder: widgetOptions?.placeholder
           }
@@ -139,57 +136,6 @@ export function useCustomizationOptionWidget (
         };
     }
   });
-
-  function setBundleOptionValue (
-    optionId: number,
-    optionQty: number,
-    optionSelections: number[]
-  ): void {
-    root.$store.commit(
-      `product/${PRODUCT_SET_BUNDLE_OPTION}`,
-      { optionId, optionQty, optionSelections }
-    )
-  }
-
-  watch(
-    selectedOption,
-    (newValue) => {
-      if (!customization.value.bundleOptionId) {
-        return;
-      }
-
-      if (isFileUploadValue(newValue)) {
-        return;
-      }
-
-      let selectedValueIds: string[]
-
-      if (!newValue) {
-        selectedValueIds = [];
-      } else {
-        selectedValueIds = Array.isArray(newValue) ? newValue : [newValue];
-      }
-
-      const bundleOptionItemIds: number[] = [];
-
-      selectedValueIds.forEach((id) => {
-        const value = values.value.find((item) => item.id === id);
-
-        if (value && value.bundleOptionItemId) {
-          bundleOptionItemIds.push(value.bundleOptionItemId)
-        }
-      })
-
-      setBundleOptionValue(
-        customization.value.bundleOptionId,
-        1,
-        bundleOptionItemIds
-      )
-    },
-    {
-      immediate: true
-    }
-  );
 
   return {
     maxValuesCount,
