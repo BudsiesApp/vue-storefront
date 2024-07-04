@@ -30,6 +30,8 @@ export const getProductOptions = (product, optionsName) => {
 
 const getDataToHash = (product: CartItem | ServerItem): any => {
   //TODO rewrite to keep implementation details in corresponding modules (customization-system, budsies, etc.)
+
+  //ServerItem doesn't have the "customizations" field
   const emailCustomization = (product as any).customizations?.find(isEmailCustomization);
 
   let customizationState = product.customizationState;
