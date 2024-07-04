@@ -1,6 +1,7 @@
 const productFieldsAllowedToUpdate = [
   'category_ids',
   'category',
+  'customizations',
   'image',
   'type_id',
   'sku',
