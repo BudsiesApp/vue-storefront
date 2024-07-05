@@ -151,7 +151,7 @@ export function useAvailableCustomizations (
         continue;
       }
 
-      if (typeof optionValue === 'string') {
+      if (!Array.isArray(optionValue)) {
         // TODO: temporary until separate option value for "Standard"
         // production time will be added
         if (

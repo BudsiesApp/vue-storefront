@@ -1,4 +1,5 @@
 import { Ref, watch } from '@vue/composition-api';
+import { canSelectMultipleOptionValues } from '../helpers/can-select-multiple-option-values';
 
 import { getDefaultValue } from '../helpers/get-default-option-value';
 import { CustomizationOptionValue } from '../types/customization-option-value';
@@ -18,14 +19,14 @@ export function useCustomizationsOptionsDefaultValue (
       const selectedOptionValue = customizationOptionValue.value[customization.id];
       const optionValues = customizationAvailableOptionValues.value[customization.id];
 
-      if (!optionValues || isFileUploadValue(selectedOptionValue) || !customization.optionData) {
+      if (!optionValues || isFileUploadValue(selectedOptionValue)) {
         continue;
       }
 
       const defaultValue = getDefaultValue(
         optionValues,
         selectedOptionValue,
-        customization.optionData.isRequired
+        canSelectMultipleOptionValues(customization)
       );
 
       if (!defaultValue) {

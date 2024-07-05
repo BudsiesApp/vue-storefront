@@ -31,7 +31,7 @@ export function useCustomizationState (
     const selectedValues: string[] = [];
 
     customizationState.value.forEach((state) => {
-      if (isFileUploadValue(state.value)) {
+      if (isFileUploadValue(state.value) || typeof state.value === 'number') {
         return;
       }
 

@@ -49,8 +49,10 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
             : customization.value.id;
         }
 
-        if (typeof customization.value === 'string') {
-          return customization.value;
+        if (!Array.isArray(customization.value)) {
+          // TODO some customizations has number values
+          // temporary until there is no separate widget for number values
+          return customization.value.toString();
         }
 
         return customization.value.sort();

@@ -8,7 +8,7 @@ export function filterCustomizationState (customizationState: CustomizationState
   const filteredState: CustomizationStateItem[] = [];
 
   for (const stateItem of customizationState) {
-    if (isFileUploadValue(stateItem.value)) {
+    if (isFileUploadValue(stateItem.value) || typeof stateItem.value === 'number') {
       filteredState.push(stateItem);
       continue;
     }

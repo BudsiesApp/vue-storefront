@@ -10,7 +10,8 @@ export function getCustomizationSelectedValues (
   if (
     !customizationOptionValue ||
     !customization.optionData ||
-    isFileUploadValue(customizationOptionValue)
+    isFileUploadValue(customizationOptionValue) ||
+    typeof customizationOptionValue === 'number'
   ) {
     return;
   }
