@@ -19,21 +19,20 @@ export function useListWidget (
   });
   const selectedOption = computed<string | string[] | undefined>({
     get: () => {
-      if (
-        inputType.value === ListWidgetInputType.CHECKBOX &&
-        selectedValue.value === undefined
-      ) {
-        return [];
+      const isCheckbox = inputType.value === ListWidgetInputType.CHECKBOX;
+      if (!selectedValue.value) {
+        return isCheckbox ? [] : undefined;
       }
 
-      if (
-        inputType.value !== ListWidgetInputType.CHECKBOX &&
-        Array.isArray(selectedValue.value)
-      ) {
-        return selectedValue.value[0];
+      if (isCheckbox) {
+        return Array.isArray(selectedValue.value)
+          ? selectedValue.value
+          : [selectedValue.value];
       }
 
-      return selectedValue.value;
+      return Array.isArray(selectedValue.value)
+        ? selectedValue.value[0]
+        : selectedValue.value;
     },
     set: (value) => {
       const isCheckbox = inputType.value === ListWidgetInputType.CHECKBOX;
@@ -49,12 +48,12 @@ export function useListWidget (
 
   function isSelected (option: OptionValue): boolean {
     if (inputType.value === ListWidgetInputType.CHECKBOX) {
-      return Array.isArray(selectedValue.value) &&
-        selectedValue.value.includes(option.id);
+      return Array.isArray(selectedOption.value) &&
+        selectedOption.value.includes(option.id);
     }
 
-    return typeof selectedValue.value === 'string' &&
-      selectedValue.value === option.id;
+    return typeof selectedOption.value === 'string' &&
+      selectedOption.value === option.id;
   }
 
   function handleCheckboxInput (value: string | string[] | undefined): void {
