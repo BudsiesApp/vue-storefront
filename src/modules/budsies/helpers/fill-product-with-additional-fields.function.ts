@@ -79,7 +79,13 @@ export default function fillProductWithAdditionalFields (
         value = value as GiftCardOptions;
         break;
       case 'CustomizationStateItem[]':
-        value = value as CustomizationStateItem[];
+        value = (value as CustomizationStateItem[]).map((item) => {
+          if (typeof item.value === 'number') {
+            item.value = (item.value as number).toString();
+          }
+
+          return item;
+        });
         break;
       default:
         throw new Error('Unsupported additional field type ');

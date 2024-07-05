@@ -56,10 +56,6 @@ export function useCustomizationsBundleOptions (
       return;
     }
 
-    if (typeof value === 'number') {
-      return;
-    }
-
     let selectedValueIds: string[]
 
     if (!value) {
