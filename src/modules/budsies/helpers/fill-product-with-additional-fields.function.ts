@@ -1,4 +1,4 @@
-import { ExtensionAttributes } from 'src/modules/customization-system/types/extension-attributes.interface';
+import { ExtensionAttributes } from 'src/modules/customization-system';
 import { GiftCardOptions } from 'src/modules/gift-card';
 import { CustomerImage } from 'src/modules/shared';
 

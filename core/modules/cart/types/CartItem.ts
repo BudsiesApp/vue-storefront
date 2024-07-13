@@ -4,7 +4,7 @@ import { CustomerImage } from 'src/modules/shared';
 
 import CartItemOption from './CartItemOption'
 import CartItemTotals from './CartItemTotals'
-import { ExtensionAttributes } from 'src/modules/customization-system/types/extension-attributes.interface';
+import { ExtensionAttributes } from 'src/modules/customization-system';
 
 export default interface CartItem extends Product {
   qty: number,
