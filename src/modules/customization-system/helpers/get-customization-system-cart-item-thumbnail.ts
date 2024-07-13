@@ -10,7 +10,7 @@ export function getCustomizationSystemCartItemThumbnail (
   cartItem: CartItem,
   imageHandlerService: ImageHandlerService
 ): string | undefined {
-  if (!cartItem.customizations || !cartItem.customizationState) {
+  if (!cartItem.customizations || !cartItem.extension_attributes?.customization_state) {
     return;
   }
 
@@ -26,8 +26,8 @@ export function getCustomizationSystemCartItemThumbnail (
     return;
   }
 
-  const customizationStateItem = cartItem.customizationState.find((item) => {
-    return item.customizationId === imageUploadCustomization.id;
+  const customizationStateItem = cartItem.extension_attributes?.customization_state.find((item) => {
+    return item.customization_id === imageUploadCustomization.id;
   });
 
   if (!customizationStateItem || !isFileUploadValue(customizationStateItem.value)) {

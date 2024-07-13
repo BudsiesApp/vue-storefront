@@ -1,6 +1,6 @@
 import { FileUploadValue } from './file-upload-value';
 
 export interface CustomizationStateItem {
-  customizationId: string,
+  customization_id: string,
   value: string | string[] | FileUploadValue | FileUploadValue[]
 }

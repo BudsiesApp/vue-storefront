@@ -26,6 +26,7 @@ import { requiredCustomizationsFilter } from './helpers/required-customizations-
 
 import { Customization } from './types/customization.interface';
 import { CustomizationOptionValue } from './types/customization-option-value';
+import { ExtensionAttributes } from './types/extension-attributes.interface'
 import { CustomizationStateItem } from './types/customization-state-item.interface'
 import { FileUploadValue } from './types/file-upload-value';
 import { isFileUploadValue } from './types/is-file-upload-value.typeguard';
@@ -42,6 +43,7 @@ export {
   Customization,
   CustomizationOptionValue,
   CustomizationStateItem,
+  ExtensionAttributes,
   FileUploadValue,
   ListWidgetInputType,
   OptionType,

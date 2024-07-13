@@ -34,10 +34,10 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
   //ServerItem doesn't have the "customizations" field
   const emailCustomization = (product as any).customizations?.find(isEmailCustomization);
 
-  let customizationState = product.customizationState;
+  let customizationState = product.extension_attributes?.customization_state;
 
   if (emailCustomization) {
-    customizationState = customizationState?.filter((item) => item.customizationId !== emailCustomization.id);
+    customizationState = customizationState?.filter((item) => item.customization_id !== emailCustomization.id);
   }
 
   if (customizationState && customizationState.length) {

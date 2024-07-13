@@ -2,14 +2,16 @@ import { computed, nextTick, onMounted, ref, Ref } from '@vue/composition-api';
 import { usePersistedEmail } from 'src/modules/persisted-customer-data';
 import { isEmailCustomization } from '../helpers/is-email-customization';
 import { CustomizationOptionValue } from '../types/customization-option-value';
-import { CustomizationStateItem } from '../types/customization-state-item.interface';
 
 import { Customization } from '../types/customization.interface';
 
 export function useEmailCustomization (
   availableCustomizations: Ref<Customization[]>,
   customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
-  updateCustomizationOptionValue: (payload: CustomizationStateItem) => void
+  updateCustomizationOptionValue: (payload: {
+    customizationId: string,
+    value: CustomizationOptionValue
+  }) => void
 ) {
   const emailCustomization = computed<Customization | undefined>(() => {
     return availableCustomizations.value.find((customization) => {

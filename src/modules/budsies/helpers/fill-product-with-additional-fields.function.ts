@@ -1,4 +1,4 @@
-import { CustomizationStateItem } from 'src/modules/customization-system';
+import { CustomizationStateItem, ExtensionAttributes } from 'src/modules/customization-system';
 import { GiftCardOptions } from 'src/modules/gift-card';
 import { CustomerImage } from 'src/modules/shared';
 
@@ -6,10 +6,6 @@ const ADDITIONAL_FIELDS_LIST = [
   {
     'type': 'string',
     'key': 'thumbnail'
-  },
-  {
-    'type': 'string',
-    'key': 'plushieId'
   },
   {
     'type': 'string',
@@ -44,8 +40,8 @@ const ADDITIONAL_FIELDS_LIST = [
     'key': 'giftcard_options'
   },
   {
-    'type': 'CustomizationStateItem[]',
-    'key': 'customizationState'
+    'type': 'ExtensionAttributes[]',
+    'key': 'extension_attributes'
   }
 ];
 
@@ -78,14 +74,18 @@ export default function fillProductWithAdditionalFields (
       case 'GiftCardOptions':
         value = value as GiftCardOptions;
         break;
-      case 'CustomizationStateItem[]':
-        value = (value as CustomizationStateItem[]).map((item) => {
+      case 'ExtensionAttributes[]':
+        value = value as ExtensionAttributes[];
+        value.plushie_id = value.plushie_id ? String(value.plushie_id) : null;
+
+        value.customization_state = (value.customization_state as CustomizationStateItem[]).map((item) => {
           if (typeof item.value === 'number') {
             item.value = (item.value as number).toString();
           }
 
           return item;
         });
+
         break;
       default:
         throw new Error('Unsupported additional field type ');
