@@ -1,10 +1,10 @@
 import Product from '@vue-storefront/core/modules/catalog/types/Product'
-import { CustomizationStateItem } from 'src/modules/customization-system';
 import { GiftCardOptions } from 'src/modules/gift-card'
 import { CustomerImage } from 'src/modules/shared';
 
 import CartItemOption from './CartItemOption'
 import CartItemTotals from './CartItemTotals'
+import { ExtensionAttributes } from 'src/modules/customization-system/types/extension-attributes.interface';
 
 export default interface CartItem extends Product {
   qty: number,
@@ -16,7 +16,6 @@ export default interface CartItem extends Product {
   item_id?: number | string,
   checksum?: string,
   quoteId?: string,
-  plushieId?: string,
   plushieBreed?: string,
   plushieName?: string,
   plushieDescription?: string,
@@ -33,5 +32,5 @@ export default interface CartItem extends Product {
   participantName?: string,
   parentName?: string,
   hospitalId?: number,
-  customizationState?: CustomizationStateItem[]
+  extension_attributes?: ExtensionAttributes
 }

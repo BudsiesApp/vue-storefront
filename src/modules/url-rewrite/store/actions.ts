@@ -10,6 +10,7 @@ import { State } from './types/state.interface'
 
 export const actions: ActionTree<State, RootState> = {
   async loadUrlRewrite ({ state }, { requestPath }): Promise<UrlRewrite | null> {
+    return null;
     if (!requestPath) {
       return null;
     }

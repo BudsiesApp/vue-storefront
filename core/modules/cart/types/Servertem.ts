@@ -1,5 +1,6 @@
 import { ProductOptions } from 'core/modules/catalog/types/Product';
 import { CustomizationStateItem } from 'src/modules/customization-system';
+import { ExtensionAttributes } from 'src/modules/customization-system/types/extension-attributes.interface';
 import { GiftCardOptions } from 'src/modules/gift-card';
 import { CustomerImage } from 'src/modules/shared';
 
@@ -10,9 +11,8 @@ export default interface ServerItem {
   prev_qty: number,
   product_option: ProductOptions,
   type_id: any,
-  plushieId?: string,
   thumbnail?: string,
   customerImages?: CustomerImage[],
-  customizationState?: CustomizationStateItem[],
+  extension_attributes?: ExtensionAttributes
   giftcard_options?: GiftCardOptions
 }

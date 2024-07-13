@@ -27,7 +27,7 @@ export function filterCustomizationState (customizationState: CustomizationState
       });
 
       filteredState.push({
-        customizationId: stateItem.customizationId,
+        customization_id: stateItem.customization_id,
         value: filteredValues
       });
     }
