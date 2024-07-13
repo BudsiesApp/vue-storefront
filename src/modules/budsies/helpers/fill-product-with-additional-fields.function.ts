@@ -1,4 +1,4 @@
-import { CustomizationStateItem } from 'src/modules/customization-system';
+import { ExtensionAttributes } from 'src/modules/customization-system/types/extension-attributes.interface';
 import { GiftCardOptions } from 'src/modules/gift-card';
 import { CustomerImage } from 'src/modules/shared';
 
@@ -44,8 +44,8 @@ const ADDITIONAL_FIELDS_LIST = [
     'key': 'giftcard_options'
   },
   {
-    'type': 'CustomizationStateItem[]',
-    'key': 'customizationState'
+    'type': 'ExtensionAttributes[]',
+    'key': 'extension_attributes'
   }
 ];
 
@@ -78,8 +78,9 @@ export default function fillProductWithAdditionalFields (
       case 'GiftCardOptions':
         value = value as GiftCardOptions;
         break;
-      case 'CustomizationStateItem[]':
-        value = value as CustomizationStateItem[];
+      case 'ExtensionAttributes[]':
+        value = value as ExtensionAttributes[];
+        value.plushie_id = value.plushie_id ? String(value.plushie_id) : null;
         break;
       default:
         throw new Error('Unsupported additional field type ');

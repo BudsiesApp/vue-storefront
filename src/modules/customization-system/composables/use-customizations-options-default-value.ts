@@ -2,7 +2,6 @@ import { Ref, watch } from '@vue/composition-api';
 
 import { getDefaultValue } from '../helpers/get-default-option-value';
 import { CustomizationOptionValue } from '../types/customization-option-value';
-import { CustomizationStateItem } from '../types/customization-state-item.interface';
 import { Customization } from '../types/customization.interface';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 import { OptionValue } from '../types/option-value.interface';
@@ -11,7 +10,10 @@ export function useCustomizationsOptionsDefaultValue (
   availableCustomizations: Ref<Customization[]>,
   customizationAvailableOptionValues: Ref<Record<string, OptionValue[]>>,
   customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
-  updateCustomizationOptionValue: (payload: CustomizationStateItem) => void
+  updateCustomizationOptionValue: (payload: {
+    customizationId: string,
+    value: CustomizationOptionValue
+  }) => void
 ) {
   function setDefaultValues (): void {
     for (const customization of availableCustomizations.value) {

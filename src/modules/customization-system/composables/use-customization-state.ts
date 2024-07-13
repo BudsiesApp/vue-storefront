@@ -9,6 +9,7 @@ export function useCustomizationState (
   existingCartItem: Ref<CartItem | undefined>
 ) {
   const customizationOptionValue = ref<Record<string, CustomizationOptionValue>>({});
+
   const customizationState = computed<CustomizationStateItem[]>(() => {
     const items: CustomizationStateItem[] = [];
 
@@ -20,7 +21,7 @@ export function useCustomizationState (
       }
 
       items.push({
-        customizationId,
+        customization_id: customizationId,
         value
       });
     }
@@ -70,7 +71,7 @@ export function useCustomizationState (
     const newCustomizationOptionValue: Record<string, CustomizationOptionValue> = {};
 
     for (const stateItem of state) {
-      newCustomizationOptionValue[stateItem.customizationId] = stateItem.value;
+      newCustomizationOptionValue[stateItem.customization_id] = stateItem.value;
     }
 
     // TODO: temporary - current TS version don't handle `value` type right in this case
@@ -127,14 +128,14 @@ export function useCustomizationState (
   }
 
   function fillCustomizationStateFromExistingCartItem () {
-    if (!existingCartItem.value || !existingCartItem.value.customizationState) {
+    if (!existingCartItem.value || !existingCartItem.value.extension_attributes?.customization_state) {
       return;
     }
 
     const customizationOptionValueDictionary: Record<string, CustomizationOptionValue> = {};
 
-    existingCartItem.value.customizationState.forEach((item) => {
-      customizationOptionValueDictionary[item.customizationId] = item.value;
+    existingCartItem.value.extension_attributes?.customization_state.forEach((item) => {
+      customizationOptionValueDictionary[item.customization_id] = item.value;
     });
 
     // TODO: temporary - current TS version don't handle `value` type right in this case
