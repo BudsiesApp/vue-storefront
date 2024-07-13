@@ -9,10 +9,6 @@ const ADDITIONAL_FIELDS_LIST = [
   },
   {
     'type': 'string',
-    'key': 'plushieId'
-  },
-  {
-    'type': 'string',
     'key': 'email'
   },
   {
