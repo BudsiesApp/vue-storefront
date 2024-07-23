@@ -1,6 +1,5 @@
 import { ExtensionAttributes } from 'src/modules/customization-system';
 import { GiftCardOptions } from 'src/modules/gift-card';
-import { CustomerImage } from 'src/modules/shared';
 
 const ADDITIONAL_FIELDS_LIST = [
   {
@@ -10,30 +9,6 @@ const ADDITIONAL_FIELDS_LIST = [
   {
     'type': 'string',
     'key': 'email'
-  },
-  {
-    'type': 'string',
-    'key': 'plushieBreed'
-  },
-  {
-    'type': 'string',
-    'key': 'plushieName'
-  },
-  {
-    'type': 'string',
-    'key': 'plushieDescription'
-  },
-  {
-    'type': 'string',
-    'key': 'uploadMethod'
-  },
-  {
-    'type': 'object',
-    'key': 'bodyparts'
-  },
-  {
-    'type': 'CustomerImage[]',
-    'key': 'customerImages'
   },
   {
     'type': 'GiftCardOptions',
@@ -67,9 +42,6 @@ export default function fillProductWithAdditionalFields (
         break;
       case 'object':
         value = value as object;
-        break;
-      case 'CustomerImage[]':
-        value = value as CustomerImage[];
         break;
       case 'GiftCardOptions':
         value = value as GiftCardOptions;
