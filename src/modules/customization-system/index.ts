@@ -21,6 +21,7 @@ import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { filterCustomizationState } from './helpers/filter-customization-state';
 import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
+import { getCustomizationValueIdFieldKey } from './helpers/get-customization-value-id-field-key';
 import { isEmailCustomization } from './helpers/is-email-customization';
 import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
 
@@ -56,6 +57,7 @@ export {
 
   filterCustomizationState,
   getCustomizationSystemCartItemThumbnail,
+  getCustomizationValueIdFieldKey,
   isEmailCustomization,
   isFileUploadValue,
   requiredCustomizationsFilter,
