@@ -52,7 +52,9 @@ export const RaffleModule: StorefrontModule = async function ({ store }) {
         return { cartItem };
       }
 
-      cartItem.participantId = participantData.participantId;
+      // TODO: currently this module is not used
+      // and there is no `participantId` field in customization system
+      // cartItem.participantId = participantData.participantId;
 
       return {
         cartItem

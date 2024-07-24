@@ -1,6 +1,8 @@
 import { computed, Ref, SetupContext, watch } from '@vue/composition-api';
-import { CustomizationOptionValue } from '../types/customization-option-value';
 
+import Product from 'core/modules/catalog/types/Product';
+
+import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 import { OptionValue } from '../types/option-value.interface';
@@ -9,6 +11,7 @@ export function useSelectedOptionValueUrlQuery (
   availableCustomizationDictionary: Ref<Record<string, Customization>>,
   availableOptionValues: Ref<OptionValue[]>,
   customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
+  currentProduct: Ref<Product | undefined>,
   updateCustomizationOptionValue: (payload: { customizationId: string, value: CustomizationOptionValue }) => void,
   { root }: SetupContext
 ) {
@@ -76,6 +79,10 @@ export function useSelectedOptionValueUrlQuery (
     return dictionary;
   });
 
+  const queryString = computed<string>(() => {
+    return JSON.stringify(showInUrlQueryData);
+  });
+
   function updateCustomizationOptionValueFromQuery (): void {
     for (const customization of showInUrlQueryCustomizations.value) {
       if (!customization.optionData?.sku) {
@@ -111,7 +118,17 @@ export function useSelectedOptionValueUrlQuery (
 
   updateCustomizationOptionValueFromQuery();
 
-  watch(showInUrlQueryData, () => {
-    root.$router.push({ query: { ...root.$route.query, ...showInUrlQueryData.value } });
-  });
+  watch(
+    queryString,
+    () => {
+      if (!currentProduct.value) {
+        return;
+      }
+
+      root.$router.push({ query: { ...root.$route.query, ...showInUrlQueryData.value } });
+    },
+    {
+      immediate: true
+    }
+  );
 }

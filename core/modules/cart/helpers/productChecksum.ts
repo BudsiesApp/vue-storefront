@@ -58,10 +58,6 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
     ).sort();
   }
 
-  if (product.customerImages && product.customerImages.length) {
-    return product.customerImages.map(item => item.id);
-  }
-
   if (product.giftcard_options) {
     return {
       amount: product.giftcard_options.amount,

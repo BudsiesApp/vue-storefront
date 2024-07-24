@@ -149,6 +149,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     commit('setProductRushAddons', { key: productId, addons });
   },
+  // TODO: used in Bulkorders theme on Bulk Request page
   async loadProductBodyparts (
     { dispatch },
     { productId, useCache = true }
