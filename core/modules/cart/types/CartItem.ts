@@ -16,21 +16,6 @@ export default interface CartItem extends Product {
   item_id?: number | string,
   checksum?: string,
   quoteId?: string,
-  plushieBreed?: string,
-  plushieName?: string,
-  plushieDescription?: string,
-  bodyparts?: object,
-  customFields?: object,
-  uploadMethod?: string,
-  customerImages?: CustomerImage[],
   giftcard_options?: GiftCardOptions,
-  upgradeOptionValues?: {
-    upgradeSku: string,
-    optionsValues: Record<string, string>
-  }[],
-  participantId?: string,
-  participantName?: string,
-  parentName?: string,
-  hospitalId?: number,
   extension_attributes?: ExtensionAttributes
 }
