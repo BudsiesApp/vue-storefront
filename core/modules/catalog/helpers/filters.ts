@@ -25,7 +25,7 @@ const getAvailableFiltersByProduct = (product: Product) => {
         }
 
         const variantProduct = product.configurable_children.find(
-          (child) => child[type] === value_index
+          (child) => child[type].toString() === value_index
         );
 
         if (!variantProduct || !variantProduct.stock.is_in_stock) {
