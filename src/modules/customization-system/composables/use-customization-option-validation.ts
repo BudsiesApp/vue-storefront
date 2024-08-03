@@ -21,18 +21,26 @@ extend('email', {
 
 export function useCustomizationOptionValidation (customization: Ref<Customization>) {
   const validationProvider = ref<InstanceType<typeof ValidationProvider> | null>(null);
+
   const validationRef = computed<string>(() => {
     const customizationValue = customization.value;
     return getFieldAnchorName(customizationValue.title || customizationValue.name);
   });
-  const validationRules = computed<Record<string, any>>(() => {
-    const maxValueCount = customization.value.optionData?.maxValuesCount;
 
+  const isFieldRequired = computed<boolean>(() => {
     // TODO: temporary until separate option value for "Standard"
     // production time will be added
     const isProductionTimeCustomization = customization.value.optionData?.type === OptionType.PRODUCTION_TIME;
+
+    return customization.value.optionData?.isRequired ||
+      isProductionTimeCustomization;
+  });
+
+  const validationRules = computed<Record<string, any>>(() => {
+    const maxValueCount = customization.value.optionData?.maxValuesCount;
+
     const validationRules: Record<string, any> = {
-      required: customization.value.optionData?.isRequired || isProductionTimeCustomization,
+      required: isFieldRequired.value,
       maxValueCount: maxValueCount &&
         maxValueCount > 1
         ? {
@@ -47,6 +55,7 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
 
     return validationRules;
   });
+
   const validatedValue = ref<string | string[] | undefined>();
 
   const maxValueCountValidationRule = computed<ValidationRuleSchema>(() => {
@@ -87,7 +96,7 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
 
   async function validateSilent (): Promise<ValidationResult> {
     if (validationProvider.value) {
-    // TODO: temporary - current TS version don't handle `value` type right in this case
+      // TODO: temporary - current TS version don't handle `value` type right in this case
       return (validationProvider as any).value.validateSilent()
     }
 
@@ -110,6 +119,7 @@ export function useCustomizationOptionValidation (customization: Ref<Customizati
   );
 
   return {
+    isFieldRequired,
     validateSilent,
     validationProvider,
     validationRef,
