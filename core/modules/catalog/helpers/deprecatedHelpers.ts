@@ -44,7 +44,7 @@ export function populateProductConfigurationAsync (context, { product, selectedV
         }
       }
       if (option.values && option.values.length) {
-        const selectedOptionMeta = option.values.find(ov => { return ov.value_index === selectedOption.value })
+        const selectedOptionMeta = option.values.find(ov => { return ov.value_index.toString() === selectedOption.value.toString() })
         if (selectedOptionMeta) {
           selectedOption.label = selectedOptionMeta.label ? selectedOptionMeta.label : selectedOptionMeta.default_label
           selectedOption.value_data = selectedOptionMeta.value_data
