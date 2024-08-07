@@ -23,7 +23,8 @@ export function useOptionValuesPrice (
   );
 
   const defaultOptionValue = computed<OptionValue | undefined>(() => {
-    const defaultValue = values.value.find((value) => value.isDefault);
+    const _values = values.value;
+    const defaultValue = _values.find((value) => value.isDefault);
 
     if (defaultValue) {
       return defaultValue;
@@ -31,9 +32,10 @@ export function useOptionValuesPrice (
 
     let valueWithLowestPrice: OptionValue | undefined;
     let lowestFinalPrice: number | undefined;
+    const _optionValuePriceDictionary = optionValuePriceDictionary.value;
 
-    for (const optionValue of values.value) {
-      const optionValuePrice = optionValuePriceDictionary.value[optionValue.id];
+    for (const optionValue of _values) {
+      const optionValuePrice = _optionValuePriceDictionary[optionValue.id];
 
       if (!optionValuePrice) {
         continue;
@@ -53,38 +55,43 @@ export function useOptionValuesPrice (
   });
 
   const defaultOptionValuePrice = computed<PriceHelper.ProductPrice | undefined>(() => {
-    if (!defaultOptionValue.value) {
+    const _defaultOptionValue = defaultOptionValue.value;
+    if (!_defaultOptionValue) {
       return;
     }
 
-    return optionValuePriceDictionary.value[defaultOptionValue.value.id];
+    return optionValuePriceDictionary.value[_defaultOptionValue.id];
   });
 
   const defaultOptionValueFinalPrice = computed<number | undefined>(() => {
-    if (!defaultOptionValuePrice.value) {
+    const _defaultOptionValuePrice = defaultOptionValuePrice.value;
+    if (!_defaultOptionValuePrice) {
       return;
     }
 
-    return PriceHelper.getFinalPrice(defaultOptionValuePrice.value);
+    return PriceHelper.getFinalPrice(_defaultOptionValuePrice);
   });
   const optionValuePriceDeltaDictionary = computed<Record<string, PriceHelper.ProductPrice | undefined>>(() => {
     const dictionary: Record<string, PriceHelper.ProductPrice | undefined> = {};
+    const _defaultOptionValueFinalPrice = defaultOptionValueFinalPrice.value;
 
-    if (!defaultOptionValueFinalPrice.value) {
+    if (!_defaultOptionValueFinalPrice) {
       return dictionary;
     }
 
-    for (const optionValueId of Object.keys(optionValuePriceDictionary.value)) {
-      const optionValuePrice = optionValuePriceDictionary.value[optionValueId];
+    const _optionValuePriceDictionary = optionValuePriceDictionary.value;
+
+    for (const optionValueId of Object.keys(_optionValuePriceDictionary)) {
+      const optionValuePrice = _optionValuePriceDictionary[optionValueId];
 
       if (!optionValuePrice) {
         continue;
       }
 
       const priceDelta: PriceHelper.ProductPrice = {
-        regular: optionValuePrice.regular - defaultOptionValueFinalPrice.value,
+        regular: optionValuePrice.regular - _defaultOptionValueFinalPrice,
         special: optionValuePrice.special != null
-          ? optionValuePrice.special - defaultOptionValueFinalPrice.value
+          ? optionValuePrice.special - _defaultOptionValueFinalPrice
           : null
       };
 
@@ -109,7 +116,8 @@ export function useOptionValuesPrice (
   });
 
   function isDefaultOptionValue (optionValue: OptionValue): boolean {
-    return !!defaultOptionValue.value && defaultOptionValue.value.id === optionValue.id;
+    const _defaultOptionValue = defaultOptionValue.value;
+    return !!_defaultOptionValue && _defaultOptionValue.id === optionValue.id;
   }
 
   return {
