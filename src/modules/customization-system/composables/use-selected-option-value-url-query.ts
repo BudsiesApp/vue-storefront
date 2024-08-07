@@ -109,9 +109,21 @@ export function useSelectedOptionValueUrlQuery (
         }
       }
 
+      if (!relatedOptionValues.length) {
+        continue;
+      }
+
+      const value = relatedOptionValues.length > 1
+        ? relatedOptionValues.map((item) => item.id)
+        : relatedOptionValues[0].id;
+
+      if (!value) {
+        continue;
+      }
+
       updateCustomizationOptionValue({
         customizationId: customization.id,
-        value: relatedOptionValues.length > 1 ? relatedOptionValues.map((item) => item.id) : relatedOptionValues[0].id
+        value
       });
     }
   }
