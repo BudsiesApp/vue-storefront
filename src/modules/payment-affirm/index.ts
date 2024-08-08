@@ -8,7 +8,7 @@ import registerStoryblokComponents from './components/storyblok'
 import addAffirmScript from './helpers/add-affirm-script.function';
 import { module } from './store';
 import { SET_CHECKOUT_TOKEN } from './types/StoreMutations';
-import { AFFIRM_METHOD_CODE } from './types/AffirmPaymentMethod';
+import { AFFIRM_METHOD_CODE, MAGENTO1_AFFIRM_METHOD_CODE } from './types/AffirmPaymentMethod';
 import { AFFIRM_BEFORE_PLACE_ORDER, AFFIRM_MODAL_CLOSED, AFFIRM_CHECKOUT_ERROR } from './types/AffirmCheckoutEvents';
 import affirmIcon from './assets/affirm-icon.svg';
 
@@ -23,7 +23,7 @@ export const PaymentAffirm: StorefrontModule = function ({ app, store, appConfig
 
       let isCurrentPaymentMethod = false;
       EventBus.$on('checkout-payment-method-changed', (paymentMethodCode: string) => {
-        isCurrentPaymentMethod = paymentMethodCode === AFFIRM_METHOD_CODE;
+        isCurrentPaymentMethod = paymentMethodCode === AFFIRM_METHOD_CODE || paymentMethodCode === MAGENTO1_AFFIRM_METHOD_CODE;
       })
 
       const invokePlaceOrder = async () => {
@@ -80,11 +80,12 @@ export const PaymentAffirm: StorefrontModule = function ({ app, store, appConfig
 
       const onCollectSupportedPaymentMethodsEventHandler = (methods: string[]) => {
         methods.push(AFFIRM_METHOD_CODE);
+        methods.push(MAGENTO1_AFFIRM_METHOD_CODE);
       };
 
       const onBeforeReplacePaymentMethods = (methods: PaymentMethod[]) => {
         methods.forEach((method) => {
-          if (method.code !== AFFIRM_METHOD_CODE) {
+          if (method.code !== AFFIRM_METHOD_CODE && method.code !== MAGENTO1_AFFIRM_METHOD_CODE) {
             return;
           }
 

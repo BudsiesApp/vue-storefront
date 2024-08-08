@@ -14,21 +14,8 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     ...((serverItem && serverItem.item_id) ? { item_id: serverItem.item_id } : {}),
     qty,
     product_option: clientItem.product_option,
-    customerImages: clientItem.customerImages ? clientItem.customerImages : undefined,
-    plushieId: clientItem.plushieId ? clientItem.plushieId : undefined,
-    email: clientItem.email ? clientItem.email : undefined,
-    plushieBreed: clientItem.plushieBreed ? clientItem.plushieBreed : undefined,
-    plushieName: clientItem.plushieName ? clientItem.plushieName : undefined,
-    plushieDescription: clientItem.plushieDescription ? clientItem.plushieDescription : undefined,
-    bodyparts: clientItem.bodyparts ? clientItem.bodyparts : undefined,
-    customFields: clientItem.customFields ? clientItem.customFields : undefined,
-    uploadMethod: clientItem.uploadMethod ? clientItem.uploadMethod : undefined,
     giftcard_options: clientItem.giftcard_options ? clientItem.giftcard_options : undefined,
-    upgradeOptionValues: clientItem.upgradeOptionValues,
-    participantId: clientItem.participantId ? clientItem.participantId : undefined,
-    participantName: clientItem.participantName ? clientItem.participantName : undefined,
-    parentName: clientItem.parentName ? clientItem.parentName : undefined,
-    hospitalId: clientItem.hospitalId ? clientItem.hospitalId : undefined
+    extension_attributes: clientItem.extension_attributes ? clientItem.extension_attributes : undefined,
   } as any as CartItem
 
   if (updateIds && serverItem.quote_id && serverItem.item_id) {
