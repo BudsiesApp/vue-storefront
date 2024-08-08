@@ -203,7 +203,7 @@ const actions = {
     let productOptions = {}
     for (let option of product.configurable_options) {
       for (let ov of option.values) {
-        let lb = ov.label ? ov.label : optionLabel(context.rootState.attribute, { attributeKey: option.attribute_id, searchBy: 'id', optionId: ov.value_index })
+        let lb = ov.label ? ov.label : optionLabel(context.rootState.attribute, { attributeKey: option.attribute_id, searchBy: 'id', optionId: ov.value_index.toString() })
         if (trim(lb) !== '') {
           let optionKey = option.attribute_code ? option.attribute_code : option.label.toLowerCase()
           if (!productOptions[optionKey]) {
@@ -212,7 +212,7 @@ const actions = {
 
           productOptions[optionKey].push({
             label: lb,
-            id: ov.value_index,
+            id: ov.value_index.toString(),
             attribute_code: option.attribute_code
           })
         }
