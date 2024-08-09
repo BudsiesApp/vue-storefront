@@ -83,6 +83,10 @@ export function useSelectedOptionValueUrlQuery (
     return JSON.stringify(showInUrlQueryData);
   });
 
+  const routeQuery = computed<Record<string, string |(string | null)[]>>(() => {
+    return root.$route.query;
+  });
+
   function updateCustomizationOptionValueFromQuery (): void {
     for (const customization of showInUrlQueryCustomizations.value) {
       if (!customization.optionData?.sku) {
@@ -121,10 +125,18 @@ export function useSelectedOptionValueUrlQuery (
         continue;
       }
 
+      if (value === customizationOptionValue.value[customization.id]) {
+        continue;
+      }
+
       updateCustomizationOptionValue({
         customizationId: customization.id,
         value
       });
+
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      }
     }
   }
 
@@ -141,6 +153,13 @@ export function useSelectedOptionValueUrlQuery (
     },
     {
       immediate: true
+    }
+  );
+
+  watch(
+    routeQuery,
+    () => {
+      updateCustomizationOptionValueFromQuery();
     }
   );
 }
