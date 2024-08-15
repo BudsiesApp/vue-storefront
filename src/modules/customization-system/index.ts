@@ -23,6 +23,7 @@ import { filterCustomizationState } from './helpers/filter-customization-state';
 import { getCustomizationSelectedValues } from './helpers/get-customization-selected-values';
 import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
 import { getCustomizationValueIdFieldKey } from './helpers/get-customization-value-id-field-key';
+import { getSelectedOptionValuesByCustomizationState } from './helpers/get-selected-options-values-by-customization-state';
 import { isEmailCustomization } from './helpers/is-email-customization';
 import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
 
@@ -60,6 +61,7 @@ export {
   getCustomizationSelectedValues,
   getCustomizationSystemCartItemThumbnail,
   getCustomizationValueIdFieldKey,
+  getSelectedOptionValuesByCustomizationState,
   isEmailCustomization,
   isFileUploadValue,
   requiredCustomizationsFilter,
