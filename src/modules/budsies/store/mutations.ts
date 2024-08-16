@@ -9,7 +9,6 @@ import { Dictionary } from '../types/Dictionary.type';
 import * as types from './mutation-types';
 import BulkorderQuote from '../models/bulkorder-quote.model';
 import BulkOrderInfo from '../types/bulk-order-info';
-import Hospital from '../types/hospital.interface';
 import { StoreRating } from '../types/store-rating.interface';
 import { StatisticValue } from '../types/statistic-value.interface';
 
@@ -87,9 +86,6 @@ export const mutations: MutationTree<BudsiesState> = {
   },
   [types.CUSTOMER_TYPES_SET] (state: BudsiesState, customerTypes: Dictionary<string> | undefined) {
     Vue.set(state, 'customerTypes', customerTypes);
-  },
-  [types.HOSPITALS_SET] (state, hospitals: Hospital[]): void {
-    state.hospitals = hospitals;
   },
   [types.STORE_RATING_SET] (state, storeRating: StoreRating): void {
     Vue.set(state, 'storeRating', storeRating);

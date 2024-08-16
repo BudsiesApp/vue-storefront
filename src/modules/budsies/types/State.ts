@@ -5,7 +5,6 @@ import Bodypart from '../models/bodypart.model'
 import { Dictionary } from './Dictionary.type'
 import BulkorderQuote from '../models/bulkorder-quote.model'
 import BulkOrderInfo from './bulk-order-info'
-import Hospital from './hospital.interface'
 import { StoreRating } from './store-rating.interface'
 import { StatisticMetric } from './statistic-metric'
 
@@ -25,7 +24,6 @@ export interface BudsiesState {
   bulkorderQuotes: Dictionary<BulkorderQuote>,
   bulkordersQuotes: Dictionary<number[]>,
   customerTypes?: Dictionary<string>,
-  hospitals: Hospital[],
   storeRating: StoreRating | undefined,
   statisticValues: Record<StatisticMetric, string | number | undefined>
 }
