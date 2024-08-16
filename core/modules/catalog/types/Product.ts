@@ -1,4 +1,5 @@
 import { Customization } from 'src/modules/customization-system';
+import { AmGiftCardOptions, GiftCardImage } from 'src/modules/gift-card';
 
 import { ProductOption } from './ProductConfiguration';
 import { ConfigurableItemOption } from './ConfigurableOption';
@@ -18,6 +19,7 @@ export default interface Product {
   custom_attributes?: any,
   custom_options?: CustomOption[],
   description: string,
+  gift_card_images_data?: GiftCardImage[],
   short_description?: string,
   errors?: Record<string, any>,
   final_price?: number,
@@ -101,6 +103,7 @@ export interface ProductOptions {
   extension_attributes: {
     custom_options: any[],
     configurable_item_options: ConfigurableItemOption[],
-    bundle_options: SelectedBundleOption[]
+    bundle_options: SelectedBundleOption[],
+    am_giftcard_options?: AmGiftCardOptions
   }
 }
