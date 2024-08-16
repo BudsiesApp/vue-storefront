@@ -74,7 +74,22 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
     return null
   }
 
-  const supportedProductOptions = ['bundle_options', 'custom_options', 'configurable_item_options']
+
+  const giftCardOptions = product.product_option?.extension_attributes?.am_giftcard_options;
+
+  if (giftCardOptions) {
+    const definedOptions: Record<string, string | number> = {};
+
+    Object.keys(giftCardOptions).sort().forEach((key) => {
+      if (giftCardOptions[key]) {
+        definedOptions[key] = giftCardOptions[key].toString();
+      }
+    })
+
+    return definedOptions;
+  }
+
+  const supportedProductOptions = ['bundle_options', 'custom_options', 'configurable_item_options', 'am_giftcard_options'];
   let selectedProductOptions: Record<string, any> | undefined;
 
   // add options that has array with selected options to the dictionary
