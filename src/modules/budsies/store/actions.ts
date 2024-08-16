@@ -1,10 +1,8 @@
-import Vue from 'vue';
 import RootState from '@vue-storefront/core/types/RootState'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import { processURLAddress } from '@vue-storefront/core/helpers'
 import { ActionTree, Commit } from 'vuex'
 import config from 'config'
-import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 
 import { BudsiesState } from '../types/State'
@@ -27,7 +25,6 @@ import isBodypartApiResponse from '../models/is-bodypart-api-response.typeguard'
 import isBodypartValueApiResponse from '../models/is-bodypart-value-api-response.typeguard'
 import BodypartApiResponse from '../models/bodypart-api-response.interface'
 import Task from 'core/lib/sync/types/Task'
-import getCartTokenCookieKey from '../helpers/get-cart-token-cookie-key.function'
 import { Dictionary } from '../types/Dictionary.type';
 import Hospital from '../types/hospital.interface';
 import { StoreRating } from '../types/store-rating.interface';
@@ -267,30 +264,6 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     });
 
     commit('setPlushieShortcode', { key: plushieId, shortcode: result.result });
-  },
-  async synchronize ({ commit, dispatch }) {
-    const cartStorage = StorageManager.get('cart');
-    const cartTokenFromLocalStorage = await cartStorage.getItem('current-cart-token');
-    let cartTokenFromCookies = Vue.$cookies.get(getCartTokenCookieKey());
-
-    if (cartTokenFromCookies === 'null') {
-      cartTokenFromCookies = null;
-    }
-
-    if (!cartTokenFromLocalStorage && cartTokenFromCookies) {
-      await cartStorage.setItem('current-cart-token', cartTokenFromCookies);
-
-      dispatch(
-        'cart/synchronizeCart',
-        {
-          forceClientState: false,
-          forceSync: true
-        },
-        { root: true }
-      )
-    }
-
-    EventBus.$emit('budsies-store-synchronized');
   },
   async loadRecoverableCart (
     { commit, state },
