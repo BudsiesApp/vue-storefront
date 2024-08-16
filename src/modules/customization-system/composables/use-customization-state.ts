@@ -1,4 +1,4 @@
-import { ref, computed, del, set, Ref, onMounted } from '@vue/composition-api';
+import { ref, computed, del, set, Ref, onMounted, unref } from '@vue/composition-api';
 
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 
@@ -6,7 +6,7 @@ import { CustomizationOptionValue, CustomizationStateItem } from '..';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 
 export function useCustomizationState (
-  existingCartItem: Ref<CartItem | undefined>
+  existingCartItem?: Ref<CartItem | undefined>
 ) {
   const customizationOptionValue = ref<Record<string, CustomizationOptionValue>>({});
 
@@ -128,13 +128,16 @@ export function useCustomizationState (
   }
 
   function fillCustomizationStateFromExistingCartItem () {
-    if (!existingCartItem.value || !existingCartItem.value.extension_attributes?.customization_state) {
+    // TODO: temporary - current TS version don't handle `value` type right in this case
+    const existingCartItemValue: CartItem | undefined = unref(existingCartItem);
+
+    if (!existingCartItemValue || !existingCartItemValue.extension_attributes?.customization_state) {
       return;
     }
 
     const customizationOptionValueDictionary: Record<string, CustomizationOptionValue> = {};
 
-    existingCartItem.value.extension_attributes?.customization_state.forEach((item) => {
+    existingCartItemValue.extension_attributes?.customization_state.forEach((item) => {
       customizationOptionValueDictionary[item.customization_id] = item.value;
     });
 
