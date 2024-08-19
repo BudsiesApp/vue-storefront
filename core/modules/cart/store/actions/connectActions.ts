@@ -85,10 +85,14 @@ const connectActions = {
   /**
    * Create cart token when there are products in cart and we don't have token already
    */
-  async create ({ dispatch, getters }) {
+  async create (
+    { dispatch, getters },
+    { ignoreClientItemsCount } = { ignoreClientItemsCount: false }
+  ) {
     const storedItems = getters['getCartItems'] || []
     const cartToken = getters['getCartToken']
-    if (storedItems.length && !cartToken) {
+
+    if ((storedItems.length || ignoreClientItemsCount) && !cartToken) {
       Logger.info('Creating server cart token', 'cart')()
       return dispatch('connect', { guestCart: false })
     }
