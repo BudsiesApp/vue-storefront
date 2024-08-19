@@ -132,5 +132,17 @@ export default Vue.extend({
       )
       this.isAllAppliedGiftCardsRemoving = false;
     }
+  },
+  watch: {
+    hasGiftCardsInOrder: {
+      handler (value: boolean) {
+        if (!value) {
+          return;
+        }
+
+        void this.removeAllAppliedGiftCards();
+      },
+      immediate: true
+    }
   }
 });
