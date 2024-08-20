@@ -708,7 +708,8 @@
     "paths": {
       "product": "/catalog/product",
       "bodypart": "/body_part/orig",
-      "giftcard": "/giftvoucher/template/background/images"
+      "giftcard": "/giftvoucher/template/background/images",
+      "am_gift_card": "/amasty/amgcard/image/admin_upload/"
     },
     "productPlaceholder": "/assets/placeholder.jpg",
     "fileuploaderUploadUrl": "${FILEUPLOADER_UPLOAD_URL}",

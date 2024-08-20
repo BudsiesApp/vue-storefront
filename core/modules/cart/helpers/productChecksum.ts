@@ -78,15 +78,15 @@ const getDataToHash = (product: CartItem | ServerItem): any => {
   const giftCardOptions = product.product_option?.extension_attributes?.am_giftcard_options;
 
   if (giftCardOptions) {
-    const definedOptions: Record<string, string | number> = {};
-
-    Object.keys(giftCardOptions).sort().forEach((key) => {
-      if (giftCardOptions[key]) {
-        definedOptions[key] = giftCardOptions[key].toString();
-      }
-    })
-
-    return definedOptions;
+    return {
+      amount: (giftCardOptions.am_giftcard_amount || giftCardOptions.am_giftcard_amount_custom).toString(),
+      image: giftCardOptions.am_giftcard_image.toString(),
+      message: giftCardOptions.am_giftcard_message || '',
+      recipient_name: giftCardOptions.am_giftcard_recipient_name || '',
+      recipient_email: giftCardOptions.am_giftcard_recipient_email || '',
+      sender: giftCardOptions.am_giftcard_sender_name || '',
+      type: giftCardOptions.am_giftcard_type.toString()
+    };
   }
 
   const supportedProductOptions = ['bundle_options', 'custom_options', 'configurable_item_options', 'am_giftcard_options'];
