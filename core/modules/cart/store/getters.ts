@@ -6,6 +6,7 @@ import AppliedCoupon from '../types/AppliedCoupon'
 import { onlineHelper, isServer, calcItemsHmac } from '@vue-storefront/core/helpers'
 import { calculateTotals } from '@vue-storefront/core/modules/cart/helpers'
 import config from 'config'
+import { AmGiftCardType } from 'src/modules/gift-card'
 
 const getters: GetterTree<CartState, RootState> = {
   getCartToken: state => state.cartServerToken,
@@ -34,6 +35,7 @@ const getters: GetterTree<CartState, RootState> = {
     itm.type_id === 'downloadable' ||
     itm.type_id === 'virtual' ||
     (itm.type_id === 'giftvoucher' && itm.giftcard_options && itm.giftcard_options.recipient_ship === undefined)
+    || (itm.type_id === 'amgiftcard' && itm.product_option?.extension_attributes?.am_giftcard_options?.am_giftcard_type === AmGiftCardType.VIRTUAL)
   ) : false,
   canUpdateMethods: (state, getters) => getters.isCartSyncEnabled && getters.isCartConnected,
   canSyncTotals: (state, getters) => getters.isTotalsSyncEnabled && getters.isCartConnected,
