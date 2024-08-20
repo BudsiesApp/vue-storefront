@@ -9,6 +9,9 @@ import { CustomOption } from './CustomOption';
 
 export default interface Product {
   attributes_metadata?: AttributesMetadata[],
+  am_gift_card_prices?: number[],
+  am_open_amount_max?: number,
+  am_open_amount_min?: number,
   bundle_options?: BundleOption[],
   category?: Record<string, any>[],
   category_ids: string[] | number[],
