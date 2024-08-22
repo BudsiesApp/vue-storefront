@@ -634,7 +634,7 @@
   },
   "orders": {
     "directBackendSync": true,
-    "endpoint": "https://${VSF_API_DOMAIN}/api/order",
+    "endpoint": "https://${VSF_API_DOMAIN}/api/order?token={{token}}",
     "payment_methods_mapping": {},
     "offline_orders": {
       "automatic_transmission_enabled": false,
