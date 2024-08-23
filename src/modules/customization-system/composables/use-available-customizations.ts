@@ -8,6 +8,7 @@ import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType,
 import { isItemAvailable } from '../helpers/is-item-available';
 import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
+import { getAvailabilityRulesForOptionValue } from '../helpers/get-availability-rules-for-option-value';
 
 const ignoreAvailableOptionsCheckFor = [
   WidgetType.CHECKBOX,
@@ -16,7 +17,7 @@ const ignoreAvailableOptionsCheckFor = [
   WidgetType.IMAGE_UPLOAD,
   WidgetType.TEXT_AREA,
   WidgetType.TEXT_INPUT
-]
+];
 
 export function useAvailableCustomizations (
   customizations: Ref<Customization[]>,
@@ -25,9 +26,51 @@ export function useAvailableCustomizations (
   updateCustomizationOptionValue: (payload: { customizationId: string, value: CustomizationOptionValue }) => void,
   product: Ref<Product | undefined>
 ) {
+  const isProductionTimeCustomizationAvailable = computed<boolean>(() => {
+    if (!product.value) {
+      return false;
+    }
+
+    const availableAddons: RushAddon[] = rootStore.getters['budsies/getProductRushAddons'](product.value.id);
+
+    return availableAddons.length > 0;
+  });
+
+  const availableProductionTimeCustomization = computed<Customization | undefined>(() => {
+    if (!isProductionTimeCustomizationAvailable.value) {
+      return;
+    }
+
+    const customization = customizations.value.find(
+      (item) => item.optionData?.type === OptionType.PRODUCTION_TIME
+    );
+
+    if (!customization) {
+      return;
+    }
+
+    const _selectedOptionValuesIds = selectedOptionValuesIds.value;
+
+    const hasOptions = customization.optionData?.values?.some((value) => {
+      if (!value.isEnabled) {
+        return false;
+      }
+
+      return isItemAvailable(value, _selectedOptionValuesIds);
+    });
+
+    if (!hasOptions) {
+      return;
+    }
+
+    return customization;
+  });
+
   const customizationAvailableOptionValues = computed<Record<string, OptionValue[]>>(
     () => {
       const dictionary: Record<string, OptionValue[]> = {};
+      const _selectedOptionValuesIds = selectedOptionValuesIds.value;
+      const _availableProductionTimeCustomization = availableProductionTimeCustomization.value;
 
       for (const customization of customizations.value) {
         dictionary[customization.id] =
@@ -37,7 +80,17 @@ export function useAvailableCustomizations (
                 return false;
               }
 
-              return isItemAvailable(value, selectedOptionValuesIds.value);
+              const availabilityRules = getAvailabilityRulesForOptionValue(
+                value,
+                !!_availableProductionTimeCustomization
+              );
+
+              return isItemAvailable(
+                {
+                  availabilityRules
+                },
+                _selectedOptionValuesIds
+              );
             }
           ) || [];
       }
@@ -65,16 +118,6 @@ export function useAvailableCustomizations (
     }
 
     return ids;
-  });
-
-  const isProductionTimeCustomizationAvailable = computed<boolean>(() => {
-    if (!product.value) {
-      return false;
-    }
-
-    const availableAddons: RushAddon[] = rootStore.getters['budsies/getProductRushAddons'](product.value.id);
-
-    return availableAddons.length > 0;
   });
 
   const availableCustomizations = computed<Customization[]>(() => {
