@@ -37,8 +37,8 @@ export function useSelectedOptionValueUrlQuery (
 
     return dictionary;
   });
-  const showInUrlQueryData = computed<Record<string, string | null | string[]>>(() => {
-    const dictionary: Record<string, string | null | string[]> = {};
+  const showInUrlQueryData = computed<Record<string, string | null | undefined | string[]>>(() => {
+    const dictionary: Record<string, string | undefined | null | string[]> = {};
 
     for (const customization of showInUrlQueryCustomizations.value) {
       if (!customization.optionData?.sku) {
@@ -48,7 +48,7 @@ export function useSelectedOptionValueUrlQuery (
       const selectedValue = customizationOptionValue.value[customization.id];
 
       if (!selectedValue || isFileUploadValue(selectedValue)) {
-        dictionary[customization.optionData.sku] = null;
+        dictionary[customization.optionData.sku] = undefined;
         continue;
       }
 
@@ -64,7 +64,7 @@ export function useSelectedOptionValueUrlQuery (
       }
 
       if (optionValuesSkus.length === 0) {
-        dictionary[customization.optionData.sku] = null;
+        dictionary[customization.optionData.sku] = undefined;
         continue;
       }
 
@@ -83,7 +83,7 @@ export function useSelectedOptionValueUrlQuery (
     return JSON.stringify(showInUrlQueryData);
   });
 
-  const routeQuery = computed<Record<string, string |(string | null)[]>>(() => {
+  const routeQuery = computed<Record<string, string | undefined |(string | null)[]>>(() => {
     return root.$route.query;
   });
 
