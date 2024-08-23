@@ -5,10 +5,10 @@ import Product from 'core/modules/catalog/types/Product';
 import { RushAddon } from 'src/modules/budsies';
 
 import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType, OptionValue, PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID } from '..';
+import { getAvailabilityRulesForOptionValue } from '../helpers/get-availability-rules-for-option-value';
 import { isItemAvailable } from '../helpers/is-item-available';
 import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
-import { getAvailabilityRulesForOptionValue } from '../helpers/get-availability-rules-for-option-value';
 
 const ignoreAvailableOptionsCheckFor = [
   WidgetType.CHECKBOX,
