@@ -1,4 +1,3 @@
-
 import { computed, Ref, watch } from '@vue/composition-api';
 
 import CartItem from 'core/modules/cart/types/CartItem';
