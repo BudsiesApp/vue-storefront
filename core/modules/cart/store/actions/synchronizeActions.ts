@@ -56,17 +56,19 @@ const synchronizeActions = {
     commit(types.CART_SET_SYNC)
     const { result, resultCode } = await CartService.getItems()
 
-    result.forEach((item) => {
-      const sku = item.product_type === 'bundle'
-        ? item.sku.split('-')[0]
-        : item.sku;
-
-      item.sku = sku;
-    });
-
-    const { serverItems, clientItems } = cartHooksExecutors.beforeSync({ clientItems: getCartItems, serverItems: result })
-
     if (resultCode === 200) {
+      if (Array.isArray(result)) {
+        result.forEach((item) => {
+          const sku = item.product_type === 'bundle'
+            ? item.sku.split('-')[0]
+            : item.sku;
+
+          item.sku = sku;
+        });
+      }
+
+      const { serverItems, clientItems } = cartHooksExecutors.beforeSync({ clientItems: getCartItems, serverItems: result })
+
       const diffLog = await dispatch('merge', {
         dryRun,
         serverItems,
