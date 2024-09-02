@@ -1,11 +1,6 @@
 import { Ref, ComputedRef, computed, watch } from '@vue/composition-api';
 
-import rootStore from '@vue-storefront/core/store';
-import Product from 'core/modules/catalog/types/Product';
-import { RushAddon } from 'src/modules/budsies';
-
-import { Customization, CustomizationOptionValue, isFileUploadValue, OptionType, OptionValue, PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID } from '..';
-import { getAvailabilityRulesForOptionValue } from '../helpers/get-availability-rules-for-option-value';
+import { Customization, CustomizationOptionValue, isFileUploadValue, OptionValue } from '..';
 import { isItemAvailable } from '../helpers/is-item-available';
 import { CustomizationType } from '../types/customization-type';
 import { WidgetType } from '../types/widget-type';
@@ -23,54 +18,12 @@ export function useAvailableCustomizations (
   customizations: Ref<Customization[]>,
   selectedOptionValuesIds: ComputedRef<string[]>,
   customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
-  updateCustomizationOptionValue: (payload: { customizationId: string, value: CustomizationOptionValue }) => void,
-  product: Ref<Product | undefined>
+  updateCustomizationOptionValue: (payload: { customizationId: string, value: CustomizationOptionValue }) => void
 ) {
-  const isProductionTimeCustomizationAvailable = computed<boolean>(() => {
-    if (!product.value) {
-      return false;
-    }
-
-    const availableAddons: RushAddon[] = rootStore.getters['budsies/getProductRushAddons'](product.value.id);
-
-    return availableAddons.length > 0;
-  });
-
-  const availableProductionTimeCustomization = computed<Customization | undefined>(() => {
-    if (!isProductionTimeCustomizationAvailable.value) {
-      return;
-    }
-
-    const customization = customizations.value.find(
-      (item) => item.optionData?.type === OptionType.PRODUCTION_TIME
-    );
-
-    if (!customization) {
-      return;
-    }
-
-    const _selectedOptionValuesIds = selectedOptionValuesIds.value;
-
-    const hasOptions = customization.optionData?.values?.some((value) => {
-      if (!value.isEnabled) {
-        return false;
-      }
-
-      return isItemAvailable(value, _selectedOptionValuesIds);
-    });
-
-    if (!hasOptions) {
-      return;
-    }
-
-    return customization;
-  });
-
   const customizationAvailableOptionValues = computed<Record<string, OptionValue[]>>(
     () => {
       const dictionary: Record<string, OptionValue[]> = {};
       const _selectedOptionValuesIds = selectedOptionValuesIds.value;
-      const _availableProductionTimeCustomization = availableProductionTimeCustomization.value;
 
       for (const customization of customizations.value) {
         dictionary[customization.id] =
@@ -80,15 +33,8 @@ export function useAvailableCustomizations (
                 return false;
               }
 
-              const availabilityRules = getAvailabilityRulesForOptionValue(
-                value,
-                !!_availableProductionTimeCustomization
-              );
-
               return isItemAvailable(
-                {
-                  availabilityRules
-                },
+                value,
                 _selectedOptionValuesIds
               );
             }
@@ -127,16 +73,12 @@ export function useAvailableCustomizations (
           return false;
         }
 
-        const isProductionTimeCustomization = customization.optionData?.type === OptionType.PRODUCTION_TIME;
-        const isProductionTimeUnavailable = isProductionTimeCustomization &&
-          !isProductionTimeCustomizationAvailable.value;
-
         const hasAvailableOptionValues =
           customizationAvailableOptionValues.value[customization.id].length > 0 ||
           !customization.optionData ||
           ignoreAvailableOptionsCheckFor.includes(customization.optionData.displayWidget);
 
-        return !isProductionTimeUnavailable && isItemAvailable(customization, selectedOptionValuesIds.value) &&
+        return isItemAvailable(customization, selectedOptionValuesIds.value) &&
           hasAvailableOptionValues;
       }
     );
@@ -195,15 +137,6 @@ export function useAvailableCustomizations (
       }
 
       if (typeof optionValue === 'string') {
-        // TODO: temporary until separate option value for "Standard"
-        // production time will be added
-        if (
-          optionValue === PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID &&
-          customization.optionData.type === OptionType.PRODUCTION_TIME
-        ) {
-          continue;
-        }
-
         if (customization.optionData.displayWidget === WidgetType.SEARCH_FIELD) {
           continue;
         }

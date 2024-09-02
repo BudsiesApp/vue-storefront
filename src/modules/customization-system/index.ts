@@ -25,6 +25,7 @@ import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customiza
 import { getCustomizationValueIdFieldKey } from './helpers/get-customization-value-id-field-key';
 import { isEmailCustomization } from './helpers/is-email-customization';
 import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
+import { updateProductProductionTimeCustomizationData } from './helpers/update-product-production-time-customization-data';
 
 import { Customization } from './types/customization.interface';
 import { CustomizationOptionValue } from './types/customization-option-value';
@@ -63,6 +64,7 @@ export {
   isEmailCustomization,
   isFileUploadValue,
   requiredCustomizationsFilter,
+  updateProductProductionTimeCustomizationData,
   useAvailableCustomizations,
   useCustomizationsBundleOptions,
   useCustomizationsBusyState,
