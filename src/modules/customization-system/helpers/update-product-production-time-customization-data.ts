@@ -126,6 +126,8 @@ function removeProductionTimeCustomizationFromProduct (
   return product;
 }
 
+// TODO: temporary until separate option value for "Standard"
+// production time will be added
 export function updateProductProductionTimeCustomizationData (
   product: Product,
   store: Store<any>
