@@ -15,7 +15,6 @@ import { useFilesUpload } from './composables/use-files-upload';
 import { useListWidget } from './composables/use-list-widget';
 import { useOptionValueActions } from './composables/use-option-value-actions';
 import { useOptionValuesPrice } from './composables/use-option-values-price';
-import { useProductionTimeSelectorCustomization } from './composables/use-production-time-selector-customization';
 import { useSelectedOptionValueUrlQuery } from './composables/use-selected-option-value-url-query';
 import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
@@ -25,6 +24,8 @@ import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customiza
 import { getCustomizationValueIdFieldKey } from './helpers/get-customization-value-id-field-key';
 import { isEmailCustomization } from './helpers/is-email-customization';
 import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
+import { updateCartItemProductionTimeCustomizationState } from './helpers/update-cart-item-production-time-customization-state';
+import { updateProductProductionTimeCustomizationData } from './helpers/update-product-production-time-customization-data';
 
 import { Customization } from './types/customization.interface';
 import { CustomizationOptionValue } from './types/customization-option-value';
@@ -63,6 +64,8 @@ export {
   isEmailCustomization,
   isFileUploadValue,
   requiredCustomizationsFilter,
+  updateCartItemProductionTimeCustomizationState,
+  updateProductProductionTimeCustomizationData,
   useAvailableCustomizations,
   useCustomizationsBundleOptions,
   useCustomizationsBusyState,
@@ -80,7 +83,6 @@ export {
   useListWidget,
   useOptionValueActions,
   useOptionValuesPrice,
-  useProductionTimeSelectorCustomization,
   useSelectedOptionValueUrlQuery,
   useValuesSort,
   useWidgetBusyState
