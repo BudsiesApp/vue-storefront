@@ -18,7 +18,14 @@ export const CartModule: StorefrontModule = function ({ store, router }) {
     store.subscribe(cartClearHandlerFactory(router));
 
     const onCartNotFoundErrorHandler = () => {
-      store.dispatch('cart/clear', { disconnect: true, sync: false });
+      store.dispatch(
+        'clear',
+        {
+          disconnect: true,
+          sync: false,
+          reconnect: true
+        }
+      );
     };
 
     EventBus.$on('cart-not-found-error', onCartNotFoundErrorHandler);

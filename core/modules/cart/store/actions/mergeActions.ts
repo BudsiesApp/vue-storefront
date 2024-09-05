@@ -98,7 +98,14 @@ const mergeActions = {
     })
 
     if (resultCode === 404) {
-      dispatch('clear', { disconnect: true, sync: false });
+      dispatch(
+        'clear',
+        {
+          disconnect: true,
+          sync: false,
+          reconnect: true
+        }
+      );
       return diffLog;
     }
 
