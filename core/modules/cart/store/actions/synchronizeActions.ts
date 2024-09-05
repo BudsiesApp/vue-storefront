@@ -8,6 +8,7 @@ import { createDiffLog } from '@vue-storefront/core/modules/cart/helpers'
 import i18n from '@vue-storefront/i18n'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { cartHooksExecutors } from '../../hooks'
+import { LOCAL_CART_DATA_LOADED_EVENT } from '../../types/local-cart-data-loaded.event'
 
 const synchronizeActions = {
   async load (
@@ -19,16 +20,22 @@ const synchronizeActions = {
     dispatch('setDefaultCheckoutMethods')
     const storedItems = await StorageManager.get('cart').getItem('current-cart')
     commit(types.CART_LOAD_CART, storedItems)
-    dispatch('synchronizeCart', { forceClientState, forceSync })
+    dispatch('loadCartDataFromLocalStorage', { forceClientState, forceSync })
 
     cartHooksExecutors.afterLoad(storedItems)
   },
   updateCart ({ commit }, { items }) {
     commit(types.CART_LOAD_CART, items)
   },
-  async synchronizeCart ({ commit, dispatch }, { forceClientState, forceSync }) {
-    const { synchronize, serverMergeByDefault } = config.cart
-    if (!synchronize) return
+  async loadCartDataFromLocalStorage ({ commit, dispatch }, { forceClientState, forceSync }) {
+    const { synchronize } = config.cart
+
+    if (!synchronize) {
+      commit(types.CART_SET_LOCAL_DATA_LOADED, true);
+      EventBus.$emit(LOCAL_CART_DATA_LOADED_EVENT);
+      return;
+    }
+
     const cartStorage = StorageManager.get('cart')
     const token = await cartStorage.getItem('current-cart-token')
     const hash = await cartStorage.getItem('current-cart-hash')
@@ -37,13 +44,25 @@ const synchronizeActions = {
       commit(types.CART_SET_ITEMS_HASH, hash)
       Logger.info('Cart hash received from cache.', 'cache', hash)()
     }
+
     if (token) {
       commit(types.CART_LOAD_CART_SERVER_TOKEN, token)
       Logger.info('Cart token received from cache.', 'cache', token)()
-      Logger.info('Syncing cart with the server.', 'cart')()
-      dispatch('sync', { forceClientState, dryRun: !serverMergeByDefault, forceSync })
     }
-    await dispatch('create')
+
+    commit(types.CART_SET_LOCAL_DATA_LOADED, true);
+    EventBus.$emit(LOCAL_CART_DATA_LOADED_EVENT);
+  },
+  async synchronizeCart({dispatch, rootGetters}) {
+    const isUserAuthorized = rootGetters['user/getUserToken'];
+
+    if (isUserAuthorized) {
+      return dispatch('authorize');
+    }
+
+    await dispatch('sync');
+
+    return dispatch('create');
   },
   /** @deprecated backward compatibility only */
   async serverPull ({ dispatch }, { forceClientState = false, dryRun = false }) {

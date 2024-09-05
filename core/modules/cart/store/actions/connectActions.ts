@@ -53,7 +53,7 @@ const connectActions = {
     const shouldMergeCart = cartToken && !isCartEmpty;
 
     if (!shouldMergeCart) {
-      return;
+      return dispatch('synchronizeCart');
     }
 
     const {result, resultCode} = await CartService.mergeGuestAndCustomer();
@@ -61,7 +61,7 @@ const connectActions = {
     if (resultCode === 200) {
       Logger.info('Customer and guest carts are merged.', 'cart', result)();
       commit(types.CART_LOAD_CART_SERVER_TOKEN, result);
-      await dispatch('pullServerCart');
+      await dispatch('pullServerCart', true);
     }
   },
   async connect ({ getters, rootGetters, dispatch, commit }, { guestCart = false, forceClientState = false }) {

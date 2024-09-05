@@ -6,6 +6,7 @@ import { isServer } from '@vue-storefront/core/helpers'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 
 import cartClearHandlerFactory from './helpers/cartClearHandler.factory';
+import { LOCAL_CART_DATA_LOADED_EVENT } from './types/local-cart-data-loaded.event';
 
 export const CartModule: StorefrontModule = function ({ store, router }) {
   StorageManager.init('cart')
@@ -30,4 +31,8 @@ export const CartModule: StorefrontModule = function ({ store, router }) {
 
     EventBus.$on('cart-not-found-error', onCartNotFoundErrorHandler);
   }
+}
+
+export {
+  LOCAL_CART_DATA_LOADED_EVENT
 }

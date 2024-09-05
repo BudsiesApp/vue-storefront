@@ -9,13 +9,14 @@ import { isServer, onlineHelper } from '@vue-storefront/core/helpers'
 import { UserService } from '@vue-storefront/core/data-resolver'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
-import { userHooksExecutors, userHooks } from '../hooks'
+import { userHooksExecutors }  from '../hooks'
 import { isModuleRegistered } from '@vue-storefront/core/lib/modules'
 import Task from '@vue-storefront/core/lib/sync/types/Task'
 import uniqBy from 'lodash-es/uniqBy'
+import { LOCAL_CART_DATA_LOADED_EVENT } from '@vue-storefront/core/modules/cart'
 
 const actions: ActionTree<UserState, RootState> = {
-  async startSession ({ commit, dispatch, getters }) {
+  async startSession ({ commit, dispatch, getters, rootGetters }) {
     const usersCollection = StorageManager.get('user')
     const userData = await usersCollection.getItem('current-user')
 
@@ -41,6 +42,16 @@ const actions: ActionTree<UserState, RootState> = {
     }
 
     EventBus.$emit('session-after-started')
+
+    const isLocalCartDataLoaded = rootGetters['cart/isLocalDataLoaded'];
+
+    if (isLocalCartDataLoaded) {
+      return dispatch('cart/synchronizeCart', undefined, {root: true});
+    }
+
+    EventBus.$once(LOCAL_CART_DATA_LOADED_EVENT, () => {
+      dispatch('cart/synchronizeCart', undefined, {root: true});
+    });
   },
   /**
    * Send password reset link for specific e-mail
@@ -126,7 +137,6 @@ const actions: ActionTree<UserState, RootState> = {
       commit(types.USER_INFO_LOADED, currentUser)
       await dispatch('setUserGroup', currentUser)
       EventBus.$emit('user-after-loggedin', currentUser)
-      dispatch('cart/authorize', {}, { root: true })
 
       return currentUser
     }
@@ -143,7 +153,6 @@ const actions: ActionTree<UserState, RootState> = {
 
     if (!resolvedFromCache && resp.resultCode === 200) {
       EventBus.$emit('user-after-loggedin', resp.result)
-      await dispatch('cart/authorize', {}, { root: true })
       return resp
     }
   },
