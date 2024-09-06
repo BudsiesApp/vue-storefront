@@ -60,7 +60,7 @@ const synchronizeActions = {
       return dispatch('authorize');
     }
 
-    await dispatch('sync');
+    await dispatch('sync', {});
 
     return dispatch('create');
   },
