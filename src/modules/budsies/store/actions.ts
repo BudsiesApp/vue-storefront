@@ -271,7 +271,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     const url = processURLAddress(`${config.budsies.endpoint}/carts/recovery-requests`);
 
     const { result, resultCode } = await TaskQueue.execute({
-      url: `${url}?recoveryId=${recoveryId}&recoveryCode=${recoveryCode}`,
+      url: `${url}?recoveryId=${recoveryId}&recoveryCode=${recoveryCode}&token={{token}}`,
       payload: {
         headers: { 'Accept': 'application/json' },
         mode: 'cors',
