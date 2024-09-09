@@ -7,6 +7,7 @@ import { InjectType } from './types/inject-type';
 import { VideoProvider } from './types/video-provider.value';
 import CustomerImage from './types/customer-image.interface';
 import { getCartItemPrice, getProductDefaultDiscount, getProductDefaultPrice, getProductPriceFromTotals } from './helpers/price';
+import { PAYMENT_ERROR_EVENT } from './types/payment-error-event';
 import ServerError from './types/server-error';
 import * as ProductEvent from './types/product-events';
 import * as PriceHelper from './helpers/price';
@@ -31,5 +32,6 @@ export {
   CartEvents,
   PriceHelper,
   BEFORE_STORE_BACKEND_API_REQUEST,
-  BreakpointValue
+  BreakpointValue,
+  PAYMENT_ERROR_EVENT
 }
