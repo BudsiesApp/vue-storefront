@@ -119,7 +119,7 @@ export function useCustomizationsBundleOptions (
   }
 
   watch(
-    [selectedBundleOptionsIds, customizationsBundleOptionsIds],
+    customizationsBundleOptionsIds,
     () => {
       removeUnavailableSelectedBundleOptions(
         customizationsBundleOptionsIds.value,
