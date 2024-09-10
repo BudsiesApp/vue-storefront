@@ -41,17 +41,20 @@ const actions: ActionTree<UserState, RootState> = {
       EventBus.$emit('session-after-nonauthorized')
     }
 
-    EventBus.$emit('session-after-started')
-
     const isLocalCartDataLoaded = rootGetters['cart/isLocalDataLoaded'];
 
     if (isLocalCartDataLoaded) {
-      return dispatch('cart/synchronizeCart', undefined, {root: true});
+      return dispatch('sessionAfterStarted');
     }
 
     EventBus.$once(LOCAL_CART_DATA_LOADED_EVENT, () => {
-      dispatch('cart/synchronizeCart', undefined, {root: true});
+      dispatch('sessionAfterStarted');
     });
+  },
+  async sessionAfterStarted({getters, dispatch}) {
+    await dispatch('cart/synchronizeCart', undefined, {root: true});
+    const userToken = getters['getUserToken'];
+    EventBus.$emit('session-after-started', userToken);
   },
   /**
    * Send password reset link for specific e-mail
@@ -80,6 +83,8 @@ const actions: ActionTree<UserState, RootState> = {
         commit(types.USER_TOKEN_CHANGED, { newToken: resp.result, meta: resp.meta }) // TODO: handle the "Refresh-token" header
         await dispatch('cart/mergeGuestAndCustomer', undefined, {root: true});
         await dispatch('sessionAfterAuthorized', { refresh: true, useCache: false })
+
+        EventBus.$emit('user-after-logged-in', resp.result);
       } catch (err) {
         await dispatch('clearCurrentUser')
         throw new Error(err)
