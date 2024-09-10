@@ -120,7 +120,7 @@ function removeProductionTimeCustomizationFromProduct (
   }
 
   product.customizations = product.customizations.filter(
-    (customization) => customization.id === productionTimeCustomization.id
+    (customization) => customization.id !== productionTimeCustomization.id
   );
 
   return product;
