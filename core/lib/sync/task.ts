@@ -72,7 +72,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
     return // return but not resolve
   } else if (rootStore.state.userTokenInvalidateLock < 0) {
     Logger.error('Aborting the network task' + task.url + rootStore.state.userTokenInvalidateLock, 'sync')()
-    resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })()
+    resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
     return
   } else {
     if (rootStore.state.userTokenInvalidated) {
@@ -123,6 +123,8 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
                   action1: { label: i18n.t('OK') }
                 })
                 rootStore.state.userTokenInvalidateAttemptsCount = 0
+                resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
+                return;
               } else {
                 Logger.info('Invalidation process in progress (autoRefreshTokens is set to true)' + rootStore.state.userTokenInvalidateAttemptsCount + rootStore.state.userTokenInvalidateLock, 'sync')()
                 rootStore.state.userTokenInvalidateAttemptsCount++
@@ -137,6 +139,8 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
                     EventBus.$emit('modal-show', 'modal-signup')
                     TaskQueue.clearNotTransmited()
                     Logger.error('Error refreshing user token' + token, 'sync')()
+                    resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
+                    return;
                   }
                 }).catch((excp) => {
                   rootStore.state.userTokenInvalidateLock = -1
@@ -144,6 +148,8 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
                   EventBus.$emit('modal-show', 'modal-signup')
                   TaskQueue.clearNotTransmited()
                   Logger.error('Error refreshing user token' + excp, 'sync')()
+                  resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
+                  return;
                 })
               }
             }
@@ -152,6 +158,8 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
             Logger.info('Invalidation process is disabled (autoRefreshTokens is set to false)', 'sync')()
             rootStore.dispatch('user/logout', { silent: true })
             EventBus.$emit('modal-show', 'modal-signup')
+            resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
+            return;
           }
         }
 
