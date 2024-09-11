@@ -102,8 +102,7 @@ const mergeActions = {
         'clear',
         {
           disconnect: true,
-          sync: false,
-          reconnect: true
+          sync: false
         }
       );
       return diffLog;

@@ -23,8 +23,7 @@ export const CartModule: StorefrontModule = function ({ store, router }) {
         'clear',
         {
           disconnect: true,
-          sync: false,
-          reconnect: true
+          sync: false
         }
       );
     };

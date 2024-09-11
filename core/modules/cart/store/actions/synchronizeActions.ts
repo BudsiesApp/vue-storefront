@@ -105,8 +105,7 @@ const synchronizeActions = {
         'clear',
         {
           disconnect: true,
-          sync: false,
-          reconnect: true
+          sync: false
         }
       );
       return createDiffLog();

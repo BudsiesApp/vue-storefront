@@ -16,7 +16,7 @@ const connectActions = {
    * sync - if you want to sync it with backend.
    * disconnect - if you want to clear cart token.
    */
-  async clear ({ commit, dispatch }, { disconnect = true, sync = true, reconnect = false } = {}) {
+  async clear ({ commit, dispatch }, { disconnect = true, sync = true } = {}) {
     await commit(types.CART_LOAD_CART, [])
 
     if (sync) {
@@ -26,9 +26,6 @@ const connectActions = {
     if (disconnect) {
       await commit(types.CART_SET_ITEMS_HASH, null)
       await dispatch('disconnect')
-    }
-
-    if (reconnect) {
       await dispatch('synchronizeCart');
     }
   },

@@ -22,7 +22,7 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
       await store.dispatch(`${SN_PROMOTION_PLATFORM}/synchronize`);
       const cartId = store.getters['cart/getCartToken'];
 
-      if (!userToken || app.$route.query.data) {
+      if (!cartId || app.$route.query.data) {
         return store.dispatch(
           `${SN_PROMOTION_PLATFORM}/updateActiveCampaign`,
           {
