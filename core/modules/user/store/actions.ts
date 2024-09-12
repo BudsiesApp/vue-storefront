@@ -249,7 +249,6 @@ const actions: ActionTree<UserState, RootState> = {
     commit(types.USER_END_SESSION)
 
     await Promise.all([
-      dispatch('resetUserInvalidation', {}, { root: true }),
       dispatch('cart/disconnect', {}, { root: true }),
       dispatch('clearCurrentUser')
     ]);
