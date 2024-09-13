@@ -98,13 +98,6 @@ const mergeActions = {
     })
 
     if (resultCode === 404) {
-      dispatch(
-        'clear',
-        {
-          disconnect: true,
-          sync: false
-        }
-      );
       return diffLog;
     }
 
@@ -169,7 +162,7 @@ const mergeActions = {
 
     return diffLog
   },
-  async synchronizeServerItem({ dispatch }, { serverItem, clientItem, forceClientState, dryRun, mergeQty, forceUpdateServerItem }) {
+  async synchronizeServerItem({ commit, dispatch }, { serverItem, clientItem, forceClientState, dryRun, mergeQty, forceUpdateServerItem }) {
     const diffLog = createDiffLog()
 
     if (!serverItem) {
@@ -182,7 +175,7 @@ const mergeActions = {
         return diffLog.merge(updateServerItemDiffLog)
       }
 
-      await dispatch('removeItem', { product: clientItem })
+      commit(types.CART_DEL_ITEM, { product: clientItem, removeByParentSku: false });
       return diffLog
     }
 
@@ -235,6 +228,10 @@ const mergeActions = {
       try {
         const mergeClientItemDiffLog = await dispatch('mergeClientItem', { clientItem, serverItems, forceClientState, dryRun, mergeQty, forceUpdateServerItem })
         diffLog.merge(mergeClientItemDiffLog)
+
+        if (diffLog.hasNotFoundServerResponse()) {
+          return diffLog;
+        }
       } catch (e) {
         Logger.debug('Problem syncing clientItem', 'cart', clientItem)()
       }
@@ -335,6 +332,19 @@ const mergeActions = {
       forceUpdateServerItem
     }
     const mergeClientItemsDiffLog = await dispatch('mergeClientItems', mergeParameters)
+
+    if (mergeClientItemsDiffLog.hasNotFoundServerResponse()) {
+      await dispatch(
+        'clear',
+        {
+          disconnect: true,
+          sync: false
+        }
+      );
+
+      return mergeClientItemsDiffLog;
+    } 
+
     const mergeServerItemsDiffLog = await dispatch('mergeServerItems', mergeParameters)
     await dispatch('updateTotalsAfterMerge', { clientItems, dryRun })
 
