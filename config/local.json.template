@@ -295,7 +295,6 @@
         "url_key",
         "url_path",
         "description",
-        "short_desc",
         "*.children_data.id",
         "*.id"
       ],
