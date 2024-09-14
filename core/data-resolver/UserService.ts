@@ -115,7 +115,9 @@ const refreshToken = async (refreshToken: string): Promise<string> => {
     getApiEndpointUrl(config.users, 'refresh_endpoint')),
     payload
     ).then(resp => resp.json())
-    .then(resp => resp.result)
+    .then(resp => {
+      return resp.code === 200 ? resp.result : null
+    });
 }
 
 const passwordResetConfirm = async (data: {

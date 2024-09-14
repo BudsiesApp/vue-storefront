@@ -261,8 +261,12 @@ const actions: ActionTree<UserState, RootState> = {
    */
   async logout ({ commit, dispatch }, { silent = false }) {
     commit(types.USER_END_SESSION)
-    await dispatch('cart/disconnect', {}, { root: true })
-    await dispatch('clearCurrentUser')
+
+    await Promise.all([
+      dispatch('cart/disconnect', {}, { root: true }),
+      dispatch('clearCurrentUser')
+    ]);
+
     EventBus.$emit('user-after-logout')
     // clear cart without sync, because after logout we don't want to clear cart on backend
     // user should have items when he comes back
