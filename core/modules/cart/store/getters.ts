@@ -44,7 +44,8 @@ const getters: GetterTree<CartState, RootState> = {
   getShippingMethodCode: state => state.shipping && state.shipping.method_code,
   getPaymentMethodCode: state => state.payment && state.payment.code,
   getIsAdding: state => state.isAddingToCart,
-  getIsMicroCartOpen: state => state.isMicrocartOpen
+  getIsMicroCartOpen: state => state.isMicrocartOpen,
+  isLocalDataLoaded: state => state.isLocalDataLoaded
 
 }
 
