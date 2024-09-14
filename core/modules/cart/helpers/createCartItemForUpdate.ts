@@ -18,11 +18,14 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     extension_attributes: clientItem.extension_attributes ? clientItem.extension_attributes : undefined,
   } as any as CartItem
 
-  if (updateIds && serverItem.quote_id && serverItem.item_id) {
+  const quoteId = clientItem.server_cart_id || serverItem?.quote_id;
+  const item_id = clientItem.server_item_id || serverItem?.item_id;
+
+  if (quoteId && item_id) {
     return {
       ...cartItem,
-      quoteId: serverItem.quote_id,
-      item_id: serverItem.item_id
+      quoteId,
+      item_id
     }
   }
 

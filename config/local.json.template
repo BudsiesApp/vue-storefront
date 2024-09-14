@@ -473,7 +473,7 @@
     },
     "serverMergeByDefault": true,
     "serverSyncCanRemoveLocalItems": false,
-    "serverSyncCanModifyLocalItems": false,
+    "serverSyncCanModifyLocalItems": true,
     "synchronize": true,
     "synchronize_totals": true,
     "setCustomProductOptions": true,
