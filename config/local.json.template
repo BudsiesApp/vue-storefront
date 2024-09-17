@@ -301,7 +301,6 @@
         "url_key",
         "url_path",
         "description",
-        "short_desc",
         "*.children_data.id",
         "*.id"
       ],
@@ -480,7 +479,7 @@
     },
     "serverMergeByDefault": true,
     "serverSyncCanRemoveLocalItems": false,
-    "serverSyncCanModifyLocalItems": false,
+    "serverSyncCanModifyLocalItems": true,
     "synchronize": true,
     "synchronize_totals": true,
     "setCustomProductOptions": true,
