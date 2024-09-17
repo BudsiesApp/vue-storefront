@@ -9,6 +9,9 @@ const getters: GetterTree<StoryblokState, RootState> = {
   },
   supportsWebp (state: StoryblokState): boolean {
     return state.supportsWebp
+  },
+  previewToken (state): string | undefined {
+    return state.previewToken;
   }
 }
 
