@@ -25,10 +25,7 @@ const totalsActions = {
     const task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
     const { resultCode, result } = task;
 
-    if (
-      isCartNotFoundError(task) ||
-      (!hasShippingInformation && resultCode === 404)
-    ) {
+    if (isCartNotFoundError(task)) {
       return dispatch('clear', { disconnect: true, sync: false });
     }
 
