@@ -15,16 +15,40 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
   store.registerModule(`${SN_PROMOTION_PLATFORM}`, module);
 
   if (!app.$isServer) {
-    EventBus.$once('cart-created', async (cartToken: string) => {
-      await store.dispatch(`${SN_PROMOTION_PLATFORM}/synchronize`);
-      store.dispatch(`${SN_PROMOTION_PLATFORM}/updateActiveCampaign`, { dataParam: app.$route.query.data, cartId: cartToken });
+    EventBus.$once('session-after-started', async (userToken: string) => {
       initEventBusListeners(store, app);
+      await store.dispatch(`${SN_PROMOTION_PLATFORM}/synchronize`);
+      const cartId = store.getters['cart/getCartToken'];
+
+      if (!cartId || app.$route.query.data) {
+        return store.dispatch(
+          `${SN_PROMOTION_PLATFORM}/updateActiveCampaign`,
+          {
+            dataParam: app.$route.query.data,
+            cartId
+          }
+        );
+      }
+
+      return store.dispatch(
+        `${SN_PROMOTION_PLATFORM}/fetchActiveCampaign`,
+        {
+          cartId,
+          userToken
+        }
+      );
     });
 
     EventBus.$on(
-      'cart-connected',
-      (payload: {cartId: string, userToken: string}) =>
-        store.dispatch(`${SN_PROMOTION_PLATFORM}/fetchActiveCampaign`, payload)
+      'user-after-logged-in',
+      (userToken: string) => {
+        const cartId = store.getters['cart/getCartToken'];
+
+        store.dispatch(`${SN_PROMOTION_PLATFORM}/fetchActiveCampaign`, {
+          userToken,
+          cartId
+        });
+      }
     );
 
     store.subscribe((mutation) => {

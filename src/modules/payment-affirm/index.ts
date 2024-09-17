@@ -79,7 +79,8 @@ export const PaymentAffirm: StorefrontModule = function ({ app, store, appConfig
           return;
         }
 
-        order.checkout_token = checkoutToken;
+        order.checkout_token = checkoutToken; // Magento 1 checkout token send workaround
+        order.addressInformation.payment_method_additional.checkout_token = checkoutToken; // Magento 2 checkout token send workaround
       }
 
       const onCollectSupportedPaymentMethodsEventHandler = (methods: string[]) => {
