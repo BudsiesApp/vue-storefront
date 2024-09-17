@@ -14,6 +14,9 @@ const mutations: MutationTree<UserState> = {
   [types.USER_START_SESSION] (state) {
     state.session_started = new Date()
   },
+  [types.USER_SESSION_STARTED] (state) {
+    state.isSessionStarted = true
+  },
   [types.USER_GROUP_TOKEN_CHANGED] (state, token) {
     state.groupToken = token
   },
