@@ -9,25 +9,29 @@ import { RAFFLE_TOKEN, REFERRER_TOKEN } from '../types/local-storage-keys';
 
 export function cacheHandlerFactory () {
   return (mutation: MutationPayload, state: RootState) => {
+    if (mutation.payload?.avoidPersistInLocalStorage) {
+      return;
+    }
+
     const type = mutation.type;
     const raffleStorage = StorageManager.get(SN_RAFFLE);
 
     if (type.endsWith(types.PARTICIPANT_DATA_SET)) {
-      if (!mutation.payload) {
+      if (!mutation.payload?.value) {
         raffleStorage.removeItem(RAFFLE_TOKEN);
         return;
       }
 
-      raffleStorage.setItem(RAFFLE_TOKEN, mutation.payload.token);
+      raffleStorage.setItem(RAFFLE_TOKEN, mutation.payload.value.token);
     }
 
     if (type.endsWith(types.REFERRER_TOKEN_SET)) {
-      if (!mutation.payload) {
+      if (!mutation.payload?.value) {
         raffleStorage.removeItem(REFERRER_TOKEN);
         return;
       }
 
-      raffleStorage.setItem(REFERRER_TOKEN, mutation.payload);
+      raffleStorage.setItem(REFERRER_TOKEN, mutation.payload.value);
     }
   }
 }

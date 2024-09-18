@@ -7,11 +7,21 @@ import { VERIFY_TOKEN } from '../types/action';
 import { RAFFLE_TOKEN, REFERRER_TOKEN } from '../types/local-storage-keys';
 import { PARTICIPANT_DATA_SET, REFERRER_TOKEN_SET } from '../types/mutation';
 
+const clearItem = (mutationName: string) => {
+  rootStore.commit(
+    mutationName,
+    {
+      value: undefined,
+      avoidPersistInLocalStorage: true
+    }
+  );
+}
+
 const clearParticipantData = () => {
-  rootStore.commit(`${SN_RAFFLE}/${PARTICIPANT_DATA_SET}`, undefined);
+  clearItem(`${SN_RAFFLE}/${PARTICIPANT_DATA_SET}`);
 }
 const clearReferrerToken = () => {
-  rootStore.commit(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`, undefined);
+  clearItem(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`);
 }
 
 function getItemsFromStorage ({ key }: {key: string | null}) {
@@ -57,7 +67,13 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
   }
 
   if (isReferrerTokenChanged) {
-    rootStore.commit(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`, value);
+    rootStore.commit(
+      `${SN_RAFFLE}/${REFERRER_TOKEN_SET}`,
+      {
+        value,
+        avoidPersistInLocalStorage: true
+      }
+    );
   }
 }
 

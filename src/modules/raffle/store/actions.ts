@@ -102,7 +102,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       result.canPurchaseSpecComm
     );
 
-    commit(PARTICIPANT_DATA_SET, participantData);
+    commit(PARTICIPANT_DATA_SET, { value: participantData });
 
     return participantData;
   },
@@ -176,7 +176,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       participantDataResponse.canPurchaseSpecComm
     );
 
-    commit(PARTICIPANT_DATA_SET, participantData);
+    commit(PARTICIPANT_DATA_SET, { value: participantData });
 
     return true;
   },
@@ -191,7 +191,14 @@ export const actions: ActionTree<StoreState, RootState> = {
     const referrerToken = await raffleStorage.getItem(REFERRER_TOKEN);
 
     if (referrerToken) {
-      commit(REFERRER_TOKEN_SET, referrerToken);
+      commit(
+        REFERRER_TOKEN_SET,
+        {
+          value: referrerToken,
+          avoidPersistInLocalStorage: true
+
+        }
+      );
     }
 
     if (token) {
