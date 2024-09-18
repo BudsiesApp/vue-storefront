@@ -11,9 +11,6 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { isCartNotFoundError } from '../../helpers/is-cart-not-found-error'
 
 const totalsActions = {
-  async updateTotals ({ commit }, payload) {
-    commit(types.CART_UPD_TOTALS, payload)
-  },
   async getTotals (context, { addressInformation, hasShippingInformation }) {
     if (hasShippingInformation) {
       return CartService.setShippingInfo(addressInformation)

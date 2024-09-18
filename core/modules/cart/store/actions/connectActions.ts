@@ -17,20 +17,20 @@ const connectActions = {
    * disconnect - if you want to clear cart token.
    */
   async clear ({ commit, dispatch }, { disconnect = true, sync = true } = {}) {
-    await commit(types.CART_LOAD_CART, [])
+    await commit(types.CART_LOAD_CART, { cartItems: [] })
 
     if (sync) {
       await dispatch('sync', { forceClientState: true, forceSync: true })
     }
 
     if (disconnect) {
-      await commit(types.CART_SET_ITEMS_HASH, null)
+      await commit(types.CART_SET_ITEMS_HASH, { hash: null })
       await dispatch('disconnect')
       await dispatch('synchronizeCart');
     }
   },
   async disconnect ({ commit }) {
-    commit(types.CART_LOAD_CART_SERVER_TOKEN, null);
+    commit(types.CART_LOAD_CART_SERVER_TOKEN, { token: '' });
   },
   async authorize ({ dispatch, getters }) {
     const coupon = getters.getCoupon.code
@@ -57,7 +57,7 @@ const connectActions = {
 
     if (resultCode === 200) {
       Logger.info('Customer and guest carts are merged.', 'cart', result)();
-      commit(types.CART_LOAD_CART_SERVER_TOKEN, result);
+      commit(types.CART_LOAD_CART_SERVER_TOKEN, { token: result });
       await dispatch('pullServerCart', true);
     }
   },
@@ -69,7 +69,7 @@ const connectActions = {
 
     if (resultCode === 200) {
       Logger.info('Server cart token created.', 'cart', result)();
-      commit(types.CART_LOAD_CART_SERVER_TOKEN, result);
+      commit(types.CART_LOAD_CART_SERVER_TOKEN, { token: result });
 
       EventBus.$emit('cart-connected', {cartId: result, userToken});
       return dispatch('sync', { forceClientState, dryRun: !config.cart.serverMergeByDefault });

@@ -19,13 +19,10 @@ const synchronizeActions = {
 
     dispatch('setDefaultCheckoutMethods')
     const storedItems = await StorageManager.get('cart').getItem('current-cart')
-    commit(types.CART_LOAD_CART, storedItems)
+    commit(types.CART_LOAD_CART, { cartItems: storedItems })
     dispatch('loadCartDataFromLocalStorage', { forceClientState, forceSync })
 
     cartHooksExecutors.afterLoad(storedItems)
-  },
-  updateCart ({ commit }, { items }) {
-    commit(types.CART_LOAD_CART, items)
   },
   async loadCartDataFromLocalStorage ({ commit, dispatch }, { forceClientState, forceSync }) {
     const { synchronize } = config.cart
@@ -46,7 +43,7 @@ const synchronizeActions = {
     }
 
     if (token) {
-      commit(types.CART_LOAD_CART_SERVER_TOKEN, token)
+      commit(types.CART_LOAD_CART_SERVER_TOKEN, { token })
       Logger.info('Cart token received from cache.', 'cache', token)()
     }
 
