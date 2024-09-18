@@ -51,9 +51,10 @@ const actions: ActionTree<UserState, RootState> = {
       dispatch('sessionAfterStarted');
     });
   },
-  async sessionAfterStarted({getters, dispatch}) {
+  async sessionAfterStarted({ commit, getters, dispatch }) {
     await dispatch('cart/synchronizeCart', undefined, {root: true});
     const userToken = getters['getUserToken'];
+    commit(types.USER_SESSION_STARTED);
     EventBus.$emit('session-after-started', userToken);
   },
   /**
