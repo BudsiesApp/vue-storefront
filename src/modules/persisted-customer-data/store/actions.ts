@@ -17,6 +17,11 @@ export const actions: ActionTree<StoreState, RootState> = {
     );
 
     let email = await persistedCustomerDataStorage.getItem(EMAIL);
+    let emailMutationPayload = {
+      value: email,
+      avoidPersistInLocalStorage: true
+    };
+
     const firstName = await persistedCustomerDataStorage.getItem(FIRST_NAME);
     const lastName = await persistedCustomerDataStorage.getItem(LAST_NAME);
     const phoneNumber = await persistedCustomerDataStorage.getItem(PHONE_NUMBER);
@@ -25,27 +30,40 @@ export const actions: ActionTree<StoreState, RootState> = {
     // Backwards compatibility for previous used local storage key
     if (!email) {
       const budsiesStorage = StorageManager.get(SN_BUDSIES);
-      email = await budsiesStorage.getItem('customer-email');
+      emailMutationPayload.value = await budsiesStorage.getItem('customer-email');
+      emailMutationPayload.avoidPersistInLocalStorage = false;
     }
 
-    if (email) {
-      commit(SET_LAST_USED_CUSTOMER_EMAIL, email);
+    if (emailMutationPayload.value) {
+      commit(SET_LAST_USED_CUSTOMER_EMAIL, emailMutationPayload);
     }
 
     if (firstName) {
-      commit(SET_LAST_USED_CUSTOMER_FIRST_NAME, firstName);
+      commit(
+        SET_LAST_USED_CUSTOMER_FIRST_NAME,
+        { value: firstName, avoidPersistInLocalStorage: true }
+      );
     }
 
     if (lastName) {
-      commit(SET_LAST_USED_CUSTOMER_LAST_NAME, lastName);
+      commit(
+        SET_LAST_USED_CUSTOMER_LAST_NAME,
+        { value: lastName, avoidPersistInLocalStorage: true }
+      );
     }
 
     if (phoneNumber) {
-      commit(SET_LAST_USED_CUSTOMER_PHONE_NUMBER, phoneNumber);
+      commit(
+        SET_LAST_USED_CUSTOMER_PHONE_NUMBER,
+        { value: phoneNumber, avoidPersistInLocalStorage: true }
+      );
     }
 
     if (shippingCountry) {
-      commit(SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY, shippingCountry);
+      commit(
+        SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY,
+        { value: shippingCountry, avoidPersistInLocalStorage: true }
+      );
     }
   }
 }

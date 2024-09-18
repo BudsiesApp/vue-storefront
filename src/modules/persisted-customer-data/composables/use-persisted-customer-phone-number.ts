@@ -20,7 +20,12 @@ export function usePersistedPhoneNumber (
   }
 
   function persistLastUsedCustomerPhoneNumber (phoneNumber: string | undefined) {
-    rootStore.commit(`${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_PHONE_NUMBER}`, phoneNumber);
+    rootStore.commit(
+      `${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_PHONE_NUMBER}`,
+      {
+        value: phoneNumber
+      }
+    );
   }
 
   onBeforeMount(() => {

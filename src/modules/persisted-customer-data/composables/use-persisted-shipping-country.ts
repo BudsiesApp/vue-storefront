@@ -20,7 +20,12 @@ export function usePersistedShippingCountry (
   }
 
   function persistLastUsedCustomerShippingCountry (shippingCountry: string | undefined) {
-    rootStore.commit(`${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY}`, shippingCountry);
+    rootStore.commit(
+      `${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY}`,
+      {
+        value: shippingCountry
+      }
+    );
   }
 
   onBeforeMount(() => {
