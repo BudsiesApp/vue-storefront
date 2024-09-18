@@ -6,6 +6,10 @@ import * as types from '../types/StoreMutations'
 
 export function cacheHandlerFactory () {
   return (mutation, state) => {
+    if (mutation.payload?.avoidPersistInLocalStorage) {
+      return;
+    }
+
     const type = mutation.type;
 
     if (type.endsWith(types.SET_CAMPAIGN_TOKEN)) {
@@ -30,6 +34,15 @@ export function cacheHandlerFactory () {
       return StorageManager
         .get(types.SN_PROMOTION_PLATFORM)
         .setItem('production-spot-countdown-expiration-date', (state.promotionPlatform as PromotionPlatformState).productionSpotCountdownExpirationDate)
+        .catch((reason) => {
+          Logger.error(reason)()
+        })
+    }
+
+    if (type.endsWith(types.CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE)) {
+      return StorageManager
+        .get(types.SN_PROMOTION_PLATFORM)
+        .removeItem('production-spot-countdown-expiration-date')
         .catch((reason) => {
           Logger.error(reason)()
         })

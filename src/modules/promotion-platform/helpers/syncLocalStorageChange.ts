@@ -6,8 +6,16 @@ import { SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE } from '../types/StoreMut
 
 function getItemsFromStorage ({ key }) {
   if (checkMultiStoreLocalStorageKey(key, 'promotionPlatform/production-spot-countdown-expiration-date')) {
-    const value = JSON.parse(localStorage[key]);
-    rootStore.commit(`promotionPlatform/${SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE}`, value);
+    const rawValue = localStorage[key];
+    const value = rawValue ? JSON.parse(localStorage[key]) : undefined;
+
+    rootStore.commit(
+      `promotionPlatform/${SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE}`,
+      {
+        value,
+        avoidPersistInLocalStorage: true
+      }
+    );
   }
 }
 
