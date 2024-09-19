@@ -99,7 +99,7 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
   }
 
   if (isEmailChanged) {
-    rootStore.dispatch(
+    rootStore.commit(
       `${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_EMAIL}`,
       value
     );
