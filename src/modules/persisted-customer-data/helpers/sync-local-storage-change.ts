@@ -1,6 +1,8 @@
 import rootStore from '@vue-storefront/core/store'
 
+import { parseLocalStorageValue } from 'src/modules/shared';
 import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check-multi-store-local-storage-key.function';
+
 import { SN_PERSISTED_CUSTOMER_DATA } from '../types/store-name';
 import { SET_LAST_USED_CUSTOMER_EMAIL, SET_LAST_USED_CUSTOMER_FIRST_NAME, SET_LAST_USED_CUSTOMER_LAST_NAME, SET_LAST_USED_CUSTOMER_PHONE_NUMBER, SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY } from '../types/mutation';
 import { EMAIL, FIRST_NAME, LAST_NAME, PHONE_NUMBER, SHIPPING_COUNTRY } from '../types/local-storage-key';
@@ -104,14 +106,7 @@ function getItemsFromStorage ({ key }: { key: string | null }) {
     }
   }
 
-  const rawValue = localStorage[key];
-
-  if (!rawValue) {
-    clearData();
-    return;
-  }
-
-  const value = JSON.parse(rawValue);
+  const value = parseLocalStorageValue(localStorage[key]);
 
   if (!value) {
     clearData();

@@ -1,5 +1,6 @@
 import rootStore from '@vue-storefront/core/store'
 
+import { parseLocalStorageValue } from 'src/modules/shared';
 import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check-multi-store-local-storage-key.function';
 
 import { SN_MAILCHIMP } from '../types/store-name';
@@ -57,14 +58,7 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
     }
   }
 
-  const rawValue = localStorage[key];
-
-  if (!rawValue) {
-    clearData();
-    return;
-  }
-
-  const value = JSON.parse(rawValue);
+  const value = parseLocalStorageValue(localStorage[key]);
 
   if (!value) {
     clearData();
