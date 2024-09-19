@@ -99,6 +99,7 @@ declare namespace DataResolver {
     changePassword: (passwordData: PasswordData) => Promise<Task>,
     refreshToken: (refreshToken: string) => Promise<string>,
     passwordResetConfirm: (data: {
+      id: string,
       email: string,
       token: string,
       password: string,

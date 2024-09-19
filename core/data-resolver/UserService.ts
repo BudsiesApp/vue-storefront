@@ -121,6 +121,7 @@ const refreshToken = async (refreshToken: string): Promise<string> => {
 }
 
 const passwordResetConfirm = async (data: {
+  id: string,
   email: string,
   token: string,
   password: string,
