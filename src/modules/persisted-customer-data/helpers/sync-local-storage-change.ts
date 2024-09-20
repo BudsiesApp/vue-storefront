@@ -10,10 +10,7 @@ import { EMAIL, FIRST_NAME, LAST_NAME, PHONE_NUMBER, SHIPPING_COUNTRY } from '..
 const clearItem = (mutationName: string) => {
   rootStore.commit(
     mutationName,
-    {
-      value: undefined,
-      avoidPersistInLocalStorage: true
-    }
+    undefined
   );
 }
 
@@ -141,10 +138,7 @@ function getItemsFromStorage ({ key }: { key: string | null }) {
 
   rootStore.commit(
     mutationName,
-    {
-      value,
-      avoidPersistInLocalStorage: true
-    }
+    value
   );
 }
 

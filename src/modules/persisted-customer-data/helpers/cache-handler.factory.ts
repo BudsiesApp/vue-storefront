@@ -8,10 +8,6 @@ import { EMAIL, FIRST_NAME, LAST_NAME, PHONE_NUMBER, SHIPPING_COUNTRY } from '..
 
 export function cacheHandlerFactory () {
   return (mutation: MutationPayload) => {
-    if (mutation.payload?.avoidPersistInLocalStorage) {
-      return;
-    }
-
     const type = mutation.type;
     const persistedCustomerDataStorage = StorageManager.get(SN_PERSISTED_CUSTOMER_DATA);
 
@@ -41,14 +37,14 @@ export function cacheHandlerFactory () {
       return;
     }
 
-    if (!mutation.payload?.value) {
+    if (!mutation.payload) {
       persistedCustomerDataStorage.removeItem(localStorageKey);
       return;
     }
 
     persistedCustomerDataStorage.setItem(
       localStorageKey,
-      mutation.payload.value
+      mutation.payload
     );
   }
 }

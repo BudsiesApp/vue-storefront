@@ -9,24 +9,18 @@ import CurrentState from '../models/current-state.model';
 export const mutations: MutationTree<StoreState> = {
   [PARTICIPANT_DATA_SET] (
     state: StoreState,
-    payload: {
-      value?: ParticipantData,
-      avoidPersistInLocalStorage?: boolean
-    } = {}
+    value?: ParticipantData
   ): void {
-    Vue.set(state, 'participantData', payload.value);
+    Vue.set(state, 'participantData', value);
   },
   [CURRENT_STATE_SET] (state: StoreState, payload: CurrentState): void {
     Vue.set(state, 'currentState', payload);
   },
   [REFERRER_TOKEN_SET] (
     state: StoreState,
-    payload: {
-      value?: string,
-      avoidPersistInLocalStorage?: boolean
-    } = {}
+    value?: string
   ): void {
-    Vue.set(state, 'referrerToken', payload.value);
+    Vue.set(state, 'referrerToken', value);
   },
   [LAST_WINNING_TICKETS_SET] (state: StoreState, payload: string[]): void {
     state.lastWinningTickets = payload;

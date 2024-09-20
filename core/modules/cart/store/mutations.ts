@@ -27,10 +27,7 @@ const mutations: MutationTree<CartState> = {
   },
   [types.CART_SET_ITEMS_HASH](
     state,
-    {
-      hash = null,
-      avoidPersistInLocalStorage = false
-    } = {}
+    hash = null,
   ) {
     state.cartItemsHash = hash
   },
@@ -72,10 +69,7 @@ const mutations: MutationTree<CartState> = {
   },
   [types.CART_LOAD_CART](
     state,
-    {
-      cartItems,
-      avoidPersistInLocalStorage = false 
-    } = {}
+    cartItems,
   ) {
     state.cartItems = cartItems || []
     state.cartIsLoaded = true
@@ -87,10 +81,7 @@ const mutations: MutationTree<CartState> = {
   },
   [types.CART_LOAD_CART_SERVER_TOKEN](
     state,
-    {
-      token = '',
-      avoidPersistInLocalStorage = false
-    } = {}
+    token = '',
   ) {
     state.cartServerToken = token
   },
@@ -100,7 +91,6 @@ const mutations: MutationTree<CartState> = {
       itemsAfterPlatformTotals,
       platformTotals,
       platformTotalSegments,
-      avoidPersistInLocalStorage = false
     } = {}
   ) {
     state.itemsAfterPlatformTotals = itemsAfterPlatformTotals

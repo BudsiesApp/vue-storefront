@@ -13,7 +13,7 @@ const couponActions = {
         // so we need to update it in vuex and StorageManager
         commit(
           types.CART_SET_ITEMS_HASH,
-          { hash: getters.getCurrentCartHash }
+          getters.getCurrentCartHash
         );
         return result
       }
@@ -30,7 +30,7 @@ const couponActions = {
         // so we need to update it in vuex and StorageManager
         commit(
           types.CART_SET_ITEMS_HASH,
-          { hash: getters.getCurrentCartHash }
+          getters.getCurrentCartHash
         );
       }
 

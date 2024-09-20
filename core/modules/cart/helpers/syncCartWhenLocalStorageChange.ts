@@ -11,34 +11,23 @@ function getItemsFromStorage ({ key }) {
   if (checkMultiStoreLocalStorageKey(key, 'cart/current-cart')) {
     rootStore.commit(
       `cart/${CART_LOAD_CART}`,
-      {
-        cartItems: valueFromStorage,
-        avoidPersistInLocalStorage: true
-      }
+      valueFromStorage,
     );
   } else if (checkMultiStoreLocalStorageKey(key, 'cart/current-totals')) {
     rootStore.commit(
       `cart/${CART_UPD_TOTALS}`,
-      {
-        ...valueFromStorage,
-        avoidPersistInLocalStorage: true
-      }
+      valueFromStorage,
     );
   } else if (checkMultiStoreLocalStorageKey(key, 'cart/current-cart-token')) {
     rootStore.commit(
       `cart/${CART_LOAD_CART_SERVER_TOKEN}`,
-      {
-        token: valueFromStorage,
-        avoidPersistInLocalStorage: true
-      }
+      valueFromStorage,
     );
   } else if (checkMultiStoreLocalStorageKey(key, 'cart/current-cart-hash')) {
     rootStore.commit(
       `cart/${CART_SET_ITEMS_HASH}`,
-      {
-        hash: valueFromStorage,
-        avoidPersistInLocalStorage: true
-      });
+      valueFromStorage,
+    );
   }
 }
 

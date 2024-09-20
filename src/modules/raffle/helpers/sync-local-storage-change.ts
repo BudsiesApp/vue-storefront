@@ -11,10 +11,7 @@ import { PARTICIPANT_DATA_SET, REFERRER_TOKEN_SET } from '../types/mutation';
 const clearItem = (mutationName: string) => {
   rootStore.commit(
     mutationName,
-    {
-      value: undefined,
-      avoidPersistInLocalStorage: true
-    }
+    undefined
   );
 }
 
@@ -63,10 +60,7 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
   if (isReferrerTokenChanged) {
     rootStore.commit(
       `${SN_RAFFLE}/${REFERRER_TOKEN_SET}`,
-      {
-        value,
-        avoidPersistInLocalStorage: true
-      }
+      value
     );
   }
 }

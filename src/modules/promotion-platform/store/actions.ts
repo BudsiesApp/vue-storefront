@@ -47,10 +47,7 @@ export const actions: ActionTree<PromotionPlatformState, any> = {
     if (productionSpotCountdownExpirationDate) {
       commit(
         types.SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE,
-        {
-          value: productionSpotCountdownExpirationDate,
-          avoidPersistInLocalStorage: true
-        }
+        productionSpotCountdownExpirationDate
       );
       Logger.info('Production Spot Countdown Expiration Date received from cache.', 'cache', lastClosedBannerVersionByUser)()
     }

@@ -9,10 +9,6 @@ import { RAFFLE_TOKEN, REFERRER_TOKEN } from '../types/local-storage-keys';
 
 export function cacheHandlerFactory () {
   return (mutation: MutationPayload, state: RootState) => {
-    if (mutation.payload?.avoidPersistInLocalStorage) {
-      return;
-    }
-
     const type = mutation.type;
     const raffleStorage = StorageManager.get(SN_RAFFLE);
 

@@ -10,10 +10,7 @@ import { SET_CAMPAIGN_ID, SET_LANDING_PAGE } from '../types/mutation';
 const clearItem = (mutationName: string) => {
   rootStore.commit(
     mutationName,
-    {
-      value: undefined,
-      avoidPersistInLocalStorage: true
-    }
+    undefined
   );
 }
 
@@ -81,10 +78,7 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
 
   rootStore.commit(
     mutationName,
-    {
-      value,
-      avoidPersistInLocalStorage: true
-    }
+    value
   );
 }
 

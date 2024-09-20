@@ -44,7 +44,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       landingPage = undefined;
     }
 
-    commit(SET_CAMPAIGN_ID, { value: campaignId });
-    commit(SET_LANDING_PAGE, { value: landingPage });
+    commit(SET_CAMPAIGN_ID, campaignId);
+    commit(SET_LANDING_PAGE, landingPage);
   }
 }

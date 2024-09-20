@@ -27,7 +27,7 @@ export function usePersistedEmail (
   function persistLastUsedCustomerEmail (email: string | undefined) {
     rootStore.commit(
       `${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_EMAIL}`,
-      { value: email }
+      email
     );
   }
 

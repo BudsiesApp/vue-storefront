@@ -6,10 +6,6 @@ import * as types from '../types/StoreMutations'
 
 export function cacheHandlerFactory () {
   return (mutation, state) => {
-    if (mutation.payload?.avoidPersistInLocalStorage) {
-      return;
-    }
-
     const type = mutation.type;
 
     if (type.endsWith(types.SET_CAMPAIGN_TOKEN)) {

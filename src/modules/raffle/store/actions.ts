@@ -102,7 +102,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       result.canPurchaseSpecComm
     );
 
-    commit(PARTICIPANT_DATA_SET, { value: participantData });
+    commit(PARTICIPANT_DATA_SET, participantData);
 
     return participantData;
   },
@@ -176,7 +176,7 @@ export const actions: ActionTree<StoreState, RootState> = {
       participantDataResponse.canPurchaseSpecComm
     );
 
-    commit(PARTICIPANT_DATA_SET, { value: participantData });
+    commit(PARTICIPANT_DATA_SET, participantData);
 
     return true;
   },
@@ -193,11 +193,7 @@ export const actions: ActionTree<StoreState, RootState> = {
     if (referrerToken) {
       commit(
         REFERRER_TOKEN_SET,
-        {
-          value: referrerToken,
-          avoidPersistInLocalStorage: true
-
-        }
+        referrerToken
       );
     }
 

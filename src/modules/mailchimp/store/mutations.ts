@@ -7,13 +7,13 @@ import { StoreState } from '../types/store-state.interface';
 export const mutations: MutationTree<StoreState> = {
   [SET_CAMPAIGN_ID] (
     state,
-    { value, avoidPersistInLocalStorage = false } = {}
+    value
   ) {
     Vue.set(state, 'campaignId', value);
   },
   [SET_LANDING_PAGE] (
     state,
-    { value, avoidPersistInLocalStorage = false } = {}
+    value
   ) {
     Vue.set(state, 'landingPage', value);
   }

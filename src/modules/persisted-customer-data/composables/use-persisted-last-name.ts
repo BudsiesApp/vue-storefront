@@ -23,9 +23,7 @@ export function usePersistedLastName (
   function persistLastUsedCustomerLastName (lastName: string | undefined) {
     rootStore.commit(
       `${SN_PERSISTED_CUSTOMER_DATA}/${SET_LAST_USED_CUSTOMER_LAST_NAME}`,
-      {
-        value: lastName
-      }
+      lastName
     );
   }
 

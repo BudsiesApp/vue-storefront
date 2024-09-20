@@ -20,12 +20,9 @@ export const mutations: MutationTree<PromotionPlatformState> = {
   },
   [types.SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE] (
     state,
-    payload: {
-      value?: number,
-      avoidPersistInLocalStorage?: boolean
-    } = {}
+    value?: number
   ) {
-    Vue.set(state, 'productionSpotCountdownExpirationDate', payload.value);
+    Vue.set(state, 'productionSpotCountdownExpirationDate', value);
   },
   [types.CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE] (state) {
     Vue.set(state, 'productionSpotCountdownExpirationDate', undefined);

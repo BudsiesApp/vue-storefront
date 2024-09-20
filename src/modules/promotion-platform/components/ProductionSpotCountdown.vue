@@ -110,7 +110,7 @@ export default (Vue as VueConstructor<Vue & InjectedServices>).extend({
       const expirationDate = Date.now() + this.expirationMinutesCount * millisecondsInMinute;
       this.$store.commit(
         `promotionPlatform/${SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE}`,
-        { value: expirationDate }
+        expirationDate
       );
     },
     startTimer (): void {

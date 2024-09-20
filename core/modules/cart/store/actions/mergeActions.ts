@@ -319,7 +319,7 @@ const mergeActions = {
 
     commit(
       types.CART_SET_ITEMS_HASH,
-      { hash: getters.getCurrentCartHash }
+      getters.getCurrentCartHash
     );
   },
   async merge({ getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false }) {

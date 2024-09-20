@@ -11,10 +11,7 @@ function getItemsFromStorage ({ key }) {
 
     rootStore.commit(
       `promotionPlatform/${SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE}`,
-      {
-        value,
-        avoidPersistInLocalStorage: true
-      }
+      value
     );
   }
 }
