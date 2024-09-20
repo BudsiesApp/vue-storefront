@@ -13,21 +13,21 @@ export function cacheHandlerFactory () {
     const raffleStorage = StorageManager.get(SN_RAFFLE);
 
     if (type.endsWith(types.PARTICIPANT_DATA_SET)) {
-      if (!mutation.payload?.value) {
+      if (!mutation.payload?.token) {
         raffleStorage.removeItem(RAFFLE_TOKEN);
         return;
       }
 
-      raffleStorage.setItem(RAFFLE_TOKEN, mutation.payload.value.token);
+      raffleStorage.setItem(RAFFLE_TOKEN, mutation.payload.token);
     }
 
     if (type.endsWith(types.REFERRER_TOKEN_SET)) {
-      if (!mutation.payload?.value) {
+      if (!mutation.payload) {
         raffleStorage.removeItem(REFERRER_TOKEN);
         return;
       }
 
-      raffleStorage.setItem(REFERRER_TOKEN, mutation.payload.value);
+      raffleStorage.setItem(REFERRER_TOKEN, mutation.payload);
     }
   }
 }
