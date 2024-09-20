@@ -17,7 +17,7 @@ const mutations: MutationTree<CartState> = {
       let item = {
         ...product,
         qty: parseInt(product.qty ? product.qty : 1)
-      }
+      } 
       EventBus.$emit('cart-before-add', { product: item })
       state.cartItems.push(item)
     } else {

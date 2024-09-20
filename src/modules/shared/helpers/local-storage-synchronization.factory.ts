@@ -13,12 +13,12 @@ export function localStorageSynchronizationFactory (
     isSetItemsToStorageLocked = false;
   }
 
-  function setItems () {
+  function setItems (...args: any[]) {
     if (isSetItemsToStorageLocked) {
       return;
     }
 
-    setItemsToStorage();
+    setItemsToStorage(...args);
   }
 
   function removeStorageEventListener () {
