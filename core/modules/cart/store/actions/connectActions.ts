@@ -30,7 +30,7 @@ const connectActions = {
     }
   },
   async disconnect ({ commit }) {
-    commit(types.CART_LOAD_CART_SERVER_TOKEN, '');
+    commit(types.CART_LOAD_CART_SERVER_TOKEN, null);
   },
   async authorize ({ dispatch, getters }) {
     const coupon = getters.getCoupon.code
