@@ -22,7 +22,7 @@ const clearReferrerToken = () => {
   clearItem(`${SN_RAFFLE}/${REFERRER_TOKEN_SET}`);
 }
 
-function getItemsFromStorage ({ key }: {key: string | null}) {
+export function getItemsFromStorage ({ key }: {key: string | null}) {
   if (!key) {
     clearParticipantData();
     clearReferrerToken();
@@ -63,17 +63,4 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
       value
     );
   }
-}
-
-function addEventListener () {
-  window.addEventListener('storage', getItemsFromStorage)
-}
-
-function removeEventListener () {
-  window.removeEventListener('storage', getItemsFromStorage)
-}
-
-export {
-  addEventListener,
-  removeEventListener
 }

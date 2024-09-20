@@ -5,7 +5,7 @@ import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check
 
 import { CART_LOAD_CART, CART_LOAD_CART_SERVER_TOKEN, CART_SET_ITEMS_HASH, CART_UPD_TOTALS } from '../store/mutation-types';
 
-function getItemsFromStorage ({ key }) {
+export function getItemsFromStorage ({ key }) {
   const valueFromStorage = parseLocalStorageValue(localStorage[key]);
 
   if (checkMultiStoreLocalStorageKey(key, 'cart/current-cart')) {
@@ -29,17 +29,4 @@ function getItemsFromStorage ({ key }) {
       valueFromStorage,
     );
   }
-}
-
-function addEventListener () {
-  window.addEventListener('storage', getItemsFromStorage)
-}
-
-function removeEventListener () {
-  window.removeEventListener('storage', getItemsFromStorage)
-}
-
-export {
-  addEventListener,
-  removeEventListener
 }

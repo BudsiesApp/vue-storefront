@@ -5,7 +5,7 @@ import { checkMultiStoreLocalStorageKey } from 'src/modules/shared/helpers/check
 
 import { SET_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE } from '../types/StoreMutations';
 
-function getItemsFromStorage ({ key }) {
+export function getItemsFromStorage ({ key }) {
   if (checkMultiStoreLocalStorageKey(key, 'promotionPlatform/production-spot-countdown-expiration-date')) {
     const value = parseLocalStorageValue(localStorage[key]);
 
@@ -14,17 +14,4 @@ function getItemsFromStorage ({ key }) {
       value
     );
   }
-}
-
-function addEventListener () {
-  window.addEventListener('storage', getItemsFromStorage)
-}
-
-function removeEventListener () {
-  window.removeEventListener('storage', getItemsFromStorage)
-}
-
-export {
-  addEventListener,
-  removeEventListener
 }

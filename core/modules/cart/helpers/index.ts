@@ -16,7 +16,7 @@ import getProductOptions from './getProductOptions'
 import getProductConfiguration from './getProductConfiguration'
 import createOrderData from './createOrderData'
 import createShippingInfoData from './createShippingInfoData'
-import * as syncCartWhenLocalStorageChange from './syncCartWhenLocalStorageChange'
+import { getItemsFromStorage } from './get-local-storage-items.function'
 
 export {
   cartCacheHandlerPlugin,
@@ -37,5 +37,5 @@ export {
   getProductConfiguration,
   createOrderData,
   createShippingInfoData,
-  syncCartWhenLocalStorageChange
+  getItemsFromStorage
 }

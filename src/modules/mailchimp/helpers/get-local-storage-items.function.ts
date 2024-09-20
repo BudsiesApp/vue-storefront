@@ -25,7 +25,7 @@ const clearLandingPage = () => {
   );
 }
 
-function getItemsFromStorage ({ key }: {key: string | null}) {
+export function getItemsFromStorage ({ key }: {key: string | null}) {
   if (!key) {
     clearCampaignId();
     clearLandingPage();
@@ -80,17 +80,4 @@ function getItemsFromStorage ({ key }: {key: string | null}) {
     mutationName,
     value
   );
-}
-
-function addEventListener () {
-  window.addEventListener('storage', getItemsFromStorage)
-}
-
-function removeEventListener () {
-  window.removeEventListener('storage', getItemsFromStorage)
-}
-
-export {
-  addEventListener,
-  removeEventListener
 }
