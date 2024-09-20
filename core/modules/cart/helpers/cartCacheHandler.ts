@@ -6,10 +6,6 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 export const cartCacheHandlerPlugin = (mutation, state) => {
   const type = mutation.type;
 
-  if (mutation.payload?.avoidPersistInLocalStorage) {
-    return;
-  }
-
   if (
     type.endsWith(types.CART_LOAD_CART) ||
     type.endsWith(types.CART_ADD_ITEM) ||
