@@ -11,8 +11,8 @@ const mutations: MutationTree<UserState> = {
       Logger.log('Refresh token is set to' + state.refreshToken, 'user')()
     }
   },
-  [types.SET_USER_TOKEN] (state, value: string = '') {
-    state.token = value;
+  [types.SET_USER_TOKEN] (state, payload: string = '') {
+    state.token = payload;
   },
   [types.SET_USER_REFRESH_TOKEN] (state, payload: string = '') {
     state.refreshToken = payload
