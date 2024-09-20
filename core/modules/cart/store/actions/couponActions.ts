@@ -11,10 +11,7 @@ const couponActions = {
 
         // 'getCurrentCartHash' has been changed (it's based on cart items data)
         // so we need to update it in vuex and StorageManager
-        commit(
-          types.CART_SET_ITEMS_HASH,
-          getters.getCurrentCartHash
-        );
+        commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
         return result
       }
     }
@@ -28,10 +25,7 @@ const couponActions = {
 
         // 'getCurrentCartHash' has been changed (it's based on cart items data)
         // so we need to update it in vuex and StorageManager
-        commit(
-          types.CART_SET_ITEMS_HASH,
-          getters.getCurrentCartHash
-        );
+        commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
       }
 
       return task;

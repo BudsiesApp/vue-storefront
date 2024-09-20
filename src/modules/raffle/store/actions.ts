@@ -191,10 +191,7 @@ export const actions: ActionTree<StoreState, RootState> = {
     const referrerToken = await raffleStorage.getItem(REFERRER_TOKEN);
 
     if (referrerToken) {
-      commit(
-        REFERRER_TOKEN_SET,
-        referrerToken
-      );
+      commit(REFERRER_TOKEN_SET, referrerToken);
     }
 
     if (token) {

@@ -17,7 +17,6 @@ export const actions: ActionTree<StoreState, RootState> = {
     );
 
     let email = await persistedCustomerDataStorage.getItem(EMAIL);
-
     const firstName = await persistedCustomerDataStorage.getItem(FIRST_NAME);
     const lastName = await persistedCustomerDataStorage.getItem(LAST_NAME);
     const phoneNumber = await persistedCustomerDataStorage.getItem(PHONE_NUMBER);
@@ -34,31 +33,19 @@ export const actions: ActionTree<StoreState, RootState> = {
     }
 
     if (firstName) {
-      commit(
-        SET_LAST_USED_CUSTOMER_FIRST_NAME,
-        firstName
-      );
+      commit(SET_LAST_USED_CUSTOMER_FIRST_NAME, firstName);
     }
 
     if (lastName) {
-      commit(
-        SET_LAST_USED_CUSTOMER_LAST_NAME,
-        lastName
-      );
+      commit(SET_LAST_USED_CUSTOMER_LAST_NAME, lastName);
     }
 
     if (phoneNumber) {
-      commit(
-        SET_LAST_USED_CUSTOMER_PHONE_NUMBER,
-        phoneNumber
-      );
+      commit(SET_LAST_USED_CUSTOMER_PHONE_NUMBER, phoneNumber);
     }
 
     if (shippingCountry) {
-      commit(
-        SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY,
-        shippingCountry
-      );
+      commit(SET_LAST_USED_CUSTOMER_SHIPPING_COUNTRY, shippingCountry);
     }
   }
 }

@@ -17,7 +17,7 @@ const connectActions = {
    * disconnect - if you want to clear cart token.
    */
   async clear ({ commit, dispatch }, { disconnect = true, sync = true } = {}) {
-    await commit(types.CART_LOAD_CART, []);
+    await commit(types.CART_LOAD_CART, [])
 
     if (sync) {
       await dispatch('sync', { forceClientState: true, forceSync: true })

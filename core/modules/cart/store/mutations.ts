@@ -25,10 +25,7 @@ const mutations: MutationTree<CartState> = {
       record.qty += parseInt((product.qty ? product.qty : 1))
     }
   },
-  [types.CART_SET_ITEMS_HASH](
-    state,
-    hash = null,
-  ) {
+  [types.CART_SET_ITEMS_HASH](state, hash = null) {
     state.cartItemsHash = hash
   },
   [types.CART_SET_SYNC] (state) {
@@ -67,11 +64,8 @@ const mutations: MutationTree<CartState> = {
   [types.CART_UPD_SHIPPING] (state, shippingMethod) {
     state.shipping = shippingMethod
   },
-  [types.CART_LOAD_CART](
-    state,
-    cartItems,
-  ) {
-    state.cartItems = cartItems || []
+  [types.CART_LOAD_CART](state, storedItems) {
+    state.cartItems = storedItems || []
     state.cartIsLoaded = true
 
     // EventBus.$emit('order/PROCESS_QUEUE', { config: config }) // process checkout queue
@@ -79,20 +73,10 @@ const mutations: MutationTree<CartState> = {
     EventBus.$emit('application-after-loaded')
     EventBus.$emit('cart-after-loaded')
   },
-  [types.CART_LOAD_CART_SERVER_TOKEN](
-    state,
-    token = '',
-  ) {
+  [types.CART_LOAD_CART_SERVER_TOKEN](state, token) {
     state.cartServerToken = token
   },
-  [types.CART_UPD_TOTALS](
-    state,
-    {
-      itemsAfterPlatformTotals,
-      platformTotals,
-      platformTotalSegments,
-    } = {}
-  ) {
+  [types.CART_UPD_TOTALS](state, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments }) {
     state.itemsAfterPlatformTotals = itemsAfterPlatformTotals
     state.platformTotals = platformTotals
     state.platformTotalSegments = platformTotalSegments

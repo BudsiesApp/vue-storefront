@@ -317,10 +317,7 @@ const mergeActions = {
       await dispatch('syncTotals')
     }
 
-    commit(
-      types.CART_SET_ITEMS_HASH,
-      getters.getCurrentCartHash
-    );
+    commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
   },
   async merge({ getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false }) {
     const hookResult = cartHooksExecutors.beforeSync({ clientItems, serverItems })

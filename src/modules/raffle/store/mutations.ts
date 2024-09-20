@@ -7,20 +7,14 @@ import ParticipantData from '../models/participant-data.model';
 import CurrentState from '../models/current-state.model';
 
 export const mutations: MutationTree<StoreState> = {
-  [PARTICIPANT_DATA_SET] (
-    state: StoreState,
-    value?: ParticipantData
-  ): void {
-    Vue.set(state, 'participantData', value);
+  [PARTICIPANT_DATA_SET] (state: StoreState, payload: ParticipantData): void {
+    Vue.set(state, 'participantData', payload);
   },
   [CURRENT_STATE_SET] (state: StoreState, payload: CurrentState): void {
     Vue.set(state, 'currentState', payload);
   },
-  [REFERRER_TOKEN_SET] (
-    state: StoreState,
-    value?: string
-  ): void {
-    Vue.set(state, 'referrerToken', value);
+  [REFERRER_TOKEN_SET] (state: StoreState, payload: string): void {
+    Vue.set(state, 'referrerToken', payload);
   },
   [LAST_WINNING_TICKETS_SET] (state: StoreState, payload: string[]): void {
     state.lastWinningTickets = payload;
