@@ -10,6 +10,8 @@ import { getCartItemPrice, getProductDefaultDiscount, getProductDefaultPrice, ge
 import { PAYMENT_ERROR_EVENT } from './types/payment-error-event';
 import ServerError from './types/server-error';
 import * as ProductEvent from './types/product-events';
+import { localStorageSynchronizationFactory } from './helpers/local-storage-synchronization.factory';
+import { parseLocalStorageValue } from './helpers/parse-local-storage-value.function';
 import * as PriceHelper from './helpers/price';
 
 import StreamingVideo from './components/streaming-video.vue';
@@ -33,5 +35,7 @@ export {
   PriceHelper,
   BEFORE_STORE_BACKEND_API_REQUEST,
   BreakpointValue,
-  PAYMENT_ERROR_EVENT
+  PAYMENT_ERROR_EVENT,
+  parseLocalStorageValue,
+  localStorageSynchronizationFactory
 }
