@@ -24,9 +24,6 @@ const synchronizeActions = {
 
     cartHooksExecutors.afterLoad(storedItems)
   },
-  updateCart ({ commit }, { items }) {
-    commit(types.CART_LOAD_CART, items)
-  },
   async loadCartDataFromLocalStorage ({ commit, dispatch }, { forceClientState, forceSync }) {
     const { synchronize } = config.cart
 
