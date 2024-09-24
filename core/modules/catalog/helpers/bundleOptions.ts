@@ -17,7 +17,7 @@ export const getBundleOptionsValues = (selectedBundleOptions: SelectedBundleOpti
 
     return selectedBundleOptionProductLinks.map((selectedBundleOptionProductLink) => ({
       ...selectedBundleOptionProductLink,
-      qty: selectedBundleOption.option_qty
+      qty: selectedBundleOption.option_qty || 1
     }))
   }).reduce(
     (selectedBundleOptionsProductLinksFlattedArray, selectedBundleOptionProductLinks) =>
