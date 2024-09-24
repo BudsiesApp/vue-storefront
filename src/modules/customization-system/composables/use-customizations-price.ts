@@ -36,6 +36,9 @@ export function useCustomizationsPrice (
     const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
     const selectedOptionValuesPrices: PriceHelper.ProductPrice[] = [];
 
+    // TODO: quick fix, need to refactor
+    const _ = root.$store.getters['promotionPlatform/campaignContent'];
+
     customizations.value.forEach((customization) => {
       if (!customization.optionData) {
         return;
