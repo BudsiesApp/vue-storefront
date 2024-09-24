@@ -14,6 +14,9 @@ export function useOptionValuesPrice (
       const dictionary: Record<string, PriceHelper.ProductPrice | undefined> = {};
       const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
 
+      // TODO: quick fix, need to refactor
+      const _ = root.$store.getters['promotionPlatform/campaignContent'];
+
       values.value.forEach((optionValue) => {
         dictionary[optionValue.id] = getOptionValuePrice(optionValue, productBySkuDictionary);
       });
