@@ -12,6 +12,7 @@ import {
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import productChecksum from '@vue-storefront/core/modules/cart/helpers/productChecksum';
 import { SearchQuery } from 'storefront-query-builder'
+import { getProductOptions } from 'src/modules/shared'
 
 import { cartHooksExecutors } from './../../hooks'
 import ServerItem from '../../types/Servertem'
@@ -53,7 +54,7 @@ const mergeActions = {
       sku: cartItem.sku,
       server_cart_id: serverItem.quote_id,
       prev_qty: cartItem.qty,
-      product_option: serverItem.product_option,
+      product_option: getProductOptions(serverItem),
       type_id: serverItem.product_type
     }
 
@@ -212,7 +213,7 @@ const mergeActions = {
         sku: clientItem.sku,
         server_cart_id: serverItem.quote_id,
         server_item_id: serverItem.item_id,
-        product_option: serverItem.product_option,
+        product_option: getProductOptions(serverItem),
         type_id: serverItem.product_type
       }
 
