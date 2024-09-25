@@ -5,12 +5,13 @@ import { CART_ADD_ITEM } from '@vue-storefront/core/modules/cart/store/mutation-
 
 import { cacheHandlerFactory } from './helpers/cacheHandler.factory';
 import initEventBusListeners from './helpers/initEventBusListeners';
-import * as syncLocalStorageChange from './helpers/syncLocalStorageChange';
+import { getItemsFromStorage } from './helpers/get-local-storage-items.function';
 import { module } from './store';
 import { CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE, SN_PROMOTION_PLATFORM } from './types/StoreMutations';
 import isCustomProduct from '../shared/helpers/is-custom-product.function';
 import onWindowMouseLeaveEventHandler from './helpers/on-window-mouseleave-event-handler.function';
 import { USER_LEAVING_WEBSITE } from './types/user-leaving-website.event';
+import { localStorageSynchronizationFactory } from '../shared';
 
 export const PromotionPlatformModule: StorefrontModule = function ({ app, store }) {
   StorageManager.init(SN_PROMOTION_PLATFORM);
@@ -68,9 +69,12 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
       }
     });
 
-    store.subscribe(cacheHandlerFactory());
+    const localStorageSynchronization = localStorageSynchronizationFactory(
+      getItemsFromStorage,
+      cacheHandlerFactory()
+    );
 
-    syncLocalStorageChange.addEventListener();
+    store.subscribe(localStorageSynchronization.setItems);
 
     document.body.addEventListener('mouseleave', onWindowMouseLeaveEventHandler);
   }
