@@ -58,5 +58,14 @@ export function cacheHandlerFactory () {
           Logger.error(reason)()
         })
     }
+
+    if (type.endsWith(types.CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE)) {
+      return StorageManager
+        .get(types.SN_PROMOTION_PLATFORM)
+        .removeItem('production-spot-countdown-expiration-date')
+        .catch((reason) => {
+          Logger.error(reason)()
+        })
+    }
   }
 }
