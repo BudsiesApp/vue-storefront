@@ -16,6 +16,7 @@ import * as PriceHelper from './helpers/price';
 
 import StreamingVideo from './components/streaming-video.vue';
 import EmailSubmitForm from './components/email-submit-form.vue';
+import { getProductOptions } from './helpers/get-product-options.function';
 
 export {
   InjectType,
@@ -37,5 +38,6 @@ export {
   BreakpointValue,
   PAYMENT_ERROR_EVENT,
   parseLocalStorageValue,
-  localStorageSynchronizationFactory
+  localStorageSynchronizationFactory,
+  getProductOptions
 }
