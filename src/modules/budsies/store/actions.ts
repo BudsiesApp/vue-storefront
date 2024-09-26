@@ -580,5 +580,31 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       },
       silent: true
     });
+  },
+  updatePersonalDetails ({ rootGetters }, personalDetails: {
+    emailAddress: string,
+    firstName: string,
+    lastName: string
+  }): Promise<Task> {
+    const url = `${config.budsies.endpoint}/carts/personal-details-update-requests?token={{token}}`;
+    const cartId = rootGetters['cart/getCartToken'];
+
+    const body = {
+      email: personalDetails.emailAddress,
+      firstName: personalDetails.firstName,
+      lastName: personalDetails.lastName,
+      cartId
+    };
+
+    return TaskQueue.execute({
+      url,
+      payload: {
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors',
+        method: 'POST',
+        body: JSON.stringify(body)
+      },
+      silent: true
+    });
   }
 }
