@@ -78,8 +78,6 @@ services:
       # - vue-storefront-api
     expose:
       - 3000
-    ports:
-      - 9229:9229
 
 volumes: 
   cache:
