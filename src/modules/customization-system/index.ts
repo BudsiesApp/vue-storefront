@@ -19,6 +19,7 @@ import { useSelectedOptionValueUrlQuery } from './composables/use-selected-optio
 import { useValuesSort } from './composables/use-values-sort';
 import { useWidgetBusyState } from './composables/use-widget-busy-state';
 import { filterCustomizationState } from './helpers/filter-customization-state';
+import { getCartItemExtensionAttributes } from './helpers/get-cart-item-extension-attributes';
 import { getCustomizationSelectedValues } from './helpers/get-customization-selected-values';
 import { getCustomizationSystemCartItemThumbnail } from './helpers/get-customization-system-cart-item-thumbnail';
 import { getCustomizationValueIdFieldKey } from './helpers/get-customization-value-id-field-key';
@@ -58,6 +59,7 @@ export {
   WidgetType,
 
   filterCustomizationState,
+  getCartItemExtensionAttributes,
   getCustomizationSelectedValues,
   getCustomizationSystemCartItemThumbnail,
   getCustomizationValueIdFieldKey,
