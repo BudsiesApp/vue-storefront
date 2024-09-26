@@ -70,9 +70,8 @@ services:
       - './packages:/var/www/packages'
       - './node_modules:/var/www/node_modules'
       - './yarn.lock:/var/www/yarn.lock'
-      - cache://usr/local/share/.cache
-    tmpfs:
-      - /var/www/dist
+      - cache:/usr/local/share/.cache
+      - dist:/var/www/dist
     networks:
       - default
       - reverseproxy
@@ -84,6 +83,7 @@ services:
 
 volumes: 
   cache:
+  dist:
 
 networks:
   reverseproxy:
