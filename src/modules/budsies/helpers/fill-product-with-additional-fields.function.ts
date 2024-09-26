@@ -50,7 +50,7 @@ export default function fillProductWithAdditionalFields (
         value = value as ExtensionAttributes;
 
         const plushieId = value.plushie_id ? String(value.plushie_id) : undefined;
-        const customizationState = (value.customization_state as CustomizationStateItem[]).map((item) => {
+        const customizationState = ((value.customization_state || []) as CustomizationStateItem[]).map((item) => {
           if (typeof item.value === 'number') {
             item.value = (item.value as number).toString();
           }
