@@ -10,6 +10,7 @@ import { module } from './store';
 import { CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE, SN_PROMOTION_PLATFORM } from './types/StoreMutations';
 import isCustomProduct from '../shared/helpers/is-custom-product.function';
 import onWindowMouseLeaveEventHandler from './helpers/on-window-mouseleave-event-handler.function';
+import { CAMPAIGN_CONTENT_CHANGED } from './types/campaign-content-changed.event';
 import { USER_LEAVING_WEBSITE } from './types/user-leaving-website.event';
 import { localStorageSynchronizationFactory } from '../shared';
 
@@ -81,5 +82,6 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
 }
 
 export {
+  CAMPAIGN_CONTENT_CHANGED,
   USER_LEAVING_WEBSITE
 }

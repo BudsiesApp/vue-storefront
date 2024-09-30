@@ -25,6 +25,7 @@ import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 
 import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
+import { CAMPAIGN_CONTENT_CHANGED } from 'src/modules/promotion-platform';
 
 import RichTextItem from '../../../../types/rich-text-item.interface';
 
@@ -94,7 +95,7 @@ export default Vue.extend({
   data () {
     return {
       textParts: [] as ProcessedTextPart[],
-      onPromotionPlatformStoreSynchronizedHandler: undefined as ((text: string) => void) | undefined
+      onPromotionCampaignContentChangedHandler: undefined as ((text: string) => void) | undefined
     }
   },
   computed: {
@@ -150,12 +151,12 @@ export default Vue.extend({
   beforeMount (): void {
     this.processDirectivesInText(this.item.text || '');
 
-    this.onPromotionPlatformStoreSynchronizedHandler = () => this.processDirectivesInText(this.item.text || '');
-    EventBus.$on('promotion-platform-store-synchronized', this.onPromotionPlatformStoreSynchronizedHandler);
+    this.onPromotionCampaignContentChangedHandler = () => this.processDirectivesInText(this.item.text || '');
+    EventBus.$on(CAMPAIGN_CONTENT_CHANGED, this.onPromotionCampaignContentChangedHandler);
   },
   beforeDestroy (): void {
-    if (this.onPromotionPlatformStoreSynchronizedHandler) {
-      EventBus.$off('promotion-platform-store-synchronized', this.onPromotionPlatformStoreSynchronizedHandler);
+    if (this.onPromotionCampaignContentChangedHandler) {
+      EventBus.$off(CAMPAIGN_CONTENT_CHANGED, this.onPromotionCampaignContentChangedHandler);
     }
   },
   methods: {
