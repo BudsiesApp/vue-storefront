@@ -26,7 +26,7 @@ export const CartModule: StorefrontModule = function ({ store, router }) {
 
     const onCartNotFoundErrorHandler = () => {
       store.dispatch(
-        'clear',
+        'cart/clear',
         {
           disconnect: true,
           sync: false

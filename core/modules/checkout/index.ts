@@ -8,6 +8,7 @@ import { checkoutModule } from './store/checkout'
 import { paymentModule } from './store/payment'
 import { shippingModule } from './store/shipping'
 import * as types from './store/checkout/mutation-types'
+import { ORDER_CONFLICT_EVENT } from './types/OrderConflictEvent'
 import { ORDER_ERROR_EVENT } from './types/OrderErrorEvent'
 
 export const CheckoutModule: StorefrontModule = function ({ store }) {
@@ -57,5 +58,6 @@ export const CheckoutModule: StorefrontModule = function ({ store }) {
 }
 
 export {
+  ORDER_CONFLICT_EVENT,
   ORDER_ERROR_EVENT
 }

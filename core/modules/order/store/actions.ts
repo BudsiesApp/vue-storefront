@@ -61,6 +61,12 @@ const actions: ActionTree<OrderState, RootState> = {
       return task;
     }
 
+    if (task.resultCode === 409) {
+      commit(types.ORDER_REMOVE_SESSION_ORDER_HASH, currentOrderHash);
+      EventBus.$emit('notification-progress-stop');
+      return task;
+    }
+
     if (task.resultCode === 200) {
       dispatch('enqueueOrder', { newOrder: order })
 
