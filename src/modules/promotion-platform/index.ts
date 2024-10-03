@@ -34,7 +34,7 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
         );
       }
 
-      if (!cartId || app.$route.query.data) {
+      if (!userToken || !cartId || app.$route.query.data) {
         return updateActiveCampaign();
       }
 
