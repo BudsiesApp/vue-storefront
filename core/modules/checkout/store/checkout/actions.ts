@@ -7,7 +7,6 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { ORDER_ERROR_EVENT } from '../../types/OrderErrorEvent'
 import { ProcessOrderError } from 'core/modules/order/types/ProcessOrderError'
-import { ORDER_CONFLICT_EVENT } from '../../types/OrderConflictEvent'
 
 const actions: ActionTree<CheckoutState, RootState> = {
   async placeOrder ({ dispatch }, { order }) {
@@ -18,9 +17,6 @@ const actions: ActionTree<CheckoutState, RootState> = {
         // clear cart without sync, because after order cart will be already cleared on backend
         await dispatch('cart/clear', { sync: false }, { root: true })
         await dispatch('dropPassword')
-      } else if (result.resultCode === 409) {
-        await dispatch('cart/pullServerCart', true, { root: true });
-        EventBus.$emit(ORDER_CONFLICT_EVENT);
       } else if (result.resultCode !== 404 && result.resultCode !== 409) {
         EventBus.$emit(
           ORDER_ERROR_EVENT,
