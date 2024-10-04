@@ -1,4 +1,5 @@
 import { ActionTree } from 'vuex'
+import config from 'config'
 import * as types from './mutation-types'
 import i18n from '@vue-storefront/i18n'
 import RootState from '@vue-storefront/core/types/RootState'
@@ -74,8 +75,7 @@ const actions: ActionTree<UserState, RootState> = {
    * Login user and return user profile and current token
    */
   async login ({ commit, dispatch }, { username, password }) {
-    await dispatch('resetUserInvalidation', {}, { root: true })
-
+    commit(types.RESET_TOKEN_REFRESH_COUNT);
     const resp = await UserService.login(username, password)
     userHooksExecutors.afterUserAuthorize(resp)
 
@@ -106,7 +106,36 @@ const actions: ActionTree<UserState, RootState> = {
 
     return task;
   },
+  async tryToRefreshToken({commit, dispatch, getters}): Promise<boolean> {
+    const existingTokenRefreshPromise: Promise<boolean> | undefined = getters['getTokenRefreshPromise'];
 
+    if (existingTokenRefreshPromise) {
+      return existingTokenRefreshPromise;
+    }
+
+    const tokenRefreshPromise = new Promise<boolean>(async (resolve) => {
+      const canRefreshToken = getters['canRefreshToken'] && config.users.autoRefreshTokens;
+      let isRefreshed = canRefreshToken;
+
+      if (canRefreshToken) {
+        const newToken = await dispatch('refresh');
+        isRefreshed = !!newToken;
+      }
+
+      commit(types.INCREMENT_TOKEN_REFRESH_COUNT);
+
+      if (!isRefreshed) {
+        await dispatch('logout', { silent: true });
+      }
+
+      commit(types.SET_TOKEN_REFRESH_PROMISE, undefined);
+      resolve(isRefreshed);
+    });
+    
+    commit(types.SET_TOKEN_REFRESH_PROMISE, tokenRefreshPromise);
+
+    return tokenRefreshPromise;
+  },
   /**
   * Invalidate user token
   */
@@ -261,6 +290,7 @@ const actions: ActionTree<UserState, RootState> = {
    * Logout user
    */
   async logout ({ commit, dispatch }, { silent = false }) {
+    commit(types.RESET_TOKEN_REFRESH_COUNT);
     commit(types.USER_END_SESSION)
 
     await Promise.all([

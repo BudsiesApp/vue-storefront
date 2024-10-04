@@ -29,9 +29,6 @@ export default interface RootState {
   twoStageCachingDelta1: number,
   twoStageCachingDelta2: number,
   twoStageCachingDisabled: boolean,
-  userTokenInvalidated: string | null,
-  userTokenInvalidateAttemptsCount: number,
-  userTokenInvalidateLock: number,
   route?: any,
   url: any
 }
