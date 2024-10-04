@@ -113,8 +113,8 @@ const actions: ActionTree<UserState, RootState> = {
       return existingTokenRefreshPromise;
     }
 
-    const tokenRefreshPromise = new Promise<boolean>(async (resolve) => {
-      const canRefreshToken = getters['canRefreshToken'] && config.users.autoRefreshTokens;
+    const refreshToken = async (): Promise<boolean> => {
+      const canRefreshToken: boolean = getters['canRefreshToken'] && config.users.autoRefreshTokens;
       let isRefreshed = canRefreshToken;
 
       if (canRefreshToken) {
@@ -129,8 +129,10 @@ const actions: ActionTree<UserState, RootState> = {
       }
 
       commit(types.SET_TOKEN_REFRESH_PROMISE, undefined);
-      resolve(isRefreshed);
-    });
+      return isRefreshed; 
+    };
+
+    const tokenRefreshPromise = refreshToken();
     
     commit(types.SET_TOKEN_REFRESH_PROMISE, tokenRefreshPromise);
 
