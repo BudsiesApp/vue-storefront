@@ -13,5 +13,7 @@ export default interface UserState {
   session_started: Date,
   orders_history: any,
   local_data_loaded: boolean,
-  isSessionStarted: boolean
+  isSessionStarted: boolean,
+  tokenRefreshPromise: Promise<boolean> | undefined,
+  tokenRefreshCount: number
 }

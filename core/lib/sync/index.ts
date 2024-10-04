@@ -29,23 +29,7 @@ async function queue (task) {
 /** Runs given task. If user is offline request will fail */
 async function execute (task): Promise<Task> { // not offline task
   task = _prepareTask(task)
-  return new Promise((resolve, reject) => {
-    if (isServer) {
-      taskExecute(task, null, null).then((result) => {
-        resolve(result)
-      }).catch(err => {
-        reject(err)
-      })
-    } else {
-      const currentUserToken = rootStore.getters['user/getUserToken']
-      const currentCartToken = rootStore.getters['cart/getCartToken']
-      taskExecute(task, currentUserToken, currentCartToken).then((result) => {
-        resolve(result)
-      }).catch(err => {
-        reject(err)
-      })
-    }
-  })
+  return taskExecute(task)
 }
 
 /** Clear sync tasks that were not transmitted yet */

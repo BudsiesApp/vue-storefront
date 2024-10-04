@@ -7,6 +7,9 @@ import { localStorageSynchronizationFactory } from 'src/modules/shared'
 
 import { cacheHandlerFactory } from './helpers/cache-handler.factory'
 import { getItemsFromStorage } from './helpers/get-local-storage-items.function'
+import { RESET_TOKEN_REFRESH_COUNT } from './store/mutation-types'
+
+const RESET_USER_TOKEN_REFRESH_COUNT = `user/${RESET_TOKEN_REFRESH_COUNT}`;
 
 export const UserModule: StorefrontModule = async function ({ store }) {
   StorageManager.init('user')
@@ -51,4 +54,8 @@ export const UserModule: StorefrontModule = async function ({ store }) {
 
     store.dispatch('user/startSession');
   }
+}
+
+export {
+  RESET_USER_TOKEN_REFRESH_COUNT
 }
