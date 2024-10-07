@@ -26,6 +26,15 @@ export default class CampaignContent implements CampaignContentI {
     return this.fImageBanner;
   }
 
+  public get isEmpty (): boolean {
+    const isProductDiscountsEmpty = !this.productDiscountPriceDictionary ||
+      !Object.values(this.productDiscountPriceDictionary).length;
+
+    return !this.countdownBannerContent &&
+      isProductDiscountsEmpty &&
+      !this.imageBanner
+  }
+
   public toPlainObject (): CampaignContentI {
     return {
       countdownBannerContent: this.countdownBannerContent,
