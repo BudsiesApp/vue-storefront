@@ -11,6 +11,7 @@ import { CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE, SN_PROMOTION_PLATFORM 
 import isCustomProduct from '../shared/helpers/is-custom-product.function';
 import onWindowMouseLeaveEventHandler from './helpers/on-window-mouseleave-event-handler.function';
 import { CAMPAIGN_CONTENT_CHANGED } from './types/campaign-content-changed.event';
+import CampaignsGetAPIResponse from './types/CampaignsGetAPIResponse';
 import { USER_LEAVING_WEBSITE } from './types/user-leaving-website.event';
 import { localStorageSynchronizationFactory } from '../shared';
 
@@ -24,7 +25,7 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
       await store.dispatch(`${SN_PROMOTION_PLATFORM}/synchronize`);
       const cartId = store.getters['cart/getCartToken'];
 
-      if (!cartId || app.$route.query.data) {
+      const updateActiveCampaign = () => {
         return store.dispatch(
           `${SN_PROMOTION_PLATFORM}/updateActiveCampaign`,
           {
@@ -34,13 +35,23 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
         );
       }
 
-      return store.dispatch(
+      if (!userToken || !cartId || app.$route.query.data) {
+        return updateActiveCampaign();
+      }
+
+      const response: CampaignsGetAPIResponse = await store.dispatch(
         `${SN_PROMOTION_PLATFORM}/fetchActiveCampaign`,
         {
           cartId,
           userToken
         }
       );
+
+      if (!response.campaignContent.isEmpty) {
+        return;
+      }
+
+      return updateActiveCampaign();
     });
 
     EventBus.$on(
