@@ -1,15 +1,19 @@
 import Product from 'core/modules/catalog/types/Product';
-import { getFinalPrice, getProductDefaultDiscount, getProductDefaultPrice } from 'src/modules/shared/helpers/price';
+import { PriceHelper } from 'src/modules/shared';
 
 import { prepareBaseItemData } from './prepare-base-item-data.function';
 
-export function prepareProductItemData (product: Product) {
-  const price = getProductDefaultPrice(product, {}, false);
+export function prepareProductItemData (
+  product: Product,
+  productPriceDictionary: Record<string, PriceHelper.ProductPrice>,
+  productDiscountDictionary: Record<string, PriceHelper.ProductDiscount>
+) {
+  const price = productPriceDictionary[product.id];
   const baseData = prepareBaseItemData(product);
 
   return {
     ...baseData,
-    discount: getProductDefaultDiscount(product, false, false),
-    price: getFinalPrice(price)
+    discount: productDiscountDictionary[product.id] || 0,
+    price: price ? PriceHelper.getFinalPrice(price) : product.price
   }
 }

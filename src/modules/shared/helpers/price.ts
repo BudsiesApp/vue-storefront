@@ -1,14 +1,13 @@
 import get from 'lodash-es/get'
 
+import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import { isBundleProduct } from '@vue-storefront/core/modules/catalog/helpers';
+import { getBundleOptionsValues, getBundleOptionPrice } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions'
+import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { price } from '@vue-storefront/core/filters';
-import { getCustomOptionValues, getCustomOptionPriceDelta } from '@vue-storefront/core/modules/catalog/helpers/customOption'
-import { getBundleOptionsValues, getBundleOptionPrice, getDefaultBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions'
-import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
-
-import { UPDATE_CART_ITEM_DISCOUNT_PRICE_DATA_EVENT_ID, UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID } from 'src/modules/shared/types/discount-price/events';
 import UpdateProductDiscountPriceEventData from 'src/modules/shared/types/discount-price/update-product-discount-price-event-data.interface';
-import { AmGiftCardOptions } from 'src/modules/gift-card';
+
+import { getProductDiscountPrice } from './product-discount-price';
 
 interface ProductPriceData {
   originalPriceInclTax: number,
@@ -21,7 +20,24 @@ export interface ProductPrice {
   special: number | null
 }
 
-function calculateCartItemBundleOptionsPrice (product) {
+export interface FormattedProductPrice {
+  regular: string,
+  special: string
+}
+
+export interface ProductDiscount {
+  discount: number,
+  discountPercent: number
+}
+
+export interface FormattedProductDiscount {
+  discount: string,
+  discountPercent: string
+}
+
+function calculateCartItemBundleOptionsPrice (
+  product: Product
+): ProductPriceData {
   const allBundleOptions = product.bundle_options || []
   const selectedBundleOptions = Object.values(get(product, 'product_option.extension_attributes.bundle_options', {}))
   const price = getBundleOptionPrice(
@@ -31,109 +47,89 @@ function calculateCartItemBundleOptionsPrice (product) {
   return price
 }
 
-function calculateProductDefaultBundleOptionsPrice (product) {
+export function calculateProductDefaultBundleOptionsPrice (
+  product: Product
+): ProductPriceData {
   return {
     priceInclTax: product.price_incl_tax || 0,
     originalPriceInclTax: product.original_price_incl_tax || 0,
-    specialPrice: product.special_price
+    specialPrice: product.special_price !== undefined ? product.special_price : null
   };
 }
 
-function getProductPriceData (product, bundleOptionsPriceCalculationFunction: (product) => any): ProductPriceData {
+export function getProductPriceData (
+  product: Product | CartItem,
+  bundleOptionsPriceCalculationFunction: (product: Product) => any
+): ProductPriceData {
   let productPriceData: ProductPriceData = {
     originalPriceInclTax: 0,
     priceInclTax: 0,
     specialPrice: null
   }
 
-  const amGiftCardOptions: AmGiftCardOptions = product.product_option?.extension_attributes?.am_giftcard_options;
+  const amGiftCardOptions = product.product_option?.extension_attributes?.am_giftcard_options;
+  const giftCardOptions = (product as CartItem).giftcard_options;
 
   if (isBundleProduct(product)) {
     productPriceData = bundleOptionsPriceCalculationFunction(product);
-  } else if (product.giftcard_options) {
-    productPriceData.priceInclTax = product.giftcard_options.price_amount;
-    productPriceData.originalPriceInclTax = product.giftcard_options.price_amount;
+  } else if (giftCardOptions) {
+    productPriceData.priceInclTax = giftCardOptions.price_amount;
+    productPriceData.originalPriceInclTax = giftCardOptions.price_amount;
   } else if (amGiftCardOptions) {
     productPriceData.priceInclTax = amGiftCardOptions.am_giftcard_amount || amGiftCardOptions.am_giftcard_amount_custom;
     productPriceData.originalPriceInclTax = productPriceData.priceInclTax;
   } else {
     productPriceData.priceInclTax = product.price_incl_tax || 0;
     productPriceData.originalPriceInclTax = product.original_price_incl_tax || 0;
-    productPriceData.specialPrice = product.special_price;
+    productPriceData.specialPrice = product.special_price !== undefined ? product.special_price : null;
   }
 
   return productPriceData;
-}
-
-function calculateCustomOptionsPriceDelta (product, customOptions) {
-  const priceDelta = getCustomOptionPriceDelta(
-    getCustomOptionValues(Object.values(customOptions), product.custom_options),
-    product
-  )
-
-  return priceDelta.priceInclTax;
 }
 
 export function formatPrice (value: number | null) {
   return value !== null ? price(value) : ''
 }
 
-export function getProductDefaultDiscount (product, format = true, inPercent = true) {
-  const defaultDiscount = format ? '' : 0;
-  if (!product) {
-    return defaultDiscount;
+export function formatProductPrice (
+  value: ProductPrice
+): FormattedProductPrice {
+  return {
+    special: formatPrice(value.special),
+    regular: formatPrice(value.regular)
   }
-
-  const productPriceData = getProductPriceData(product, calculateProductDefaultBundleOptionsPrice);
-  const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
-    value: undefined,
-    product
-  };
-
-  EventBus.$emit(UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID, productDiscountPriceData);
-
-  const price = getProductPrice(product, productDiscountPriceData, productPriceData);
-
-  if (price.special === null || price.regular === price.special) {
-    return defaultDiscount;
-  }
-
-  if (!inPercent) {
-    return price.regular - price.special;
-  }
-
-  const discount = Math.round((1 - price.special / price.regular) * 100);
-
-  return format ? `-${discount}%` : discount;
 }
 
-export function getCartItemDiscount (product, format = true, inPercent = true) {
-  const defaultDiscount = format ? '' : 0;
-  if (!product) {
-    return defaultDiscount;
-  }
-
-  const productPriceData = getProductPriceData(product, calculateCartItemBundleOptionsPrice);
-  const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
-    value: undefined,
-    product
+export function formatProductDiscount (
+  value: ProductDiscount
+): FormattedProductDiscount {
+  return {
+    discount: value.discount ? price(value) : '',
+    discountPercent: value.discountPercent
+      ? `-${value.discountPercent}%`
+      : ''
   };
+}
 
-  EventBus.$emit(UPDATE_CART_ITEM_DISCOUNT_PRICE_DATA_EVENT_ID, productDiscountPriceData);
-
-  const price = getProductPrice(product, productDiscountPriceData, productPriceData)
-
-  if (price.special === null || price.regular === price.special) {
-    return defaultDiscount;
+export function getProductDiscount (
+  productPrice: ProductPrice
+): ProductDiscount {
+  if (
+    productPrice.special === null ||
+        productPrice.regular === productPrice.special
+  ) {
+    return {
+      discount: 0,
+      discountPercent: 0
+    };
   }
+  const discount = productPrice.regular - productPrice.special;
+  const discountPercent = Math.round((1 - productPrice.special / productPrice.regular) * 100);
 
-  if (!inPercent) {
-    return price.regular - price.special;
+  return {
+    discount,
+    discountPercent
   }
-
-  const discount = Math.round((1 - price.special / price.regular) * 100);
-
-  return format ? `-${discount}%` : discount;
 }
 
 export function getFinalPrice ({
@@ -161,20 +157,27 @@ export function getTotalPriceForProductPrices (
   }
 }
 
-function getProductPrice (product, productDiscountPriceData: UpdateProductDiscountPriceEventData, productPriceData: ProductPriceData, customOptions = {}) {
+function getProductPrice (
+  product: Product,
+  productDiscountPriceData: UpdateProductDiscountPriceEventData,
+  productPriceData: ProductPriceData
+) {
+  const quantity = (product.qty || 1);
   const productDiscountPrice = productDiscountPriceData.value
-    ? productDiscountPriceData.value * (product.qty || 1)
+    ? productDiscountPriceData.value * quantity
     : productDiscountPriceData.value;
 
   let priceInclTax = productPriceData.priceInclTax;
   let originalPriceInclTax = productPriceData.originalPriceInclTax;
   let specialPrice = productPriceData.specialPrice;
 
-  const priceDelta = calculateCustomOptionsPriceDelta(product, customOptions)
+  const original = originalPriceInclTax
+  const regular = product.regular_price || priceInclTax
+  let special = productDiscountPrice || priceInclTax
 
-  const original = (originalPriceInclTax + priceDelta) * product.qty || originalPriceInclTax
-  const regular = (priceInclTax + priceDelta) * product.qty || product.regular_price || priceInclTax
-  let special = productDiscountPrice || (priceInclTax + priceDelta) * product.qty || priceInclTax
+  if (productDiscountPrice !== undefined && productDiscountPrice < special) {
+    special = productDiscountPrice
+  }
 
   const isSpecialPrice = (!!productDiscountPrice ||
    (specialPrice && priceInclTax && originalPriceInclTax) ||
@@ -191,60 +194,44 @@ function getProductPrice (product, productDiscountPriceData: UpdateProductDiscou
   }
 }
 
-export function getCartItemPrice (product, customOptions, format = true) {
-  if (!product) {
-    return {
-      regular: format ? '' : 0,
-      special: format ? '' : null
-    }
-  }
-
-  const productPriceData = getProductPriceData(product, calculateCartItemBundleOptionsPrice);
+export function getCartItemPrice (
+  product: CartItem,
+  productDiscountPriceDictionary: Record<string, number>
+) {
+  const productPriceData = getProductPriceData(
+    product,
+    calculateCartItemBundleOptionsPrice
+  );
   const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
-    value: undefined,
+    value: getProductDiscountPrice(product, productDiscountPriceDictionary),
     product
   }
 
-  EventBus.$emit(UPDATE_CART_ITEM_DISCOUNT_PRICE_DATA_EVENT_ID, productDiscountPriceData);
-
-  const productPrice = getProductPrice(product, productDiscountPriceData, productPriceData, customOptions);
-
-  if (!format) {
-    return productPrice;
-  }
-
-  return {
-    regular: formatPrice(productPrice.regular),
-    special: formatPrice(productPrice.special)
-  }
+  return getProductPrice(
+    product,
+    productDiscountPriceData,
+    productPriceData
+  );
 }
 
-export function getProductDefaultPrice (product, customOptions, format = true) {
-  if (!product) {
-    return {
-      regular: format ? '' : 0,
-      special: format ? '' : null
-    }
-  }
-
-  const productPriceData = getProductPriceData(product, calculateProductDefaultBundleOptionsPrice);
+export function getProductDefaultPrice (
+  product: Product,
+  productDiscountPriceDictionary: Record<string, number>
+) {
+  const productPriceData = getProductPriceData(
+    product,
+    calculateProductDefaultBundleOptionsPrice
+  );
   const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
-    value: undefined,
+    value: getProductDiscountPrice(product, productDiscountPriceDictionary),
     product
   }
 
-  EventBus.$emit(UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID, productDiscountPriceData);
-
-  const productPrice = getProductPrice(product, productDiscountPriceData, productPriceData, customOptions);
-
-  if (!format) {
-    return productPrice;
-  }
-
-  return {
-    regular: productPrice.regular ? formatPrice(productPrice.regular) : '',
-    special: formatPrice(productPrice.special)
-  }
+  return getProductPrice(
+    product,
+    productDiscountPriceData,
+    productPriceData
+  );
 }
 
 export function getProductPriceFromTotals (product) {

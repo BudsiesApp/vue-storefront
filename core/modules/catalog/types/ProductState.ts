@@ -1,3 +1,4 @@
+import { ComputedRef } from '@vue/composition-api';
 import Product from './Product';
 
 export interface PagedProductList {
@@ -26,5 +27,6 @@ export default interface ProductState {
   productLoadStart: number,
   productLoadPromise: Promise<any> | null,
   productGallery: any,
-  productBySku: Record<string, Product>
+  productBySku: Record<string, Product>,
+  productDiscount: ComputedRef<Record<string, number>> | null,
 }

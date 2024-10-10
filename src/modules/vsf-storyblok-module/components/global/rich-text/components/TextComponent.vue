@@ -19,7 +19,7 @@
 <script lang="ts">
 import { v4 as uuidv4 } from 'uuid';
 import Vue, { PropType } from 'vue';
-import { getProductDefaultPrice } from 'src/modules/shared';
+import { PriceHelper } from 'src/modules/shared';
 import { SearchQuery } from 'storefront-query-builder'
 import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
@@ -143,6 +143,9 @@ export default Vue.extend({
       }
 
       return result;
+    },
+    productPriceDictionary (): Record<string, PriceHelper.ProductPrice> {
+      return this.$store.getters['product/productPriceDictionary'];
     }
   },
   serverPrefetch (): Promise<void> {
@@ -327,11 +330,7 @@ export default Vue.extend({
       }
     },
     processProductPriceDirective (textPart: ProductPriceDirective): ProcessedTextPart {
-      const { regular, special } = getProductDefaultPrice(
-        this.productBySkuDictionary[textPart.productSku],
-        {},
-        false
-      );
+      const { regular, special } = this.productPriceDictionary[this.productBySkuDictionary[textPart.productSku]];
 
       const processedTextPart: ProcessedTextPart = {
         id: uuidv4(),
@@ -350,14 +349,12 @@ export default Vue.extend({
       return processedTextPart;
     },
     processProductSpecificPriceDirective (textPart: ProductSpecificPriceDirective): ProcessedTextPart {
-      const prices = getProductDefaultPrice(
-        this.productBySkuDictionary[textPart.productSku],
-        {}
-      );
+      const prices = this.productPriceDictionary[this.productBySkuDictionary[textPart.productSku]];
+      const formattedPrice = PriceHelper.formatProductPrice(prices);
 
       return {
         id: uuidv4(),
-        text: prices[textPart.priceType],
+        text: formattedPrice[textPart.priceType],
         classes: this.classes,
         styles: this.styles,
         component: 'span'

@@ -166,15 +166,23 @@ export default class EventBusListener {
   }
 
   private onProductPageShowEventHandler (product: Product): void {
-    const price = PriceHelper.getProductDefaultPrice(product, {}, false);
+    if (!product.id) {
+      return;
+    }
+
+    const productPriceDictionary: Record<string, PriceHelper.ProductPrice> = this.store.getters['product/productPriceDictionary'];
+    const price = productPriceDictionary[product.id];
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.VIEW_ITEM,
       ecommerce: {
         currency: DEFAULT_CURRENCY,
-        value: PriceHelper.getFinalPrice(price),
+        value: price ? PriceHelper.getFinalPrice(price) : product.price,
         items: [
-          prepareProductItemData(product)
+          prepareProductItemData(
+            product,
+            productPriceDictionary
+          )
         ]
       }
     });

@@ -9,8 +9,7 @@ import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import { getThumbnailPath, productThumbnailPath } from '@vue-storefront/core/helpers';
 
-import { getProductDefaultPrice } from 'src/modules/shared';
-import { getFinalPrice } from 'src/modules/shared/helpers/price';
+import { PriceHelper } from 'src/modules/shared';
 
 export default Vue.extend({
   name: 'ProductStructuredData',
@@ -21,11 +20,18 @@ export default Vue.extend({
     }
   },
   computed: {
+    productPriceDictionary (): Record<string, PriceHelper.ProductPrice> {
+      return this.$store.getters['product/productPriceDictionary'];
+    },
     structuredData (): string | undefined {
       const storeView = currentStoreView();
 
-      const price = getProductDefaultPrice(this.product, {}, false);
-      const finalPrice = getFinalPrice(price);
+      const price = this.product.id
+        ? this.productPriceDictionary[this.product.id]
+        : undefined;
+      const finalPrice = price
+        ? PriceHelper.getFinalPrice(price)
+        : this.product.price;
 
       const data = {
         '@context': 'https://schema.org/',
