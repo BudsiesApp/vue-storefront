@@ -13,6 +13,7 @@ import { filterChangedProduct, productAfterCustomoptions, productAfterBundleopti
 import { isServer } from '@vue-storefront/core/helpers'
 import uniq from 'lodash-es/uniq'
 import { PRODUCT_SET_PRODUCT_BY_SKU } from './store/product/mutation-types'
+import { CART_ITEM_PRICE_DICTIONARY, GET_CART_ITEM_PRICE, GET_PRODUCT_PRICE, PRODUCT_PRICE_DICTIONARY } from './types/ProductGetters'
 
 export const CatalogModule: StorefrontModule = async function ({ store, router, appConfig }) {
   StorageManager.init('categories')
@@ -50,4 +51,11 @@ export const CatalogModule: StorefrontModule = async function ({ store, router, 
       EventBus.$on('user-after-logout', onUserPricesRefreshed.bind(null, store, router))
     }
   }
+}
+
+export {
+  GET_PRODUCT_PRICE,
+  GET_CART_ITEM_PRICE,
+  PRODUCT_PRICE_DICTIONARY,
+  CART_ITEM_PRICE_DICTIONARY
 }

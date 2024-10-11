@@ -4,6 +4,7 @@ import ProductState from '../../types/ProductState'
 import { Dictionary } from 'src/modules/budsies';
 import { PriceHelper } from 'src/modules/shared';
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
+import Product from '../../types/Product';
 
 const getters: GetterTree<ProductState, RootState> = {
   getCurrentProduct: state => state.current,
@@ -24,6 +25,34 @@ const getters: GetterTree<ProductState, RootState> = {
   getCurrentCustomOptions: state => state.current_custom_options,
   getProductBySkuDictionary: state => state.productBySku,
   getCurrentBundleOptions: state => state.current_bundle_options,
+  getProductPrice: (state, getters): (product: Product) => PriceHelper.ProductPrice => {
+    return (product: Product) => {
+      const price: PriceHelper.ProductPrice | undefined = getters['productPriceDictionary'][product.id];
+      const productDiscount = state.productDiscount ? state.productDiscount.value : {};
+
+      if (price) {
+        return price;
+      }
+
+      return PriceHelper.getProductDefaultPrice(
+        product,
+        productDiscount
+      )
+    }
+  },
+  getProductDiscount: (state, getters): (product: Product) => PriceHelper.ProductDiscount => {
+    return (product: Product) => {
+      const discount: PriceHelper.ProductDiscount | undefined = getters['productDiscountDictionary'][product.id];
+
+      if (discount) {
+        return discount;
+      }
+
+      const price: PriceHelper.ProductPrice = getters['getProductPrice'](product);
+
+      return PriceHelper.getProductDiscount(price);
+    }
+  },
   productPriceDictionary: (state): Dictionary<PriceHelper.ProductPrice> => {
     const loadedProducts = Object.values(state.productBySku);
     const productPrices: Dictionary<PriceHelper.ProductPrice> = {};
@@ -102,7 +131,38 @@ const getters: GetterTree<ProductState, RootState> = {
 
     return productDiscountDictionary;
   },
+  getCartItemPrice: (state, getters): (cartItem: CartItem) => PriceHelper.ProductPrice => {
+    return (cartItem: CartItem) => {
+      const price: PriceHelper.ProductPrice | undefined =
+        cartItem.checksum
+          ? getters['cartItemPriceDictionary'][cartItem.checksum]
+          : undefined;
 
+      const productDiscount = state.productDiscount ? state.productDiscount.value : {};
+
+      if (price) {
+        return price;
+      }
+
+      return PriceHelper.getCartItemPrice(
+        cartItem,
+        productDiscount
+      )
+    }
+  },
+  getCartItemDiscount: (state, getters): (cartItem: CartItem) => PriceHelper.ProductDiscount => {
+    return (cartItem: Product) => {
+      const discount: PriceHelper.ProductDiscount | undefined = getters['cartItemDiscountDictionary'][cartItem.id];
+
+      if (discount) {
+        return discount;
+      }
+
+      const price: PriceHelper.ProductPrice = getters['getCartItemPrice'](cartItem);
+
+      return PriceHelper.getProductDiscount(price);
+    }
+  },
 }
 
 export default getters
