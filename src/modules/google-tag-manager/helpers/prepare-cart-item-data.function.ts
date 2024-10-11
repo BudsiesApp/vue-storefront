@@ -1,12 +1,14 @@
-import CartItem from 'core/modules/cart/types/CartItem';
-import { getCartItemDiscount, getCartItemPrice, getFinalPrice } from 'src/modules/shared/helpers/price';
+import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
+import { PriceHelper } from 'src/modules/shared';
 
 import { prepareBaseItemData } from './prepare-base-item-data.function';
 import { getComposedSku } from './get-composed-sku.function';
 
-export function prepareCartItemData (cartItem: CartItem) {
-  const totalPrice = getCartItemPrice(cartItem, {}, false);
-  const finalTotalPrice = getFinalPrice(totalPrice);
+export function prepareCartItemData (
+  cartItem: CartItem,
+  price: PriceHelper.ProductPrice
+) {
+  const finalTotalPrice = PriceHelper.getFinalPrice(price);
   const itemPrice = finalTotalPrice / cartItem.qty;
 
   const baseData = prepareBaseItemData(cartItem);
@@ -14,7 +16,7 @@ export function prepareCartItemData (cartItem: CartItem) {
   return {
     ...baseData,
     item_variant: getComposedSku(cartItem),
-    discount: getCartItemDiscount(cartItem, false, false),
+    discount: PriceHelper.getProductDiscount(price),
     price: itemPrice
   }
 }
