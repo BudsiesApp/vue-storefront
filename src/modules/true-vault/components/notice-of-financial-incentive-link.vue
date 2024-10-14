@@ -32,7 +32,7 @@ export default Vue.extend({
   .truevault-polaris-privacy-notice {
     font-size: var(--font-xs);
 
-    &:not([disabled]) {
+    &:not([hidden]) {
       display: var(--financial-incentive-link-display, inline);
       margin: var(--financial-incentive-link-margin, 0)
     }
