@@ -31,8 +31,9 @@ export default Vue.extend({
 .notice-of-financial-incentive-link {
   .truevault-polaris-privacy-notice {
     font-size: var(--font-xs);
+    color: var(--financial-incentive-link-color, var(--c-link));
 
-    &:not([disabled]) {
+    &:not([hidden]) {
       display: var(--financial-incentive-link-display, inline);
       margin: var(--financial-incentive-link-margin, 0)
     }
