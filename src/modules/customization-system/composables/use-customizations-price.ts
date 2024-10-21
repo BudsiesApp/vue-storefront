@@ -40,9 +40,6 @@ export function useCustomizationsPrice (
     const productPriceDictionary = root.$store.getters[PRODUCT_PRICE_DICTIONARY];
     const selectedOptionValuesPrices: PriceHelper.ProductPrice[] = [];
 
-    // TODO: quick fix, need to refactor
-    const _ = root.$store.getters['promotionPlatform/campaignContent'];
-
     customizations.value.forEach((customization) => {
       if (!customization.optionData) {
         return;
