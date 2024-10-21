@@ -7,6 +7,11 @@ import { onlineHelper, isServer, calcItemsHmac } from '@vue-storefront/core/help
 import { calculateTotals } from '@vue-storefront/core/modules/cart/helpers'
 import config from 'config'
 import { AmGiftCardType } from 'src/modules/gift-card'
+import { Dictionary } from 'src/modules/budsies'
+import { PriceHelper } from 'src/modules/shared'
+import { PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER } from 'src/modules/promotion-platform'
+
+import CartItem from '../types/CartItem'
 
 const getters: GetterTree<CartState, RootState> = {
   getCartToken: state => state.cartServerToken,
@@ -45,7 +50,49 @@ const getters: GetterTree<CartState, RootState> = {
   getPaymentMethodCode: state => state.payment && state.payment.code,
   getIsAdding: state => state.isAddingToCart,
   getIsMicroCartOpen: state => state.isMicrocartOpen,
-  isLocalDataLoaded: state => state.isLocalDataLoaded
+  isLocalDataLoaded: state => state.isLocalDataLoaded,
+  cartItemPriceDictionary: (
+    state,
+    getters,
+    rootState,
+    rootGetters
+  ): Dictionary<PriceHelper.ProductPrice> => {
+    const cartItems: CartItem[] = rootGetters['cart/getCartItems'];
+    const cartItemPrices: Dictionary<PriceHelper.ProductPrice> = {};
+    const productDiscountPriceDictionary = rootGetters[PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER];
+
+    for (const cartItem of cartItems) {
+      if (!cartItem.checksum) {
+        continue;
+      }
+
+      cartItemPrices[cartItem.checksum] = PriceHelper.getCartItemPrice(
+        cartItem,
+        productDiscountPriceDictionary
+      );
+    }
+
+    return cartItemPrices;
+  },
+  getCartItemPrice: (state, getters, rootState, rootGetters): (cartItem: CartItem) => PriceHelper.ProductPrice => {
+    return (cartItem: CartItem) => {
+      const price: PriceHelper.ProductPrice | undefined =
+        cartItem.checksum
+          ? getters['cartItemPriceDictionary'][cartItem.checksum]
+          : undefined;
+
+      const productDiscountPriceDictionary = rootGetters[PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER];
+
+      if (price) {
+        return price;
+      }
+
+      return PriceHelper.getCartItemPrice(
+        cartItem,
+        productDiscountPriceDictionary
+      )
+    }
+  }
 
 }
 

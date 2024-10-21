@@ -19,12 +19,14 @@
 <script lang="ts">
 import { v4 as uuidv4 } from 'uuid';
 import Vue, { PropType } from 'vue';
-import { getProductDefaultPrice } from 'src/modules/shared';
+import { PriceHelper } from 'src/modules/shared';
 import { SearchQuery } from 'storefront-query-builder'
 import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 
 import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
+import { PRODUCT_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
+import { CAMPAIGN_CONTENT_CHANGED } from 'src/modules/promotion-platform';
 
 import RichTextItem from '../../../../types/rich-text-item.interface';
 
@@ -94,7 +96,7 @@ export default Vue.extend({
   data () {
     return {
       textParts: [] as ProcessedTextPart[],
-      onPromotionPlatformStoreSynchronizedHandler: undefined as ((text: string) => void) | undefined
+      onPromotionCampaignContentChangedHandler: undefined as ((text: string) => void) | undefined
     }
   },
   computed: {
@@ -142,6 +144,9 @@ export default Vue.extend({
       }
 
       return result;
+    },
+    productPriceDictionary (): Record<string, PriceHelper.ProductPrice> {
+      return this.$store.getters[PRODUCT_PRICE_DICTIONARY];
     }
   },
   serverPrefetch (): Promise<void> {
@@ -150,12 +155,12 @@ export default Vue.extend({
   beforeMount (): void {
     this.processDirectivesInText(this.item.text || '');
 
-    this.onPromotionPlatformStoreSynchronizedHandler = () => this.processDirectivesInText(this.item.text || '');
-    EventBus.$on('promotion-platform-store-synchronized', this.onPromotionPlatformStoreSynchronizedHandler);
+    this.onPromotionCampaignContentChangedHandler = () => this.processDirectivesInText(this.item.text || '');
+    EventBus.$on(CAMPAIGN_CONTENT_CHANGED, this.onPromotionCampaignContentChangedHandler);
   },
   beforeDestroy (): void {
-    if (this.onPromotionPlatformStoreSynchronizedHandler) {
-      EventBus.$off('promotion-platform-store-synchronized', this.onPromotionPlatformStoreSynchronizedHandler);
+    if (this.onPromotionCampaignContentChangedHandler) {
+      EventBus.$off(CAMPAIGN_CONTENT_CHANGED, this.onPromotionCampaignContentChangedHandler);
     }
   },
   methods: {
@@ -326,11 +331,7 @@ export default Vue.extend({
       }
     },
     processProductPriceDirective (textPart: ProductPriceDirective): ProcessedTextPart {
-      const { regular, special } = getProductDefaultPrice(
-        this.productBySkuDictionary[textPart.productSku],
-        {},
-        false
-      );
+      const { regular, special } = this.productPriceDictionary[this.productBySkuDictionary[textPart.productSku].id];
 
       const processedTextPart: ProcessedTextPart = {
         id: uuidv4(),
@@ -349,14 +350,12 @@ export default Vue.extend({
       return processedTextPart;
     },
     processProductSpecificPriceDirective (textPart: ProductSpecificPriceDirective): ProcessedTextPart {
-      const prices = getProductDefaultPrice(
-        this.productBySkuDictionary[textPart.productSku],
-        {}
-      );
+      const prices = this.productPriceDictionary[this.productBySkuDictionary[textPart.productSku]];
+      const formattedPrice = PriceHelper.formatProductPrice(prices);
 
       return {
         id: uuidv4(),
-        text: prices[textPart.priceType],
+        text: formattedPrice[textPart.priceType],
         classes: this.classes,
         styles: this.styles,
         component: 'span'

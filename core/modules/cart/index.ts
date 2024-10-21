@@ -10,6 +10,7 @@ import cartClearHandlerFactory from './helpers/cartClearHandler.factory';
 import { cartStore } from './store'
 import { LOCAL_CART_DATA_LOADED_EVENT } from './types/local-cart-data-loaded.event';
 import { ORDER_CONFLICT_EVENT } from '../order';
+import { CART_ITEM_PRICE_DICTIONARY, GET_CART_ITEM_PRICE } from './types/CartItemGetters';
 
 export const CartModule: StorefrontModule = function ({ store, router }) {
   StorageManager.init('cart')
@@ -50,5 +51,7 @@ export const CartModule: StorefrontModule = function ({ store, router }) {
 }
 
 export {
-  LOCAL_CART_DATA_LOADED_EVENT
+  LOCAL_CART_DATA_LOADED_EVENT,
+  GET_CART_ITEM_PRICE,
+  CART_ITEM_PRICE_DICTIONARY
 }

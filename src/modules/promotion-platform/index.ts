@@ -10,9 +10,12 @@ import { module } from './store';
 import { CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE, SN_PROMOTION_PLATFORM } from './types/StoreMutations';
 import isCustomProduct from '../shared/helpers/is-custom-product.function';
 import onWindowMouseLeaveEventHandler from './helpers/on-window-mouseleave-event-handler.function';
+import { CAMPAIGN_CONTENT_CHANGED } from './types/campaign-content-changed.event';
 import CampaignsGetAPIResponse from './types/CampaignsGetAPIResponse';
 import { USER_LEAVING_WEBSITE } from './types/user-leaving-website.event';
 import { localStorageSynchronizationFactory } from '../shared';
+
+const PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER = `${SN_PROMOTION_PLATFORM}/productDiscount`;
 
 export const PromotionPlatformModule: StorefrontModule = function ({ app, store }) {
   StorageManager.init(SN_PROMOTION_PLATFORM);
@@ -21,6 +24,7 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
   if (!app.$isServer) {
     EventBus.$once('session-after-started', async (userToken: string) => {
       initEventBusListeners(store, app);
+
       await store.dispatch(`${SN_PROMOTION_PLATFORM}/synchronize`);
       const cartId = store.getters['cart/getCartToken'];
 
@@ -92,5 +96,7 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
 }
 
 export {
-  USER_LEAVING_WEBSITE
+  CAMPAIGN_CONTENT_CHANGED,
+  USER_LEAVING_WEBSITE,
+  PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER
 }
