@@ -1,5 +1,3 @@
-import config from 'config';
-
 import { BundleProductDiscountPrice } from 'src/modules/shared';
 
 import { isBundleProduct } from '../../../../core/modules/catalog/helpers';
@@ -14,7 +12,6 @@ function getDiscountPrice (
   ) => (number | undefined)
 ): number | undefined {
   if (
-    config.products.calculateBundlePriceByOptions &&
     isBundleProduct(product)
   ) {
     return bundlePriceCalculationFunction(
