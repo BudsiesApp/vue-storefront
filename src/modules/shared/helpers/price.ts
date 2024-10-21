@@ -227,9 +227,6 @@ export function getProductDefaultPrice (
     product
   }
 
-  console.log(productPriceData);
-  console.log(productDiscountPriceData);
-
   return getProductPrice(
     product,
     productDiscountPriceData,
