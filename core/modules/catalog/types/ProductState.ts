@@ -28,5 +28,4 @@ export default interface ProductState {
   productLoadPromise: Promise<any> | null,
   productGallery: any,
   productBySku: Record<string, Product>,
-  productDiscount: ComputedRef<Record<string, number>> | null,
 }

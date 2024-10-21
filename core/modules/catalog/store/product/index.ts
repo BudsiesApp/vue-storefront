@@ -36,7 +36,6 @@ export const productModule: Module<ProductState, RootState> = {
     productLoadPromise: null,
     productGallery: [],
     productBySku: {},
-    productDiscount: null
   },
   getters,
   actions,

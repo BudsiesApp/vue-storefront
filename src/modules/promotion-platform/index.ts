@@ -14,8 +14,8 @@ import { CAMPAIGN_CONTENT_CHANGED } from './types/campaign-content-changed.event
 import CampaignsGetAPIResponse from './types/CampaignsGetAPIResponse';
 import { USER_LEAVING_WEBSITE } from './types/user-leaving-website.event';
 import { localStorageSynchronizationFactory } from '../shared';
-import { PRODUCT_SET_DISCOUNTS } from '@vue-storefront/core/modules/catalog/store/product/mutation-types';
-import { computed } from '@vue/composition-api';
+
+const PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER = `${SN_PROMOTION_PLATFORM}/productDiscount`;
 
 export const PromotionPlatformModule: StorefrontModule = function ({ app, store }) {
   StorageManager.init(SN_PROMOTION_PLATFORM);
@@ -24,11 +24,6 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
   if (!app.$isServer) {
     EventBus.$once('session-after-started', async (userToken: string) => {
       initEventBusListeners(store, app);
-
-      store.commit(
-        `product/${PRODUCT_SET_DISCOUNTS}`,
-        computed(() => store.getters[`${SN_PROMOTION_PLATFORM}/productDiscount`])
-      );
 
       await store.dispatch(`${SN_PROMOTION_PLATFORM}/synchronize`);
       const cartId = store.getters['cart/getCartToken'];
@@ -102,5 +97,6 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
 
 export {
   CAMPAIGN_CONTENT_CHANGED,
-  USER_LEAVING_WEBSITE
+  USER_LEAVING_WEBSITE,
+  PROMOTION_PLATFORM_PRODUCT_DISCOUNT_GETTER
 }

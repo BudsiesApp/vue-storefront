@@ -107,9 +107,6 @@ const mutations: MutationTree<ProductState> = {
     state.current_bundle_options = {};
     state.current_custom_options = {};
   },
-  [types.PRODUCT_SET_DISCOUNTS] (state, value) {
-    state.productDiscount = value;
-  },
   [types.CATALOG_ADD_CUSTOM_OPTION_VALIDATOR] (state, { validationRule, validatorFunction }) {
     Logger.error('Deprecated mutation CATALOG_ADD_CUSTOM_OPTION_VALIDATOR - use PRODUCT_SET_CUSTOM_OPTION_VALIDATOR instead')()
   },
