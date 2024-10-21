@@ -330,7 +330,7 @@ export default Vue.extend({
       }
     },
     processProductPriceDirective (textPart: ProductPriceDirective): ProcessedTextPart {
-      const { regular, special } = this.productPriceDictionary[this.productBySkuDictionary[textPart.productSku]];
+      const { regular, special } = this.productPriceDictionary[this.productBySkuDictionary[textPart.productSku].id];
 
       const processedTextPart: ProcessedTextPart = {
         id: uuidv4(),

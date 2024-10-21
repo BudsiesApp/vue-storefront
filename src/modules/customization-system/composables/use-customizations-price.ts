@@ -16,6 +16,7 @@ export function useCustomizationsPrice (
     () => {
       const dictionary: Record<string, PriceHelper.ProductPrice | undefined> = {};
       const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
+      const productPriceDictionary = root.$store.getters['product/productPriceDictionary'];
 
       customizations.value.forEach((customization) => {
         if (!customization.optionData?.values) {
@@ -24,7 +25,8 @@ export function useCustomizationsPrice (
 
         dictionary[customization.id] = getLowestPriceForOptionValues(
           customization.optionData.values,
-          productBySkuDictionary
+          productBySkuDictionary,
+          productPriceDictionary
         );
       });
 
@@ -34,6 +36,7 @@ export function useCustomizationsPrice (
 
   const totalPrice = computed<PriceHelper.ProductPrice>(() => {
     const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
+    const productPriceDictionary = root.$store.getters['product/productPriceDictionary'];
     const selectedOptionValuesPrices: PriceHelper.ProductPrice[] = [];
 
     // TODO: quick fix, need to refactor
@@ -70,7 +73,11 @@ export function useCustomizationsPrice (
       }
 
       selectedValues.forEach((value) => {
-        const price = getOptionValuePrice(value, productBySkuDictionary);
+        const price = getOptionValuePrice(
+          value,
+          productBySkuDictionary,
+          productPriceDictionary
+        );
 
         if (price) {
           selectedOptionValuesPrices.push(price);

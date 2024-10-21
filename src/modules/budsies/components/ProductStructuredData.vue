@@ -26,12 +26,8 @@ export default Vue.extend({
     structuredData (): string | undefined {
       const storeView = currentStoreView();
 
-      const price = this.product.id
-        ? this.productPriceDictionary[this.product.id]
-        : undefined;
-      const finalPrice = price
-        ? PriceHelper.getFinalPrice(price)
-        : this.product.price;
+      const price = this.productPriceDictionary[this.product.id];
+      const finalPrice = PriceHelper.getFinalPrice(price);
 
       const data = {
         '@context': 'https://schema.org/',

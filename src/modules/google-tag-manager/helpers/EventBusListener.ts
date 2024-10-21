@@ -13,7 +13,7 @@ import { PlushieWizardEvents } from 'src/modules/budsies';
 import { PriceHelper, ProductEvent } from 'src/modules/shared';
 
 import CartItem from 'core/modules/cart/types/CartItem';
-import { GET_CART_ITEM_PRICE, GET_PRODUCT_PRICE } from 'core/modules/catalog';
+import { GET_CART_ITEM_PRICE, GET_PRODUCT_PRICE } from '@vue-storefront/core/modules/catalog';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
 import ShippingDetails from 'core/modules/checkout/types/ShippingDetails';
 import { ORDER_ERROR_EVENT } from '@vue-storefront/core/modules/checkout';

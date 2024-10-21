@@ -7,7 +7,7 @@ import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { price } from '@vue-storefront/core/filters';
 import UpdateProductDiscountPriceEventData from 'src/modules/shared/types/discount-price/update-product-discount-price-event-data.interface';
 
-import { getProductDiscountPrice } from './product-discount-price';
+import { getCartItemDiscountPrice, getProductDiscountPrice } from './product-discount-price';
 
 interface ProductPriceData {
   originalPriceInclTax: number,
@@ -195,20 +195,20 @@ function getProductPrice (
 }
 
 export function getCartItemPrice (
-  product: CartItem,
+  cartItem: CartItem,
   productDiscountPriceDictionary: Record<string, number>
 ) {
   const productPriceData = getProductPriceData(
-    product,
+    cartItem,
     calculateCartItemBundleOptionsPrice
   );
   const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
-    value: getProductDiscountPrice(product, productDiscountPriceDictionary),
-    product
+    value: getCartItemDiscountPrice(cartItem, productDiscountPriceDictionary),
+    product: cartItem
   }
 
   return getProductPrice(
-    product,
+    cartItem,
     productDiscountPriceData,
     productPriceData
   );
@@ -227,28 +227,12 @@ export function getProductDefaultPrice (
     product
   }
 
+  console.log(productPriceData);
+  console.log(productDiscountPriceData);
+
   return getProductPrice(
     product,
     productDiscountPriceData,
     productPriceData
   );
-}
-
-export function getProductPriceFromTotals (product) {
-  if (!product.totals || !product.totals.options) {
-    return {
-      regular: '',
-      special: ''
-    }
-  }
-
-  const isSpecialPrice = product.totals.discount_amount > 0
-
-  const special = product.totals.row_total_incl_tax - product.totals.discount_amount
-  const regular = product.totals.row_total_incl_tax
-
-  return {
-    regular: formatPrice(regular),
-    special: isSpecialPrice ? formatPrice(special) : ''
-  }
 }
