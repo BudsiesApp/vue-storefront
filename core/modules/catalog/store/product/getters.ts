@@ -40,19 +40,6 @@ const getters: GetterTree<ProductState, RootState> = {
       )
     }
   },
-  getProductDiscount: (state, getters): (product: Product) => PriceHelper.ProductDiscount => {
-    return (product: Product) => {
-      const discount: PriceHelper.ProductDiscount | undefined = getters['productDiscountDictionary'][product.id];
-
-      if (discount) {
-        return discount;
-      }
-
-      const price: PriceHelper.ProductPrice = getters['getProductPrice'](product);
-
-      return PriceHelper.getProductDiscount(price);
-    }
-  },
   productPriceDictionary: (state): Dictionary<PriceHelper.ProductPrice> => {
     const loadedProducts = Object.values(state.productBySku);
     const productPrices: Dictionary<PriceHelper.ProductPrice> = {};
@@ -70,24 +57,6 @@ const getters: GetterTree<ProductState, RootState> = {
     }
 
     return productPrices;
-  },
-  productDiscountDictionary: (state, getters): Dictionary<PriceHelper.ProductDiscount> => {
-    const productDiscountDictionary: Dictionary<PriceHelper.ProductDiscount> = {};
-    const productPriceDictionary: Dictionary<PriceHelper.ProductPrice> = getters['productPriceDictionary'];
-
-    Object.keys(
-      productPriceDictionary
-    ).forEach((key) => {
-      const productPrice = productPriceDictionary[key];
-
-      if (!productPrice) {
-        return;
-      }
-
-      productDiscountDictionary[key] = PriceHelper.getProductDiscount(productPrice);
-    });
-
-    return productDiscountDictionary;
   },
   cartItemPriceDictionary: (
     state,
@@ -113,24 +82,6 @@ const getters: GetterTree<ProductState, RootState> = {
 
     return cartItemPrices;
   },
-  cartItemDiscountDictionary: (state, getters): Dictionary<PriceHelper.ProductDiscount> => {
-    const productDiscountDictionary: Dictionary<PriceHelper.ProductDiscount> = {};
-    const cartItemPriceDictionary: Dictionary<PriceHelper.ProductPrice> = getters['cartItemPriceDictionary'];
-
-    Object.keys(
-      cartItemPriceDictionary
-    ).forEach((key) => {
-      const cartItemPrice = cartItemPriceDictionary[key];
-
-      if (!cartItemPrice) {
-        return;
-      }
-
-      productDiscountDictionary[key] = PriceHelper.getProductDiscount(cartItemPrice);
-    });
-
-    return productDiscountDictionary;
-  },
   getCartItemPrice: (state, getters): (cartItem: CartItem) => PriceHelper.ProductPrice => {
     return (cartItem: CartItem) => {
       const price: PriceHelper.ProductPrice | undefined =
@@ -149,20 +100,7 @@ const getters: GetterTree<ProductState, RootState> = {
         productDiscount
       )
     }
-  },
-  getCartItemDiscount: (state, getters): (cartItem: CartItem) => PriceHelper.ProductDiscount => {
-    return (cartItem: Product) => {
-      const discount: PriceHelper.ProductDiscount | undefined = getters['cartItemDiscountDictionary'][cartItem.id];
-
-      if (discount) {
-        return discount;
-      }
-
-      const price: PriceHelper.ProductPrice = getters['getCartItemPrice'](cartItem);
-
-      return PriceHelper.getProductDiscount(price);
-    }
-  },
+  }
 }
 
 export default getters

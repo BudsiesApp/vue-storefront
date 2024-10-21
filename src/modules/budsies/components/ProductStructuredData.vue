@@ -5,6 +5,7 @@
 <script lang="ts">
 import Vue, { PropType } from 'vue';
 
+import { PRODUCT_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import { getThumbnailPath, productThumbnailPath } from '@vue-storefront/core/helpers';
@@ -21,7 +22,7 @@ export default Vue.extend({
   },
   computed: {
     productPriceDictionary (): Record<string, PriceHelper.ProductPrice> {
-      return this.$store.getters['product/productPriceDictionary'];
+      return this.$store.getters[PRODUCT_PRICE_DICTIONARY];
     },
     structuredData (): string | undefined {
       const storeView = currentStoreView();

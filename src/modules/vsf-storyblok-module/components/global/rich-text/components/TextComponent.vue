@@ -25,6 +25,7 @@ import { mapGetters } from 'vuex';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 
 import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
+import { PRODUCT_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
 import { CAMPAIGN_CONTENT_CHANGED } from 'src/modules/promotion-platform';
 
 import RichTextItem from '../../../../types/rich-text-item.interface';
@@ -145,7 +146,7 @@ export default Vue.extend({
       return result;
     },
     productPriceDictionary (): Record<string, PriceHelper.ProductPrice> {
-      return this.$store.getters['product/productPriceDictionary'];
+      return this.$store.getters[PRODUCT_PRICE_DICTIONARY];
     }
   },
   serverPrefetch (): Promise<void> {

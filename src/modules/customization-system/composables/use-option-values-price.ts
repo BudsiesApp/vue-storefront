@@ -1,5 +1,7 @@
 import { Ref, computed, SetupContext } from '@vue/composition-api';
 
+import { PRODUCT_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
+
 import { PriceHelper } from 'src/modules/shared';
 
 import { getOptionValuePrice } from '../helpers/get-option-value-price';
@@ -13,7 +15,7 @@ export function useOptionValuesPrice (
     () => {
       const dictionary: Record<string, PriceHelper.ProductPrice | undefined> = {};
       const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
-      const productPriceDictionary = root.$store.getters['product/productPriceDictionary'];
+      const productPriceDictionary = root.$store.getters[PRODUCT_PRICE_DICTIONARY];
 
       // TODO: quick fix, need to refactor
       const _ = root.$store.getters['promotionPlatform/campaignContent'];

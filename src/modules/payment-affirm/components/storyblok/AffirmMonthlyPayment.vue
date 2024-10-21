@@ -14,6 +14,7 @@ import { isServer } from '@vue-storefront/core/helpers';
 import { InjectType, PriceHelper } from 'src/modules/shared';
 import { Blok } from 'src/modules/vsf-storyblok-module/components'
 
+import { PRODUCT_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import AffirmMonthlyPaymentData from './interfaces/affirm-monthly-payment-data.interface';
 
@@ -37,7 +38,7 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
       return this.item as AffirmMonthlyPaymentData;
     },
     productPriceDictionary (): Record<string, PriceHelper.ProductPrice> {
-      return this.$store.getters['product/productPriceDictionary'];
+      return this.$store.getters[PRODUCT_PRICE_DICTIONARY];
     },
     productPriceInCents (): number {
       if (!this.product) {

@@ -1,7 +1,7 @@
 import { BundleProductDiscountPrice } from 'src/modules/shared';
 
-import { isBundleProduct } from '../../../../core/modules/catalog/helpers';
-import Product from '../../../../core/modules/catalog/types/Product';
+import { isBundleProduct } from '@vue-storefront/core/modules/catalog/helpers';
+import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
 function getDiscountPrice (
   product: Product,
