@@ -5,6 +5,7 @@ import CartState from '../types/CartState'
 import config from 'config'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import productsEquals from './../helpers/productsEquals'
+import fillProductWithAdditionalFields from 'src/modules/budsies/helpers/fill-product-with-additional-fields.function'
 
 const mutations: MutationTree<CartState> = {
   /**
@@ -96,6 +97,20 @@ const mutations: MutationTree<CartState> = {
   },
   [types.CART_SET_LOCAL_DATA_LOADED] (state, isLoaded: boolean) {
     state.isLocalDataLoaded = isLoaded;
+  },
+  [types.CART_UPDATE_ITEM_ESTIMATED_SHIPMENTS] (state, serverItem) {
+    const clientCartItem = state.cartItems.find(
+      (cartItem) => productsEquals(cartItem, serverItem)
+    )
+
+    if (!clientCartItem) {
+      return;
+    }
+
+    fillProductWithAdditionalFields({
+      product: clientCartItem,
+      serverItem: serverItem
+    });
   }
 }
 
