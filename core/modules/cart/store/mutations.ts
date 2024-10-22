@@ -98,7 +98,7 @@ const mutations: MutationTree<CartState> = {
   [types.CART_SET_LOCAL_DATA_LOADED] (state, isLoaded: boolean) {
     state.isLocalDataLoaded = isLoaded;
   },
-  [types.CART_UPDATE_ITEM_ESTIMATED_SHIPMENTS] (state, serverItem) {
+  [types.CART_UPDATE_ITEM_ESTIMATED_SHIPMENT] (state, serverItem) {
     const clientCartItem = state.cartItems.find(
       (cartItem) => productsEquals(cartItem, serverItem)
     )

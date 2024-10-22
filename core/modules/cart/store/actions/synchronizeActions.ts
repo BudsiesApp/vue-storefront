@@ -179,7 +179,7 @@ const synchronizeActions = {
 
       item.sku = sku;
 
-      commit(types.CART_UPDATE_ITEM_ESTIMATED_SHIPMENTS, item);
+      commit(types.CART_UPDATE_ITEM_ESTIMATED_SHIPMENT, item);
     });
   }
 }
