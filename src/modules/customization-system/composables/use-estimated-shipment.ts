@@ -46,7 +46,7 @@ export function useEstimatedShipment (
     const date = new Date(estimatedShipment.value.offer_expiration_date);
 
     return i18n.t(
-      'Estimated shipment date is valid if you place your order before {date}',
+      '(The offer is valid until {date})',
       {
         date: date.toLocaleDateString()
       }
