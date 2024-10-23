@@ -1,4 +1,4 @@
-import { computed, Ref, watch } from '@vue/composition-api';
+import { computed, ref, Ref, watch } from '@vue/composition-api';
 import { Mutex } from 'async-mutex';
 
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
@@ -23,6 +23,7 @@ export function useCustomizationStatePreservation (
 ) {
   const mutex = new Mutex();
   const customizationSystemStorage = StorageManager.get(STORAGE_NAME);
+  const isRestored = ref(false);
 
   const storageItemKey = computed<string>(() => {
     return `${STORAGE_BASE_KEY}/${productSku.value}`;
@@ -85,6 +86,7 @@ export function useCustomizationStatePreservation (
 
   async function getPreservedData (): Promise<PersistedData | undefined> {
     if (!storageItemKey.value) {
+      isRestored.value = true;
       return;
     }
 
@@ -99,17 +101,18 @@ export function useCustomizationStatePreservation (
 
       return data;
     } finally {
+      isRestored.value = true;
       mutexRelease();
     }
   }
-  const watchProperties: Ref<any>[] = [filteredCustomizationState];
+  const watchProperties: Ref<any>[] = [filteredCustomizationState, isRestored];
 
   if (additionalData) {
     watchProperties.push(additionalData);
   }
 
   watch(watchProperties, (value) => {
-    if (!value.length || existingCartItem.value) {
+    if (!value.length || existingCartItem.value || !isRestored.value) {
       return;
     }
 
