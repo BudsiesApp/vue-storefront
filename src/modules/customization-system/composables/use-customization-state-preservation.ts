@@ -70,6 +70,7 @@ export function useCustomizationStatePreservation (
 
   async function removePreservedState (): Promise<void> {
     if (!storageItemKey.value) {
+      isRestored.value = true;
       return;
     }
 
@@ -80,6 +81,7 @@ export function useCustomizationStatePreservation (
         storageItemKey.value
       );
     } finally {
+      isRestored.value = true;
       mutexRelease();
     }
   }
