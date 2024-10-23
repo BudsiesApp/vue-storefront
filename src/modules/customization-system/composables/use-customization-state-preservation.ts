@@ -23,7 +23,7 @@ export function useCustomizationStatePreservation (
 ) {
   const mutex = new Mutex();
   const customizationSystemStorage = StorageManager.get(STORAGE_NAME);
-  const isRestored = ref(false);
+  const canUpdateState = ref(false);
 
   const storageItemKey = computed<string>(() => {
     return `${STORAGE_BASE_KEY}/${productSku.value}`;
@@ -70,7 +70,7 @@ export function useCustomizationStatePreservation (
 
   async function removePreservedState (): Promise<void> {
     if (!storageItemKey.value) {
-      isRestored.value = true;
+      canUpdateState.value = true;
       return;
     }
 
@@ -81,14 +81,14 @@ export function useCustomizationStatePreservation (
         storageItemKey.value
       );
     } finally {
-      isRestored.value = true;
+      canUpdateState.value = true;
       mutexRelease();
     }
   }
 
   async function getPreservedData (): Promise<PersistedData | undefined> {
     if (!storageItemKey.value) {
-      isRestored.value = true;
+      canUpdateState.value = true;
       return;
     }
 
@@ -103,18 +103,18 @@ export function useCustomizationStatePreservation (
 
       return data;
     } finally {
-      isRestored.value = true;
+      canUpdateState.value = true;
       mutexRelease();
     }
   }
-  const watchProperties: Ref<any>[] = [filteredCustomizationState, isRestored];
+  const watchProperties: Ref<any>[] = [filteredCustomizationState, canUpdateState];
 
   if (additionalData) {
     watchProperties.push(additionalData);
   }
 
   watch(watchProperties, (value) => {
-    if (!value.length || existingCartItem.value || !isRestored.value) {
+    if (!value.length || existingCartItem.value || !canUpdateState.value) {
       return;
     }
 
