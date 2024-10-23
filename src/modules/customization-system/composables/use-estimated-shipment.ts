@@ -5,6 +5,7 @@ import i18n from '@vue-storefront/core/i18n';
 import { EstimatedShipment } from '../types/estimated-shipment.interface';
 
 const estimatedDateTemplateVariable = '{estimatedShipment}';
+const estimatedDateTemplateVariableRegExp = new RegExp(estimatedDateTemplateVariable, 'g');
 
 export function useEstimatedShipment (
   estimatedShipment: Ref<EstimatedShipment | undefined>
@@ -32,9 +33,9 @@ export function useEstimatedShipment (
     }
 
     return shipmentPromiseTemplate.replace(
-      estimatedDateTemplateVariable,
+      estimatedDateTemplateVariableRegExp,
       estimatedShipmentDate.value.toLocaleDateString()
-    ).replace(';', ';<br>');
+    ).replace(/;/g, ';<br>');
   });
 
   const offerExpirationDateText = computed<string | undefined>(() => {

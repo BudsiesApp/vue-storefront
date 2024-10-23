@@ -5,7 +5,8 @@ import CartState from '../types/CartState'
 import config from 'config'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import productsEquals from './../helpers/productsEquals'
-import fillProductWithAdditionalFields from 'src/modules/budsies/helpers/fill-product-with-additional-fields.function'
+import CartItem from '../types/CartItem'
+import { updateCartItemEstimatedShipment } from '../helpers/update-cart-item-estimated-shipment.function'
 
 const mutations: MutationTree<CartState> = {
   /**
@@ -99,7 +100,7 @@ const mutations: MutationTree<CartState> = {
     state.isLocalDataLoaded = isLoaded;
   },
   [types.CART_UPDATE_ITEM_ESTIMATED_SHIPMENT] (state, serverItem) {
-    const clientCartItem = state.cartItems.find(
+    const clientCartItem: CartItem | undefined = state.cartItems.find(
       (cartItem) => productsEquals(cartItem, serverItem)
     )
 
@@ -107,10 +108,8 @@ const mutations: MutationTree<CartState> = {
       return;
     }
 
-    fillProductWithAdditionalFields({
-      product: clientCartItem,
-      serverItem: serverItem
-    });
+    const serverItemEstimatedShipment = serverItem.extension_attributes?.estimated_shipment;
+    updateCartItemEstimatedShipment(clientCartItem, serverItemEstimatedShipment);
   }
 }
 
