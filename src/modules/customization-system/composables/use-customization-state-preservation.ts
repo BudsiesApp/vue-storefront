@@ -18,6 +18,7 @@ export function useCustomizationStatePreservation (
   productSku: Ref<string | undefined>,
   customizationState: Ref<CustomizationStateItem[]>,
   existingCartItem: Ref<CartItem | undefined>,
+  customizationStateFilters: ((customizationId: string) => boolean)[] = [],
   additionalData?: Ref<Record<string, any>> | undefined
 ) {
   const mutex = new Mutex();
@@ -25,6 +26,20 @@ export function useCustomizationStatePreservation (
 
   const storageItemKey = computed<string>(() => {
     return `${STORAGE_BASE_KEY}/${productSku.value}`;
+  });
+
+  const filterCustomizationState = (item: CustomizationStateItem): boolean => {
+    for (const filter of customizationStateFilters) {
+      if (!filter(item.customization_id)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  const filteredCustomizationState = computed<CustomizationStateItem[]>(() => {
+    return customizationState.value.filter(filterCustomizationState);
   });
 
   async function preserveState (state: CustomizationStateItem[]): Promise<void> {
@@ -73,9 +88,21 @@ export function useCustomizationStatePreservation (
       return;
     }
 
-    return customizationSystemStorage.getItem(storageItemKey.value);
+    const mutexRelease = await mutex.acquire();
+
+    try {
+      const data: PersistedData | undefined = await customizationSystemStorage.getItem(storageItemKey.value);
+
+      if (data?.customizationState) {
+        data.customizationState = data.customizationState.filter(filterCustomizationState);
+      }
+
+      return data;
+    } finally {
+      mutexRelease();
+    }
   }
-  const watchProperties: Ref<any>[] = [customizationState];
+  const watchProperties: Ref<any>[] = [filteredCustomizationState];
 
   if (additionalData) {
     watchProperties.push(additionalData);
@@ -86,7 +113,7 @@ export function useCustomizationStatePreservation (
       return;
     }
 
-    preserveState(customizationState.value);
+    preserveState(filteredCustomizationState.value);
   });
 
   return {
