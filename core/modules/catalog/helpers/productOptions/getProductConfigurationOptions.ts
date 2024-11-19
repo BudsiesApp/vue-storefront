@@ -14,7 +14,7 @@ export default function getProductConfigurationOptions ({ product, attribute }) 
           : optionLabel(attribute, {
             attributeKey: option.attribute_id,
             searchBy: 'id',
-            optionId: optionValue.value_index
+            optionId: optionValue.value_index.toString()
           }),
         id: String(optionValue.value_index),
         attribute_code: option.attribute_code

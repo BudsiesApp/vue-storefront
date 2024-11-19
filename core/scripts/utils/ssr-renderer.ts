@@ -106,6 +106,7 @@ function initTemplatesCache (config, compileOptions) {
   return templatesCache
 }
 
+
 function initSSRRequestContext (app, req, res, config): Context {
   return {
     url: decodeURI(req.url),
@@ -126,7 +127,8 @@ function initSSRRequestContext (app, req, res, config): Context {
     vs: {
       config: config,
       storeCode: typeof req.header === 'function' ? (req.header('x-vs-store-code') ? req.header('x-vs-store-code') : process.env.STORE_CODE) : process.env.STORE_CODE
-    }
+    },
+    extendedHead: null
   };
 }
 

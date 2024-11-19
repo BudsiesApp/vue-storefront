@@ -77,6 +77,10 @@
         <div class="_agreement">
           {{ $t('You agree to receive email marketing from Budsies regarding our products and services.') }}
         </div>
+
+        <template v-if="$additionalContent.privacyPolicyAdditionalLinks">
+          <component :is="linkComponent.component" :key="linkComponent.key" v-for="linkComponent in $additionalContent.privacyPolicyAdditionalLinks" />
+        </template>
       </validation-observer>
     </form>
 

@@ -31,8 +31,8 @@ const isSkuEqual = (product1: CartItem, product2: CartItem): boolean =>
 
 // 'plushieId' check
 const isPlushieIdsEquals = (product1: CartItem, product2: CartItem): boolean => {
-  let product1PlushieId = product1.plushieId ? product1.plushieId : undefined
-  let product2PlushieId = product2.plushieId ? product2.plushieId : undefined
+  let product1PlushieId = product1.extension_attributes?.plushie_id ? product1.extension_attributes?.plushie_id : undefined
+  let product2PlushieId = product2.extension_attributes?.plushie_id ? product2.extension_attributes?.plushie_id : undefined
 
   product1PlushieId = typeof product1PlushieId === 'number' ? (product1PlushieId as number).toString() : product1PlushieId;
   product2PlushieId = typeof product2PlushieId === 'number' ? (product2PlushieId as number).toString() : product2PlushieId;
@@ -86,11 +86,15 @@ const productsEquals = (product1: CartItem, product2: CartItem): boolean => {
 
   const check = makeCheck.bind(null, product1, product2)
 
-  if (product1.plushieId && product2.plushieId) {
+  if (product1.extension_attributes?.plushie_id && product2.extension_attributes?.plushie_id) {
     return check(['plushieId']);
   }
 
   if (product1.giftcard_options || product2.giftcard_options) {
+    return check(['id', 'checksum']);
+  }
+
+  if (getProductOptions(product1, 'am_giftcard_options').length || getProductOptions(product2, 'am_giftcard_options').length) {
     return check(['id', 'checksum']);
   }
 

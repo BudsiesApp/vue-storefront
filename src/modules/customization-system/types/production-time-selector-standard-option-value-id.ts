@@ -1,0 +1,1 @@
+export const PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID = 'production_time_selector_standard_option';

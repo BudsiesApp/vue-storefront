@@ -34,6 +34,10 @@
         >
           {{ buttonText }}
         </SfButton>
+
+        <template v-if="$additionalContent.privacyPolicyAdditionalLinks">
+          <component :is="linkComponent.component" :key="linkComponent.key" v-for="linkComponent in $additionalContent.privacyPolicyAdditionalLinks" />
+        </template>
       </form>
     </validation-observer>
   </div>

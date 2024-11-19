@@ -42,7 +42,8 @@ export function usePersistedEmail (
   })
 
   return {
-    persistLastUsedCustomerEmail,
-    hasPrefilledEmail
+    fillLastUsedCustomerEmail,
+    hasPrefilledEmail,
+    persistLastUsedCustomerEmail
   }
 }

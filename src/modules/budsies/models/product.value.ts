@@ -2,7 +2,7 @@ export enum ProductValue {
   BUDSIE = '1',
   SELFIE = '2',
   BULK_SAMPLE = '3',
-  SPECIALITY_COMMISSION = '4',
+  SPECIALTY_COMMISSION = '4',
   PETSIE_CAT = '5',
   PETSIE_DOG = '6',
   PETSIE_OTHER = '7',

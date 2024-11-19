@@ -1,5 +1,7 @@
 import config from 'config'
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
+import { getProductOptions } from 'src/modules/shared';
+import { getCartItemExtensionAttributes } from 'src/modules/customization-system';
 
 const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateIds: boolean = false, mergeQty: boolean = false): CartItem => {
   const sku = clientItem.parentSku && config.cart.setConfigurableProductOptions ? clientItem.parentSku : clientItem.sku
@@ -13,29 +15,19 @@ const createCartItemForUpdate = (clientItem: CartItem, serverItem: any, updateId
     sku,
     ...((serverItem && serverItem.item_id) ? { item_id: serverItem.item_id } : {}),
     qty,
-    product_option: clientItem.product_option,
-    customerImages: clientItem.customerImages ? clientItem.customerImages : undefined,
-    plushieId: clientItem.plushieId ? clientItem.plushieId : undefined,
-    email: clientItem.email ? clientItem.email : undefined,
-    plushieBreed: clientItem.plushieBreed ? clientItem.plushieBreed : undefined,
-    plushieName: clientItem.plushieName ? clientItem.plushieName : undefined,
-    plushieDescription: clientItem.plushieDescription ? clientItem.plushieDescription : undefined,
-    bodyparts: clientItem.bodyparts ? clientItem.bodyparts : undefined,
-    customFields: clientItem.customFields ? clientItem.customFields : undefined,
-    uploadMethod: clientItem.uploadMethod ? clientItem.uploadMethod : undefined,
+    product_option: getProductOptions(clientItem),
     giftcard_options: clientItem.giftcard_options ? clientItem.giftcard_options : undefined,
-    upgradeOptionValues: clientItem.upgradeOptionValues,
-    participantId: clientItem.participantId ? clientItem.participantId : undefined,
-    participantName: clientItem.participantName ? clientItem.participantName : undefined,
-    parentName: clientItem.parentName ? clientItem.parentName : undefined,
-    hospitalId: clientItem.hospitalId ? clientItem.hospitalId : undefined
+    extension_attributes: getCartItemExtensionAttributes(clientItem),
   } as any as CartItem
 
-  if (updateIds && serverItem.quote_id && serverItem.item_id) {
+  const quoteId = clientItem.server_cart_id || serverItem?.quote_id;
+  const item_id = clientItem.server_item_id || serverItem?.item_id;
+
+  if (quoteId && item_id) {
     return {
       ...cartItem,
-      quoteId: serverItem.quote_id,
-      item_id: serverItem.item_id
+      quoteId,
+      item_id
     }
   }
 

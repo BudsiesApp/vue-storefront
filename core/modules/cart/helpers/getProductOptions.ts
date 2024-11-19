@@ -2,7 +2,7 @@ import CartItem from '@vue-storefront/core/modules/cart/types/CartItem'
 import { ProductOption } from '@vue-storefront/core/modules/catalog/types/ProductConfiguration'
 
 const mapValues = (current) => (val) => ({
-  id: val.value_index,
+  id: val.value_index.toString(),
   label: val.label,
   attribute_code: current.attribute_code,
   type: current.attribute_code

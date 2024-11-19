@@ -1,3 +1,6 @@
+import { Customization } from 'src/modules/customization-system';
+import { AmGiftCardOptions, GiftCardImage } from 'src/modules/gift-card';
+
 import { ProductOption } from './ProductConfiguration';
 import { ConfigurableItemOption } from './ConfigurableOption';
 import { BundleOption, SelectedBundleOption } from './BundleOption';
@@ -6,6 +9,9 @@ import { CustomOption } from './CustomOption';
 
 export default interface Product {
   attributes_metadata?: AttributesMetadata[],
+  am_gift_card_prices?: number[],
+  am_open_amount_max?: number,
+  am_open_amount_min?: number,
   bundle_options?: BundleOption[],
   category?: Record<string, any>[],
   category_ids: string[] | number[],
@@ -16,6 +22,7 @@ export default interface Product {
   custom_attributes?: any,
   custom_options?: CustomOption[],
   description: string,
+  gift_card_images_data?: GiftCardImage[],
   short_description?: string,
   errors?: Record<string, any>,
   final_price?: number,
@@ -79,7 +86,8 @@ export default interface Product {
   meta_title?: string | null,
   meta_description?: string | null,
   landing_page_url?: string | null,
-  disabled_upgrades?: string[]
+  disabled_upgrades?: string[],
+  customizations?: Customization[]
 }
 
 export interface ProductLink {
@@ -98,6 +106,7 @@ export interface ProductOptions {
   extension_attributes: {
     custom_options: any[],
     configurable_item_options: ConfigurableItemOption[],
-    bundle_options: SelectedBundleOption[]
+    bundle_options: SelectedBundleOption[],
+    am_giftcard_options?: AmGiftCardOptions
   }
 }

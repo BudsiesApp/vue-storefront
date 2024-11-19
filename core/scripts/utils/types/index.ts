@@ -19,5 +19,9 @@ export interface Context {
   vs: {
     config: Record<any, any>,
     storeCode: string
-  }
+  },
+  extendedHead: {
+    append: (value: string) => void,
+    inject: () => string
+  } | null
 }

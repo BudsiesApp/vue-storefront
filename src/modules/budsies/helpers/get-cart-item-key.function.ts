@@ -7,8 +7,8 @@ export default function getCartItemKey (cartItem: CartItem): string {
     key = key + '-' + cartItem.checksum;
   }
 
-  if (cartItem.plushieId) {
-    key = key + '-' + cartItem.plushieId;
+  if (cartItem.extension_attributes?.plushie_id) {
+    key = key + '-' + cartItem.extension_attributes?.plushie_id;
   }
 
   return key;
