@@ -7,7 +7,8 @@ import { Logger } from '@vue-storefront/core/lib/logger'
 import { processDynamicRoute, normalizeUrlPath } from '../helpers'
 import { LocalizedRoute } from '@vue-storefront/core/lib/types'
 import { RouterManager } from '@vue-storefront/core/lib/router-manager'
-import { routerHelper } from '@vue-storefront/core/helpers'
+import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
+import { routerHelper, isServer } from '@vue-storefront/core/helpers'
 
 export const UrlDispatchMapper = async (to) => {
   const routeData = await store.dispatch('url/mapUrl', { url: to.path, query: to.query })
@@ -21,6 +22,21 @@ export async function beforeEachGuard (to: Route, from: Route, next) {
     return
   }
   RouterManager.lockRoute()
+
+  const isAccessAllowed = await checkAuth(to, from);
+
+  if (!isAccessAllowed) {
+    RouterManager.unlockRoute();
+
+    next({
+      path: '/',
+      query: {
+        accessDenied: to.fullPath
+      }
+    });
+
+    return;
+  }
 
   const path = normalizeUrlPath(to.path, false)
   const hasRouteParams = to.hasOwnProperty('params') && Object.values(to.params).length > 0
@@ -56,4 +72,21 @@ export async function beforeEachGuard (to: Route, from: Route, next) {
   }
 
   routerHelper.popStateDetected = false
+}
+
+async function checkAuth(to: Route, from: Route | undefined): Promise<boolean> {
+  const isHydratingRoute = to.fullPath === from?.fullPath && !from?.name;
+
+  if (!to.meta?.auth || isServer || isHydratingRoute) {
+    return true;
+  }
+
+  const usersCollection = StorageManager.get('user');
+  const userData = await usersCollection.getItem('current-user');
+
+  if (!!userData) {
+    return true;
+  }
+
+  return false;
 }

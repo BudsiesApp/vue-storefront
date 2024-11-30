@@ -1,5 +1,5 @@
+import Vue from 'vue';
 import config from 'config'
-import { mapState } from 'vuex'
 import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import { KEY } from '..'
 import { StoryblokState } from '../types/State'
@@ -7,36 +7,43 @@ import { loadScript, getStoryblokQueryParams } from '../helpers'
 import get from 'lodash-es/get'
 import { resolveParentData } from '../helpers/resolve-parent-data.function'
 
-export default {
+export default Vue.extend({
   name: 'Storyblok',
   computed: {
-    ...mapState(KEY, {
-      loadingStory (state: StoryblokState) {
-        const { id, fullSlug } = getStoryblokQueryParams(this.$route)
+    previewToken (): string | undefined {
+      return this.$store.getters[`${KEY}/previewToken`];
+    },
+    storeCodeFromHeader (): string {
+      return this.$store.getters[`${KEY}/storeCode`];
+    },
+    loadingStory (): boolean {
+      const state = this.$store.state[KEY] as StoryblokState;
+      const { id, fullSlug } = getStoryblokQueryParams(this.$route)
 
-        const key = this.storyblokPath || id || this.formatFullSlug(fullSlug)
-        return (state.stories[key] && state.stories[key].loading) || false
-      },
-      previewToken: (state: StoryblokState) => state.previewToken,
-      storeCodeFromHeader: (state: StoryblokState) => state.storeCode,
-      story (state: StoryblokState) {
-        const { id, fullSlug } = getStoryblokQueryParams(this.$route)
+      const key = this.storyblokPath || id || this.formatFullSlug(fullSlug)
+      return (state.stories[key] && state.stories[key].loading) || false
+    },
+    isStatic (): boolean {
+      return !!this.storyblok.path
+    },
+    storyblokPath (): string {
+      const { storeCode } = currentStoreView()
+      const path = this.storyblok.path
 
-        const key = this.storyblokPath || id || this.formatFullSlug(fullSlug)
-        return state.stories[key] && state.stories[key].story
-      },
-      isStatic () {
-        return !!this.storyblok.path
-      },
-      storyblokPath () {
-        const { storeCode } = currentStoreView()
-        const path = this.storyblok.path
-        if (this.storyblok.prependStorecode && config.storeViews.multistore && storeCode) {
-          return `${storeCode}/${path}`
-        }
-        return path
+      if (this.storyblok.prependStorecode && config.storeViews.multistore && storeCode) {
+        return `${storeCode}/${path}`
       }
-    })
+
+      return path
+    },
+    story (): Record<string, any> {
+      const state = this.$store.state[KEY] as StoryblokState;
+      const { id, fullSlug } = getStoryblokQueryParams(this.$route)
+
+      const key = this.storyblokPath || id || this.formatFullSlug(fullSlug)
+
+      return state.stories[key] && state.stories[key].story
+    }
   },
   data () {
     return {
@@ -48,7 +55,7 @@ export default {
     }
   },
   methods: {
-    formatFullSlug (fullSlug: string) {
+    formatFullSlug (fullSlug: string): string {
       const addStoreCode = get(config, 'storyblok.settings.appendStoreCodeFromHeader')
       const storeCodeToAdd = this.storeCodeFromHeader
       if (addStoreCode && storeCodeToAdd) {
@@ -56,7 +63,7 @@ export default {
       }
       return fullSlug
     },
-    async fetchStory () {
+    async fetchStory (): Promise<void> {
       if (this.storyblok.fetchStory === false) {
         return
       }
@@ -83,9 +90,8 @@ export default {
       })
     }
   },
-  async serverPrefetch () {
-    const story = await this.fetchStory()
-    return { story }
+  async serverPrefetch (): Promise<void> {
+    const story = await (this as any).fetchStory()
   },
   async asyncData ({ route, context }) {
     return new Promise((resolve) => {
@@ -106,7 +112,7 @@ export default {
 
       await loadScript(url, 'storyblok-javascript-bridge')
 
-      const StoryblokBridge = window['StoryblokBridge'];
+      const StoryblokBridge = (window as any)['StoryblokBridge'];
 
       const storyblokInstance = new StoryblokBridge({
         resolveRelations: ['block_reference.reference', 'page.parent']
@@ -131,4 +137,4 @@ export default {
       }
     }
   }
-}
+});

@@ -9,6 +9,12 @@ export const forStoryblok = async ({ dispatch, rootState }, { url, params }) => 
       name: 'storyblok-page'
     }
   }
+  if (params && params._storyblok_c && params._storyblok_c === 'page_layout') {
+    return {
+      name: 'storyblok-page-layout-page',
+      meta: { layout: 'empty' }
+    }
+  }
   if (params && params._storyblok_c && params._storyblok_c === 'block') {
     return {
       name: 'storyblok-block',

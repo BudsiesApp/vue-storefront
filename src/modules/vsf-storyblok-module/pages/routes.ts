@@ -3,6 +3,7 @@ import { RouteConfig } from 'vue-router/types/router'
 
 const StoryblokPage = () => import(/* webpackChunkName: "vsf-storyblok" */ './StoryblokPage.vue')
 const StoryblokBlock = () => import(/* webpackChunkName: "vsf-storyblok" */ './StoryblokBlock.vue')
+const StoryblokPageLayoutPage = () => import(/* webpackChunkName: "vsf-storyblok" */ './StoryblokPageLayout.vue')
 
 export const StoryblokRoutes: RouteConfig[] = [
   {
@@ -14,6 +15,11 @@ export const StoryblokRoutes: RouteConfig[] = [
     name: 'storyblok-block',
     path: '/stub',
     component: StoryblokBlock as unknown as ComponentOptions<Vue> | typeof Vue | AsyncComponent
+  },
+  {
+    name: 'storyblok-page-layout-page',
+    path: '/stub',
+    component: StoryblokPageLayoutPage
   },
   {
     name: 'storyblok-single-component-visual-editor-mode',
