@@ -1,11 +1,10 @@
 import i18n from '@vue-storefront/i18n'
-import isNaN from 'lodash-es/isNaN'
-import isUndefined from 'lodash-es/isUndefined'
 import fetch from 'isomorphic-fetch'
 import rootStore from '@vue-storefront/core/store'
 import { adjustMultistoreApiUrl, currentStoreView } from '@vue-storefront/core/lib/multistore'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import Task from '@vue-storefront/core/lib/sync/types/Task'
+import { isServer } from '@vue-storefront/core/helpers'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import * as entities from '@vue-storefront/core/lib/store/entities'
@@ -18,6 +17,7 @@ import { hasResponseError, getResponseMessage } from '@vue-storefront/core/lib/s
 import queryString from 'query-string'
 
 import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared'
+import { RESET_USER_TOKEN_REFRESH_COUNT } from '@vue-storefront/core/modules/user'
 
 export function _prepareTask (task) {
   const taskId = entities.uniqueEntityId(task) // timestamp as a order id is not the best we can do but it's enough
@@ -26,10 +26,6 @@ export function _prepareTask (task) {
   task.created_at = new Date()
   task.updated_at = new Date()
   return task
-}
-
-function _sleep (time) {
-  return new Promise((resolve) => setTimeout(resolve, time))
 }
 
 function getUrl (task, currentToken, currentCartId) {
@@ -62,142 +58,108 @@ function getPayload (task, currentToken) {
   return payload
 }
 
-function _internalExecute (resolve, reject, task: Task, currentToken, currentCartId) {
-  if (currentToken && rootStore.state.userTokenInvalidateLock > 0) { // invalidate lock set
-    Logger.log('Waiting for rootStore.state.userTokenInvalidateLock to release for ' + task.url, 'sync')()
-    _sleep(1000).then(() => {
-      Logger.log('Another try for rootStore.state.userTokenInvalidateLock for ' + task.url, 'sync')()
-      _internalExecute(resolve, reject, task, currentToken, currentCartId)
-    })
-    return // return but not resolve
-  } else if (currentToken && rootStore.state.userTokenInvalidateLock < 0) {
-    Logger.error('Aborting the network task' + task.url + rootStore.state.userTokenInvalidateLock, 'sync')()
-    resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
-    return
-  } else {
-    if (rootStore.state.userTokenInvalidated) {
-      Logger.log('Using new user token' + rootStore.state.userTokenInvalidated, 'sync')()
-      currentToken = rootStore.state.userTokenInvalidated
-    }
-  }
+async function _internalExecute(
+  task: Task,
+): Promise<Task> {
+  const currentCartId = !isServer ? rootStore.getters['cart/getCartToken'] : null;
   const isCartIdRequired = task.url.includes('{{cartId}}') // this is bypass for #2592
+
   if (isCartIdRequired && !currentCartId) { // by some reason we does't have the  cart id yet
-    reject('Error executing sync task ' + task.url + ' the required cartId  argument is null. Re-creating shopping cart synchro.')
-    return
+    throw new Error('Error executing sync task ' + task.url + ' the required cartId  argument is null. Re-creating shopping cart synchro.')
   }
+
+  const tokenRefreshPromise = rootStore.getters['user/getTokenRefreshPromise'];
+  
+  if (tokenRefreshPromise) {
+    await tokenRefreshPromise;
+  }
+
+  const currentToken = !isServer ? rootStore.getters['user/getUserToken'] : null;
+
   const url = getUrl(task, currentToken, currentCartId)
   const payload = getPayload(task, currentToken)
-  let silentMode = false
+
   Logger.info('Executing sync task ' + url, 'sync', task)()
 
   EventBus.$emit(BEFORE_STORE_BACKEND_API_REQUEST, payload);
 
-  return fetch(url, payload).then((response) => {
-    const contentType = response.headers.get('content-type')
-    if (contentType && contentType.includes('application/json')) {
-      return response.json()
+  let response: Response;
+  
+  try {
+    response = await fetch(url, payload);
+  } catch (error) {
+    Logger.error(error, 'sync')();
+    throw error;
+  }
+
+  const contentType = response.headers.get('content-type')
+  let jsonResponse;
+
+  if (contentType && contentType.includes('application/json')) {
+    jsonResponse = await response.json();
+  } else {
+    const msg = i18n.t('Error with response - bad content-type!').toString();
+    Logger.error(msg, 'sync')();
+    throw new Error(msg);
+  }
+
+  if (!jsonResponse) {
+    const msg = i18n.t('Unhandled error, wrong response format!').toString();
+    Logger.error(msg, 'sync')();
+    throw new Error(msg);
+  }
+
+  const responseCode = parseInt(jsonResponse.code)
+
+  if (responseCode === 401) {
+    const isRefreshed: boolean = await rootStore.dispatch(
+      'user/tryToRefreshToken'
+    );
+
+    if (isRefreshed) {
+      return _internalExecute(task);
     } else {
-      const msg = i18n.t('Error with response - bad content-type!')
-      Logger.error(msg.toString(), 'sync')()
-      reject(msg)
+      TaskQueue.clearNotTransmited();
     }
-  }).then((jsonResponse) => {
-    if (jsonResponse) {
-      const responseCode = parseInt(jsonResponse.code)
-      if (responseCode !== 200) {
-        if (responseCode === 401 /** unauthorized */ && currentToken) { // the token is no longer valid, try to invalidate it
-          Logger.error('Invalid token - need to be revalidated' + currentToken + task.url + rootStore.state.userTokenInvalidateLock, 'sync')()
-          silentMode = true
-          if (config.users.autoRefreshTokens) {
-            if (!rootStore.state.userTokenInvalidateLock) {
-              rootStore.state.userTokenInvalidateLock++
-              if (rootStore.state.userTokenInvalidateAttemptsCount >= config.queues.maxNetworkTaskAttempts) {
-                Logger.error('Internal Application error while refreshing the tokens. Please clear the storage and refresh page.', 'sync')()
-                rootStore.state.userTokenInvalidateLock = -1
-                rootStore.state.userTokenInvalidated = null
-                rootStore.dispatch('user/logout', { silent: true })
-                TaskQueue.clearNotTransmited()
-                EventBus.$emit('modal-show', 'modal-signup')
-                rootStore.state.userTokenInvalidateAttemptsCount = 0
-              } else {
-                Logger.info('Invalidation process in progress (autoRefreshTokens is set to true)' + rootStore.state.userTokenInvalidateAttemptsCount + rootStore.state.userTokenInvalidateLock, 'sync')()
-                rootStore.state.userTokenInvalidateAttemptsCount++
-                rootStore.dispatch('user/refresh').then((token) => {
-                  if (token) {
-                    rootStore.state.userTokenInvalidateLock = 0
-                    rootStore.state.userTokenInvalidated = token
-                    Logger.info('User token refreshed successfully' + token, 'sync')()
-                  } else {
-                    rootStore.state.userTokenInvalidateLock = -1
-                    rootStore.dispatch('user/logout', { silent: true })
-                    EventBus.$emit('modal-show', 'modal-signup')
-                    TaskQueue.clearNotTransmited()
-                    Logger.error('Error refreshing user token' + token, 'sync')()
-                  }
-                }).catch((excp) => {
-                  rootStore.state.userTokenInvalidateLock = -1
-                  rootStore.dispatch('user/logout', { silent: true })
-                  EventBus.$emit('modal-show', 'modal-signup')
-                  TaskQueue.clearNotTransmited()
-                  Logger.error('Error refreshing user token' + excp, 'sync')()
-                })
-              }
-            }
-            if (rootStore.state.userTokenInvalidateAttemptsCount <= config.queues.maxNetworkTaskAttempts) _internalExecute(resolve, reject, task, currentToken, currentCartId) // retry
-          } else {
-            Logger.info('Invalidation process is disabled (autoRefreshTokens is set to false)', 'sync')()
-            rootStore.dispatch('user/logout', { silent: true })
-            EventBus.$emit('modal-show', 'modal-signup')
-            resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
-            return;
-          }
-        }
+  } else {
+    rootStore.commit(RESET_USER_TOKEN_REFRESH_COUNT);
+  }
 
-        if (!task.silent && jsonResponse.result && hasResponseError(jsonResponse) && !silentMode) {
-          rootStore.dispatch('notification/spawnNotification', {
-            type: 'error',
-            message: i18n.t(getResponseMessage(jsonResponse)),
-            action1: { label: i18n.t('OK') }
-          })
-        }
-      }
+  if (
+    responseCode !== 200 &&
+    !task.silent &&
+    jsonResponse.result &&
+    hasResponseError(jsonResponse)
+  ) {
+    rootStore.dispatch('notification/spawnNotification', {
+      type: 'error',
+      message: i18n.t(getResponseMessage(jsonResponse)),
+      action1: { label: i18n.t('OK') }
+    });
+  }
 
-      Logger.debug('Response for: ' + task.task_id + ' = ' + JSON.stringify(jsonResponse.result), 'sync')()
-      task.transmited = true
-      task.transmited_at = new Date()
-      task.result = jsonResponse.result
-      task.resultCode = jsonResponse.code
-      task.code = jsonResponse.code // backward compatibility to fetch()
-      task.acknowledged = false
-      task.meta = jsonResponse.meta
+  Logger.debug('Response for: ' + task.task_id + ' = ' + JSON.stringify(jsonResponse.result), 'sync')()
+  task.transmited = true
+  task.transmited_at = new Date()
+  task.result = jsonResponse.result
+  task.resultCode = jsonResponse.code
+  task.code = jsonResponse.code // backward compatibility to fetch()
+  task.acknowledged = false
+  task.meta = jsonResponse.meta
 
-      if (task.callback_event) {
-        if (task.callback_event.startsWith('store:')) {
-          rootStore.dispatch(task.callback_event.split(':')[1], task)
-        } else {
-          EventBus.$emit(task.callback_event, task)
-        }
-      }
-      if (!rootStore.state.userTokenInvalidateLock || !currentToken) { // in case we're revalidaing the token - user must wait for it
-        resolve(task)
-      }
+  if (task.callback_event) {
+    if (task.callback_event.startsWith('store:')) {
+      rootStore.dispatch(task.callback_event.split(':')[1], task)
     } else {
-      const msg = i18n.t('Unhandled error, wrong response format!')
-      Logger.error(msg.toString(), 'sync')()
-      reject(msg)
+      EventBus.$emit(task.callback_event, task)
     }
-  }).catch((err) => {
-    Logger.error(err, 'sync')()
-    reject(err)
-  })
+  }
+
+  return task;
 }
 
-export function execute (task: Task, currentToken = null, currentCartId = null): Promise<Task> {
-  const taskId = task.task_id
-
-  return new Promise((resolve, reject) => {
-    _internalExecute(resolve, reject, task, currentToken, currentCartId)
-  })
+export function execute (task: Task): Promise<Task> {
+  return _internalExecute(task);
 }
 
 export function initializeSyncTaskStorage () {
@@ -222,7 +184,7 @@ export function registerSyncTaskProcessor () {
       syncTaskCollection.iterate((task, id) => {
         if (task && !task.transmited && !mutex[id]) { // not sent to the server yet
           mutex[id] = true // mark this task as being processed
-          fetchQueue.push(execute(task, currentUserToken, currentCartToken).then(executedTask => {
+          fetchQueue.push(execute(task).then(executedTask => {
             if (!executedTask.is_result_cacheable) {
               syncTaskCollection.removeItem(id) // remove successfully executed task from the queue
             } else {

@@ -1,6 +1,9 @@
-import { GetterTree } from 'vuex'
-import RootState from '@vue-storefront/core/types/RootState'
-import UserState from '../types/UserState'
+import { GetterTree } from 'vuex';
+import config from 'config';
+
+import RootState from '@vue-storefront/core/types/RootState';
+
+import UserState from '../types/UserState';
 
 const getters: GetterTree<UserState, RootState> = {
   isLoggedIn (state) {
@@ -9,6 +12,19 @@ const getters: GetterTree<UserState, RootState> = {
   isLocalDataLoaded: state => state.local_data_loaded,
   getUserToken (state) {
     return state.token
+  },
+  getRefreshToken (state) {
+    return state.refreshToken;
+  },
+  canRefreshToken (state, getters): boolean {
+    if (state.tokenRefreshCount >= config.queues.maxNetworkTaskAttempts) {
+      return false;
+    }
+
+    return getters['getToken'] || getters['getRefreshToken'];
+  },
+  getTokenRefreshPromise(state) {
+    return state.tokenRefreshPromise;
   },
   getOrdersHistory (state) {
     return state.orders_history ? state.orders_history.items : []

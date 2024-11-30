@@ -17,7 +17,9 @@ export const userStore: Module<UserState, RootState> = {
     session_started: new Date(),
     orders_history: null,
     local_data_loaded: false,
-    isSessionStarted: false
+    isSessionStarted: false,
+    tokenRefreshPromise: undefined,
+    tokenRefreshCount: 0
   },
   getters,
   actions,

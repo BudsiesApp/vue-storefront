@@ -18,9 +18,6 @@ const state: any = {
   twoStageCachingDelta1: 0,
   twoStageCachingDelta2: 0,
   twoStageCachingDisabled: false,
-  userTokenInvalidated: null,
-  userTokenInvalidateAttemptsCount: 0,
-  userTokenInvalidateLock: 0
 }
 
 let rootStore = new Vuex.Store<RootState>({

@@ -1,7 +1,10 @@
 import { MutationTree } from 'vuex'
+import Vue from 'vue'
+
+import { Logger } from '@vue-storefront/core/lib/logger'
+
 import * as types from './mutation-types'
 import UserState from '../types/UserState'
-import { Logger } from '@vue-storefront/core/lib/logger'
 
 const mutations: MutationTree<UserState> = {
   [types.USER_TOKEN_CHANGED] (state, payload) {
@@ -42,6 +45,15 @@ const mutations: MutationTree<UserState> = {
   },
   [types.USER_LOCAL_DATA_LOADED] (state, readed = false) {
     state.local_data_loaded = readed
+  },
+  [types.SET_TOKEN_REFRESH_PROMISE] (state, value: Promise<boolean> | undefined) {
+    Vue.set(state, 'tokenRefreshPromise', value);
+  },
+  [types.INCREMENT_TOKEN_REFRESH_COUNT] (state) {
+    state.tokenRefreshCount++;
+  },
+  [types.RESET_TOKEN_REFRESH_COUNT] (state) {
+    state.tokenRefreshCount = 0;
   }
 }
 
