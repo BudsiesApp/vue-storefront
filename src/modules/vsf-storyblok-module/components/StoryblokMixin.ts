@@ -9,12 +9,20 @@ import { resolveParentData } from '../helpers/resolve-parent-data.function'
 
 export default {
   name: 'Storyblok',
+  props: {
+    storyFullSlug: {
+      type: String,
+      default: undefined
+    }
+  },
   computed: {
     ...mapState(KEY, {
       loadingStory (state: StoryblokState) {
         const { id, fullSlug } = getStoryblokQueryParams(this.$route)
 
-        const key = this.storyblokPath || id || this.formatFullSlug(fullSlug)
+        const slug = this.storyFullSlug || fullSlug;
+
+        const key = this.storyblokPath || id || this.formatFullSlug(slug)
         return (state.stories[key] && state.stories[key].loading) || false
       },
       previewToken: (state: StoryblokState) => state.previewToken,
@@ -22,7 +30,9 @@ export default {
       story (state: StoryblokState) {
         const { id, fullSlug } = getStoryblokQueryParams(this.$route)
 
-        const key = this.storyblokPath || id || this.formatFullSlug(fullSlug)
+        const slug = this.storyFullSlug || fullSlug;
+
+        const key = this.storyblokPath || id || this.formatFullSlug(slug)
         return state.stories[key] && state.stories[key].story
       },
       isStatic () {
@@ -78,8 +88,10 @@ export default {
         }
       }
 
+      const slug = this.storyFullSlug || fullSlug;
+
       return this.$store.dispatch(`${KEY}/loadStory`, {
-        fullSlug: this.storyblokPath || this.formatFullSlug(fullSlug)
+        fullSlug: this.storyblokPath || this.formatFullSlug(slug)
       })
     }
   },
