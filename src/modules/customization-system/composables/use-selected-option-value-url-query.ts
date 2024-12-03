@@ -98,7 +98,7 @@ export function useSelectedOptionValueUrlQuery (
       return;
     }
 
-    root.$router.push({ query: { ...root.$route.query, ...showInUrlQueryData.value } });
+    root.$router.replace({ query: { ...root.$route.query, ...showInUrlQueryData.value } });
   }
 
   function updateCustomizationOptionValueFromQuery (): void {
@@ -153,6 +153,10 @@ export function useSelectedOptionValueUrlQuery (
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
       }
+    }
+
+    if (customizationStateItemsForUpdate.length === 0) {
+      return;
     }
 
     mergeCustomizationState(customizationStateItemsForUpdate);
