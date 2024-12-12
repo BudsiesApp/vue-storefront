@@ -10,9 +10,8 @@ import { StatisticMetric } from './statistic-metric'
 
 export interface BudsiesState {
   extraPhotoAddons: Dictionary<ExtraPhotoAddon>,
-  rushAddons: Dictionary<RushAddon>,
   productExtraPhotoAddons: Dictionary<string[]>,
-  productRushAddons: Dictionary<string[]>,
+  productRushAddons: Dictionary<RushAddon[]>,
   bodyparts: Dictionary<Bodypart>,
   bodypartsValues: Dictionary<BodypartValue>,
   bodypartBodypartsValues: Dictionary<string[]>,
@@ -25,5 +24,7 @@ export interface BudsiesState {
   bulkordersQuotes: Dictionary<number[]>,
   customerTypes?: Dictionary<string>,
   storeRating: StoreRating | undefined,
-  statisticValues: Record<StatisticMetric, string | number | undefined>
+  statisticValues: Record<StatisticMetric, string | number | undefined>,
+  rushAddonsLoadingPromise: Promise<void> | undefined,
+  isRushAddonsLoaded: boolean
 }

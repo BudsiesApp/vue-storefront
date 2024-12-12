@@ -12,6 +12,9 @@ import BulkOrderInfo from '../types/bulk-order-info'
 import { StatisticMetric } from '../types/statistic-metric'
 
 const getters: GetterTree<BudsiesState, RootState> = {
+  extraPhotoAddonsLoadingPromise: (state) => {
+    return state.rushAddonsLoadingPromise;
+  },
   getExtraPhotoAddon: (state: BudsiesState, id: string): ExtraPhotoAddon | undefined => {
     return state.extraPhotoAddons[id];
   },
@@ -31,21 +34,8 @@ const getters: GetterTree<BudsiesState, RootState> = {
 
     return result;
   },
-  getRushAddon: (state: BudsiesState, id: string): RushAddon | undefined => {
-    return state.rushAddons[id];
-  },
   getProductRushAddons: (state: BudsiesState) => (id: string): RushAddon[] => {
-    const result: RushAddon[] = [];
-
-    if (!state.productRushAddons[id] || !state.productRushAddons[id].length) {
-      return result;
-    }
-
-    state.productRushAddons[id].forEach((id) => {
-      result.push(state.rushAddons[id]);
-    });
-
-    return result;
+    return state.productRushAddons[id] || [];
   },
   getProductBodyparts: (state: BudsiesState) => (id: string): Bodypart[] => {
     const result: Bodypart[] = [];
@@ -151,6 +141,9 @@ const getters: GetterTree<BudsiesState, RootState> = {
   },
   getStatisticValueByMetric: (state) => (metric: StatisticMetric) => {
     return state.statisticValues[metric];
+  },
+  getRushAddonsLoadingPromise: (state) => {
+    return state.rushAddonsLoadingPromise;
   }
 }
 
