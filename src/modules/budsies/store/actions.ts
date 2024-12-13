@@ -267,7 +267,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     return TaskQueue.execute({
       url: `${url}/${plushieId}`,
       payload: {
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { 'Accept': 'application/json' },
         mode: 'cors',
         method: 'GET'
       },
