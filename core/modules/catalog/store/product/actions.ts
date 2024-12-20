@@ -225,7 +225,17 @@ const actions: ActionTree<ProductState, RootState> = {
   /**
    * Load the product data and sets current product
    */
-  async loadProduct ({ dispatch, state }, { parentSku, childSku = null, route = null, skipCache = false, setCurrent = true }) {
+  async loadProduct (
+    { dispatch, state },
+    {
+      prefetchGroupProducts = true,
+      parentSku,
+      childSku = null,
+      route = null,
+      skipCache = false,
+      setCurrent = true
+    }
+  ) {
     Logger.info('Fetching product data asynchronously', 'product', { parentSku, childSku })()
 
     if (setCurrent) {
@@ -235,7 +245,8 @@ const actions: ActionTree<ProductState, RootState> = {
     const product = await dispatch('single', {
       options: {
         sku: parentSku,
-        childSku: childSku
+        childSku: childSku,
+        prefetchGroupProducts: prefetchGroupProducts
       },
       key: 'sku',
       skipCache

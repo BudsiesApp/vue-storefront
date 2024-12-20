@@ -17,5 +17,9 @@ export interface OptionValue {
   availabilityRules?: AvailabilityRules,
   actions?: Actions,
   sn: number,
-  galleryImages?: GalleryImage[]
+  galleryImages?: GalleryImage[],
+  specialPrice?: number,
+  specialFromDate?: string,
+  specialToDate?: string,
+  productId?: number
 }

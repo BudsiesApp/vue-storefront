@@ -135,7 +135,9 @@ const getProduct = async (options: { [key: string]: string }, key: string): Prom
     size: 1,
     configuration: { sku: options.childSku },
     options: {
-      prefetchGroupProducts: true,
+      prefetchGroupProducts: options.prefetchGroupProducts !== undefined
+        ? !!options.prefetchGroupProducts
+        : true,
       assignProductConfiguration: true
     }
   })

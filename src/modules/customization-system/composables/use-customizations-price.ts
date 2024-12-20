@@ -15,7 +15,6 @@ export function useCustomizationsPrice (
   const customizationOptionValuesLowestPrice = computed<Record<string, PriceHelper.ProductPrice | undefined>>(
     () => {
       const dictionary: Record<string, PriceHelper.ProductPrice | undefined> = {};
-      const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
 
       customizations.value.forEach((customization) => {
         if (!customization.optionData?.values) {
@@ -23,8 +22,7 @@ export function useCustomizationsPrice (
         }
 
         dictionary[customization.id] = getLowestPriceForOptionValues(
-          customization.optionData.values,
-          productBySkuDictionary
+          customization.optionData.values
         );
       });
 
@@ -33,7 +31,6 @@ export function useCustomizationsPrice (
   );
 
   const totalPrice = computed<PriceHelper.ProductPrice>(() => {
-    const productBySkuDictionary = root.$store.getters['product/getProductBySkuDictionary'];
     const selectedOptionValuesPrices: PriceHelper.ProductPrice[] = [];
     const _customizationOptionValuesLowestPrice = customizationOptionValuesLowestPrice.value;
 
@@ -71,7 +68,7 @@ export function useCustomizationsPrice (
       }
 
       selectedValues.forEach((value) => {
-        const price = getOptionValuePrice(value, productBySkuDictionary);
+        const price = getOptionValuePrice(value);
 
         if (price) {
           selectedOptionValuesPrices.push(price);
