@@ -46,7 +46,9 @@ function getOptionValuesDiscountPrice (
     }
 
     const productPrice = store.getters['promotionPlatform/getProductCampaignDiscountPrice'](
-      optionValue.productId
+      {
+        id: optionValue.productId
+      }
     );
     const optionValueSpecialPrice = getOptionValueSpecialPrice(optionValue);
 

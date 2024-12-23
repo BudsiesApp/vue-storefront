@@ -32,7 +32,6 @@ function calculateBundleCartItemWithoutCustomizationsPrice (cartItem: CartItem) 
   return price;
 }
 
-// TODO: probably it's redundant
 function calculateCartItemOptionValuesPrice (cartItem: CartItem) {
   const price = {
     price: 0,
@@ -54,8 +53,9 @@ function calculateCartItemOptionValuesPrice (cartItem: CartItem) {
       ? optionValueSpecialPrice
       : optionPrice;
 
-    price.price += optionPrice;
-    price.priceInclTax += optionPrice;
+    // Same logic is applied to the product prices in VSF-api
+    price.price += finalSpecialPrice;
+    price.priceInclTax += finalSpecialPrice;
     price.originalPriceInclTax += optionPrice;
     price.specialPrice = finalSpecialPrice;
   }
@@ -64,9 +64,11 @@ function calculateCartItemOptionValuesPrice (cartItem: CartItem) {
 }
 
 function calculateCartItemBundleOptionsPrice (cartItem: CartItem) {
-  // if (!cartItem.customizations || !cartItem.extension_attributes?.customization_state) {
-  return calculateBundleCartItemWithoutCustomizationsPrice(cartItem);
-  // }
+  if (!cartItem.customizations || !cartItem.extension_attributes?.customization_state) {
+    return calculateBundleCartItemWithoutCustomizationsPrice(cartItem);
+  }
+
+  return calculateCartItemOptionValuesPrice(cartItem);
 }
 
 function calculateProductDefaultBundleOptionsPrice (product) {
