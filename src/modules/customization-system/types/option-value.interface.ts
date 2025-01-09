@@ -19,7 +19,7 @@ export interface OptionValue {
   sn: number,
   galleryImages?: GalleryImage[],
   specialPrice?: number,
-  specialFromDate?: string,
-  specialToDate?: string,
+  specialPriceFromDate?: string,
+  specialPriceToDate?: string,
   productId?: number
 }
