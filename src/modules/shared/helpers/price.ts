@@ -53,11 +53,10 @@ function calculateCartItemOptionValuesPrice (cartItem: CartItem) {
       ? optionValueSpecialPrice
       : optionPrice;
 
-    // Same logic is applied to the product prices in VSF-api
     price.price += finalSpecialPrice;
     price.priceInclTax += finalSpecialPrice;
     price.originalPriceInclTax += optionPrice;
-    price.specialPrice = finalSpecialPrice;
+    price.specialPrice += finalSpecialPrice;
   }
 
   return price
