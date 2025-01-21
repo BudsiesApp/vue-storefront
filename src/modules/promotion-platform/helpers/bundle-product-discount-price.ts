@@ -63,7 +63,7 @@ function getOptionValuesDiscountPrice (
       continue;
     }
 
-    return optionValue.price || 0;
+    price += optionValue.price || 0;
   }
 
   if (!isDiscounted) {
