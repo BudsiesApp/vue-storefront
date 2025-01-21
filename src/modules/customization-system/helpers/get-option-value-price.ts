@@ -35,7 +35,7 @@ export function getOptionValuePrice (
     return defaultPrice;
   }
 
-  if (defaultPrice.special === null || defaultPrice.special < productDiscountPriceData.value) {
+  if (defaultPrice.special !== null && defaultPrice.special < productDiscountPriceData.value) {
     return defaultPrice;
   }
 
