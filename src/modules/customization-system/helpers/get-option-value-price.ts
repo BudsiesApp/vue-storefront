@@ -1,37 +1,46 @@
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
+
 import { PriceHelper } from 'src/modules/shared';
+import UpdateProductDiscountPriceEventData from 'src/modules/shared/types/discount-price/update-product-discount-price-event-data.interface';
+import { UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID } from 'src/modules/shared/types/discount-price/events';
 
 import { OptionValue } from '../types/option-value.interface';
+import { getOptionValueSpecialPrice } from './get-option-value-special-price.function';
 
 export function getOptionValuePrice (
-  optionValue: OptionValue,
-  productBySkuDictionary: Record<string, Product>
+  optionValue: OptionValue
 ): PriceHelper.ProductPrice | undefined {
-  const defaultOptionValuePrice = optionValue.price
-    ? {
-      regular: optionValue.price,
-      special: null
+  const defaultPrice = {
+    regular: optionValue.price !== undefined
+      ? optionValue.price
+      : 0,
+    special: getOptionValueSpecialPrice(optionValue)
+  }
+
+  if (optionValue.productId === undefined) {
+    return defaultPrice;
+  }
+
+  const productDiscountPriceData: UpdateProductDiscountPriceEventData = {
+    value: undefined,
+    product: {
+      id: optionValue.productId
     }
-    : {
-      regular: 0,
-      special: null
-    }
+  };
 
-  if (!optionValue.sku) {
-    return defaultOptionValuePrice;
+  EventBus.$emit(UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID, productDiscountPriceData);
+
+  if (productDiscountPriceData.value === undefined) {
+    return defaultPrice;
   }
 
-  const product = productBySkuDictionary[optionValue.sku];
-
-  if (!product) {
-    return defaultOptionValuePrice;
+  if (defaultPrice.special !== null && defaultPrice.special < productDiscountPriceData.value) {
+    return defaultPrice;
   }
 
-  const price = PriceHelper.getProductDefaultPrice(product, {}, false);
-
-  if (!price.regular) {
-    return defaultOptionValuePrice;
+  return {
+    regular: defaultPrice.regular,
+    special: productDiscountPriceData.value
   }
-
-  return price;
 }

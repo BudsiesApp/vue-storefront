@@ -1,14 +1,15 @@
-import get from 'lodash-es/get'
-
+import get from 'lodash/get';
 import { isBundleProduct } from '@vue-storefront/core/modules/catalog/helpers';
 import { price } from '@vue-storefront/core/filters';
 import { getCustomOptionValues, getCustomOptionPriceDelta } from '@vue-storefront/core/modules/catalog/helpers/customOption'
-import { getBundleOptionsValues, getBundleOptionPrice, getDefaultBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
+import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
+import { getBundleOptionPrice, getBundleOptionsValues } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions';
 
 import { UPDATE_CART_ITEM_DISCOUNT_PRICE_DATA_EVENT_ID, UPDATE_PRODUCT_DEFAULT_DISCOUNT_PRICE_DATA_EVENT_ID } from 'src/modules/shared/types/discount-price/events';
 import UpdateProductDiscountPriceEventData from 'src/modules/shared/types/discount-price/update-product-discount-price-event-data.interface';
 import { AmGiftCardOptions } from 'src/modules/gift-card';
+import { getSelectedOptionValuesByCustomizationState, getOptionValueSpecialPrice } from 'src/modules/customization-system';
 
 interface ProductPriceData {
   originalPriceInclTax: number,
@@ -21,14 +22,52 @@ export interface ProductPrice {
   special: number | null
 }
 
-function calculateCartItemBundleOptionsPrice (product) {
-  const allBundleOptions = product.bundle_options || []
-  const selectedBundleOptions = Object.values(get(product, 'product_option.extension_attributes.bundle_options', {}))
+function calculateBundleCartItemWithoutCustomizationsPrice (cartItem: CartItem) {
+  const allBundleOptions = cartItem.bundle_options || []
+  const selectedBundleOptions = Object.values(get(cartItem, 'product_option.extension_attributes.bundle_options', {}))
   const price = getBundleOptionPrice(
     getBundleOptionsValues(selectedBundleOptions as any[], allBundleOptions)
   )
 
+  return price;
+}
+
+function calculateCartItemOptionValuesPrice (cartItem: CartItem) {
+  const price = {
+    price: 0,
+    priceInclTax: 0,
+    originalPriceInclTax: 0,
+    specialPrice: null as number | null
+  }
+
+  const selectedCustomizationsOptionValues = getSelectedOptionValuesByCustomizationState(
+    cartItem.extension_attributes?.customization_state,
+    cartItem.customizations
+  );
+
+  for (const selectedCustomizationOptionValue of selectedCustomizationsOptionValues) {
+    const optionValueSpecialPrice = getOptionValueSpecialPrice(selectedCustomizationOptionValue);
+
+    const optionPrice = selectedCustomizationOptionValue.price || 0;
+    const finalSpecialPrice = optionValueSpecialPrice !== null
+      ? optionValueSpecialPrice
+      : optionPrice;
+
+    price.price += finalSpecialPrice;
+    price.priceInclTax += finalSpecialPrice;
+    price.originalPriceInclTax += optionPrice;
+    price.specialPrice += finalSpecialPrice;
+  }
+
   return price
+}
+
+function calculateCartItemBundleOptionsPrice (cartItem: CartItem) {
+  if (!cartItem.customizations || !cartItem.extension_attributes?.customization_state) {
+    return calculateBundleCartItemWithoutCustomizationsPrice(cartItem);
+  }
+
+  return calculateCartItemOptionValuesPrice(cartItem);
 }
 
 function calculateProductDefaultBundleOptionsPrice (product) {
@@ -177,7 +216,7 @@ function getProductPrice (product, productDiscountPriceData: UpdateProductDiscou
   let special = productDiscountPrice || (priceInclTax + priceDelta) * product.qty || priceInclTax
 
   const isSpecialPrice = (!!productDiscountPrice ||
-   (specialPrice && priceInclTax && originalPriceInclTax) ||
+    (specialPrice && priceInclTax && originalPriceInclTax) ||
     specialPrice === 0) &&
     special < original;
 
