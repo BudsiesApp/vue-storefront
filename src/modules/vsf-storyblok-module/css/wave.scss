@@ -1,0 +1,44 @@
+@mixin wave-section {
+  position: relative;
+
+  &::before {
+    background: url(/assets/images/wave.png) repeat-x 0 0;
+    content: "";
+    display: block;
+    height: 10px;
+    left: 0;
+    position: absolute;
+    top: -10px;
+    width: 100%;
+  }
+}
+
+@mixin wave-section-yellow {
+  @include wave-section();
+
+  background: linear-gradient(to bottom,
+      #fbf5e7 0%,
+      #fcf7ed 47%,
+      #ffffff 100%);
+
+  &::before {
+    background: url(/assets/images/wave-yellow.png) repeat-x 0 0;
+    height: 8px;
+    top: -8px;
+  }
+}
+
+@mixin wave-section-blue {
+  @include wave-section();
+
+  background: linear-gradient(to bottom,
+      #e4f5f1 0%,
+      #e9f9f2 47%,
+      #e9f9f2 47%,
+      #fcfefd 87%,
+      #ffffff 100%);
+
+  &::before {
+    background: url(/assets/images/wave-blue.png) repeat-x 0 0;
+  }
+}

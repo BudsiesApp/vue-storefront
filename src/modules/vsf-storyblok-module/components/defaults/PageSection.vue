@@ -98,6 +98,7 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
 
 <style lang="scss" scoped>
 @import "~@storefront-ui/shared/styles/helpers/breakpoints";
+@import "../../css/wave.scss";
 @import "./mixins";
 
 .page-section {
@@ -119,5 +120,13 @@ export default (EmptyChildrenState as VueConstructor<InstanceType<typeof EmptyCh
 
   @include storyblok-sub-elements-layout;
   @include display-property-handling;
+
+  &.wave--yellow {
+    @include wave-section-yellow;
+  }
+
+  &.wave--blue {
+    @include wave-section-blue;
+  }
 }
 </style>
