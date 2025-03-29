@@ -5,6 +5,7 @@ import { CART_ADD_ITEM } from '@vue-storefront/core/modules/cart/store/mutation-
 
 import { cacheHandlerFactory } from './helpers/cacheHandler.factory';
 import initEventBusListeners from './helpers/initEventBusListeners';
+import { isCampaignEmpty } from './helpers/is-campaign-empty.function';
 import { getItemsFromStorage } from './helpers/get-local-storage-items.function';
 import { module } from './store';
 import { CLEAR_PRODUCTION_SPOT_COUNTDOWN_EXPIRATION_DATE, SN_PROMOTION_PLATFORM } from './types/StoreMutations';
@@ -44,7 +45,7 @@ export const PromotionPlatformModule: StorefrontModule = function ({ app, store 
         }
       );
 
-      if (!response.campaignContent.isEmpty) {
+      if (!isCampaignEmpty(response.campaignContent)) {
         return;
       }
 
