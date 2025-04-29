@@ -40,4 +40,6 @@ export enum ProductValue {
   HAWAIIAN_SHIRTS = '44',
   PHOTO_PORTRAITS = '47',
   TUMBLERS = '46',
+  // TODO: update
+  BULK_PLUSH_KEYCHAIN_SAMPLE = '31',
 }
