@@ -41,4 +41,6 @@ export enum ProductValue {
   PHOTO_PORTRAITS = '47',
   TUMBLERS = '46',
   BULK_PLUSH_KEYCHAIN_SAMPLE = '50',
+  // TODO: update
+  BULK_ACRYLIC_KEYCHAIN_SAMPLE = '51',
 }
