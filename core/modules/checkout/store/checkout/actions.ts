@@ -54,7 +54,7 @@ const actions: ActionTree<CheckoutState, RootState> = {
     commit(types.CHECKOUT_RESET_PAYMENT_DETAILS);
     commit(types.CHECKOUT_RESET_PERSONAL_DETAILS);
     commit(types.CHECKOUT_RESET_SHIPPING_DETAILS);
-    commit(types.CHECKOUT_SET_USE_SHIPPING_AS_BILLING, null);
+    commit(types.CHECKOUT_SET_USE_SHIPPING_AS_BILLING, true);
   },
   async setModifiedAt ({ commit }, timestamp) {
     commit(types.CHECKOUT_SET_MODIFIED_AT, timestamp)

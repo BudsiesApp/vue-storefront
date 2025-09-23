@@ -96,7 +96,6 @@ const mutations: MutationTree<CheckoutState> = {
       paymentMethodAdditional: undefined
     };
   }
-
 }
 
 export default mutations
