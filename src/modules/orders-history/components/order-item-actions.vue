@@ -148,6 +148,10 @@ export default defineComponent({
         }
 
         if (action.code === OrderItemAvailableActionCode.AWAITING_CUSTOMIZATION) {
+          if (props.orderItem.extension_attributes?.support_bulk_customization) {
+            continue;
+          }
+
           actionItem.handlers.click = onCustomizeOrderItemActionClick;
           actionItem.component = 'SfButton';
           blockingActionsList.push(actionItem);
@@ -211,6 +215,7 @@ export default defineComponent({
       ._action-with-message {
         padding: var(--spacer-xs) var(--spacer-sm);
         background-color: var(--c-warning);
+        color: var(--c-white);
       }
     }
   }
