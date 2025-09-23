@@ -45,6 +45,7 @@ const mutations: MutationTree<CheckoutState> = {
   },
   [types.CHECKOUT_RESET_SHIPPING_DETAILS] (state) {
     state.shippingDetails = getDefaultShippingDetails();
+    state.useShippingAddressAsBilling = true;
   },
   [types.CHECKOUT_RESET_PAYMENT_DETAILS] (state) {
     state.paymentDetails = getDefaultPaymentDetails();
@@ -73,7 +74,29 @@ const mutations: MutationTree<CheckoutState> = {
   },
   [types.CHECKOUT_UPDATE_SUCCESS_ORDER_DATA] (state, payload) {
     Vue.set(state, 'successOrderData', payload);
+  },
+  [types.CHECKOUT_SET_USE_SHIPPING_AS_BILLING] (state, value: boolean) {
+    state.useShippingAddressAsBilling = value;
+  },
+  [types.CHECKOUT_COPY_SHIPPING_TO_BILLING_ADDRESS] (state) {
+    state.paymentDetails = {
+      company: '',
+      firstName: state.shippingDetails.firstName,
+      lastName: state.shippingDetails.lastName,
+      country: state.shippingDetails.country,
+      state: state.shippingDetails.state,
+      region_id: state.shippingDetails.region_id,
+      city: state.shippingDetails.city,
+      streetAddress: state.shippingDetails.streetAddress,
+      apartmentNumber: state.shippingDetails.apartmentNumber,
+      zipCode: state.shippingDetails.zipCode,
+      phoneNumber: state.shippingDetails.phoneNumber,
+      paymentMethod: '',
+      vat_id: state.shippingDetails.vat_id,
+      paymentMethodAdditional: undefined
+    };
   }
+
 }
 
 export default mutations

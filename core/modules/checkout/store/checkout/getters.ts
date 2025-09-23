@@ -1,6 +1,9 @@
 import { GetterTree } from 'vuex'
-import CheckoutState from '../../types/CheckoutState'
+
 import RootState from '@vue-storefront/core/types/RootState'
+
+import { CHECKOUT_USE_SHIPPING_ADDRESS_AS_BILLING } from './getter-types'
+import CheckoutState from '../../types/CheckoutState'
 
 const getters: GetterTree<CheckoutState, RootState> = {
   getShippingDetails: (state, getters, rootState) => {
@@ -26,7 +29,8 @@ const getters: GetterTree<CheckoutState, RootState> = {
     ),
   getShippingMethods: state => state.shippingMethods,
   getDefaultShippingMethod: state => state.shippingMethods.find(item => item.default),
-  getSuccessOrderData: state => state.successOrderData
+  getSuccessOrderData: state => state.successOrderData,
+  [CHECKOUT_USE_SHIPPING_ADDRESS_AS_BILLING]: state => state.useShippingAddressAsBilling
 }
 
 export default getters

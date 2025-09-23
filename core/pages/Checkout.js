@@ -8,7 +8,7 @@ import Composite from '@vue-storefront/core/mixins/composite'
 import { currentStoreView, localizedRoute } from '@vue-storefront/core/lib/multistore'
 import { isServer } from '@vue-storefront/core/helpers'
 import { Logger } from '@vue-storefront/core/lib/logger'
-import { CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION } from '@vue-storefront/core/modules/checkout';
+import { CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION, CHECKOUT_USE_SHIPPING_ADDRESS_AS_BILLING_GETTER } from '@vue-storefront/core/modules/checkout';
 
 export default {
   name: 'Checkout',
@@ -40,7 +40,8 @@ export default {
   computed: {
     ...mapGetters({
       isVirtualCart: 'cart/isVirtualCart',
-      successOrderData: 'checkout/getSuccessOrderData'
+      successOrderData: 'checkout/getSuccessOrderData',
+      useShippingAddressAsBilling: CHECKOUT_USE_SHIPPING_ADDRESS_AS_BILLING_GETTER
     }),
     ...mapState({
       platformTotals: state => state.cart.platformTotals
@@ -188,7 +189,9 @@ export default {
     onAfterShippingDetails (receivedData, validationResult) {
       this.shipping = receivedData
       this.validationResults.shipping = validationResult
-      this.activateSection('payment')
+
+      const nextSection = this.useShippingAddressAsBilling ? 'orderReview' : 'payment'
+      this.activateSection(nextSection)
       this.saveShippingDetails()
 
       const storeView = currentStoreView()

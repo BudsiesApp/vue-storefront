@@ -54,6 +54,7 @@ const actions: ActionTree<CheckoutState, RootState> = {
     commit(types.CHECKOUT_RESET_PAYMENT_DETAILS);
     commit(types.CHECKOUT_RESET_PERSONAL_DETAILS);
     commit(types.CHECKOUT_RESET_SHIPPING_DETAILS);
+    commit(types.CHECKOUT_SET_USE_SHIPPING_AS_BILLING, null);
   },
   async setModifiedAt ({ commit }, timestamp) {
     commit(types.CHECKOUT_SET_MODIFIED_AT, timestamp)
@@ -72,11 +73,13 @@ const actions: ActionTree<CheckoutState, RootState> = {
     const [
       personalDetails,
       shippingDetails,
-      paymentDetails
+      paymentDetails,
+      useShippingAddressAsBilling
     ] = await Promise.all([
       checkoutStorage.getItem('personal-details'),
       checkoutStorage.getItem('shipping-details'),
-      checkoutStorage.getItem('payment-details')
+      checkoutStorage.getItem('payment-details'),
+      checkoutStorage.getItem('use-shipping-as-billing')
     ])
 
     if (personalDetails) {
@@ -89,6 +92,10 @@ const actions: ActionTree<CheckoutState, RootState> = {
 
     if (paymentDetails) {
       commit(types.CHECKOUT_LOAD_PAYMENT_DETAILS, paymentDetails)
+    }
+
+    if (useShippingAddressAsBilling !== null) {
+      commit(types.CHECKOUT_SET_USE_SHIPPING_AS_BILLING, useShippingAddressAsBilling)
     }
   },
   async updatePropValue ({ commit }, payload) {

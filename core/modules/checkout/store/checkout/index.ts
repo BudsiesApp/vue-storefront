@@ -21,6 +21,7 @@ export const checkoutModule: Module<CheckoutState, RootState> = {
     shippingDetails: getDefaultShippingDetails(),
     paymentDetails: getDefaultPaymentDetails(),
     modifiedAt: 0,
+    useShippingAddressAsBilling: true,
     successOrderData: undefined
   },
   getters,
