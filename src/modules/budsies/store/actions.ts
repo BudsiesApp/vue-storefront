@@ -553,13 +553,29 @@ export const actions: ActionTree<BudsiesState, RootState> = {
   async createBulkorder (context, payload): Promise<number> {
     const url = processURLAddress(`${config.budsies.endpoint}/bulk-orders/create`)
 
+    const data: Record<string, any> = {};
+
+    for (const key of Object.keys(payload)) {
+      let value = payload[key];
+
+      if (!value) {
+        continue;
+      }
+
+      if (['qty', 'alternative_qty', 'size', 'client_type_id'].includes(key)) {
+        value = Number.parseInt(value, 10);
+      }
+
+      data[key] = value;
+    }
+
     const { result, resultCode } = await TaskQueue.execute({
       url,
       payload: {
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
         mode: 'cors',
         method: 'POST',
-        body: JSON.stringify(payload)
+        body: JSON.stringify(data)
       },
       silent: false
     });
