@@ -21,14 +21,12 @@ export const Payment = {
       countries: Countries,
       payment: this.$store.getters['checkout/getPaymentDetails'],
       generateInvoice: false,
-      sendToShippingAddress: false,
       sendToBillingAddress: false
     }
   },
   computed: {
     ...mapState({
-      currentUser: (state: RootState) => state.user.current,
-      shippingDetails: (state: RootState) => state.checkout.shippingDetails
+      currentUser: (state: RootState) => state.user.current
     }),
     ...mapGetters({
       paymentMethods: 'checkout/getPaymentMethods',
@@ -84,19 +82,6 @@ export const Payment = {
     this.$bus.$off('checkout-after-load', this.onCheckoutLoad)
   },
   watch: {
-    shippingDetails: {
-      handler () {
-        if (this.sendToShippingAddress) {
-          this.copyShippingToBillingAddress()
-        }
-      },
-      deep: true
-    },
-    sendToShippingAddress: {
-      handler () {
-        this.useShippingAddress()
-      }
-    },
     sendToBillingAddress: {
       handler () {
         this.useBillingAddress()
@@ -131,36 +116,6 @@ export const Payment = {
       }
       return false
     },
-    useShippingAddress () {
-      if (this.isVirtualCart) {
-        this.sendToShippingAddress = false;
-      }
-
-      if (this.sendToShippingAddress) {
-        this.copyShippingToBillingAddress()
-        this.sendToBillingAddress = false
-      }
-
-      if (!this.sendToBillingAddress && !this.sendToShippingAddress) {
-        this.payment = this.paymentDetails
-      }
-    },
-    copyShippingToBillingAddress () {
-      this.payment = {
-        firstName: this.shippingDetails.firstName,
-        lastName: this.shippingDetails.lastName,
-        country: this.shippingDetails.country,
-        state: this.shippingDetails.state,
-        region_id: this.shippingDetails.region_id,
-        city: this.shippingDetails.city,
-        streetAddress: this.shippingDetails.streetAddress,
-        apartmentNumber: this.shippingDetails.apartmentNumber,
-        zipCode: this.shippingDetails.zipCode,
-        phoneNumber: this.shippingDetails.phoneNumber,
-        paymentMethod: this.paymentMethods.length > 0 ? this.paymentMethods[0].code : '',
-        vat_id: this.shippingDetails.vat_id
-      }
-    },
     useBillingAddress () {
       if (this.sendToBillingAddress) {
         this.payment = {
@@ -169,10 +124,9 @@ export const Payment = {
         }
 
         this.generateInvoice = true;
-        this.sendToShippingAddress = false
       }
 
-      if (!this.sendToBillingAddress && !this.sendToShippingAddress) {
+      if (!this.sendToBillingAddress) {
         this.payment = this.paymentDetails
         this.generateInvoice = false
       }
@@ -237,7 +191,6 @@ export const Payment = {
     },
     updateCheckboxesFlags () {
       this.sendToBillingAddress = false;
-      this.sendToShippingAddress = false;
 
       if (
         !!this.defaultBillingAddress &&
@@ -245,13 +198,6 @@ export const Payment = {
           isAddressesEquals(this.payment, this.defaultBillingAddress))
       ) {
         this.sendToBillingAddress = true;
-        return;
-      }
-
-      if (isAddressEmpty(this.payment, ['country']) ||
-        isAddressesEquals(this.payment, this.shippingDetails)
-      ) {
-        this.sendToShippingAddress = true;
       }
     }
   }

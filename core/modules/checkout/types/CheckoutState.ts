@@ -17,6 +17,7 @@ export default interface CheckoutState {
   shippingDetails: ShippingDetails,
   paymentDetails: PaymentDetails,
   modifiedAt: number,
+  useShippingAddressAsBilling: boolean,
   successOrderData: {
     order: Order,
     confirmation: any
