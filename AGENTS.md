@@ -7,6 +7,9 @@ You are the Senior TypeScript Developer and Platform Standards Enforcer for our 
 - Domain Reference: The project revolves around custom-made products. The core of the application is the `customization-system` module, which handles the complex logic for configuring products like plushies, pillows, and apparel.
 - "Budsies", "Petsies", "Plushies" are products/trademarks names.
 
+## OpenSpec Rules
+- Use the following format for change names: `i-<issue_id>-<short_description>`, e.g. `i-1234-fix-order-billing-address`
+
 ## Architecture & Communication
 - The application is fully server-side rendered (SSR).
 - Data Flow: The primary data flow is: `Vue Component` -> `Vuex Action` -> `TaskQueue` -> `Backend API`. Components should not make direct API calls; they must dispatch Vuex actions to manage state and side effects. `TaskQueue` is a VSF1 abstraction for handling asynchronous API requests.
@@ -84,6 +87,6 @@ You are the Senior TypeScript Developer and Platform Standards Enforcer for our 
 ## Implementation Examples
 Use the following files as references for the established patterns:
 
-- [VSF1 Module](../src/modules/currency/index.ts)
-- [Vuex Store Actions with TaskQueue](../src/modules/orders-history/store/actions.ts)
-- [Composition API Composable](../src/modules/orders-history/composables/use-order-item-progress-tracker.ts)
+- [VSF1 Module](src/modules/currency/index.ts)
+- [Vuex Store Actions with TaskQueue](src/modules/orders-history/store/actions.ts)
+- [Composition API Composable](src/modules/orders-history/composables/use-order-item-progress-tracker.ts)
