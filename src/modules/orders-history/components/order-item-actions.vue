@@ -52,6 +52,7 @@ import { SfButton } from '@storefront-ui/vue';
 
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { IS_CART_SYNCING } from '@vue-storefront/core/modules/cart';
+import { FOREVERS_BUNDLE_SKUS } from 'src/modules/shared';
 
 import { OrderItem } from '../types/order-item';
 import { OrderItemAvailableAction } from '../types/order-item-available-action';
@@ -60,7 +61,7 @@ import { REORDER_ITEM_ACTION, IS_REORDERING_ITEM } from '..';
 
 interface ActionItem {
   action: OrderItemAvailableAction,
-  component?: 'SfButton' | 'a',
+  component?: 'SfButton' | 'a' | 'router-link',
   props: Record<string, string | undefined>,
   handlers: Record<string, () => Promise<void>>
 }
@@ -83,6 +84,7 @@ const printedProductSkus = [
 
 const foreversProductCustomizeRouteName = 'forevers-customize';
 const foreversProductSkus = [
+  ...FOREVERS_BUNDLE_SKUS,
   'ShopifyForeversDog_bundle',
   'ShopifyForeversCat_bundle',
   'ShopifyForeversOther_bundle'
@@ -126,6 +128,10 @@ export default defineComponent({
     actionsList: {
       type: Array as PropType<OrderItemAvailableAction[]>,
       required: true
+    },
+    orderId: {
+      type: Number,
+      required: true
     }
   },
   setup (props, { root }) {
@@ -153,7 +159,8 @@ export default defineComponent({
         name: routeName,
         query: {
           orderItemId: props.orderItem.item_id.toString(),
-          sku
+          sku,
+          orderId: props.orderId.toString()
         }
       });
     }
@@ -183,6 +190,33 @@ export default defineComponent({
       }
     }
 
+    async function onDownloadResultsActionClick (): Promise<void> {
+      await root.$router.push({
+        name: 'order-item-deliverables-download',
+        query: {
+          'order_item_id': props.orderItem.item_id.toString()
+        }
+      });
+    }
+
+    async function onDownloadPrintoutsActionClick (): Promise<void> {
+      await root.$router.push({
+        name: 'orders-printouts-download',
+        query: {
+          orderId: props.orderId.toString()
+        }
+      });
+    }
+
+    async function onProvideTaxIdActionClick (): Promise<void> {
+      await root.$router.push({
+        name: 'tax-id-request',
+        query: {
+          orderId: props.orderId.toString()
+        }
+      });
+    }
+
     const actionsListGroups = computed<ActionsListGroups>(() => {
       const blockingActionsList: ActionItem[] = [];
       const nonBlockingActionsList: ActionItem[] = [];
@@ -202,6 +236,27 @@ export default defineComponent({
           continue;
         }
 
+        if (action.code === OrderItemAvailableActionCode.DOWNLOAD_RESULT) {
+          actionItem.handlers.click = onDownloadResultsActionClick;
+          actionItem.component = 'SfButton';
+          nonBlockingActionsList.push(actionItem);
+          continue;
+        }
+
+        if (action.code === OrderItemAvailableActionCode.DOWNLOAD_PRINTOUTS) {
+          actionItem.handlers.click = onDownloadPrintoutsActionClick;
+          actionItem.component = 'SfButton';
+          nonBlockingActionsList.push(actionItem);
+          continue;
+        }
+
+        if (action.code === OrderItemAvailableActionCode.PROVIDE_TAX_ID) {
+          actionItem.handlers.click = onProvideTaxIdActionClick;
+          actionItem.component = 'SfButton';
+          blockingActionsList.push(actionItem);
+          continue;
+        }
+
         if (action.code === OrderItemAvailableActionCode.AWAITING_CUSTOMIZATION) {
           if (props.orderItem.extension_attributes?.support_bulk_customization) {
             continue;
@@ -214,10 +269,21 @@ export default defineComponent({
         }
 
         if (action.url) {
-          actionItem.component = 'a';
-          actionItem.props = {
-            href: action.url,
-            target: '_blank'
+          const isExternal = action.url.startsWith('http');
+          const target = action.open_in_new_tab ? '_blank' : undefined;
+
+          if (isExternal) {
+            actionItem.component = 'a';
+            actionItem.props = {
+              href: action.url,
+              target
+            };
+          } else {
+            actionItem.component = 'router-link';
+            actionItem.props = {
+              to: action.url,
+              target
+            };
           }
         }
 

@@ -20,6 +20,8 @@ services:
       - NODEJS_INSTANCES_COUNT
       - NODEJS_INSTANCE_MAX_MEMORY
       - NODEJS_INSTANCE_MAX_OLD_SPACE
+      - NODEJS_KEEP_ALIVE_TIMEOUT
+      - PM2_WORKER_INTERVAL
 
       - SSR_USE_HTML_MINIFIER
       - SSR_OUTPUT_CACHE_ENABLE
@@ -49,10 +51,12 @@ services:
       - CACHE_INVALIDATION_KEY
       - FILEUPLOADER_UPLOAD_URL
       - IMAGE_HANDLER_SERVICE_URL
+      - QA_PHOTOS_HANDLER_SERVICE_URL
       - ERROR_LOGGING_SERVICE_URL
 
       - GTM_ID
       - GOOGLE_ANALYTICS_TRACKING_ID
+      - GTM_SCRIPT_SOURCE
 
       - AFFIRM_PUBLIC_KEY
       - AFFIRM_CDN
@@ -64,6 +68,9 @@ services:
       - GOOGLE_PAY_MERCHANT_ID
 
       - FERA_API_PUBLIC_KEY
+      - SHOW_PRODUCT_RATING
+
+      - PLACES_API_PUBLIC_KEY
 
       - VIRTUAL_HOST=${DOMAIN}
       - VIRTUAL_PORT=3000
@@ -86,6 +93,7 @@ services:
       - './packages:/var/www/packages'
       - './node_modules:/var/www/node_modules'
       - './yarn.lock:/var/www/yarn.lock'
+      - './test:/var/www/test'
       - cache:/usr/local/share/.cache
       - dist:/var/www/dist
     networks:
@@ -96,22 +104,21 @@ services:
       - 3000
 
   tests:
-      image: mcr.microsoft.com/playwright:v1.50.1-noble
+      build:
+        context: .
+        dockerfile: docker/tests/Dockerfile
+      security_opt:
+        - seccomp:unconfined
       environment:
+        - SSH_AUTH_SOCK=/ssh-agent.sock
         - DEFAULT_STORE_DOMAIN
       volumes:
         - .:/var/www
-      working_dir: "/var/www"
-      command:
-        [
-           "/bin/sh",
-           "-c",
-           "echo Container started\n trap \"exit 0\" 15\n \n \"$@\" & \n while sleep 1 & wait $!; do :; done",
-           "-",
-           "/bin/sh",
-           "-c",
-           "cd /var/www/src/themes/petsies-capybara/e2e-tests && yarn"
-        ]
+        - ${SSH_AUTH_SOCK}:/ssh-agent.sock
+        #- ~/.agents:/root/.agents
+        - ~/.agents:/home/ubuntu/.agents
+        #- ~/.codex:/root/.codex
+        - ~/.codex:/home/ubuntu/.codex
 
 volumes:
   cache:

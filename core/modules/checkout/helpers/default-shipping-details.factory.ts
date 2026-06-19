@@ -1,4 +1,6 @@
-export default function getDefaultShippingDetails () {
+import ShippingDetails from '../types/ShippingDetails';
+
+export default function getDefaultShippingDetails (): ShippingDetails {
   return {
     firstName: '',
     lastName: '',
@@ -11,6 +13,7 @@ export default function getDefaultShippingDetails () {
     zipCode: '',
     phoneNumber: '',
     shippingMethod: '',
+    shippingCarrier: '',
     vat_id: ''
   }
 }

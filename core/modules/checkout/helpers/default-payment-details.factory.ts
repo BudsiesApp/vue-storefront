@@ -1,4 +1,6 @@
-export default function getDefaultPaymentDetails () {
+import PaymentDetails from '../types/PaymentDetails';
+
+export default function getDefaultPaymentDetails (): PaymentDetails {
   return {
     firstName: '',
     lastName: '',

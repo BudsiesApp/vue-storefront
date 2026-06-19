@@ -1,3 +1,5 @@
+import { AddressExtensionAttributes } from '@vue-storefront/core/modules/shared';
+
 export default interface ShippingAddress {
   firstname: string,
   lastname: string,
@@ -7,5 +9,6 @@ export default interface ShippingAddress {
   region?: string,
   region_id: number | null,
   telephone?: string,
-  vat_id?: string
+  vat_id?: string,
+  extension_attributes?: AddressExtensionAttributes
 }

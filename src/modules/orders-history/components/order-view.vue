@@ -25,6 +25,8 @@
         v-for="item in orderItems"
         :key="item.display_id"
         :item="item"
+        :order-id="order.entity_id"
+        :alteration-product="alterationProducts[item.item_id]"
         class="_order-item"
       />
     </div>
@@ -33,6 +35,8 @@
 
 <script lang="ts">
 import { computed, defineComponent, PropType } from '@vue/composition-api';
+
+import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
 import { Order } from '../types/order';
 
@@ -48,6 +52,10 @@ export default defineComponent({
     order: {
       type: Object as PropType<Order>,
       required: true
+    },
+    alterationProducts: {
+      type: Object as PropType<Record<number, Product>>,
+      default: () => ({})
     }
   },
   setup (props) {
