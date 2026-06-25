@@ -1,6 +1,7 @@
 import config from 'config'
 import { mapState } from 'vuex'
 import { currentStoreView } from '@vue-storefront/core/lib/multistore'
+import { emitPageRenderedEvent } from 'src/modules/shared';
 import { KEY } from '..'
 import { StoryblokState } from '../types/State'
 import { loadScript, getStoryblokQueryParams } from '../helpers'
@@ -123,11 +124,15 @@ export default {
         }
       })
     }
+
+    emitPageRenderedEvent();
   },
   watch: {
     '$route' (to, from) {
       if (!this.isStatic && from.path !== to.path) {
-        this.fetchStory()
+        this.fetchStory().then(() => {
+          emitPageRenderedEvent();
+        });
       }
     }
   }
