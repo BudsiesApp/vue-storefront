@@ -29,6 +29,7 @@ import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import getHostFromHeaders from '@vue-storefront/core/helpers/get-host-from-headers.function';
 
 import { getSettings } from '../helpers'
+import { emitPageRenderedEvent } from 'src/modules/shared';
 
 import StoryblokMixin from '../components/StoryblokMixin'
 import PageBreadcrumbs from '../components/defaults/PageBreadcrumbs.vue';
@@ -61,6 +62,10 @@ export default {
     shouldDisplayName () {
       return this.story.display_name === true;
     }
+  },
+  async mounted () {
+    await this.fetchStory();
+    emitPageRenderedEvent();
   },
   methods: {
     metaHreflangLinks () {

@@ -14,8 +14,10 @@ import ServerError from './types/server-error';
 import * as ProductEvent from './types/product-events';
 import { UserEvents } from './types/user-events';
 import { CustomerDataChangedEventPayload } from './types/user-events-payload';
+import { PAGE_RENDERED } from './types/page-rendered.event';
 import { PersistedCustomerData } from './types/persisted-customer-data.interface';
 import { PersistedBillingAddress } from './types/persisted-billing-address.interface';
+import { emitPageRenderedEvent } from './helpers/emit-page-rendered-event.function';
 import { getProductOptions } from './helpers/get-product-options.function';
 import { localStorageSynchronizationFactory } from './helpers/local-storage-synchronization.factory';
 import { parseLocalStorageValue } from './helpers/parse-local-storage-value.function';
@@ -57,6 +59,7 @@ export {
   BEFORE_STORE_BACKEND_API_REQUEST,
   BreakpointValue,
   PAYMENT_ERROR_EVENT,
+  emitPageRenderedEvent,
   parseLocalStorageValue,
   localStorageSynchronizationFactory,
   getProductOptions,
@@ -66,6 +69,7 @@ export {
   getCanonicalUrl,
   UserEvents,
   CustomerDataChangedEventPayload,
+  PAGE_RENDERED,
   PersistedCustomerData,
   PersistedBillingAddress,
   getCookieByName,
