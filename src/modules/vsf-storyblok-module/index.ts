@@ -19,6 +19,7 @@ import getUrlFromLink from './helpers/get-url-from-link'
 import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only-or-when-visible.function'
 import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
 import { Blok } from './components'
+import { useStoryblokReadinessTracker } from './composables/use-storyblok-readiness-tracker'
 
 export const KEY = 'storyblok'
 
@@ -45,5 +46,6 @@ export {
   hydrateInPreviewOrWhenVisible,
   getHeaderId,
   isStoryblokPreview,
+  useStoryblokReadinessTracker,
   ColumnsCountField
 }
