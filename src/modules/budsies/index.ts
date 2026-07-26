@@ -31,7 +31,7 @@ import PlushieWizardEvents from './types/plushie-wizard-events';
 import BulkorderQuote from './models/bulkorder-quote.model';
 import BulkorderQuoteProductId from './types/bulkorder-quote-product-id';
 import BulkOrderStatus from './types/bulk-order-status';
-import BulkOrderInfo from './types/bulk-order-info';
+import type BulkOrderInfo from './types/bulk-order-info';
 import Hospital from './types/hospital.interface';
 import { StoreRating } from './types/store-rating.interface';
 
@@ -88,7 +88,6 @@ export {
   ProductId,
   PlushieWizardEvents,
   BulkorderQuote,
-  BulkOrderInfo,
   BulkorderQuoteProductId,
   BulkOrderStatus,
   ProductStructuredData,
@@ -102,6 +101,7 @@ export type {
   ImageSourceItem,
   ImageAspectRatioSpec,
   BodypartOption,
+  BulkOrderInfo,
   Hospital,
   StoreRating
 }
