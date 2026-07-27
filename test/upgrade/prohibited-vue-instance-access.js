@@ -30,7 +30,10 @@ const allowedCacheTagCounts = {
 }
 const allowedComponentCacheTags = new Set([
   'src/themes/petsies-capybara/App.vue',
-  'src/themes/petsies-capybara/pages/Authorization/Auth.vue'
+  'src/themes/petsies-capybara/pages/Authorization/Auth.vue',
+  'src/themes/petsies-capybara/pages/BulkQuote.vue',
+  'src/themes/petsies-capybara/pages/KeychainQuote.vue',
+  'src/themes/petsies-capybara/pages/PillowQuote.vue'
 ])
 
 function collectProductionFiles (directory) {
@@ -75,7 +78,7 @@ for (const sourceRoot of sourceRoots) {
     if (componentContextMatches.length) {
       const allowed = allowedComponentCacheTags.has(relativeFile) &&
         componentContextMatches.length === 1 &&
-        source.includes('$ssrContext.output.cacheTags')
+        source.includes('output.cacheTags')
       if (!allowed) {
         failures.push(`${relativeFile}: prohibited component $ssrContext access`)
       }

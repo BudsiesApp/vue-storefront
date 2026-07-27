@@ -200,6 +200,19 @@ production baseline is:
 - `src/themes/petsies-capybara/pages/Authorization/Auth.vue`: one `no-cache`
   write.
 
+### Bulkorders branch reconciliation
+
+The Bulkorders theme branch adds three existing component cache-tag writes that
+remain assigned to the dependent request-local cache-tag change:
+
+- `src/themes/petsies-capybara/pages/BulkQuote.vue`: one `product` write;
+- `src/themes/petsies-capybara/pages/KeychainQuote.vue`: one `product` write;
+- `src/themes/petsies-capybara/pages/PillowQuote.vue`: one `product` write.
+
+The prohibited-access gate records these three files alongside the two original
+component exceptions and continues to reject every other component
+`$ssrContext` access. They do not add cache tags to the request service.
+
 ### Explicit context cache-tag inventory
 
 The dependent change must also retain the explicit non-component and
@@ -283,7 +296,7 @@ sorts the current mounted instances by rendered DOM order at consumption time.
 - Migrated component metadata, canonical links, Storyblok links, category redirects, AB assignment, and customization filters away from full renderer contexts.
 - Removed the process-global `$ssrRequestContext` bootstrap and deleted the inactive device prototype/module path.
 - Concurrent SSR coverage proves isolation across distinct host, cookie, user-agent, redirect, canonical URL, and head values.
-- The deferred `$cacheTags` inventory remains unchanged at 35 matches in 10 files, plus the two recorded component cache-tag consumers; request services contain no cache-tag access.
+- The deferred `$cacheTags` inventory remains unchanged at 35 matches in 10 files, plus the five recorded component cache-tag consumers after Bulkorders reconciliation; request services contain no cache-tag access.
 
 ## Vue instance cleanup and enforcement
 
@@ -291,6 +304,12 @@ sorts the current mounted instances by rendered DOM order at consumption time.
 - Preserved the separately scoped Vuex Storyblok client dependency.
 - Added `yarn test:upgrade:vue-instance-access`, which rejects removed access paths across parent/theme production code and enforces the exact temporary cache-tag inventory.
 - Updated engineering and code-review guidance with the explicit service, ref, EventBus, head, and Additional Content boundaries, including EventBus failure isolation and per-application module registration for app-scoped service contributors.
+
+## Vue FilePond Vue 2.7 compatibility
+
+- Replaced the registry `vue-filepond` resolution with the verified `BudsiesApp/vue-filepond` compatibility branch; `yarn.lock` resolves it to commit `facc18aba46f98be5677956ec8fc2123cae0392a` rather than the fork default branch.
+- The fork retains the Vue 2 `>=2.6.0 <3.x` peer range and exposes only explicit FilePond operation delegates instead of assigning FilePond option/state and Vue-reserved fields to the component instance.
+- The fork's runtime regression suite passes for readonly `$attrs`/`$listeners`, `disabled`, and `server` props, and its TypeScript suite confirms the narrowed ref API. The storefront type-check, lint, immutable installation, and prohibited-instance-access gate also pass with the installed fork.
 
 ## Validation
 
