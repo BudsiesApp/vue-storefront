@@ -2709,26 +2709,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storefront-ui/shared@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?739ddd27d31dc0b7228316206b264de554d0e57b":
+"@storefront-ui/shared@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?3ff374628936ba579a9bbb2a634c6c3ce9db6ac5":
   version: 0.7.11
-  resolution: "@storefront-ui/shared@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?739ddd27d31dc0b7228316206b264de554d0e57b"
-  checksum: 10c0/ab08d99ecbc2f0b59112666e0e203ec3684bdfa0930b170e46d70846b1e1986a0b697b23e2212eef13d4e13dabe40586158037502992930c269237e2e1e07a6a
+  resolution: "@storefront-ui/shared@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?3ff374628936ba579a9bbb2a634c6c3ce9db6ac5"
+  checksum: 10c0/310151aa17a6289cda6fec3ea7e5ea05fad48e437d7c243fdcf5bd90b815552a84207268fcd077282403fb9bc4a077f65e84c856f10dc0719c696d612c12dcb2
   languageName: node
   linkType: hard
 
-"@storefront-ui/shared@npm:0.7.11":
+"@storefront-ui/vue@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?e767b15b986edc3cceaa01af385560dbcba11a41":
   version: 0.7.11
-  resolution: "@storefront-ui/shared@npm:0.7.11"
-  checksum: 10c0/c413755315bb1797a5398d6852fb80f91eb24b23cbb637124c54e43d0cdb677c4659c243368d6ded283f1521d07b8292f959b998340a05e3465a2e4cc9bec8d2
-  languageName: node
-  linkType: hard
-
-"@storefront-ui/vue@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?739ddd27d31dc0b7228316206b264de554d0e57b":
-  version: 0.7.11
-  resolution: "@storefront-ui/vue@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?739ddd27d31dc0b7228316206b264de554d0e57b"
+  resolution: "@storefront-ui/vue@https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?e767b15b986edc3cceaa01af385560dbcba11a41"
   dependencies:
     "@glidejs/glide": "npm:^3.3.0"
-    "@storefront-ui/shared": "npm:0.7.11"
+    "@storefront-ui/shared": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?3ff374628936ba579a9bbb2a634c6c3ce9db6ac5"
     body-scroll-lock: "npm:^3.0.1"
     core-js: "npm:^3.6.5"
     hammerjs: "npm:^2.0.8"
@@ -2740,7 +2733,7 @@ __metadata:
     vue2-leaflet: "npm:^2.5.2"
   peerDependencies:
     vue: ^2.6.x
-  checksum: 10c0/f7e4a4dc16b731291c4986c6968f89d0010fc49043c0d5fcb1009a72b3e0e01c0e4b586767af39798769026c22d61093bac4d9ae29405824f1f8cfe250d587e9
+  checksum: 10c0/1d7f6c4f7eca690a681577f3103450094135ad93e341dac46e16f7834a15e462ff1bb337ae93988663bbf1d5f280ffe69624fbda5d2d7a7deb0672c47dc592a7
   languageName: node
   linkType: hard
 
@@ -13463,8 +13456,8 @@ __metadata:
     "@googlemaps/js-api-loader": "npm:^2.0.2"
     "@gtm-support/vue2-gtm": "npm:2.0.0"
     "@justinribeiro/lite-youtube": "npm:^1.8.2"
-    "@storefront-ui/shared": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?739ddd27d31dc0b7228316206b264de554d0e57b"
-    "@storefront-ui/vue": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?739ddd27d31dc0b7228316206b264de554d0e57b"
+    "@storefront-ui/shared": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?3ff374628936ba579a9bbb2a634c6c3ce9db6ac5"
+    "@storefront-ui/vue": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?e767b15b986edc3cceaa01af385560dbcba11a41"
     "@types/croppie": "npm:^2.5.4"
     "@types/google.maps": "npm:^3.58.1"
     "@types/ioredis": "npm:^4.0.0"
