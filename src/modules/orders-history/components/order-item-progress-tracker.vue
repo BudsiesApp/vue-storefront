@@ -20,8 +20,16 @@
           v-for="status in statusesToDisplay"
         >
           <div class="_mark" />
-          <span class="_name">
+          <span
+            class="_name"
+          >
             {{ status.statusData.name }}
+            <span
+              v-if="status.statusData.id === activeStatus.id"
+              class="sr-only"
+            >
+              {{ $t('(current step)') }}
+            </span>
           </span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { ActionTree } from 'vuex'
+import Vue from 'vue'
 import config from 'config';
 import * as types from './mutation-types'
 import i18n from '@vue-storefront/i18n'
@@ -455,7 +456,7 @@ const actions: ActionTree<UserState, RootState> = {
         )
       }
 
-      state.current.default_billing = payload.id;
+      Vue.set(state.current, 'default_billing', payload.id);
     }
 
     if (payload.default_shipping) {
@@ -474,7 +475,7 @@ const actions: ActionTree<UserState, RootState> = {
         )
       }
 
-      state.current.default_shipping = payload.id;
+      Vue.set(state.current, 'default_shipping', payload.id);
     }
   },
   removeAddress ({ state }, payload) {
