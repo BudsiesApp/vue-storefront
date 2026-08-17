@@ -65,7 +65,7 @@
     "@gtm-support/vue2-gtm": "2.0.0",
     "@justinribeiro/lite-youtube": "^1.8.2",
     "@storefront-ui/shared": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/shared?3ff374628936ba579a9bbb2a634c6c3ce9db6ac5",
-    "@storefront-ui/vue": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?e767b15b986edc3cceaa01af385560dbcba11a41",
+    "@storefront-ui/vue": "https://gitpkg-budsies-xi.vercel.app/BudsiesApp/storefront-ui/packages/vue?b345b9cb261dabf1c105f4e6007fe7332ec8b6a4",
     "app-root-path": "^2.0.1",
     "async-mutex": "^0.3.2",
     "axios": "^0.21",
