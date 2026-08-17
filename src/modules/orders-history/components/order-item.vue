@@ -40,33 +40,19 @@
       </div>
     </div>
 
-    <div
-      class="_item-details"
+    <m-expandable-section
       v-if="isExtendedInfoAvailable"
+      :initially-expanded="false"
+      class="_item-details"
     >
-      <div
-        class="_toggle-extended-info"
-        role="button"
-        :class="{'-expanded': showExtendedInfo}"
-        tabindex="0"
-        @click="toggleExtendedInfo"
-        @keydown.enter.prevent="toggleExtendedInfo"
-        @keydown.space.prevent="toggleExtendedInfo"
-      >
-        <SfHeading class="_item-details-heading" :title="$t('Item details')" :level="5" />
+      <template #title>
+        <span class="_item-details-heading">{{ $t('Item details') }}</span>
+      </template>
 
-        <SfChevron />
-      </div>
-
-      <div
-        class="_extended-info"
-        :class="{ '-expanded': showExtendedInfo }"
-      >
-        <order-item-extended-info
-          :item="item"
-        />
-      </div>
-    </div>
+      <order-item-extended-info
+        :item="item"
+      />
+    </m-expandable-section>
 
     <component
       v-if="alterationProductFormComponent"
@@ -78,8 +64,7 @@
 </template>
 
 <script lang="ts">
-import { PropType, defineComponent, computed, ref, inject, toRef } from 'vue';
-import { SfChevron, SfHeading } from '@storefront-ui/vue';
+import { PropType, defineComponent, computed, inject, toRef } from 'vue';
 
 import { BaseImage } from 'src/modules/budsies';
 import { getCustomizationSystemThumbnail } from 'src/modules/customization-system';
@@ -93,6 +78,7 @@ import { OrderItem } from '../types/order-item';
 import OrderItemActions from './order-item-actions.vue';
 import OrderItemExtendedInfo from './order-item-extended-info.vue';
 import OrderItemProgressTracker from './order-item-progress-tracker.vue';
+import MExpandableSection from 'theme/components/molecules/m-expandable-section.vue';
 
 const PROGRESS_TRACKER_MAX_HORIZONTAL_STATUSES_TO_DISPLAY_COUNT = 3;
 
@@ -103,8 +89,7 @@ export default defineComponent({
     OrderItemActions,
     OrderItemExtendedInfo,
     OrderItemProgressTracker,
-    SfChevron,
-    SfHeading
+    MExpandableSection
   },
   props: {
     item: {
@@ -124,7 +109,6 @@ export default defineComponent({
     const imageHandlerService = inject<ImageHandlerService>('ImageHandlerService');
     const alterationProductFormComponent = inject('AlterationProductForm');
 
-    const showExtendedInfo = ref<boolean>(false);
     const showActions = computed<boolean>(() => {
       return props.item.available_actions.length > 0;
     });
@@ -147,10 +131,6 @@ export default defineComponent({
 
       return customizationSystemThumbnail;
     });
-
-    function toggleExtendedInfo () {
-      showExtendedInfo.value = !showExtendedInfo.value;
-    }
 
     const {
       activeStatus: progressTrackerActiveStatus,
@@ -185,8 +165,6 @@ export default defineComponent({
       progressTrackerActiveStatus,
       progressTrackerFilteredStatusesList,
       showActions,
-      showExtendedInfo,
-      toggleExtendedInfo,
       PROGRESS_TRACKER_MAX_HORIZONTAL_STATUSES_TO_DISPLAY_COUNT
     }
   }
@@ -229,24 +207,12 @@ export default defineComponent({
     row-gap: var(--spacer-sm);
   }
 
-  ._toggle-extended-info {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    gap: var(--spacer-xs);
-    cursor: pointer;
-
-    &.-expanded {
-      .sf-chevron {
-        rotate: 180deg;
-      }
-    }
-  }
-
   ._item-details {
     border: 1px solid var(--c-secondary);
     margin-top: var(--spacer-sm);
     padding: var(--spacer-sm);
+    --expandable-section-header-hor-align: flex-start;
+    --expandable-section-body-margin-top: var(--spacer-sm);
   }
 
   ._mobile-image {
@@ -256,30 +222,13 @@ export default defineComponent({
   ._item-details-heading {
     --heading-title-font-size: var(--font-base);
     --heading-title-font-weight: var(--font-semibold);
-    --heading-padding: 0;
-
+    font-size: var(--heading-title-font-size);
+    font-weight: var(--heading-title-font-weight);
     user-select: none;
   }
 
   .alteration-product-form {
     margin-top: var(--spacer-sm);
-  }
-
-  ._extended-info {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: 0;
-    transition: grid-template-rows 300ms ease-in-out, margin-top 300ms ease-in-out;
-  }
-
-  ._extended-info.-expanded {
-    grid-template-rows: 1fr;
-    margin-top: var(--spacer-sm);
-  }
-
-  ._extended-info > * {
-    overflow: hidden;
-    min-height: 0;
   }
 
   @media (min-width: 426px) {

@@ -246,6 +246,19 @@ export default defineComponent({
       });
     }
 
+    function getActionAriaLabel (action: OrderItemAvailableAction): string {
+      const actionLabel = applicationI18n.t('{action}: {item}', {
+        action: action.name,
+        item: `${props.orderItem.display_id} ${props.orderItem.product.name}`
+      }).toString();
+
+      if (!action.open_in_new_tab) {
+        return actionLabel;
+      }
+
+      return `${actionLabel} ${applicationI18n.t('opens in new tab')}`;
+    }
+
     const actionsListGroups = computed<ActionsListGroups>(() => {
       const blockingActionsList: ActionItem[] = [];
       const nonBlockingActionsList: ActionItem[] = [];
@@ -255,7 +268,9 @@ export default defineComponent({
           action,
           component: undefined,
           cssClasses: ['sf-button', 'color-secondary'],
-          props: {},
+          props: {
+            'aria-label': getActionAriaLabel(action)
+          },
           handlers: {}
         };
 
@@ -263,7 +278,6 @@ export default defineComponent({
           actionItem.handlers.click = onReorderActionClick;
           actionItem.component = 'MSpinnerButton';
           actionItem.cssClasses = [];
-          actionItem.props.ariaLabel = action.name;
           actionItem.props.buttonClass = 'color-secondary';
           actionItem.props.showSpinner = isReorderPending.value;
           nonBlockingActionsList.push(actionItem);
@@ -305,23 +319,20 @@ export default defineComponent({
         if (action.url) {
           const isExternal = action.url.startsWith('http');
           const target = action.open_in_new_tab ? '_blank' : undefined;
-          const ariaLabel = action.open_in_new_tab
-            ? `${action.name} ${applicationI18n.t('opens in new tab')}`
-            : undefined;
 
           if (isExternal) {
             actionItem.component = 'a';
             actionItem.props = {
               href: action.url,
               target,
-              'aria-label': ariaLabel
+              'aria-label': getActionAriaLabel(action)
             };
           } else {
             actionItem.component = 'router-link';
             actionItem.props = {
               to: action.url,
               target,
-              'aria-label': ariaLabel
+              'aria-label': getActionAriaLabel(action)
             };
           }
         }
