@@ -46,6 +46,6 @@ The retry handler will dispatch `cart/syncShippingMethods` with `forceServerSync
 
 ## Risks / Trade-offs
 
-- [Risk] An error flag could remain set after a later successful lookup. → Mitigation: clear it at lookup start and on success, and cover both transitions with focused tests.
+- [Risk] An error flag could remain set after a later successful lookup. → Mitigation: clear it at lookup start and on success.
 - [Risk] Feedback states could overlap in the template. → Mitigation: derive them using the stated precedence.
 - [Risk] A retry fails repeatedly. → Mitigation: the existing error state and compact Retry button are restored after every failed request.

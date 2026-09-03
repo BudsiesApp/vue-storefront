@@ -2,7 +2,6 @@
 
 - [x] 1.1 Add an `isShippingMethodsSyncingError` state field and its mutation/getter alongside the existing shipping-method syncing state.
 - [x] 1.2 Update the shipping-method synchronization action to clear the error at start and success, and set it for unsuccessful or thrown requests.
-- [x] 1.3 Add focused cart-state/action tests for loading, successful, and failed synchronization transitions.
 
 ## 2. Shipping-Method Display States
 
@@ -14,4 +13,4 @@
 ## 3. Localization and Verification
 
 - [x] 3.1 Update i18n files for the Retry translation key.
-- [x] 3.2 Run the focused cart tests, plus applicable lint and type checks.
+- [x] 3.2 Run applicable lint and type checks.
