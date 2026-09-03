@@ -11,6 +11,7 @@ The storefront SHALL retain the existing shipping-method synchronization flag an
 #### Scenario: Synchronization fails
 - **WHEN** a shipping-method synchronization returns an unsuccessful result or throws an error
 - **THEN** the synchronization-error flag is active
+- **AND** backend-sourced shipping methods and the selected shipping carrier and method are cleared
 
 #### Scenario: Synchronization succeeds
 - **WHEN** a shipping-method synchronization completes successfully
@@ -28,6 +29,7 @@ The `o-shipping` component SHALL display exactly one of the loading, error, empt
 - **WHEN** the synchronization-error flag is active and shipping methods are not loading
 - **THEN** `o-shipping` displays `Error while loading shipping methods`
 - **AND** it displays a localized compact Retry control
+- **AND** it disables Continue to payment
 - **AND** it does not display the no-methods-available message
 
 #### Scenario: No shipping methods are available

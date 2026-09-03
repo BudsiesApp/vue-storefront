@@ -5,8 +5,9 @@ The shipping-method section can look empty while methods are loading, after a lo
 ## What Changes
 
 - Show a visible loading indicator while shipping methods are synchronizing.
-- Expose a shipping-method synchronization-error flag, show `Error while loading shipping methods` when the lookup fails, and let customers retry that lookup in place.
+- Expose a shipping-method synchronization-error flag, clear stale shipping methods and selection after a failed lookup, show `Error while loading shipping methods`, and let customers retry that lookup in place.
 - Show `No shipping methods are available for this address.` only when synchronization is not loading or failed and the method list is empty.
+- Disable Continue to payment while shipping-method synchronization has failed.
 - Preserve the existing rendering of available shipping methods.
 
 ## Capabilities
@@ -21,6 +22,6 @@ None.
 
 ## Impact
 
-- Affects the cart shipping-method synchronization state only to expose the error flag consumed by `o-shipping`.
-- Affects `o-shipping` and its translations, including the compact Retry control shown after a lookup failure.
+- Affects the cart shipping-method synchronization state to expose the error flag and invalidate unavailable shipping methods after a lookup failure.
+- Affects `o-shipping` and its translations, including the compact Retry control and Continue-to-payment guard shown after a lookup failure.
 - Does not change shipping-method selection, checkout progression, order confirmation, backend APIs, or other checkout components.

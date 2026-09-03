@@ -124,10 +124,6 @@ const methodsActions = {
           commit(types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR, true);
         }
 
-        if (isCartNotFoundError(task)) {
-          return dispatch('clear', { disconnect: true, sync: false });
-        }
-
         const result = isSuccessful ? task.result : [];
 
         await dispatch('updateShippingMethods', { shippingMethods: result })
@@ -146,11 +142,19 @@ const methodsActions = {
           commit('checkout/checkout/UPDATE_PROP_VALUE', ['shippingCarrier', ''], { root: true });
           commit('checkout/checkout/UPDATE_PROP_VALUE', ['shippingMethod', ''], { root: true });
         }
+
+        if (isCartNotFoundError(task)) {
+          return dispatch('clear', { disconnect: true, sync: false });
+        }
+
         if (isSuccessful) {
           commit(types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR, false);
         }
       } catch (error) {
         commit(types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR, true);
+        await dispatch('updateShippingMethods', { shippingMethods: [] })
+        commit('checkout/checkout/UPDATE_PROP_VALUE', ['shippingCarrier', ''], { root: true });
+        commit('checkout/checkout/UPDATE_PROP_VALUE', ['shippingMethod', ''], { root: true });
         throw error;
       } finally {
         commit(types.SET_IS_SHIPPING_METHODS_SYNCING, false);

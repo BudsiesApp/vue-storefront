@@ -9,12 +9,13 @@
 - Give `o-shipping` the minimal state it needs to render loading, error, empty, and available-method views.
 - Keep the three feedback states mutually exclusive and visible to customers.
 - Let customers retry a failed shipping-method lookup without submitting or advancing checkout.
+- Prevent checkout progression with stale shipping methods after a failed lookup.
 - Keep existing available-method rendering unchanged.
 
 **Non-Goals:**
 
-- Changing shipping-method selection, defaulting, validation, or stale-selection handling.
-- Adding automatic retries, retry limits, checkout-step guards, order-confirmation guards, or end-to-end scenarios.
+- Changing shipping-method selection, defaulting, or validation other than clearing an invalid selection after a failed lookup.
+- Adding automatic retries, retry limits, order-confirmation guards, or end-to-end scenarios.
 - Changing any API contract or checkout component other than the small cart-state source needed by `o-shipping`.
 
 ## Decisions
@@ -44,8 +45,17 @@ The error state will include a localized Retry button using the theme's `-small`
 
 The retry handler will dispatch `cart/syncShippingMethods` with `forceServerSync: true`. The existing action already clears the error at request start, exposes the loading state, and restores the error state if the retry fails. It will not call `sendDataToCheckout()`, because that legacy method advances the checkout page; retry must use the current checkout address without advancing the customer.
 
+### Invalidate shipping methods after every failed lookup
+
+An unsuccessful response already replaces shipping methods with an empty list and clears the selected carrier and method. The thrown-request path will perform the same invalidation before it rethrows: it must not leave a previously valid shipping method associated with an address whose current lookup failed. This makes both failure paths represent the same unavailable result.
+
+### Block Continue while a lookup error is active
+
+`o-shipping` will include the synchronization-error flag in its Continue-to-payment disabled condition. Clearing stale methods disables the control through the existing empty-list condition, while the error flag remains an explicit guard if a later failure path cannot update the list.
+
 ## Risks / Trade-offs
 
 - [Risk] An error flag could remain set after a later successful lookup. → Mitigation: clear it at lookup start and on success.
 - [Risk] Feedback states could overlap in the template. → Mitigation: derive them using the stated precedence.
 - [Risk] A retry fails repeatedly. → Mitigation: the existing error state and compact Retry button are restored after every failed request.
+- [Risk] A failed lookup leaves data from the prior address. → Mitigation: clear methods and the selected carrier and method for both unsuccessful and thrown requests.
