@@ -125,6 +125,9 @@ const mutations: MutationTree<CartState> = {
   [types.SET_IS_SHIPPING_METHODS_SYNCING] (state, isSyncing: boolean) {
     state.isShippingMethodsSyncing = isSyncing;
   },
+  [types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR] (state, hasError: boolean) {
+    state.isShippingMethodsSyncingError = hasError;
+  },
   [types.SET_IS_CART_SYNCING] (state, isSyncing: boolean) {
     state.isCartSyncing = isSyncing;
   },

@@ -1,0 +1,41 @@
+## Context
+
+`o-shipping` already receives the list of shipping methods and the existing `isShippingMethodsSyncing` state. A list with no entries is ambiguous without a separate error indicator: it can mean a request is still running, a request failed, or the address has no available methods.
+
+## Goals / Non-Goals
+
+**Goals:**
+
+- Give `o-shipping` the minimal state it needs to render loading, error, empty, and available-method views.
+- Keep the three feedback states mutually exclusive and visible to customers.
+- Keep existing available-method rendering unchanged.
+
+**Non-Goals:**
+
+- Changing shipping-method selection, defaulting, validation, or stale-selection handling.
+- Adding retry behavior, checkout-step guards, order-confirmation guards, or end-to-end scenarios.
+- Changing any API contract or checkout component other than the small cart-state source needed by `o-shipping`.
+
+## Decisions
+
+### Add one shipping-method synchronization-error flag
+
+Cart state will retain the existing `isShippingMethodsSyncing` flag and add `isShippingMethodsSyncingError`. The shipping-method synchronization action clears the error flag when a lookup starts and after a successful result, and sets it when the lookup fails. This keeps request-result classification at the layer that performs the request while giving the component a simple boolean contract.
+
+Using a component-local error flag was rejected because `o-shipping` does not own the asynchronous lookup and cannot reliably distinguish a failed request from a successful empty result.
+
+### Derive display state in `o-shipping` with fixed precedence
+
+`o-shipping` will render exactly one feedback state with this precedence:
+
+1. `isShippingMethodsSyncing` → visible loading indicator.
+2. `isShippingMethodsSyncingError` → `Error while loading shipping methods`.
+3. No sync and no error with an empty method list → `No shipping methods are available for this address.`
+4. Otherwise → existing shipping-method list.
+
+The error and empty messages will use the existing localization and accessible status patterns in the component. The loading indicator will not include a separate text announcement. A richer lifecycle enum and request-outcome reconciliation were rejected because the two booleans already express the required UI conditions.
+
+## Risks / Trade-offs
+
+- [Risk] An error flag could remain set after a later successful lookup. → Mitigation: clear it at lookup start and on success, and cover both transitions with focused tests.
+- [Risk] Feedback states could overlap in the template. → Mitigation: derive them using the stated precedence.
