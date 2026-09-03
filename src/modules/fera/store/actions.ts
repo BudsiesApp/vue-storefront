@@ -20,19 +20,16 @@ export const FERA_MEDIA_CONSENT_TEXT_VERSION = 'v1';
 
 function getMediaConsentRequest (
   consent: FeraMediaConsent,
-  rootState: RootState,
   rootGetters: Record<string, unknown>
 ): FeraMediaConsentRequest {
   const request: FeraMediaConsentRequest = {
     review_id: consent.reviewId,
     consent_text_version: consent.consentTextVersion
   };
-  const isLoggedIn = Boolean(rootGetters['user/isLoggedIn']);
-  const customerId = isLoggedIn ? rootState.user?.current?.id : undefined;
   const quoteId = rootGetters['cart/getCartToken'];
 
-  if (customerId) {
-    request.customer_id = customerId;
+  if (consent.customerId) {
+    request.customer_id = consent.customerId;
   } else if (typeof quoteId === 'string' && quoteId) {
     request.quote_id = quoteId;
   }
@@ -49,7 +46,7 @@ export const actions: ActionTree<FeraState, RootState> = {
       return;
     }
 
-    const { reviewId, submissionId } = getFeraReviewIdentifiers(event);
+    const { reviewId, submissionId, customerId } = getFeraReviewIdentifiers(event);
     const identifier = reviewId || submissionId;
 
     if (!identifier) {
@@ -60,21 +57,33 @@ export const actions: ActionTree<FeraState, RootState> = {
 
     commit(SET_PENDING_MEDIA_CONSENT, {
       reviewId: identifier,
-      consentTextVersion: FERA_MEDIA_CONSENT_TEXT_VERSION
+      consentTextVersion: FERA_MEDIA_CONSENT_TEXT_VERSION,
+      customerId
     });
   },
-  [SHOW_MEDIA_CONSENT] ({ state, dispatch }): Promise<unknown> | void {
-    if (!state.pendingMediaConsent) {
+  [SHOW_MEDIA_CONSENT] ({ state, commit, dispatch }, event: unknown): Promise<unknown> | void {
+    const pendingConsent = state.pendingMediaConsent;
+
+    if (!pendingConsent) {
       return;
     }
 
+    const { reviewId, submissionId, customerId } = getFeraReviewIdentifiers(event);
+    const consent: FeraMediaConsent = {
+      ...pendingConsent,
+      reviewId: reviewId || pendingConsent.reviewId || submissionId,
+      customerId: customerId || pendingConsent.customerId
+    };
+
+    commit(SET_PENDING_MEDIA_CONSENT, consent);
+
     return dispatch('ui/openModal', {
       name: FERA_MEDIA_CONSENT_MODAL_NAME,
-      payload: state.pendingMediaConsent
+      payload: consent
     }, { root: true });
   },
-  [LOG_MEDIA_CONSENT] ({ rootState, rootGetters }, consent: FeraMediaConsent): void {
-    const request = getMediaConsentRequest(consent, rootState, rootGetters);
+  [LOG_MEDIA_CONSENT] ({ rootGetters }, consent: FeraMediaConsent): void {
+    const request = getMediaConsentRequest(consent, rootGetters);
 
     // Magento does not expose this endpoint yet. Keep the exact future request
     // payload visible during the proof of concept without sending a request.

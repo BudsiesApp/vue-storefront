@@ -43,8 +43,8 @@ export const FeraModule: StorefrontModule = ({ appConfig, services, store }) => 
       store.dispatch(`${FERA_STORE_NAME}/${CAPTURE_SUBMITTED_REVIEW}`, event)
         .catch((reason) => Logger.error(reason, FERA_STORE_NAME)());
     },
-    onHide: () => {
-      store.dispatch(`${FERA_STORE_NAME}/${SHOW_MEDIA_CONSENT}`)
+    onHide: (event) => {
+      store.dispatch(`${FERA_STORE_NAME}/${SHOW_MEDIA_CONSENT}`, event)
         .catch((reason) => Logger.error(reason, FERA_STORE_NAME)());
     }
   });
