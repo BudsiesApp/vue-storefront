@@ -13,7 +13,6 @@ type CouponShortcutState = CouponButtonState | 'saved';
 const PENDING_COUPON_SAVING_TIMEOUT = 700;
 const couponShortcutId = 'promotion-platform-coupon-shortcut';
 const couponShortcutMarker = 'data-promotion-platform-coupon-shortcut-id';
-const couponShortcutStatusId = `${couponShortcutId}-status`;
 
 export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>) {
   const applicationStore = useStore();
@@ -57,27 +56,27 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
       displayState.value !== 'idle';
   });
 
-  function getShortcutDetails (): { actionLabel: string, feedback: string } {
+  function getShortcutDetails (): { actionLabel: string, hint?: string } {
     if (displayState.value === 'applying') {
-      return { actionLabel: applicationI18n.t('Applying').toString(), feedback: '' };
+      return { actionLabel: applicationI18n.t('Applying').toString() };
     }
 
     if (displayState.value === 'saved') {
-      return { actionLabel: applicationI18n.t('Saved').toString(), feedback: '' };
+      return { actionLabel: applicationI18n.t('Saved').toString() };
     }
 
     if (displayState.value === 'applied') {
-      return { actionLabel: applicationI18n.t('Applied').toString(), feedback: '' };
+      return { actionLabel: applicationI18n.t('Applied').toString() };
     }
 
     if (displayState.value === 'locked') {
       return {
         actionLabel: applicationI18n.t('Locked').toString(),
-        feedback: applicationI18n.t('Another coupon is already applied.').toString()
+        hint: applicationI18n.t('Another coupon is already applied.').toString()
       };
     }
 
-    return { actionLabel: applicationI18n.t('Apply').toString(), feedback: '' };
+    return { actionLabel: applicationI18n.t('Apply').toString() };
   }
 
   function resetDirectiveCouponCode (): void {
@@ -92,9 +91,23 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
     currentCouponCode.value = directive.couponCode;
 
     const details = getShortcutDetails();
-    const disabled = isActionDisabled.value ? ' disabled' : '';
+    const state = displayState.value;
+    const isDisabled = isActionDisabled.value;
 
-    return `<span class="promotion-platform-coupon-shortcut"><button type="button" class="promotion-platform-coupon-shortcut__button -${displayState.value}" ${couponShortcutMarker}="${couponShortcutId}" aria-busy="${displayState.value === 'applying'}" aria-describedby="${couponShortcutStatusId}" aria-disabled="${Boolean(disabled)}"${disabled}><span class="promotion-platform-coupon-shortcut__code">${directive.couponCode}</span><span class="promotion-platform-coupon-shortcut__action" data-promotion-platform-coupon-shortcut-action>${details.actionLabel}</span></button><span id="${couponShortcutStatusId}" class="promotion-platform-coupon-shortcut__status" role="status" aria-live="polite" aria-atomic="true" data-promotion-platform-coupon-shortcut-status>${details.feedback}</span></span>`;
+    return `
+      <button
+        type="button"
+        class="promotion-platform-coupon-shortcut__button -${state}"
+        ${couponShortcutMarker}="${couponShortcutId}"
+        aria-busy="${state === 'applying'}"
+        aria-disabled="${isDisabled}"
+        title="${details.hint || ''}"
+        ${isDisabled ? 'disabled' : ''}
+      >
+        <span class="promotion-platform-coupon-shortcut__code">${directive.couponCode}</span>
+        <span class="promotion-platform-coupon-shortcut__action" data-promotion-platform-coupon-shortcut-action>${details.actionLabel}</span>
+      </button>
+    `.trim();
   }
 
   async function syncCouponShortcutState (): Promise<void> {
@@ -109,9 +122,6 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
     }
 
     const details = getShortcutDetails();
-    const status = button.parentElement?.querySelector<HTMLElement>(
-      '[data-promotion-platform-coupon-shortcut-status]'
-    );
     const action = button.querySelector<HTMLElement>(
       '[data-promotion-platform-coupon-shortcut-action]'
     );
@@ -121,13 +131,10 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
     button.disabled = isActionDisabled.value;
     button.setAttribute('aria-busy', String(displayState.value === 'applying'));
     button.setAttribute('aria-disabled', String(isActionDisabled.value));
+    button.title = details.hint || '';
 
     if (action) {
       action.textContent = details.actionLabel;
-    }
-
-    if (status) {
-      status.textContent = details.feedback;
     }
   }
 

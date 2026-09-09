@@ -430,27 +430,53 @@ $mobile-s: 640px;
           }
         }
 
-        .promotion-platform-coupon-shortcut {
-          align-items: center;
-          display: inline-flex;
-          flex-wrap: wrap;
-        }
-
         .promotion-platform-coupon-shortcut__button {
+          --coupon-idle-background: var(--c-secondary-lighten);
+          --coupon-idle-text: var(--c-blue);
+          --coupon-idle-action-background: var(--c-primary-lighten);
+          --coupon-applied-background: #dff3e9;
+          --coupon-applied-text: #0f5c49;
+          --coupon-applied-action-background: #20a87c;
+          --coupon-locked-background: var(--c-white-darken);
+          --coupon-locked-text: var(--c-gray);
+          --coupon-locked-action-background: var(--c-gray-light);
+          --coupon-locked-action-text: var(--c-dark);
+
           align-items: center;
-          background: transparent;
-          border: 1px solid currentColor;
-          border-radius: 2px;
-          color: inherit;
+          background: var(--coupon-idle-background);
+          border: 0;
+          border-radius: var(--coupon-border-radius, 0);
+          color: var(--coupon-idle-text);
           cursor: pointer;
           display: inline-flex;
           font: inherit;
           margin: 0 var(--spacer-2xs);
           line-height: inherit;
+          overflow: hidden;
           padding: 0;
 
           &.-disabled {
             cursor: default;
+          }
+
+          &.-applied,
+          &.-saved {
+            background: var(--coupon-applied-background);
+            color: var(--coupon-applied-text);
+
+            .promotion-platform-coupon-shortcut__action {
+              background: var(--coupon-applied-action-background);
+            }
+          }
+
+          &.-locked {
+            background: var(--coupon-locked-background);
+            color: var(--coupon-locked-text);
+
+            .promotion-platform-coupon-shortcut__action {
+              background: var(--coupon-locked-action-background);
+              color: var(--coupon-locked-action-text);
+            }
           }
         }
 
@@ -465,13 +491,12 @@ $mobile-s: 640px;
 
         .promotion-platform-coupon-shortcut__action {
           align-items: center;
+          background: var(--coupon-idle-action-background);
+          color: var(--c-white);
           display: flex;
           padding: var(--spacer-2xs) var(--spacer-xs);
         }
 
-        .promotion-platform-coupon-shortcut__status {
-          font-size: var(--font-xs);
-        }
       }
       }
     }
