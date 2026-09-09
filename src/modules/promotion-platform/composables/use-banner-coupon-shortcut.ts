@@ -1,12 +1,10 @@
 import { useI18n, useStore } from '@vue-storefront/core/application-services';
+import { CouponButtonState, useCouponButton } from '@vue-storefront/core/modules/cart';
 import { notifications } from '@vue-storefront/core/modules/cart/helpers';
 import { CART_SET_PENDING_COUPON } from '@vue-storefront/core/modules/cart/store/mutation-types';
 import { computed, nextTick, Ref, ref, watch } from 'vue';
 
 import { CouponCodeDirective } from 'src/modules/shared/composables/use-text-directives';
-import { isStoryblokPreview } from 'src/modules/vsf-storyblok-module';
-
-import { CouponButtonState, useCouponButton } from 'theme/helpers/use-coupon-button';
 
 type CouponShortcutState = CouponButtonState | 'saved';
 
@@ -20,7 +18,6 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
   const currentCouponCode = ref<string | undefined>();
   const couponCode = computed<string | undefined>(() => currentCouponCode.value);
   const isSavingPendingCoupon = ref<boolean>(false);
-  const isEditorPreview = isStoryblokPreview();
 
   const pendingCouponCode = computed<string | null>(() => {
     return applicationStore.getters['cart/getPendingCouponCode'];
@@ -51,8 +48,7 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
     return couponButtonState.value;
   });
   const isActionDisabled = computed<boolean>(() => {
-    return isEditorPreview ||
-      isCouponInteractionBlocked.value ||
+    return isCouponInteractionBlocked.value ||
       displayState.value !== 'idle';
   });
 
@@ -165,7 +161,7 @@ export function useBannerCouponShortcut (contentElement: Ref<HTMLElement | null>
   }
 
   async function activateCouponShortcut (): Promise<void> {
-    if (isEditorPreview || !couponCode.value) {
+    if (!couponCode.value) {
       return;
     }
 

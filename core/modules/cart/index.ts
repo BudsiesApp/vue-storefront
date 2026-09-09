@@ -78,3 +78,5 @@ export {
   IS_COUPON_PROCESSING,
   IS_COUPON_INTERACTION_BLOCKED
 }
+
+export { CouponButtonState, useCouponButton } from './composables/use-coupon-button';
