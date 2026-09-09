@@ -1,22 +1,21 @@
 <template>
   <div
     class="promotion-platform-countdown-banner-wrapper"
-    :class="{ '-narrow': isNarrow }"
+    :class="{ '-narrow': isNarrow, '-regular': !isTimerEnabled }"
   >
     <div
       class="promotion-platform-countdown-banner-container"
       v-show="showBanner"
       :style="bannerStyle"
-      ref="container"
     >
       <div class="promotion-platform-countdown-banner">
         <div class="_container">
           <div class="_left-column">
-            <label class="_title">
+            <label v-if="title" class="_title">
               {{ title }}
             </label>
 
-            <div class="_timer-container">
+            <div v-if="isTimerEnabled" class="_timer-container">
               <countdown-timer
                 class="_timer"
                 :countdown-time="getCountdownTime()"
@@ -25,7 +24,12 @@
             </div>
           </div>
 
-          <div class="_content" v-html="processedDescription" />
+          <div
+            ref="contentElement"
+            class="_content"
+            v-html="processedDescription"
+            @click="onCouponShortcutClick"
+          />
 
           <div class="_timer-btn _close-btn" @click="onCloseButtonClickHandler">
             <i class="fa fa-times" />
@@ -53,7 +57,7 @@ import { isServer, PriceHelper } from '@vue-storefront/core/helpers';
 import { PRODUCT_LOCALIZED_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { Dictionary } from 'src/modules/budsies';
-import { DirectiveType, TextPart, useTextDirectives } from 'src/modules/shared/composables/use-text-directives';
+import { CouponCodeDirective, DirectiveType, TextPart, useTextDirectives } from 'src/modules/shared/composables/use-text-directives';
 import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
 import { Currency, DEFAULT_CURRENCY, GET_ACTIVE_CURRENCY, GET_CURRENCY_EXCHANGE_RATE } from 'src/modules/currency';
 
@@ -62,6 +66,7 @@ import { SET_LAST_BANNER_VERSION_CLOSED_BY_USER } from '../types/StoreMutations'
 
 import Timer from './Timer.vue';
 import { CountdownBanner } from '../types/CountdownBanner.interface';
+import { useBannerCouponShortcut } from '../composables/use-banner-coupon-shortcut';
 
 const startTimeThreshold = 1;
 
@@ -72,6 +77,7 @@ export default Vue.extend({
   setup (props) {
     const applicationStore = useStore();
     const processedDescription = ref<string>('');
+    const contentElement = ref<HTMLElement | null>(null);
 
     const productBySkuDictionary = computed<Record<string, Product>>(() => {
       return applicationStore.getters['product/getProductBySkuDictionary'];
@@ -100,7 +106,12 @@ export default Vue.extend({
     const bannerContent = computed< CountdownBanner | undefined>(() => {
       return campaignContent.value?.countdown;
     });
-
+    const {
+      onCouponShortcutClick,
+      resetDirectiveCouponCode,
+      renderCouponShortcut,
+      syncCouponShortcutState
+    } = useBannerCouponShortcut(contentElement);
     function processTextPart (
       textPart: TextPart,
       productLocalizedPriceDictionary: Record<string, PriceHelper.ProductPrice>
@@ -120,6 +131,10 @@ export default Vue.extend({
           textPart.amount * exchangeRate.value,
           selectedCurrency.value.symbol
         );
+      }
+
+      if (textPart.type === DirectiveType.COUPON_CODE) {
+        return renderCouponShortcut(textPart as CouponCodeDirective);
       }
 
       const product = productBySkuDictionary.value[textPart.productSku];
@@ -152,6 +167,7 @@ export default Vue.extend({
     }
 
     function processTextParts (textParts: TextPart[]) {
+      resetDirectiveCouponCode();
       processedDescription.value = '';
 
       if (!textParts.length) {
@@ -164,6 +180,8 @@ export default Vue.extend({
           localizedPriceDictionary.value
         );
       }
+
+      void syncCouponShortcutState();
     }
 
     const { processDirectivesInText, isDirectivesProcessing } = useTextDirectives(processTextParts);
@@ -178,7 +196,9 @@ export default Vue.extend({
     return {
       bannerContent,
       campaignContent,
+      contentElement,
       isDirectivesProcessing,
+      onCouponShortcutClick,
       processDirectivesInText,
       processedDescription
     };
@@ -193,6 +213,9 @@ export default Vue.extend({
     numbersColor (): string | undefined {
       return this.bannerContent?.style?.numbers_color;
     },
+    isTimerEnabled (): boolean {
+      return this.bannerContent?.is_timer_enabled !== false;
+    },
     version (): string | undefined {
       return this.bannerContent?.version;
     },
@@ -203,7 +226,7 @@ export default Vue.extend({
       return this.bannerContent?.title || ''
     },
     countdownDate (): Date | undefined {
-      if (!this.bannerContent?.date) {
+      if (!this.isTimerEnabled || !this.bannerContent?.date) {
         return;
       }
 
@@ -220,7 +243,7 @@ export default Vue.extend({
         style['--text-color'] = `#${this.textColor}`;
       }
 
-      if (this.numbersColor) {
+      if (this.isTimerEnabled && this.numbersColor) {
         style['--numbers-color'] = `#${this.numbersColor}`;
       }
 
@@ -239,7 +262,7 @@ export default Vue.extend({
       return !!this.bannerContent &&
         this.showOnCurrentPage &&
         (!this.isBannerWasClosedByUser || isServer) &&
-        !this.isTimeOver &&
+        (!this.isTimerEnabled || !this.isTimeOver) &&
         !this.isDirectivesProcessing;
     },
     showOnCurrentPage (): boolean {
@@ -265,6 +288,11 @@ export default Vue.extend({
     async initBanner (): Promise<void> {
       if (!this.bannerContent) {
         this.isTimeOver = true;
+        return;
+      }
+
+      if (!this.isTimerEnabled) {
+        this.isTimeOver = false;
         return;
       }
 
@@ -401,6 +429,49 @@ $mobile-s: 640px;
             }
           }
         }
+
+        .promotion-platform-coupon-shortcut {
+          align-items: center;
+          display: inline-flex;
+          flex-wrap: wrap;
+        }
+
+        .promotion-platform-coupon-shortcut__button {
+          align-items: center;
+          background: transparent;
+          border: 1px solid currentColor;
+          border-radius: 2px;
+          color: inherit;
+          cursor: pointer;
+          display: inline-flex;
+          font: inherit;
+          margin: 0 var(--spacer-2xs);
+          line-height: inherit;
+          padding: 0;
+
+          &.-disabled {
+            cursor: default;
+          }
+        }
+
+        .promotion-platform-coupon-shortcut__code {
+          align-self: stretch;
+          align-items: center;
+          border-right: 1px solid currentColor;
+          display: flex;
+          font-weight: bold;
+          padding: 0 var(--spacer-xs);
+        }
+
+        .promotion-platform-coupon-shortcut__action {
+          align-items: center;
+          display: flex;
+          padding: var(--spacer-2xs) var(--spacer-xs);
+        }
+
+        .promotion-platform-coupon-shortcut__status {
+          font-size: var(--font-xs);
+        }
       }
       }
     }
@@ -497,6 +568,19 @@ $mobile-s: 640px;
         .fa-angle-double-down,
         ._btn-text {
           display: inline-block;
+        }
+      }
+    }
+  }
+
+  &.-regular {
+    .promotion-platform-countdown-banner {
+      ._container {
+        padding: var(--spacer-sm) 0;
+
+        ._title,
+        ._content {
+          margin: 0;
         }
       }
     }

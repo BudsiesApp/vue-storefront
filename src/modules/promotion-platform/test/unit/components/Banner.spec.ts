@@ -2,7 +2,7 @@ import Vue from 'vue';
 import { createLocalVue, shallowMount, Wrapper } from '@vue/test-utils';
 import Vuex, { Store } from 'vuex';
 
-import { storeInjectionKey } from '@vue-storefront/core/application-services';
+import { i18nInjectionKey, storeInjectionKey } from '@vue-storefront/core/application-services';
 import Banner from '../../../components/Banner.vue';
 import { Currency, DEFAULT_CURRENCY } from 'src/modules/currency';
 import { CampaignContent } from '../../../types/CampaignContent.interface';
@@ -145,6 +145,7 @@ function createBanner (options: BannerTestOptions) {
     localVue,
     store,
     provide: {
+      [i18nInjectionKey as symbol]: { t: (value: string) => value },
       [storeInjectionKey as symbol]: store
     },
     mocks: {
