@@ -35,6 +35,16 @@ jest.mock('@vue-storefront/core/modules/catalog', () => ({
   PRODUCT_LOCALIZED_PRICE_DICTIONARY: 'product/productLocalizedPriceDictionary'
 }));
 
+jest.mock('@vue-storefront/core/modules/cart', () => ({
+  useCouponButton: jest.requireActual('@vue-storefront/core/modules/cart/composables/use-coupon-button').useCouponButton
+}));
+
+jest.mock('@vue-storefront/core/modules/cart/helpers', () => ({
+  notifications: {
+    createNotification: jest.fn((notification) => notification)
+  }
+}));
+
 jest.mock('../../../components/Timer.vue', () => ({
   name: 'CountdownTimer'
 }));
