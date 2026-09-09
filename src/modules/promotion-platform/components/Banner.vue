@@ -454,6 +454,7 @@ $mobile-s: 640px;
           line-height: inherit;
           overflow: hidden;
           padding: 0;
+          text-transform: uppercase;
 
           &.-disabled {
             cursor: default;
