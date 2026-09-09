@@ -1,5 +1,6 @@
 export interface CountdownBanner {
   date: string,
+  is_timer_enabled?: boolean,
   version: string,
   title: string,
   description: string,
