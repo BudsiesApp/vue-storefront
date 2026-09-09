@@ -10,12 +10,13 @@ export enum DirectiveType {
   PRODUCT_PRICE = 'productPrice',
   PRODUCT_SPECIFIC_PRICE = 'productSpecificPrice',
   PRICE_VALUE = 'priceValue',
-  ORDERED_PLUSHIES_COUNT = 'orderedPlushiesCount'
+  ORDERED_PLUSHIES_COUNT = 'orderedPlushiesCount',
+  COUPON_CODE = 'couponCode'
 }
 
 export interface ProductSpecificPriceDirective extends BaseDirective {
   type: DirectiveType.PRODUCT_SPECIFIC_PRICE,
-  priceType: priceType,
+  priceType: PriceType,
   productSku: string
 }
 
@@ -35,10 +36,15 @@ export interface PriceValueDirective extends BaseDirective {
   amount: number
 }
 
-export type Directive = ProductDependentDirective | OrderedPlushiesCountDirective | PriceValueDirective;
+export interface CouponCodeDirective extends BaseDirective {
+  type: DirectiveType.COUPON_CODE,
+  couponCode: string
+}
+
+export type Directive = ProductDependentDirective | OrderedPlushiesCountDirective | PriceValueDirective | CouponCodeDirective;
 export type TextPart = string | Directive;
 
-type priceType = 'regular' | 'special';
+type PriceType = 'regular' | 'special';
 type ProductDependentDirective = ProductSpecificPriceDirective | ProductPriceDirective;
 
 interface DirectiveSpecification {
@@ -54,6 +60,7 @@ interface BaseDirective {
 
 const directivesRegexp = /\{\{(.*?)\}\}/gi;
 const directiveSpecificationRegexp = /(.*)\((.*)\)/i;
+const couponCodeRegexp = /^[a-z0-9][a-z0-9_-]*$/i;
 
 export function useTextDirectives (
   processTextPartsFunction: (textPart: TextPart[]) => void
@@ -138,10 +145,25 @@ export function useTextDirectives (
       }
     }
 
+    if (directiveName === DirectiveType.COUPON_CODE) {
+      const couponCode = directiveParams[0];
+
+      if (directiveParams.length !== 1 || !couponCodeRegexp.test(couponCode)) {
+        throw new Error('Invalid coupon code directive');
+      }
+
+      return {
+        originalText: specification.originalText,
+        couponCode,
+        type: DirectiveType.COUPON_CODE
+      };
+    }
+
     throw new Error('Unknown directive type: ' + directiveName);
   }
 
   function getPartsFromText (text: string): TextPart[] {
+    directivesRegexp.lastIndex = 0;
     let match = directivesRegexp.exec(text);
     if (!match) {
       return [text];
@@ -157,14 +179,18 @@ export function useTextDirectives (
         textParts.push(text.slice(textFragmentStartIndex, index));
       }
 
-      const directiveData = parseDirectiveText(match[0]);
+      try {
+        const directiveData = parseDirectiveText(match[0]);
+        textParts.push(getDirectiveFromSpecification(directiveData));
+      } catch (error) {
+        // Invalid directives are intentionally omitted without losing adjacent rich text.
+      }
 
-      textParts.push(getDirectiveFromSpecification(directiveData));
       textFragmentStartIndex = match.index + match[0].length;
       match = directivesRegexp.exec(text);
     }
 
-    if (textFragmentStartIndex < text.length - 1) {
+    if (textFragmentStartIndex < text.length) {
       textParts.push(text.slice(textFragmentStartIndex));
     }
 
@@ -231,17 +257,21 @@ export function useTextDirectives (
 
   async function processDirectivesInText (text: string): Promise<void> {
     isDirectivesProcessing.value = true;
-    const parts = getPartsFromText(text);
-    const directives = (parts.filter((part) => typeof part !== 'string')) as Directive[];
 
-    const promise = loadDirectivesRelatedData(directives);
+    try {
+      const parts = getPartsFromText(text);
+      const directives = (parts.filter((part) => typeof part !== 'string')) as Directive[];
 
-    if (promise) {
-      await promise;
+      const promise = loadDirectivesRelatedData(directives);
+
+      if (promise) {
+        await promise;
+      }
+
+      processTextPartsFunction(parts);
+    } finally {
+      isDirectivesProcessing.value = false;
     }
-
-    processTextPartsFunction(parts);
-    isDirectivesProcessing.value = false;
   }
 
   return {
