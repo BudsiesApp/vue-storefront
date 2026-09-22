@@ -3,8 +3,7 @@ import { useRequestServices } from '@vue-storefront/core/request-services';
 import { computed, ref } from 'vue';
 
 import { DETECTED_COUNTRY_COOKIE_KEY } from 'src/modules/shared/types/detected-country-cookie.key';
-import { PERSISTED_CUSTOMER_SHIPPING_COUNTRY } from 'src/modules/persisted-customer-data/types/getter';
-import { SN_PERSISTED_CUSTOMER_DATA } from 'src/modules/persisted-customer-data/types/store-name';
+import { PERSISTED_CUSTOMER_SHIPPING_COUNTRY } from 'src/modules/persisted-customer-data';
 
 export enum HolidayDeliveryLocation {
   DOMESTIC = 'domestic',
@@ -22,7 +21,7 @@ export function useHolidayDeliveryLocation () {
   const request = useRequestServices();
   const manualLocation = ref<HolidayDeliveryLocation | undefined>();
   const persistedCountry = computed<string | undefined>(() => {
-    return store.getters[`${SN_PERSISTED_CUSTOMER_DATA}/${PERSISTED_CUSTOMER_SHIPPING_COUNTRY}`];
+    return store.getters[PERSISTED_CUSTOMER_SHIPPING_COUNTRY];
   });
   const automaticLocation = computed<HolidayDeliveryLocation>(() => {
     if (persistedCountry.value?.trim()) {

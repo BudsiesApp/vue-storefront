@@ -28,5 +28,5 @@ None.
 - Rush add-on API response parsing and client model.
 - Production Time customization data preparation and timeline/card presentation.
 - Location resolution using persisted customer data, request cookies, and the configured default country.
-- Production Time widget tests, Rush add-on parsing tests, responsive Holiday states, and cart promise regression coverage.
+- Production Time option preparation, responsive Holiday states, and unchanged cart promise behavior.
 - Assumes the API returns `isDomestic` for Rush add-ons and Magento continues to provide the cart item's resolved shipment promise.

@@ -79,7 +79,7 @@ An alternative is a separate Holiday card component. The card structure, icon, p
 - [Persisted shipping country loads after the first render] → Keep automatic location reactive; the widget updates when synchronization completes, while request-cookie/default resolution provides an SSR-safe initial value.
 - [A manual location switch hides the current Rush selection] → Reconcile to Standard immediately so hidden data cannot remain selected or be submitted.
 - [Malformed API data provides multiple matching Holiday Rush records] → Apply deterministic ordering and display only the first applicable Rush record while reporting the contract violation through existing client error reporting if available.
-- [Holiday-specific branches alter regular behavior] → Gate all new filtering and card formatting behind `isHolidayPeriod` and retain regression coverage for regular mode.
+- [Holiday-specific branches alter regular behavior] → Gate all new filtering and card formatting behind `isHolidayPeriod` so regular mode stays on its existing path.
 
 ## Migration Plan
 
