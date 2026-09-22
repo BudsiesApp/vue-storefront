@@ -160,6 +160,7 @@ export function useCustomizationOptionWidget (
           component: 'ProductionTimeTimelineWidget',
           props: {
             ariaLabelledby: customization.value.id,
+            isHolidayPeriod: widgetOptions?.isHolidayPeriod,
             maxValuesCount: maxValuesCount.value,
             productId: productId.value,
             radioGroupName: customization.value.id,
