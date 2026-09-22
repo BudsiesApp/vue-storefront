@@ -51,6 +51,10 @@ In Holiday Period mode, the storefront SHALL remove production-time records with
 - **WHEN** the API response also contains records for the other location
 - **THEN** none of those records is displayed in the Holiday Period widget
 
+#### Scenario: Location variants share a Rush SKU
+- **WHEN** domestic and international Holiday Rush records share a SKU
+- **THEN** the widget displays the text and terms from the selected location's record while retaining the shared underlying option-value ID
+
 ### Requirement: Cart items use the Magento shipment promise
 The cart SHALL continue to render the `shipment_promise_template` supplied for each cart item without constructing a Holiday promise on the client.
 

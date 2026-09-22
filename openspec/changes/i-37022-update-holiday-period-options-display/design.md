@@ -34,9 +34,9 @@ An alternative is to infer Holiday mode from option text, SKUs, or dates. Those 
 
 ### Restore location metadata without changing option identity
 
-Add numeric `is_domestic` to `RushAddonApiResponse` and normalize it to a boolean `RushAddon.isDomestic` property in the factory. Likewise, normalize optional `is_in_time_for_christmas` to `RushAddon.isInTimeForChristmas`. Continue identifying non-Standard upgrades by their distinct SKUs and matching them to the existing customization option values.
+Add numeric `is_domestic` to `RushAddonApiResponse` and normalize it to a boolean `RushAddon.isDomestic` property in the factory. Likewise, normalize optional `is_in_time_for_christmas` to `RushAddon.isInTimeForChristmas`. Continue identifying non-Standard upgrades by SKU and matching them to the existing customization option values. Domestic and international Holiday records may share a SKU; `isDomestic` distinguishes their presentation metadata without changing the underlying option-value identity.
 
-The client will retain every returned Holiday location variant rather than collapsing them or creating domestic/international field groups. The selected location filters the records before the widget builds its SKU dictionary and resolves the applicable Standard record. This avoids duplicate structures and ensures a visible Rush card still submits its original option-value ID.
+The client will retain every returned Holiday location variant rather than collapsing them or creating domestic/international field groups. Customization preparation uses SKU membership only to retain the original option value and does not copy text from an arbitrary location variant. The selected location filters Rush records before the widget builds its SKU dictionary, resolves the applicable Standard record, and applies the location-specific text and terms. This avoids duplicate option values and ensures a visible Rush card still submits its original option-value ID.
 
 An alternative is one Rush object containing parallel domestic and international fields. That duplicates most of the Rush contract and makes selection identity ambiguous when the variants use different products.
 
@@ -54,7 +54,7 @@ Using request services instead of reading `document.cookie` keeps server and bro
 
 ### Filter and reconcile the visible selection in the timeline
 
-Keep all API-matched option values with available slots in the prepared customization. In Holiday mode, the timeline derives its visible list from location-matching Rush records and uses the existing turnaround ordering. Standard is resolved from the matching location record.
+Keep all API-matched option values with available slots in the prepared customization. Multiple Holiday records may therefore retain one shared option value when they use the same SKU. In Holiday mode, the timeline derives its visible list and presentation metadata from location-matching Rush records and uses the existing turnaround ordering. Standard is resolved from the matching location record.
 
 Keeping the original values is required for immediate manual switching; destructively filtering them while preparing the product would make the other location impossible to restore. When a location switch hides the selected upgrade, the widget emits Standard as the replacement. Valid restored selections remain untouched.
 
