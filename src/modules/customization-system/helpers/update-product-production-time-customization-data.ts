@@ -40,10 +40,16 @@ function updateProductionTimeCustomization (
     return productionTimeCustomization;
   }
 
-  const addonBySku: Record<string, RushAddon> = {};
-  const standardAddon = availableAddons.find((addon) => !addon.id);
+  const isHolidayPeriod = !!productionTimeCustomization.optionData.displayWidgetOptions?.isHolidayPeriod;
+  let eligibleAddons = availableAddons;
 
-  for (const addon of availableAddons) {
+  if (isHolidayPeriod) {
+    eligibleAddons = availableAddons.filter((addon) => addon.slotsLeft === undefined || addon.slotsLeft > 0);
+  }
+  const addonBySku: Record<string, RushAddon> = {};
+  const standardAddon = eligibleAddons.find((addon) => !addon.id);
+
+  for (const addon of eligibleAddons) {
     if (addon.id) {
       addonBySku[addon.id] = addon;
     }
