@@ -4,6 +4,8 @@ import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import { processURLAddress } from '@vue-storefront/core/helpers'
 import { ActionTree, Commit } from 'vuex'
 import config from 'config'
+import i18n from '@vue-storefront/i18n'
+import { AddressFailure, reportAddressApiFailure } from 'src/modules/shared';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 
 import { BudsiesState } from '../types/State'
@@ -441,45 +443,71 @@ export const actions: ActionTree<BudsiesState, RootState> = {
 
     return result;
   },
-  async createNewAddress (context, payload): Promise<void> {
+  async createNewAddress ({ rootGetters }, payload): Promise<void> {
     const url = `${config.budsies.endpoint}/address/create?token={{token}}`;
 
-    const { result, resultCode } = await TaskQueue.execute({
-      url,
-      payload: {
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        mode: 'cors',
-        method: 'POST',
-        body: JSON.stringify(payload)
-      },
-      silent: false
-    });
-
-    if (resultCode !== 200) {
-      throw new Error(`Error while creating address: ${result}`);
+    const fallbackMessage = i18n.t('Unable to add new address').toString();
+    const failure: AddressFailure = { operation: 'customer-address-create', message: fallbackMessage, userId: rootGetters['user/current']?.id };
+    let response;
+    try {
+      response = await TaskQueue.execute({
+        url,
+        payload: {
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          mode: 'cors',
+          method: 'POST',
+          body: JSON.stringify(payload)
+        },
+        silent: true
+      });
+    } catch (error) {
+      failure.status = error?.response?.status;
+      reportAddressApiFailure(failure);
+      throw new Error(fallbackMessage);
     }
 
-    EventBus.$emit('address-added', result);
+    if (response.resultCode !== 200) {
+      const message = response.result?.errorMessage || fallbackMessage;
+      failure.status = response.resultCode;
+      failure.message = message;
+      reportAddressApiFailure(failure);
+      throw new Error(message);
+    }
+
+    EventBus.$emit('address-added', response.result);
   },
-  async updateAddress (context, payload): Promise<void> {
+  async updateAddress ({ rootGetters }, payload): Promise<void> {
     const url = `${config.budsies.endpoint}/address/update?token={{token}}`;
 
-    const { result, resultCode } = await TaskQueue.execute({
-      url,
-      payload: {
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        mode: 'cors',
-        method: 'POST',
-        body: JSON.stringify(payload)
-      },
-      silent: false
-    });
-
-    if (resultCode !== 200) {
-      throw new Error(`Error while creating address: ${result}`);
+    const fallbackMessage = i18n.t('Unable to update address').toString();
+    const failure: AddressFailure = { operation: 'customer-address-update', message: fallbackMessage, userId: rootGetters['user/current']?.id, addressId: payload.address?.id };
+    let response;
+    try {
+      response = await TaskQueue.execute({
+        url,
+        payload: {
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          mode: 'cors',
+          method: 'POST',
+          body: JSON.stringify(payload)
+        },
+        silent: true
+      });
+    } catch (error) {
+      failure.status = error?.response?.status;
+      reportAddressApiFailure(failure);
+      throw new Error(fallbackMessage);
     }
 
-    EventBus.$emit('address-updated', result);
+    if (response.resultCode !== 200) {
+      const message = response.result?.errorMessage || fallbackMessage;
+      failure.status = response.resultCode;
+      failure.message = message;
+      reportAddressApiFailure(failure);
+      throw new Error(message);
+    }
+
+    EventBus.$emit('address-updated', response.result);
   },
   async removeAddress (context, payload): Promise<void> {
     const url = `${config.budsies.endpoint}/address/delete?token={{token}}`;

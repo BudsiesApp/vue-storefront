@@ -26,11 +26,7 @@ export default async function logError (errorMessage: ErrorMessage): Promise<voi
     return;
   }
 
-  const clientIp = await resolveIpWithCache();
-
-  if (!clientIp) {
-    return;
-  }
+  const clientIp = await resolveIpWithCache().catch(() => 'Unable to resolve ip');
 
   await keepMessage(errorMessage);
 
