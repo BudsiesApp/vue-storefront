@@ -205,15 +205,11 @@ describe('Cart synchronizeActions', () => {
     expect(commit).toHaveBeenLastCalledWith(types.SET_IS_CART_SYNCING, false)
   })
 
-  it('attempts to bypass guest cart', async () => {
+  it('retains the cart after a failed pull', async () => {
     (CartService.getItems as jest.Mock).mockImplementation(async () => ({
       resultCode: 500,
       result: null
     }))
-
-    config.queues = {
-      maxCartBypassAttempts: 4
-    }
 
     const contextMock = createContextMock({
       rootGetters: {
@@ -228,10 +224,8 @@ describe('Cart synchronizeActions', () => {
     });
 
     await (cartActions as any).performSync(contextMock, {});
-    expect(contextMock.dispatch).toBeCalledWith('connect', {
-      guestCart: true,
-      isCartSyncRecovery: true
-    })
+    expect(contextMock.dispatch).not.toHaveBeenCalled()
+    expect(contextMock.commit).not.toHaveBeenCalled()
   })
 
   it('removes product when there is out of stock', async () => {

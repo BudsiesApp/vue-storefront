@@ -126,9 +126,8 @@ const synchronizeActions = {
       waitForTotalsUpdate = true
     }: CartSyncOptions = {}
   ) {
-    const { getCartItems, canUpdateMethods, isSyncRequired, bypassCounter } = getters
+    const { getCartItems, canUpdateMethods, isSyncRequired } = getters
     if ((!canUpdateMethods || !isSyncRequired) && !forceSync) return createDiffLog()
-    commit(types.CART_SET_SYNC)
 
     const { result, resultCode } = await CartService.getItems()
 
@@ -155,6 +154,7 @@ const synchronizeActions = {
         waitForTotalsUpdate
       })
       cartHooksExecutors.afterSync(diffLog)
+      commit(types.CART_SET_SYNC)
       return diffLog
     }
 
@@ -169,15 +169,8 @@ const synchronizeActions = {
       return createDiffLog();
     }
 
-    if (bypassCounter < config.queues.maxCartBypassAttempts) {
-      Logger.log('Bypassing with guest cart' + bypassCounter, 'cart')()
-      commit(types.CART_UPDATE_BYPASS_COUNTER, { counter: 1 })
-      await dispatch('connect', { guestCart: true, isCartSyncRecovery: true })
-    }
-
     Logger.error(result, 'cart')
     cartHooksExecutors.afterSync(result)
-    commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
     return createDiffLog()
   },
   async stockSync ({ dispatch, commit, getters }, stockTask) {
