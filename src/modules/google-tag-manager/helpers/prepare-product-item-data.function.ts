@@ -3,9 +3,9 @@ import { Store } from 'vuex';
 import RootState from '@vue-storefront/core/types/RootState';
 import { GET_PRODUCT_PRICE } from '@vue-storefront/core/modules/catalog';
 import Product from 'core/modules/catalog/types/Product';
-import { PriceHelper } from 'src/modules/shared';
 
 import { prepareBaseItemData } from './prepare-base-item-data.function';
+import { prepareProductPrice } from './prepare-item-price.function';
 
 export function prepareProductItemData (
   product: Product,
@@ -16,7 +16,6 @@ export function prepareProductItemData (
 
   return {
     ...baseData,
-    discount: PriceHelper.getProductDiscount(price),
-    price: PriceHelper.getFinalPrice(price)
+    ...prepareProductPrice(product, price)
   }
 }
