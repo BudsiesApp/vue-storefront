@@ -1,36 +1,36 @@
-import type { PriceHelper } from 'src/modules/shared';
-
-interface ProductPriceInput {
-  price?: number,
-  price_incl_tax?: number,
-  qty?: number
-}
+import type Product from '@vue-storefront/core/modules/catalog/types/Product';
+import type { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
+import { getProductDiscountedPrice } from '@vue-storefront/core/helpers/product-discounted-price';
+import { calculateProductDefaultBundleOptionsPrice, getProductPriceData } from '@vue-storefront/core/helpers/price';
 
 function finiteAmount (value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-function taxExclusivePrice (product: ProductPriceInput, unitPrice: number): number {
-  const netPrice = finiteAmount(product.price);
-  const grossPrice = finiteAmount(product.price_incl_tax);
+function netRatio (net: unknown, gross: unknown): number | undefined {
+  const netAmount = finiteAmount(net);
+  const grossAmount = finiteAmount(gross);
 
-  if (netPrice !== undefined && grossPrice && grossPrice > 0) {
-    return unitPrice * netPrice / grossPrice;
-  }
-
-  return unitPrice;
+  return netAmount !== undefined && grossAmount !== undefined && grossAmount > 0
+    ? netAmount / grossAmount
+    : undefined;
 }
 
-export function prepareProductPrice (product: ProductPriceInput, selectedPrice: PriceHelper.ProductPrice) {
-  const quantity = finiteAmount(product.qty) || 1;
-  const regular = taxExclusivePrice(product, selectedPrice.regular / quantity);
-  const paidLinePrice = selectedPrice.special !== null && selectedPrice.special < selectedPrice.regular
-    ? selectedPrice.special
-    : selectedPrice.regular;
-  const paid = taxExclusivePrice(product, paidLinePrice / quantity);
+export function prepareProductPrice (
+  product: Product & { original_price?: number },
+  discountedPrices: Record<string, ProductDiscountedPrice>
+) {
+  const prices = getProductPriceData(product, calculateProductDefaultBundleOptionsPrice);
+  const override = getProductDiscountedPrice(product, discountedPrices);
+  const paidRatio = netRatio(product.price, product.price_incl_tax);
+  const regularRatio = netRatio(product.original_price, product.original_price_incl_tax);
+  const regularGross = finiteAmount(override?.regular) ?? Math.max(prices.originalPriceInclTax, prices.priceInclTax);
+  const paidGross = finiteAmount(override?.final) ?? prices.priceInclTax;
+  const regular = Math.max(0, finiteAmount(regularGross * (regularRatio ?? paidRatio ?? 1)) ?? 0);
+  const paid = Math.max(0, finiteAmount(paidGross * (paidRatio ?? regularRatio ?? 1)) ?? 0);
 
   return {
-    price: Math.max(0, finiteAmount(paid) ?? 0),
-    discount: Math.max(0, finiteAmount(regular - paid) ?? 0)
+    price: Math.min(regular, paid),
+    discount: Math.max(0, regular - paid)
   };
 }

@@ -57,6 +57,13 @@ Existing product and cart item payloads SHALL emit numeric discounted unit `pric
 - **THEN** its tax-exclusive unit price is emitted with `discount: 0`
 - **AND** an event value, if present, matches its item revenue
 
+#### Scenario: Taxed catalog products and unit-price resolution
+- **WHEN** catalog product prices include nonzero tax, with or without a special price or campaign override
+- **THEN** item price and discount are tax-exclusive unit amounts with tax removed exactly once
+- **AND** raw `regular_price`, cached display getter amounts, and product quantity do not change their monetary basis
+- **AND** default bundle-option pricing, gift-card amounts, and zero-valued campaign overrides remain supported
+- **AND** multiplying the unit price by quantity produces the event revenue
+
 ### Requirement: Categories use available hierarchy levels
 
 Item payloads SHALL populate `item_category` through `item_category5` from available category ancestry, ordered from broadest to most specific and limited to five levels. They SHALL NOT join category names into one hierarchy field or invent ancestry between unrelated categories.
@@ -82,8 +89,7 @@ Payload updates SHALL preserve existing event names and firing points except for
 
 #### Scenario: Consumer migration and Analytics receipt
 - **WHEN** the payload correction is prepared for rollout
-- **THEN** Redmine notes document before/after value, discount, and category shapes and necessary external GTM mapping changes
-- **AND** GTM Preview verifies the four funnel events and affected non-GA consumers
+- **THEN** Redmine notes document before/after value, discount, and category shapes and the actual GTM container change status
 - **AND** GA4 DebugView verifies purchase value, shipping, tax, coupon, currency, and items
 
 ### Requirement: Cart views wait for synchronized totals

@@ -43,7 +43,7 @@ Keep the current listener and helper structure. Add a small pure helper for repe
 
 Reuse `PriceHelper.getCartItemPrice(cartItem, productDiscountedPrice)` for both cart and placed-order items. It already reads custom regular/final unit prices, multiplies them by quantity, and owns the existing fallback when custom totals are unavailable. Map its line amounts to unit `price` and numeric unit `discount` using `getFinalPrice` and `getProductDiscount`. Do not add standard row-total calculations, bundle exceptions, or another tax conversion to cart mapping. Calling the helper on the supplied item also avoids resolving a placed order's price from a cached current-cart item.
 
-Keep product tax-exclusive mapping separate from cart mapping. Do not apply the selected display exchange rate or change storefront display-price calculations. Prevent division by zero and non-finite output; cart items with invalid or nonpositive quantities report zero price and discount.
+Keep product tax-exclusive mapping separate from cart mapping. Resolve catalog product unit amounts from `PriceHelper.getProductPriceData` with the existing default-bundle calculation and `getProductDiscountedPrice`, rather than the cached `GET_PRODUCT_PRICE` getter. These sources provide tax-inclusive unit amounts; use the matching current and original net/gross product pairs to remove tax exactly once (fall back to the available pair when one is missing). Retain gift-card amounts and default bundle/campaign resolution. Honor zero-valued overrides with nullish checks. Ignore product quantity during unit-price resolution, and multiply only when calculating event value. Do not use raw `regular_price` as a tax-inclusive amount. Do not apply the selected display exchange rate or change storefront display-price calculations. Prevent division by zero and non-finite output; cart items with invalid or nonpositive quantities report zero price and discount.
 
 Calculate `value = sum(item.price * item.quantity)` and round the aggregate to two decimals. The value helper needs no currency argument or currency-precision lookup. Retain sufficient fractional unit precision for quantities such as three units sharing a one-unit monetary discount. Reuse Magento's transaction-discount allocations; do not redistribute its aggregate discount across already discounted items.
 
@@ -74,14 +74,14 @@ Empty carts and disabled/offline totals synchronization keep reporting after loc
 ## Risks / Trade-offs
 
 - Backend bundle or tax semantics differ from assumptions -> Check representative simple/bundle totals against emitted line revenue; do not ship guessed tax or currency conversions.
-- New field semantics affect RTB House, Facebook, or affiliate tags -> Preserve custom fields and inspect their actual mappings during rollout. Consumers needing former gross revenue must use an explicit GTM mapping from existing monetary inputs, not the corrected GA item-revenue field.
+- New field semantics affect RTB House, Facebook, or affiliate tags -> Preserve custom fields and document the changed shared-field semantics. Consumers needing former gross revenue must use an explicit GTM mapping from existing monetary inputs, not the corrected GA item-revenue field.
 
 ## Migration Plan
 
 1. Run focused mapper/listener regression tests, changed-file lint, and type checking. Cover no discount, quantity greater than one, combined catalog/coupon discounts, bundles, tax, currency differences, zero-price items, and rounding. Verify event counts and clear-before-push behavior using the existing event handlers.
 2. Prepare before/after examples and GTM mapping notes. For two 100-unit-price items with a 20 merchandise discount, 12 shipping, and 8 tax, the corrected purchase has `value: 180`, item `price: 90`, item `discount: 10`, `quantity: 2`, shipping 12, and tax 8. Explain the old object discount and joined category fields explicitly.
-3. The GTM owner reviews affected ecommerce consumers and applies any needed parameter mappings. Verify `begin_checkout`, `add_shipping_info`, `add_payment_info`, and `purchase` in Preview; verify purchase fields in GA4 DebugView. Keep these checks pending until evidence exists.
-4. Record results and external container changes in final Redmine notes. Roll back coordinated storefront/container mappings together if integration checks fail.
+3. Verify purchase fields in GA4 DebugView. Keep this check pending until evidence exists.
+4. Record DebugView results and the actual GTM container change status in final Redmine notes. No container changes have been applied as part of this work.
 
 ## References
 

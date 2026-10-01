@@ -51,8 +51,10 @@ describe('GA4 ecommerce listener', () => {
     id: 42,
     name: 'Plushie',
     qty: 2,
-    price: 100,
-    price_incl_tax: 120,
+    price: 90,
+    price_incl_tax: 108,
+    original_price: 100,
+    original_price_incl_tax: 120,
     type_id: 'simple',
     totals: { base_row_total: 200, base_discount_amount: 20, row_total: 240, discount_amount: 24 },
     category: [{ name: 'Plushies', slug: 'plushies-4', category_id: 4, path: 'plushies/plushies-4' }],
@@ -75,6 +77,7 @@ describe('GA4 ecommerce listener', () => {
     const store = new Store({
       state: {
         cart: { cartItems: [item], platformTotals: totals, exchangeRate: 2, productDiscountedPrice: {} },
+        product: { productDiscountedPrice: {} },
         user: { current: null }
       },
       getters: {

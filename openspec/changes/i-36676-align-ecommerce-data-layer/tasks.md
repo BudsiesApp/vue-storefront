@@ -15,8 +15,12 @@
 
 - [x] 2.3 Add reactive lifecycle regression coverage for reload before totals arrive, already synchronized navigation, repeated synchronization, coupon-free carts, empty/offline carts, failed initial totals, and destruction before completion; run focused tests, changed-file lint, and type checking. (29 focused tests passed across six suites, including existing-helper cart mapping and USD reporting coverage; changed-file ESLint and the project's direct `vue-tsc` command passed.)
 
-## 3. Document and verify the external GTM rollout
+## 3. Document the rollout and verify Analytics receipt
 
-- [x] 3.1 Prepare Redmine-ready before/after payload examples and a GTM handoff covering changed value/discount/category semantics and non-GA ecommerce compatibility; verify all affected field paths and retained custom fields are listed.
-- [ ] 3.2 With the GTM owner, verify/update actual GA ecommerce parameter mappings and affected RTB House/Facebook/affiliate mappings; capture Preview evidence for `begin_checkout`, `add_shipping_info`, `add_payment_info`, and `purchase` with expected event counts.
-- [ ] 3.3 Obtain GA4 DebugView evidence for purchase revenue, shipping, tax, currency, coupon, and items; incorporate results and actual external container changes into the final Redmine notes, keeping external checks incomplete until evidence is available.
+- [x] 3.1 Prepare Redmine-ready before/after payload examples covering changed value/discount/category semantics and non-GA ecommerce compatibility; verify all affected field paths and retained custom fields are listed.
+- [ ] 3.3 Obtain GA4 DebugView evidence for purchase revenue, shipping, tax, currency, coupon, and items; incorporate results and the actual GTM container change status into the final Redmine notes, keeping external checks incomplete until evidence is available.
+
+## 4. Make catalog product pricing explicit
+
+- [x] 4.1 Resolve tax-exclusive product unit prices independently of cached display getters; preserve default bundle/campaign/gift-card pricing, zero overrides, and quantity-independent unit values.
+- [x] 4.2 Add regression coverage using real pricing resolvers for taxed/untaxed products, discounts, quantity, raw regular-price presence, and default-option overrides; run focused tests, lint, type checking, and OpenSpec validation. (38 tests passed across six suites; changed-file ESLint, vue-tsc, and strict OpenSpec validation passed.)
