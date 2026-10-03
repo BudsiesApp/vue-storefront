@@ -4,9 +4,7 @@ services:
     image: 'redis:4-alpine'
 
   app:
-    build:
-      context: .
-      dockerfile: docker/vue-storefront/Dockerfile
+    image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/app:2026-10-03
     user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
     depends_on:
       - redis
@@ -83,9 +81,7 @@ services:
       - 3000
 
   tests:
-      build:
-        context: .
-        dockerfile: docker/tests/Dockerfile
+      image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/tests:2026-10-03
       user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
       security_opt:
         - seccomp:unconfined
@@ -99,6 +95,7 @@ services:
         - ~/.agents:/home/ubuntu/.agents
         #- ~/.codex:/root/.codex
         - ~/.codex:/home/ubuntu/.codex
+        - ~/.copilot:/home/ubuntu/.copilot
 
 networks:
   reverseproxy:
