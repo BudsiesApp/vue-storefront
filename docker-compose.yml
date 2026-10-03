@@ -95,6 +95,7 @@ services:
         - ~/.agents:/home/ubuntu/.agents
         #- ~/.codex:/root/.codex
         - ~/.codex:/home/ubuntu/.codex
+        - ~/.copilot:/home/ubuntu/.copilot
 
 networks:
   reverseproxy:
