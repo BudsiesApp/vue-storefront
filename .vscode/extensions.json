@@ -14,6 +14,7 @@
 		"k--kato.intellij-idea-keybindings",
 		"streetsidesoftware.code-spell-checker",
 		"thimo.integrated-browser-mcp",
+		"lynn-zy.vscode-agent-semantic-search",
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": [
