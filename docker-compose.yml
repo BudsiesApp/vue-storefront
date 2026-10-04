@@ -4,7 +4,7 @@ services:
     image: 'redis:4-alpine'
 
   app:
-    image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/app:2026-10-03
+    image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/app:2026-10-04.3.1
     user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
     depends_on:
       - redis
@@ -81,7 +81,7 @@ services:
       - 3000
 
   tests:
-      image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/tests:2026-10-03
+      image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/tests:2026-10-04.3.1
       user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
       security_opt:
         - seccomp:unconfined
