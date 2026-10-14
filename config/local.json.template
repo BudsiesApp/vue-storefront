@@ -209,7 +209,9 @@
       "ES": {
         "stateComponentType": "administrative_area_level_2"
       },
-      "MX": {}
+      "MX": {},
+      "AR": {},
+      "CL": {}
     }
   },
   "privacyPolicy": {
