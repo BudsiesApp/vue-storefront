@@ -1,11 +1,10 @@
-import get from 'lodash-es/get'
-
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import { isBundleProduct } from '@vue-storefront/core/modules/catalog/helpers';
-import { getBundleOptionsValues, getBundleOptionPrice } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions'
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { price } from '@vue-storefront/core/filters';
 import { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
+import { getSelectedOptionValuesByCustomizationState } from 'src/modules/customization-system/helpers/get-selected-options-values-by-customization-state';
+import { getOptionValuePrice } from 'src/modules/customization-system/helpers/get-option-value-price';
 
 import { getCartItemDiscountedPrice, getProductDiscountedPrice } from './product-discounted-price';
 
@@ -38,13 +37,24 @@ export interface FormattedProductDiscount {
 function calculateCartItemBundleOptionsPrice (
   product: Product
 ): ProductPriceData {
-  const allBundleOptions = product.bundle_options || []
-  const selectedBundleOptions = Object.values(get(product, 'product_option.extension_attributes.bundle_options', {}))
-  const price = getBundleOptionPrice(
-    getBundleOptionsValues(selectedBundleOptions as any[], allBundleOptions)
-  )
+  const customizationState = (product as CartItem).extension_attributes?.customization_state || [];
+  const values = getSelectedOptionValuesByCustomizationState(customizationState, product.customizations);
+  let regular = 0;
+  let final = 0;
 
-  return price
+  for (const value of values) {
+    if (value.price == null) continue;
+
+    const price = getOptionValuePrice(value);
+    regular += price.regular * value.quantity;
+    final += (price.special ?? price.regular) * value.quantity;
+  }
+
+  return {
+    priceInclTax: final,
+    originalPriceInclTax: regular,
+    specialPrice: final < regular ? final : null
+  };
 }
 
 export function calculateProductDefaultBundleOptionsPrice (

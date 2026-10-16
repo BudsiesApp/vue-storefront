@@ -1,13 +1,15 @@
 import { useStore } from '@vue-storefront/core/application-services';
+import {
+  PRODUCT_DISCOUNTED_PRICE_DICTIONARY
+} from '@vue-storefront/core/modules/catalog';
+import type { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
 import { Ref, computed } from 'vue';
-
-import { PRODUCT_LOCALIZED_PRICE_DICTIONARY } from '@vue-storefront/core/modules/catalog';
 
 import { PriceHelper } from 'src/modules/shared';
 
 import { getOptionValuePrice } from '../helpers/get-option-value-price';
 import { OptionValue } from '../types/option-value.interface';
-import { Currency, GET_ACTIVE_CURRENCY } from 'src/modules/currency';
+import { Currency, GET_ACTIVE_CURRENCY, GET_CURRENCY_EXCHANGE_RATE } from 'src/modules/currency';
 import { PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID } from '../types/production-time-selector-standard-option-value-id';
 
 export function useOptionValuesPrice (
@@ -15,11 +17,13 @@ export function useOptionValuesPrice (
   useLowestPriceAsDefault = false
 ) {
   const applicationStore = useStore();
+  const exchangeRate = computed<number>(() => applicationStore.getters[GET_CURRENCY_EXCHANGE_RATE] || 1);
+  const productDiscountedPriceDictionary = computed<Record<string, ProductDiscountedPrice>>(
+    () => applicationStore.getters[PRODUCT_DISCOUNTED_PRICE_DICTIONARY] || {}
+  );
   const optionValuePriceDictionary = computed<Record<string, PriceHelper.ProductPrice | undefined>>(
     () => {
       const dictionary: Record<string, PriceHelper.ProductPrice | undefined> = {};
-      const productBySkuDictionary = applicationStore.getters['product/getProductBySkuDictionary'];
-      const productPriceDictionary = applicationStore.getters[PRODUCT_LOCALIZED_PRICE_DICTIONARY];
 
       values.value.forEach((optionValue) => {
         if (optionValue.id === PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID) {
@@ -32,8 +36,8 @@ export function useOptionValuesPrice (
 
         dictionary[optionValue.id] = getOptionValuePrice(
           optionValue,
-          productBySkuDictionary,
-          productPriceDictionary
+          productDiscountedPriceDictionary.value,
+          exchangeRate.value
         );
       });
 
@@ -62,7 +66,7 @@ export function useOptionValuesPrice (
 
       const optionValueFinalPrice = PriceHelper.getFinalPrice(optionValuePrice);
 
-      if (lowestFinalPrice && optionValueFinalPrice > lowestFinalPrice) {
+      if (lowestFinalPrice !== undefined && optionValueFinalPrice > lowestFinalPrice) {
         continue;
       }
 
