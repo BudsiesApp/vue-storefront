@@ -1,7 +1,7 @@
 [submodule "src/modules/vsf-cache-varnish"]
 	path = src/modules/vsf-cache-varnish
 	url = https://github.com/BudsiesApp/vsf-cache-varnish-1.git
-	branch = master
+	branch = budsies
 [submodule "src/themes/petsies-capybara"]
 	path = src/themes/petsies-capybara
 	url = https://github.com/BudsiesApp/vsf-capybara.git
