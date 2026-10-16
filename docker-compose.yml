@@ -96,6 +96,8 @@ services:
         #- ~/.codex:/root/.codex
         - ~/.codex:/home/ubuntu/.codex
         - ~/.copilot:/home/ubuntu/.copilot
+        # - ~/.config/gorbunov-studio-skills:/root/.config/gorbunov-studio-skills
+        - ~/.config/gorbunov-studio-skills:/home/ubuntu/.config/gorbunov-studio-skills
 
 networks:
   reverseproxy:
