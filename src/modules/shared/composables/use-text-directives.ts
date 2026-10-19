@@ -219,7 +219,10 @@ export function useTextDirectives (
       'product/findProducts',
       {
         query: searchQuery,
-        size: productsSkus.length
+        size: productsSkus.length,
+        options: {
+          prefetchGroupProducts: false
+        }
       }
     )
   }
