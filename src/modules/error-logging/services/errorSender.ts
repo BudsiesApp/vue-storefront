@@ -31,6 +31,12 @@ export async function sendErrorMessage (
     _instanceId: instanceId
   }
 
+  if (errorMessage.context) {
+    for (const [key, value] of Object.entries(errorMessage.context)) {
+      data[`_${key}`] = value;
+    }
+  }
+
   const response = await fetch(
     config.errorLogging.serviceUrl,
     {

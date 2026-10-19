@@ -38,7 +38,7 @@ export async function keepMessage (errorMessage: ErrorMessage): Promise<void> {
   const message = getMessage(errorMessage);
 
   if (!message) {
-    addMessage(errorMessage);
+    await addMessage(errorMessage);
     return;
   }
 
