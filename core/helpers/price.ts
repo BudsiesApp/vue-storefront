@@ -108,7 +108,7 @@ export function formatProductDiscount (
   return {
     discount: value.discount ? formatPrice(value.discount, currencySign) : '',
     discountPercent: value.discountPercent
-      ? `-${value.discountPercent}%`
+      ? `${value.discountPercent}%`
       : ''
   };
 }
