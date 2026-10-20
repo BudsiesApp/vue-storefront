@@ -52,16 +52,16 @@
 
 ## 6. Manual verification on the current branch
 
-- [ ] 6.1 On the local storefront at desktop width, keyboard only, check that:
+- [x] 6.1 On the local storefront at desktop width, keyboard only, check that:
   - Tab to Products → no dropdown.
   - Tab → the chevron button appears; Enter or Space → the dropdown opens.
   - Tab through the links, then Escape → it closes, focus is on the button, and it stays closed.
   - Tab past the last link → it closes.
   - Enter on the title navigates to the Products page.
-- [ ] 6.2 With a screen reader (for example NVDA + Firefox or VoiceOver + Safari), confirm the announcements: "Products, link", then "Products submenu, button, collapsed/expanded".
-- [ ] 6.3 With a mouse, confirm that hover open and close, clicking the title, clicking a submenu link, and the overlay are unchanged. With the pointer resting over the open menu, Escape closes it; moving the pointer out and back reopens it.
+- [x] 6.2 With a screen reader (for example NVDA + Firefox or VoiceOver + Safari), confirm the announcements: "Products, link", then "Products submenu, button, collapsed/expanded".
+- [x] 6.3 With a mouse, confirm that hover open and close, clicking the title, clicking a submenu link, and the overlay are unchanged. With the pointer resting over the open menu, Escape closes it; moving the pointer out and back reopens it.
 
 ## 7. Ports to other theme branches (on branches the developer creates)
 
-- [ ] 7.1 On the branch created from `budsies-theme`, apply the same pattern to Products and Educators: `isEducatorsMenuExpanded` / `isEducatorsMenuHoverDismissed`, an Educators toggle button with its own `id` / `aria-controls`, and the `.m-educators-menu` CSS. Keep the existing cross-menu resets. Port and pass the header spec, then repeat checks 6.1–6.3 for both menus.
-- [ ] 7.2 On the branch created from `bulkorders-theme`, apply the same pattern to About and Products. Port and pass the header spec, then repeat checks 6.1–6.3 for both menus.
+- [x] 7.1 On the branch created from `budsies-theme`, apply the same pattern to Products and Educators: `isEducatorsMenuExpanded` / `isEducatorsMenuHoverDismissed`, an Educators toggle button with its own `id` / `aria-controls`, and the `.m-educators-menu` CSS. Keep the existing cross-menu resets. Port and pass the header spec, then repeat checks 6.1–6.3 for both menus.
+- [x] 7.2 On the branch created from `bulkorders-theme`, apply the same pattern to About and Products. Port and pass the header spec, then repeat checks 6.1–6.3 for both menus.
