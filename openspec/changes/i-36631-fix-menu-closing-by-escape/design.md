@@ -43,8 +43,6 @@ On `bulkorders-theme`, About and Products have no page of their own. Today each 
 
 The button's user-agent styles (font, background, margin) are reset so it renders exactly like the old div. State, Escape, focus-out, and hover-dismiss logic are the same as for the other brands.
 
-A visible title button also receives real mouse clicks, which the hidden 1px toggles on the other brands never do. The click handler tells them apart with `event.detail`: Enter and Space produce a click with `detail === 0`, while a pointer click has `detail > 0`. A pointer click only opens the menu the way hover does: it clears the hover dismissal and sets the hovered state. It never sets the keyboard-expanded state and never closes the menu, so pointer leave still closes it. Otherwise a click would toggle the keyboard state, and the menu would stay open after the mouse moved away.
-
 *Alternative considered:* keeping the div and adding the hidden toggle next to it. Rejected: it adds a Tab stop that does nothing and keeps the invalid role.
 
 ### State model

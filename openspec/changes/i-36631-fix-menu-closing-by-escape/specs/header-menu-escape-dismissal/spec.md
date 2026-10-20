@@ -29,16 +29,6 @@ When a desktop header menu's title has no page of its own (for example, About an
 #### Scenario: Keyboard user expands a title-button menu
 - **WHEN** focus is on the Bulk Orders About title and the user presses Enter or Space
 - **THEN** the About dropdown opens, the title reports `aria-expanded="true"`, and the next Tab moves focus to the first submenu link
-
-#### Scenario: Mouse user clicks a title without a page
-- **WHEN** a mouse user hovers over the Bulk Orders About title and clicks it
-- **THEN** the About dropdown stays open, and a mouse click never closes it
-- **AND** the dropdown closes when the pointer leaves the navigation item, as with hover
-
-#### Scenario: Mouse user clicks a title after dismissing it with Escape
-- **WHEN** a hover-opened Bulk Orders About dropdown has been closed with Escape, and the user clicks the About title without moving the pointer away
-- **THEN** the About dropdown opens and closes when the pointer leaves the navigation item
-
 ### Requirement: A disclosure toggle button controls the dropdown
 Each menu whose title is a link SHALL provide a toggle button placed directly after its title in the tab order and before the submenu links. For menus whose title is the disclosure button, the requirements below that refer to the toggle button apply to the title button.
 - The button's accessible name SHALL identify the submenu (for example, "Products submenu").
