@@ -3,6 +3,8 @@ import { Customization } from '../types/customization.interface';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 import { OptionValue } from '../types/option-value.interface';
 
+type SelectedOptionValue = OptionValue & { quantity: number };
+
 function getCustomizationDictionary (customizations: Customization[]): Record<string, Customization> {
   const dictionary: Record<string, Customization> = {};
 
@@ -16,13 +18,13 @@ function getCustomizationDictionary (customizations: Customization[]): Record<st
 export function getSelectedOptionValuesByCustomizationState (
   customizationState: CustomizationStateItem[] | undefined,
   customizations: Customization[] | undefined
-): OptionValue[] {
+): SelectedOptionValue[] {
   if (!customizationState || !customizations) {
     return [];
   }
 
   const customizationDictionary = getCustomizationDictionary(customizations);
-  const optionValues: OptionValue[] = [];
+  const optionValues: SelectedOptionValue[] = [];
 
   for (const customizationStateItem of customizationState) {
     if (isFileUploadValue(customizationStateItem.value)) {
@@ -47,7 +49,7 @@ export function getSelectedOptionValuesByCustomizationState (
         continue;
       }
 
-      optionValues.push(optionValue);
+      optionValues.push({ ...optionValue, quantity: customizationStateItem.quantity ?? 1 });
     }
   }
 

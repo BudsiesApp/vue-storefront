@@ -1,89 +1,74 @@
-import get from 'lodash-es/get'
-import { BundleOptionsProductLink, SelectedBundleOption } from '@vue-storefront/core/modules/catalog/types/BundleOption';
-import { getBundleOptionsValues, getDefaultBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions';
-import Product from '@vue-storefront/core/modules/catalog/types/Product';
-import { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
+import type CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
+import type Product from '@vue-storefront/core/modules/catalog/types/Product';
+import type { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
+import { getSelectedOptionValuesByCustomizationState } from 'src/modules/customization-system/helpers/get-selected-options-values-by-customization-state';
+import { getOptionValuePrice } from 'src/modules/customization-system/helpers/get-option-value-price';
+import type { OptionValue } from 'src/modules/customization-system/types/option-value.interface';
+
+import { getFinalPrice } from './price';
 
 function getBundleOptionDiscountedPrice (
-  bundleOptionValues: BundleOptionsProductLink[],
+  values: (OptionValue & { quantity: number })[],
   productDiscountedPrice: Record<string, ProductDiscountedPrice>
 ): ProductDiscountedPrice | undefined {
+  const total: ProductDiscountedPrice = { regular: 0, final: 0 };
   let isDiscounted = false;
 
-  const price = bundleOptionValues.map((optionValue) => {
-    const product = optionValue.product;
+  for (const value of values) {
+    if (value.price == null) continue;
 
-    if (!product || !product.id) {
-      return {
-        regular: optionValue.price || 0,
-        final: optionValue.price || 0
-      };
-    }
-
-    const productPrice = productDiscountedPrice[product.id];
-
-    if (productPrice) {
+    if (value.productId != null && productDiscountedPrice[value.productId]) {
       isDiscounted = true;
     }
 
-    return {
-      final: productPrice?.final ||
-        product.special_price_incl_tax ||
-        product.priceInclTax ||
-        product.price_incl_tax ||
-        0,
-      regular: productPrice?.regular ||
-        product.original_price_incl_tax ||
-        product.priceInclTax ||
-        product.price_incl_tax ||
-        0
-    };
-  }).reduce((productPrice, totalPrice) => {
-    return {
-      regular: totalPrice.regular + productPrice.regular,
-      final: totalPrice.final + productPrice.final
-    }
-  }, { regular: 0, final: 0 });
-
-  if (!isDiscounted || !price) {
-    return;
+    const price = getOptionValuePrice(value, productDiscountedPrice);
+    total.regular += price.regular * value.quantity;
+    total.final += getFinalPrice(price) * value.quantity;
   }
 
-  return price;
+  return isDiscounted ? total : undefined;
 }
 
 export function getBundleCartItemDiscountedPrice (
   product: Product,
   productDiscountedPrice: Record<string, ProductDiscountedPrice>
 ): ProductDiscountedPrice | undefined {
-  const allBundleOptions = product.bundle_options || [];
+  const customizationState = (product as CartItem).extension_attributes?.customization_state || [];
+  const values = getSelectedOptionValuesByCustomizationState(customizationState, product.customizations);
 
-  const selectedBundleOptions = Object.values(
-    get(
-      product,
-      'product_option.extension_attributes.bundle_options',
-      {}
-    )
-  );
-  const bundleOptionsValues = getBundleOptionsValues(
-    selectedBundleOptions as SelectedBundleOption[],
-    allBundleOptions
-  );
-
-  return getBundleOptionDiscountedPrice(bundleOptionsValues, productDiscountedPrice);
+  return getBundleOptionDiscountedPrice(values, productDiscountedPrice);
 }
 
 export function getBundleProductDefaultDiscountedPrice (
   product: Product,
   productDiscountedPrice: Record<string, ProductDiscountedPrice>
 ): ProductDiscountedPrice | undefined {
-  const allBundleOptions = product.bundle_options || [];
+  const values: (OptionValue & { quantity: number })[] = [];
 
-  const defaultBundleOptions = getDefaultBundleOptions(product);
-  const bundleOptionsValues = getBundleOptionsValues(
-    defaultBundleOptions as SelectedBundleOption[],
-    allBundleOptions
-  );
+  for (const customization of product.customizations || []) {
+    if (!customization.isEnabled || !customization.optionData?.isRequired) continue;
 
-  return getBundleOptionDiscountedPrice(bundleOptionsValues, productDiscountedPrice);
+    const optionValues = customization.optionData.values || [];
+    let defaultValue = optionValues.find(value => value.isDefault);
+
+    if (!defaultValue) {
+      let lowestPrice: number | undefined;
+
+      for (const value of optionValues) {
+        if (!value.isEnabled || value.price == null) continue;
+
+        const price = getFinalPrice(getOptionValuePrice(value, productDiscountedPrice));
+        if (lowestPrice === undefined || price < lowestPrice) {
+          lowestPrice = price;
+          defaultValue = value;
+        }
+      }
+    }
+
+    if (!defaultValue) continue;
+
+    values.push({ ...defaultValue, quantity: 1 });
+  }
+
+  return getBundleOptionDiscountedPrice(values, productDiscountedPrice);
 }
