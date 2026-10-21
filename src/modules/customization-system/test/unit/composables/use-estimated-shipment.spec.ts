@@ -22,17 +22,18 @@ describe('useEstimatedShipment', () => {
     const wrapper = mountWithApplicationServices(component, services);
 
     try {
-      const timeZone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const expected = timeZone === 'America/New_York'
-        ? /October 21, 2026.*11:59\s*PM.*(?:EDT|GMT-4)/
-        : timeZone === 'UTC' ? /October 22, 2026.*3:59\s*AM.*(?:UTC|GMT)/ : undefined;
+      const expectedDate = new Date(timestamp).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
       const deadline = result.offerExpirationDateText.value;
 
-      if (expected) {
-        expect(deadline).toMatch(expected);
-      }
-      expect(deadline).toMatch(/^if you order by .+/);
-      expect(t).toHaveBeenCalledWith('if you order by {date}', { date: expect.any(String) });
+      expect(deadline).toBe(`if you order by ${expectedDate}`);
+      expect(t).toHaveBeenCalledWith('if you order by {date}', { date: expectedDate });
 
       for (const value of [undefined, {}, { offer_expiration_date: null }, { offer_expiration_date: '' }, { offer_expiration_date: '2026-10-22' }]) {
         shipment.value = value;
