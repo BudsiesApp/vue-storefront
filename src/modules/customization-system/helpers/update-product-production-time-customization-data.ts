@@ -17,7 +17,7 @@ const SNEAK_PEEK_OPTION_VALUES_SKUS = [
   'specialty_commission_sneak_peek'
 ];
 
-const ADD_SNEAK_PEEK_AVAILABILITY_RULES = true;
+const ADD_SNEAK_PEEK_AVAILABILITY_RULES = false;
 
 function buildStandardOptionValue (standardText?: string): OptionValue {
   return {
