@@ -1,6 +1,6 @@
-import { computed, Ref } from 'vue';
+import { computed, onMounted, ref, Ref } from 'vue';
 
-import i18n from '@vue-storefront/core/i18n';
+import { useI18n } from '@vue-storefront/core/application-services';
 
 import { EstimatedShipment } from '../types/estimated-shipment.interface';
 
@@ -10,6 +10,13 @@ const estimatedDateTemplateVariableRegExp = new RegExp(estimatedDateTemplateVari
 export function useEstimatedShipment (
   estimatedShipment: Ref<EstimatedShipment | undefined>
 ) {
+  const { t } = useI18n();
+  const mounted = ref(false);
+
+  onMounted(() => {
+    mounted.value = true;
+  });
+
   const estimatedShipmentDate = computed<Date | undefined>(() => {
     if (!estimatedShipment.value?.turnaround_time) {
       return;
@@ -39,16 +46,25 @@ export function useEstimatedShipment (
   });
 
   const offerExpirationDateText = computed<string | undefined>(() => {
-    if (!estimatedShipment.value?.offer_expiration_date) {
+    const expiration = estimatedShipment.value?.offer_expiration_date;
+
+    if (!mounted.value || !expiration || /^\d{4}-\d{2}-\d{2}$/.test(expiration)) {
       return;
     }
 
-    const date = new Date(estimatedShipment.value.offer_expiration_date);
+    const date = new Date(expiration);
 
-    return i18n.t(
+    return t(
       'if you order by {date}',
       {
-        date: date.toLocaleDateString()
+        date: new Intl.DateTimeFormat(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          timeZoneName: 'short'
+        }).format(date)
       }
     ).toString();
   });
