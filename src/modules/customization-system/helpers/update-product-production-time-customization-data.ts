@@ -40,19 +40,41 @@ function updateProductionTimeCustomization (
     return productionTimeCustomization;
   }
 
-  const addonBySku: Record<string, RushAddon> = {};
-  const standardAddon = availableAddons.find((addon) => !addon.id);
+  const isHolidayPeriod = !!productionTimeCustomization.optionData.displayWidgetOptions?.isHolidayPeriod;
+  let eligibleAddons = availableAddons;
 
-  for (const addon of availableAddons) {
-    if (addon.id) {
-      addonBySku[addon.id] = addon;
+  if (isHolidayPeriod) {
+    eligibleAddons = availableAddons.filter((addon) => addon.slotsLeft === undefined || addon.slotsLeft > 0);
+  }
+  const eligibleAddonSkus = new Set<string>();
+  const addonBySku: Record<string, RushAddon> = {};
+  const standardAddon = eligibleAddons.find((addon) => !addon.id);
+
+  for (const addon of eligibleAddons) {
+    if (!addon.id) {
+      continue;
     }
+
+    if (isHolidayPeriod) {
+      eligibleAddonSkus.add(addon.id);
+      continue;
+    }
+
+    addonBySku[addon.id] = addon;
   }
 
   const values: OptionValue[] = [];
 
   for (const value of (productionTimeCustomization.optionData.values || [])) {
     if (!value.sku) {
+      continue;
+    }
+
+    if (isHolidayPeriod) {
+      if (eligibleAddonSkus.has(value.sku)) {
+        values.push({ ...value });
+      }
+
       continue;
     }
 
