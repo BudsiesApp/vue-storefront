@@ -7,10 +7,10 @@ import RootState from '@vue-storefront/core/types/RootState';
 import { I18nAdapter, RouteView } from './types';
 
 export const storeInjectionKey: InjectionKey<Store<RootState>> =
-  Symbol('StorefrontStore');
+  Symbol.for('budsies.storefront.store');
 export const routerInjectionKey: InjectionKey<VueRouter> =
-  Symbol('StorefrontRouter');
+  Symbol.for('budsies.storefront.router');
 export const routeInjectionKey: InjectionKey<RouteView> =
-  Symbol('StorefrontRoute');
+  Symbol.for('budsies.storefront.route');
 export const i18nInjectionKey: InjectionKey<I18nAdapter> =
-  Symbol('StorefrontI18n');
+  Symbol.for('budsies.storefront.i18n');
