@@ -9,7 +9,7 @@ import {
 } from './types';
 
 export const additionalContentInjectionKey:
-InjectionKey<AdditionalContentRegistry> = Symbol('AdditionalContentRegistry');
+InjectionKey<AdditionalContentRegistry> = Symbol.for('budsies.storefront.additional-content');
 
 export function useAdditionalContent (
   outlet: AdditionalContentOutlet
