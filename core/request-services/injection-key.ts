@@ -3,4 +3,4 @@ import { InjectionKey } from 'vue';
 import { RequestServices } from './types';
 
 export const requestServicesInjectionKey: InjectionKey<RequestServices> =
-  Symbol('request-services');
+  Symbol.for('budsies.storefront.request-services');
