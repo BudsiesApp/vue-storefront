@@ -12,7 +12,7 @@ import config from 'config'
 import { filterChangedProduct, productAfterCustomoptions, productAfterBundleoptions, productAfterPriceupdate, onUserPricesRefreshed } from './events'
 import { isServer } from '@vue-storefront/core/helpers'
 import uniq from 'lodash-es/uniq'
-import { PRODUCT_SET_PRODUCT_BY_SKU, SET_EXCHANGE_RATE, SET_PRODUCT_DISCOUNTED_PRICE, SN_PRODUCT } from './store/product/mutation-types'
+import { PRODUCT_MERGE_PRODUCT_BY_SKU, SET_EXCHANGE_RATE, SET_PRODUCT_DISCOUNTED_PRICE, SN_PRODUCT } from './store/product/mutation-types'
 import { GET_PRODUCT_PRICE, PRODUCT_LOCALIZED_PRICE_DICTIONARY, PRODUCT_PRICE_DICTIONARY } from './types/ProductGetters'
 import { ProductDiscountedPrice } from './types/product-discounted-price.interface'
 
@@ -29,7 +29,7 @@ export const CatalogModule: StorefrontModule = async function ({ store, router, 
   store.registerModule('category', categoryModule)
 
   catalogHooks.afterSetBundleProducts((products) => {
-    products?.forEach((product) => store.commit(`product/${PRODUCT_SET_PRODUCT_BY_SKU}`, product));
+    products?.forEach((product) => store.commit(`product/${PRODUCT_MERGE_PRODUCT_BY_SKU}`, product));
     getAttributesFromMetadata(store, products)
   });
   catalogHooks.afterSetGroupedProduct(products => getAttributesFromMetadata(store, products))

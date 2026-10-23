@@ -50,23 +50,20 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
       return PriceHelper.getFinalPrice(price) * 100;
     }
   },
-  created: async function (): Promise<void> {
-    await this.loadData()
-  },
-  mounted (): void {
-    const affirm = (this.window as any).affirm;
-
-    if (!affirm?.ui?.ready) {
-      return;
-    }
-
-    affirm.ui.ready(() => {
-      this.onAffirmUiReady();
-    });
+  async mounted (): Promise<void> {
+    this.subscribeToAffirmUiReady();
+    await this.loadData();
   },
   methods: {
     async loadData () {
       if (!this.itemData.product) {
+        return;
+      }
+
+      const loadedProduct = this.$store.getters['product/getProductByIdDictionary'][this.itemData.product];
+
+      if (loadedProduct) {
+        this.product = loadedProduct;
         return;
       }
 
@@ -80,6 +77,17 @@ export default (Blok as VueConstructor<InstanceType<typeof Blok> & InjectedServi
           skipCache: false
         }
       )
+    },
+    subscribeToAffirmUiReady (): void {
+      const affirm = (this.window as any).affirm;
+
+      if (!affirm?.ui?.ready) {
+        return;
+      }
+
+      affirm.ui.ready(() => {
+        this.onAffirmUiReady();
+      });
     },
     onAffirmUiReady (): void {
       if (!this.shouldRefreshAffirmUi) {
