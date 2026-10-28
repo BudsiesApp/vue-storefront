@@ -95,4 +95,3 @@ The storefront SHALL retain the authenticated deliverables route and existing au
 - **WHEN** the printout consumer downloads an artwork through the shared image downloader
 - **THEN** its handler receives the same storage path and the original image is saved under the supplied filename
 - **AND** its temporary blob URL is revoked after the save attempt as before
-
