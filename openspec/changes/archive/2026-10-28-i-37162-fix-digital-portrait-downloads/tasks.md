@@ -25,9 +25,9 @@ yarn exec eslint src/themes/petsies-capybara/pages/OrderItemDeliverablesDownload
 
 ## 2. Separate routine test session after implementation commit
 
-- [ ] 2.1 Run the complete maintained and core suites using the container payloads below. Record exact implementation revisions, commands, exits, discovery of the new theme specs, and any failures. Core still runs here despite being disabled in CI.
-- [ ] 2.2 In the same supported container, run type-check, full production-mode lint, and the configuration-lifecycle assertions below; record each outcome. The configuration test reads source without generating runtime configuration. Type-check excludes specs and does not replace focused Jest.
-- [ ] 2.3 Compare remaining failures against UI `17894f10295bf396e177b2762eaafc7732a45868` and theme `ce28a4ccf1e2e71c5bcac535286d12ea162602e3` with identical container/toolchain/dependencies in an isolated checkout, preserving working branches/stashes and the Braintree mismatch. Separate existing failures from regressions and resolve introduced failures; if all pass, record that no comparison was needed. Review final scope and run `openspec validate i-37162-fix-digital-portrait-downloads --strict` successfully before archive; include routine results and the production acceptance status in the handoff.
+- [x] 2.1 Run the complete maintained and core suites using the container payloads below. Record exact implementation revisions, commands, exits, discovery of the new theme specs, and any failures. Core still runs here despite being disabled in CI.
+- [x] 2.2 In the same supported container, run type-check, full production-mode lint, and the configuration-lifecycle assertions below; record each outcome. The configuration test reads source without generating runtime configuration. Type-check excludes specs and does not replace focused Jest.
+- [x] 2.3 Compare remaining failures against UI `17894f10295bf396e177b2762eaafc7732a45868` and theme `ce28a4ccf1e2e71c5bcac535286d12ea162602e3` with identical container/toolchain/dependencies in an isolated checkout, preserving working branches/stashes and the Braintree mismatch. Separate existing failures from regressions and resolve introduced failures; if all pass, record that no comparison was needed. Review final scope and run `openspec validate i-37162-fix-digital-portrait-downloads --strict` successfully before archive; include routine results and the production acceptance status in the handoff.
 
 Routine container payloads (run separately; set container `NODE_ENV=production` for lint):
 
