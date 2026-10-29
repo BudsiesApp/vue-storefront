@@ -3,17 +3,14 @@ import { computed, Ref, watch } from 'vue';
 import { ProductPurchaseFlow } from 'src/modules/shared';
 
 import { isCustomizationAvailableInFlow } from '../helpers/is-customization-available-in-flow';
+import {
+  findPurchaseFlowCustomization,
+  findPurchaseFlowOptionValue
+} from '../helpers/purchase-flow-customization';
 import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
 import { OptionValue } from '../types/option-value.interface';
 import { ProductCustomizationMode } from '../types/customizable-product-flow.type';
-
-const FLOW_CUSTOMIZATION_NAME = 'purchase flow';
-
-const flowToCustomizationValueMap: Record<ProductPurchaseFlow, string> = {
-  [ProductPurchaseFlow.CUSTOMIZE_NOW]: 'customize now',
-  [ProductPurchaseFlow.CUSTOMIZE_LATER]: 'customize later'
-};
 
 function normalizeName (value?: string): string {
   return (value || '').trim().toLowerCase();
@@ -25,12 +22,6 @@ function isSendPhotosLaterCustomization (customization: Customization) {
   const normalizedName = normalizeName(customization.name);
 
   return normalizedName === SEND_PHOTOS_LATER_CUSTOMIZATION_NAME;
-}
-
-function isFlowCustomizationByName (customization: Customization): boolean {
-  const normalizedName = normalizeName(customization.name);
-
-  return normalizedName === FLOW_CUSTOMIZATION_NAME;
 }
 
 export function usePurchaseFlowCustomizations (
@@ -64,23 +55,15 @@ export function usePurchaseFlowCustomizations (
   });
 
   const flowCustomization = computed<Customization | undefined>(() => {
-    return customizations.value.find((customization: Customization) => {
-      return isFlowCustomizationByName(customization);
-    });
+    return findPurchaseFlowCustomization(customizations.value);
   });
 
   const flowOptionValue = computed<OptionValue | undefined>(() => {
-    const customization = flowCustomization.value;
-
-    if (!customization?.optionData?.values?.length) {
+    if (!flowCustomization.value) {
       return undefined;
     }
 
-    const expectedOptionValueName = flowToCustomizationValueMap[productPurchaseFlow.value];
-
-    return customization.optionData.values.find((optionValue) => {
-      return normalizeName(optionValue.name) === expectedOptionValueName;
-    });
+    return findPurchaseFlowOptionValue(flowCustomization.value, productPurchaseFlow.value);
   });
 
   function syncHiddenFlowCustomization (): void {

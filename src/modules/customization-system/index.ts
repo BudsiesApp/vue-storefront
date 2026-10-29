@@ -33,8 +33,10 @@ import { getCustomizationAvailabilityFlowByProductPurchaseFlow } from './helpers
 import { getOptionValueId } from './helpers/get-option-value-id';
 import { getOptionValuePrice } from './helpers/get-option-value-price';
 import { getSelectedOptionValuesByCustomizationState } from './helpers/get-selected-options-values-by-customization-state';
+import { isCustomizationAvailableInFlow } from './helpers/is-customization-available-in-flow';
 import { isEmailCustomization } from './helpers/is-email-customization';
 import { fetchOrderItemCustomizationsState, fetchOrderItemDeliverables, fetchOrderItemsCustomizationsStates, saveOrderItemCustomizationsState, submitOrderItemCustomizationsState } from './helpers/order-items-customizations.service';
+import { findPurchaseFlowCustomization, findPurchaseFlowOptionValue } from './helpers/purchase-flow-customization';
 import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
 import { toOptionValueArray } from './helpers/to-option-value-array';
 import { updateCartItemProductionTimeCustomizationState } from './helpers/update-cart-item-production-time-customization-state';
@@ -84,6 +86,8 @@ export {
   fetchOrderItemDeliverables,
   fetchOrderItemsCustomizationsStates,
   filterCustomizationState,
+  findPurchaseFlowCustomization,
+  findPurchaseFlowOptionValue,
   getCartItemExtensionAttributes,
   getCustomizationSelectedValues,
   getCustomizationSystemThumbnail,
@@ -92,6 +96,7 @@ export {
   getOptionValuePrice,
   getSelectedOptionValuesByCustomizationState,
   getCustomizationAvailabilityFlowByProductPurchaseFlow,
+  isCustomizationAvailableInFlow,
   isEmailCustomization,
   isFileUploadValue,
   requiredCustomizationsFilter,
