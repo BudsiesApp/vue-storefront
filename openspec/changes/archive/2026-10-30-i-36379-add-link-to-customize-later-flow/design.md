@@ -22,7 +22,7 @@ Relevant current implementation:
 
 2. **Carry only the product type.** Derive `product` with the existing `getForeversTypeByBundleSku`; the destination keeps its normal option defaults.
 
-3. **Render real navigation with existing presentation.** Wire a translated `router-link` styled `sf-button color-secondary` (the established pattern for button-looking links in the theme) into non-last actions and directly inside the last step's `sf-step`, immediately after `<creation-wizard-form-last-step>`, with `position: sticky; bottom: 0` and right alignment; this follows the approved placement without changing the child component, while viewport-fixed positioning would violate the step-end boundary.
+3. **Render real navigation with existing presentation.** Wire a translated `router-link` styled `sf-button color-secondary` (the established pattern for button-looking links in the theme) into non-last actions and directly inside the last step's `sf-step`, immediately after `<creation-wizard-form-last-step>`, with `position: sticky; bottom: var(--spacer-sm)` and horizontal centering; this follows the approved placement without changing the child component, while viewport-fixed positioning would violate the step-end boundary.
 
 4. **Destination route prop and initial product.** Extend only `forevers-customize-later`'s route props with `preselectedProductType: route.query.product`, matching `forevers-create`, and pass a computed `initialSku` to `useMultiProductsPage`; setting the product after loading is simpler to wire but first displays the default Dog and needlessly switches products.
 

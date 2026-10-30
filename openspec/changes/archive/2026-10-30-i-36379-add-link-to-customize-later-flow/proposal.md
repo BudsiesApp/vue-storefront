@@ -7,7 +7,7 @@ Customers partway through creating a Forevers need a way to continue on the exis
 ## What Changes
 
 - Add a translated “Skip & Customize Later” navigation link on every customization step of the Forevers wizard when adding a new item; exclude Type, cart edits, golf covers, and order-history customization.
-- Place the link beside Continue on non-last steps with the recorded responsive ordering, and float it at the bottom-right within the last step's scroll boundary using the existing secondary button appearance.
+- Place the link beside Continue on non-last steps with the recorded responsive ordering, and float it at the bottom center within the last step's scroll boundary using the existing secondary button appearance.
 - Navigate to `forevers-customize-later` with the current `product` only, carrying no other wizard data and performing no cart action.
 - Initialize the destination's product type from the `product` query parameter.
 

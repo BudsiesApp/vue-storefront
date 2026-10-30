@@ -3,7 +3,7 @@
 ## 1. Wizard navigation
 
 - [x] 1.1 Add `src/themes/petsies-capybara/helpers/use-creation-wizard-customize-later-link.ts` per design decisions 1–2, with colocated `use-creation-wizard-customize-later-link.spec.ts`; verify Forevers/new-item eligibility, exclusions for missing product/cart edits/customization mode/golf covers, all three product mappings, and that the link follows the current product type.
-- [x] 1.2 Wire the composable and real links into `creation-wizard-form.vue`, rendering the floating link directly inside the last step's `sf-step` immediately after `<creation-wizard-form-last-step>`, with `position: sticky; bottom: 0`, and add scoped responsive action styles per decision 3; verify no link on Type, one link on each customization step, no changes to `creation-wizard-form-last-step.vue`, and that the wizard script adds only import/setup/return wiring.
+- [x] 1.2 Wire the composable and real links into `creation-wizard-form.vue`, rendering the floating link directly inside the last step's `sf-step` immediately after `<creation-wizard-form-last-step>`, with `position: sticky; bottom: var(--spacer-sm)`, and add scoped responsive action styles per decision 3; verify no link on Type, one link on each customization step, no changes to `creation-wizard-form-last-step.vue`, and that the wizard script adds only import/setup/return wiring.
 - [x] 1.3 Render the label through `$t("Skip & Customize Later")` in both templates and manually add `"Skip & Customize Later","Skip & Customize Later"` to `src/themes/petsies-capybara/resource/i18n/en-US.csv` in alphabetical position; verify the CSV diff is exactly one added line; do not run `yarn update-i18n-files`.
 
 ## 2. Destination initialization
@@ -12,7 +12,7 @@
 
 ## 3. Integrated acceptance
 
-- [x] 3.1 On the local storefront, verify the placement scenarios at mobile (375 px) and desktop (1280 px) widths: right-aligned link-before-Continue row on desktop, centered Continue-above-link column on mobile, square secondary appearance, and the last-step bottom-right floating link with a soft shadow that stops at the end of the step.
+- [x] 3.1 On the local storefront, verify the placement scenarios at mobile (375 px) and desktop (1280 px) widths: right-aligned link-before-Continue row on desktop, centered Continue-above-link column on mobile, square secondary appearance, and the last-step bottom-center floating link with a soft shadow that stops at the end of the step.
 - [x] 3.2 Verify navigation from Photo with an incomplete photo field succeeds with only `product`, the cart is unchanged, and the Type/golf-covers exclusions hold.
 - [x] 3.3 Load `/forevers/customize-later/?product=other` directly and verify Other is selected without a hydration mismatch; verify an unknown `product` keeps Dog.
 

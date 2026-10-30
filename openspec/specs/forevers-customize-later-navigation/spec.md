@@ -21,7 +21,7 @@ The storefront SHALL show a link labelled “Skip & Customize Later”, through 
 
 ### Requirement: Match the recorded responsive link placement
 
-On non-last customization steps, the link and Continue SHALL form one right-aligned row on tablet and desktop with the link first, and a centered column on mobile with Continue above the link. On the last customization step, the link SHALL float at the bottom-right of the form while that step scrolls and stop at the end of the step; all instances SHALL use the existing square-cornered secondary button appearance, with only the floating instance adding a soft shadow.
+On non-last customization steps, the link and Continue SHALL form one right-aligned row on tablet and desktop with the link first, and a centered column on mobile with Continue above the link. On the last customization step, the link SHALL float at the bottom center of the form while that step scrolls and stop at the end of the step; all instances SHALL use the existing square-cornered secondary button appearance, with only the floating instance adding a soft shadow.
 
 #### Scenario: Non-last step at tablet and desktop widths
 - **WHEN** Photo or Pet Info is displayed at tablet or desktop width
@@ -34,7 +34,7 @@ On non-last customization steps, the link and Continue SHALL form one right-alig
 
 #### Scenario: Last step scroll boundary
 - **WHEN** the customer scrolls through Customize at mobile, tablet, or desktop width
-- **THEN** the link remains at the visible bottom-right of the form while the step scrolls
+- **THEN** the link remains centered at the visible bottom of the form while the step scrolls
 - **AND** scrolling beyond the step does not keep the link pinned over subsequent content
 - **AND** the floating link has the secondary button appearance with square corners and a soft shadow
 - **AND** fields, Add to Cart, and the link remain usable without being covered by the floating control
