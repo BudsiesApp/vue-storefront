@@ -80,3 +80,6 @@ export {
   IS_COUPON_PROCESSING,
   IS_COUPON_INTERACTION_BLOCKED
 }
+
+export { useCouponButton } from './composables/use-coupon-button';
+export type { CouponButtonState } from './composables/use-coupon-button';

@@ -61,11 +61,14 @@ import { WidgetOptionShape } from './types/widget-option-shape.type';
 import { WidgetType } from './types/widget-type';
 import { WidgetOptionAlignment } from './types/widget-option-alignment.type';
 import { WidgetOptions } from './types/widget-options.interface';
+import { HolidayDeliveryLocation, useHolidayDeliveryLocation } from './composables/use-holiday-delivery-location';
 
 import CartItemConfiguration from './components/cart-item-configuration.vue';
 import CartItemShipmentPromise from './components/cart-item-shipment-promise.vue';
 
 export {
+  HolidayDeliveryLocation,
+  useHolidayDeliveryLocation,
   CartItemConfiguration,
   CartItemShipmentPromise,
   CustomizationAvailabilityFlow,
