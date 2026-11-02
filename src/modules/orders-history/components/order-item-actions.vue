@@ -34,6 +34,16 @@
             {{ actionItem.action.name }}
           </span>
         </component>
+
+        <component
+          v-if="photoUploadFormComponent && actionItem.action.code === OrderItemAvailableActionCode.AWAITING_ARTWORK"
+          :is="photoUploadFormComponent"
+          :key="orderItem.item_id"
+          :order-item-id="orderItem.item_id"
+          :product-sku="orderItem.product.sku"
+          @ready-changed="isPhotoUploadReady = $event"
+          @submitted="onPhotosSubmitted"
+        />
       </div>
     </div>
 
@@ -59,7 +69,7 @@
 
 <script lang="ts">
 import { useI18n, useRouter, useStore } from '@vue-storefront/core/application-services';
-import { computed, defineComponent, PropType, ref } from 'vue';
+import { computed, defineComponent, inject, PropType, ref } from 'vue';
 import { SfButton } from '@storefront-ui/vue';
 
 import { Logger } from '@vue-storefront/core/lib/logger'
@@ -71,7 +81,7 @@ import MSpinnerButton from 'theme/components/molecules/m-spinner-button.vue';
 import { OrderItem } from '../types/order-item';
 import { OrderItemAvailableAction } from '../types/order-item-available-action';
 import { OrderItemAvailableActionCode } from '../types/order-item-available-action.code';
-import { REORDER_ITEM_ACTION, IS_REORDERING_ITEM } from '..';
+import { FETCH_ORDERS_HISTORY_ACTION, REORDER_ITEM_ACTION, IS_REORDERING_ITEM } from '..';
 
 interface ActionItem {
   action: OrderItemAvailableAction,
@@ -156,6 +166,8 @@ export default defineComponent({
     const applicationI18n = useI18n();
     const productSkuRouteNameMapping = getProductSkuRouteNameMapping();
     const isReorderPending = ref(false);
+    const photoUploadFormComponent = inject('OrderItemPhotoUploadForm', undefined);
+    const isPhotoUploadReady = ref(false);
     const reorderStatusMessage = computed(() => {
       return isReorderPending.value
         ? applicationI18n.t('Item is being re-ordered')
@@ -259,13 +271,32 @@ export default defineComponent({
       return `${actionLabel} ${applicationI18n.t('opens in new tab')}`;
     }
 
+    async function onPhotosSubmitted (): Promise<void> {
+      try {
+        await applicationStore.dispatch(FETCH_ORDERS_HISTORY_ACTION, { filters: { excludeAlterationProducts: true } });
+      } catch (error) {
+        Logger.error(error, 'order-history')();
+      }
+    }
+
+    function getDisplayedAction (action: OrderItemAvailableAction): OrderItemAvailableAction {
+      if (!isPhotoUploadReady.value || action.code !== OrderItemAvailableActionCode.AWAITING_ARTWORK) {
+        return action;
+      }
+
+      return {
+        ...action,
+        message: applicationI18n.t("We're waiting for your photos. Please upload them here or send them by email.").toString()
+      };
+    }
+
     const actionsListGroups = computed<ActionsListGroups>(() => {
       const blockingActionsList: ActionItem[] = [];
       const nonBlockingActionsList: ActionItem[] = [];
 
       for (const action of props.actionsList) {
         const actionItem: ActionItem = {
-          action,
+          action: getDisplayedAction(action),
           component: undefined,
           cssClasses: ['sf-button', 'color-secondary'],
           props: {
@@ -358,6 +389,10 @@ export default defineComponent({
     return {
       actionsListGroups,
       disabledItems,
+      isPhotoUploadReady,
+      onPhotosSubmitted,
+      OrderItemAvailableActionCode,
+      photoUploadFormComponent,
       reorderStatusMessage
     }
   }

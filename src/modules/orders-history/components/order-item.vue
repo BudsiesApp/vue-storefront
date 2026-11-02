@@ -30,16 +30,8 @@
             {{ isOrderCancelled ? $t('Order is Cancelled') : isOrderCompleted ? $t('Order is Completed') : $t('Order is On Hold') }}
           </div>
 
-          <component
-            v-if="photoUploadFormComponent && hasAwaitingArtworkAction"
-            :is="photoUploadFormComponent"
-            :key="item.item_id"
-            :order-item="item"
-            @ready-changed="isPhotoUploadReady = $event"
-          />
-
           <order-item-actions
-            :actions-list="visibleActions"
+            :actions-list="item.available_actions"
             :order-item="item"
             :order-id="orderId"
             v-if="showActions"
@@ -72,14 +64,7 @@
 </template>
 
 <script lang="ts">
-import {
-  PropType,
-  defineComponent,
-  computed,
-  inject,
-  ref,
-  toRef
-} from 'vue';
+import { PropType, defineComponent, computed, inject, toRef } from 'vue';
 
 import { BaseImage } from 'src/modules/budsies';
 import { getCustomizationSystemThumbnail } from 'src/modules/customization-system';
@@ -88,8 +73,6 @@ import { ImageHandlerService } from 'src/modules/file-storage';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
 import { useOrderItemProgressTracker } from '../composables/use-order-item-progress-tracker';
-import { OrderItemAvailableAction } from '../types/order-item-available-action';
-import { OrderItemAvailableActionCode } from '../types/order-item-available-action.code';
 import { OrderItem } from '../types/order-item';
 
 import OrderItemActions from './order-item-actions.vue';
@@ -126,17 +109,8 @@ export default defineComponent({
     const imageHandlerService = inject<ImageHandlerService>('ImageHandlerService');
     const alterationProductFormComponent = inject('AlterationProductForm');
 
-    const photoUploadFormComponent = inject('OrderItemPhotoUploadForm');
-    const isPhotoUploadReady = ref(false);
-    const hasAwaitingArtworkAction = computed<boolean>(() => {
-      return props.item.available_actions.some(action => action.code === OrderItemAvailableActionCode.AWAITING_ARTWORK);
-    });
-    const visibleActions = computed<OrderItemAvailableAction[]>(() => {
-      return props.item.available_actions.filter(action => !isPhotoUploadReady.value || action.code !== OrderItemAvailableActionCode.AWAITING_ARTWORK);
-    });
-
     const showActions = computed<boolean>(() => {
-      return visibleActions.value.length > 0;
+      return props.item.available_actions.length > 0;
     });
     const orderItemImage = computed<string>(() => {
       const defaultImage = props.item.product.thumbnail;
@@ -181,10 +155,6 @@ export default defineComponent({
 
     return {
       alterationProductFormComponent,
-      photoUploadFormComponent,
-      isPhotoUploadReady,
-      hasAwaitingArtworkAction,
-      visibleActions,
       canShowExtendedProgressTracker,
       canShowProgressTracker,
       isExtendedInfoAvailable,
