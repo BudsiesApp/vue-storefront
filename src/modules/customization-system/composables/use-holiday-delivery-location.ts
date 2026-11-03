@@ -1,6 +1,7 @@
 import { useStore } from '@vue-storefront/core/application-services';
 import { useRequestServices } from '@vue-storefront/core/request-services';
 import { computed, ref } from 'vue';
+import { resolveDeliveryCountryBucket } from '../helpers/resolve-delivery-country-bucket';
 
 import { DETECTED_COUNTRY_COOKIE_KEY } from 'src/modules/shared/types/detected-country-cookie.key';
 import { PERSISTED_CUSTOMER_SHIPPING_COUNTRY } from 'src/modules/persisted-customer-data';
@@ -11,7 +12,7 @@ export enum HolidayDeliveryLocation {
 }
 
 function toDeliveryLocation (country: string | undefined): HolidayDeliveryLocation {
-  return country?.trim().toUpperCase() === 'US'
+  return resolveDeliveryCountryBucket(country) === 'US'
     ? HolidayDeliveryLocation.DOMESTIC
     : HolidayDeliveryLocation.INTERNATIONAL;
 }
@@ -30,13 +31,7 @@ export function useHolidayDeliveryLocation () {
 
     const detectedCountry = request.getCookie(DETECTED_COUNTRY_COOKIE_KEY);
 
-    if (detectedCountry?.trim()) {
-      return toDeliveryLocation(detectedCountry);
-    }
-
-    const defaultCountry = store.state.storeView?.i18n?.defaultCountry;
-
-    return toDeliveryLocation(defaultCountry);
+    return toDeliveryLocation(detectedCountry);
   });
   const location = computed<HolidayDeliveryLocation>(() => {
     return manualLocation.value || automaticLocation.value;

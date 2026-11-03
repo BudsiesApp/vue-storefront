@@ -27,3 +27,32 @@ describe('generatePageCacheKey', () => {
     expect(firstPage).not.toBe(secondPage);
   });
 });
+
+describe('Page-key behavior is preserved', () => {
+  it.each([
+    ['?email=&email=alice%40example.test&step=2', '/page/?step=2', 'email=&email=alice%40example.test'],
+    ['?%65mail=alice%40example.test&image-url=https%3A%2F%2Fexample.test%2Falice.png', '/page/', '%65mail=alice%40example.test&image-url=https%3A%2F%2Fexample.test%2Falice.png'],
+    ['?step=a%26email%3Db&step=c+d&coupon_code=', '/page/?step=a%26email%3Db&step=c+d', 'coupon_code='],
+    ['?step=2', '/page/?step=2', ''],
+    ['', '/page/', '']
+  ])('splits %s once', (query, cleanUrl, strippedQuery) => {
+    const { splitPageCacheUrl } = require('../../page-cache-key');
+    const result = splitPageCacheUrl(new URL('https://example.test/page/' + query));
+    expect(result).toEqual({ cleanUrl, strippedQuery });
+    expect(generatePageCacheKey('synthetic', 'https://example.test/page/' + query)).toBe('page:synthetic:' + cleanUrl);
+  });
+});
+
+describe('Stripped query is appended to redirect locations', () => {
+  it.each([
+    ['/giftcards/', 'email=bob%40example.test&utm_source=fb', '/giftcards/?email=bob%40example.test&utm_source=fb'],
+    ['/target/?step=2', 'coupon_code=BOB20', '/target/?step=2&coupon_code=BOB20'],
+    ['/sign-in/?redirect-target=%2Faccount%2F', 'redirect-target=%2Fother%2F&email=bob%40example.test', '/sign-in/?redirect-target=%2Faccount%2F&email=bob%40example.test'],
+    ['/target/?step=2#reviews', 'utm_source=fb', '/target/?step=2&utm_source=fb#reviews'],
+    ['https://example.test/target/', 'gclid=synthetic', 'https://example.test/target/?gclid=synthetic'],
+    ['/target/?step=2', '', '/target/?step=2']
+  ])('%s + %s', (location, strippedQuery, expected) => {
+    const { appendStrippedQuery } = require('../../page-cache-key');
+    expect(appendStrippedQuery(location, strippedQuery)).toBe(expected);
+  });
+});
