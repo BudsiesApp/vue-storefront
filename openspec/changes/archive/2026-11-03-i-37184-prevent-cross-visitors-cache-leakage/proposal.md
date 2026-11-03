@@ -28,6 +28,6 @@ Existing `storefront-request-services` boundaries remain intact; cookie tracking
 
 ## Impact
 
-Core server entry, request services, SSR context and server output-cache utilities; URL-rewrite and Storyblok mapping fallbacks, `core/pages/Checkout.js`, catalog parent redirects and the theme's `pages/Product.vue` (theme repository); customization-system country helper/composable and server extension; `availableCacheTags` in `config/default.json` and `config/local.json.template`; Jest regression suites; one AGENTS.md reference correction. No new dependencies, public configuration flags or theme-specific fixes.
+Core server entry, request services, SSR context and server output-cache utilities; URL-rewrite and Storyblok mapping fallbacks, `core/pages/Checkout.js`, catalog parent redirects and the theme's `pages/Product.vue` (theme repository); customization-system country helper/composable and server extension; `availableCacheTags` in `config/local.json.template`; Jest regression suites; one AGENTS.md reference correction. No new dependencies, public configuration flags or theme-specific fixes.
 
 Implementation covers task.md requirements R1–R8 and scope items 1–5, plus the redirect-caller migration originally planned for the URL-rewrite task, because the single-navigation design requires every redirect to pass through the server. Skipping the page render after a redirect recorded late in rendering stays with that follow-up task; CloudFront configuration, incident response, delivery rules and local Elasticsearch test data are excluded.

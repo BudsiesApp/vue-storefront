@@ -103,9 +103,9 @@ describe('Application redirects follow the server redirect path', () => {
 describe('Redirect tag and wildcard remove redirects', () => {
   it('registers tags and uses the authorized production invalidation callback', async () => {
     const fs = require('fs');
-    for (const file of ['config/default.json', 'config/local.json.template']) {
-      expect(JSON.parse(fs.readFileSync(file, 'utf8').match(/"availableCacheTags":\s*(\[[\s\S]*?\])/)[1])).toEqual(expect.arrayContaining(['redirect', 'detected_country']));
-    }
+    // Deployments generate config/local.json from this template; its list replaces the default one.
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    expect(JSON.parse(template.match(/"availableCacheTags":\s*(\[[\s\S]*?\])/)[1])).toEqual(expect.arrayContaining(['redirect', 'detected_country']));
     const h = serverHarness(redirectRenderer('inherited'));
     for (const tag of ['redirect', '*']) {
       await h.visit('/source/');

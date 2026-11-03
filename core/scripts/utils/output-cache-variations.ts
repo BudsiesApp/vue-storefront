@@ -24,8 +24,10 @@ export function resolveOutputCacheVariation (cookieName: string, cookieHeader?: 
 
 export function resolveOutputCacheDependencies (
   cookieReads: Iterable<string>,
-  requestInputs: { cookieHeader?: string; abCookie?: string; logger: CacheLogger }
+  requestInputs: { cookieHeader?: string; abCookie?: string; logger: CacheLogger },
+  alreadyClassified: Iterable<string> = []
 ) {
+  const reported = new Set(alreadyClassified);
   const variations: ReturnType<typeof resolveOutputCacheVariation>[] = [];
   const tags = new Set<string>();
   for (const name of Array.from(new Set(cookieReads)).sort()) {
@@ -36,7 +38,7 @@ export function resolveOutputCacheDependencies (
       tags.add(variation.tag);
     } else {
       tags.add('no-cache');
-      requestInputs.logger.warn('Unregistered SSR cookie dependency:', name);
+      if (!reported.has(name)) requestInputs.logger.warn('Unregistered SSR cookie dependency:', name);
     }
   }
   return { variations, tags };

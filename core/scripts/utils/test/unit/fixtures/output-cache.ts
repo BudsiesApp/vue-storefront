@@ -106,6 +106,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
     abTesting: { cookieKey: 'test-group' }
   };
   const outputCache = createOutputCache({ cache, config, logger });
+  const processOutput = jest.fn((output: string) => output);
   const cleanup = jest.fn(ctx => {
     Object.keys(ctx.server).forEach(key => delete ctx.server[key]);
     delete ctx.output.cookieReads;
@@ -138,7 +139,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
             req, res, context: ctx, outputCache, cacheRequest, tagging, logger,
             beforeOutput: hooks.beforeOutputRenderedResponse,
             afterOutput: hooks.afterOutputRenderedResponse,
-            processOutput: output => output, onComplete: jest.fn()
+            processOutput, onComplete: jest.fn()
           }),
           errorHandler, cleanup: () => cleanup(ctx), logFinalFailure: logger.error
         });
@@ -146,7 +147,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
     });
   }
   return {
-    cache, renderer, hooks, config, outputCache, logger, cleanup, execute,
+    cache, renderer, hooks, config, outputCache, logger, cleanup, execute, processOutput,
     async visit (url = '/page/', cookie?: string, site = 'main') {
       const res = response();
       await execute(request(url, cookie, site), res);

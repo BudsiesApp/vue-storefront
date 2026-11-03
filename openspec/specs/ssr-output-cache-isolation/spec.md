@@ -82,20 +82,28 @@ Only responses that read `detected_country` during SSR SHALL use country variant
 
 ### Requirement: Cookie dependencies cannot silently become shared output
 
-SSR cookie reads SHALL be recorded separately for each render, including reads of absent cookies. A response that reads a cookie other than the configured A/B key or a registered cache variation SHALL receive `no-cache`, SHALL produce no normal, redirect, marker or variant write, and SHALL log the dependency once per request without logging cookie values. Existing `no-cache` tags SHALL retain the same precedence. Component request services MUST remain narrow and MUST NOT expose tracking or cache-tag internals.
+SSR cookie reads SHALL be recorded separately for each render, including reads of absent cookies and reads made by output hooks or template processing; the complete read set SHALL be classified before any cache write. A response that reads a cookie other than the configured A/B key or a registered cache variation SHALL receive `no-cache`, SHALL produce no normal, redirect, marker or variant write, and SHALL log the dependency once per request without logging cookie values. Existing `no-cache` tags SHALL retain the same precedence. Component request services MUST remain narrow and MUST NOT expose tracking or cache-tag internals.
 
 #### Scenario: An unregistered cookie disables all writes
 - **WHEN** a render reads a synthetic unregistered cookie, repeatedly or when absent, alone or alongside country and A/B cookies, or already carries `no-cache`
 - **THEN** no response entry or marker is stored, the response carries `no-cache`, and repeated reads produce at most one dependency warning for that request
 - **AND** interleaved renders retain separate dependency sets
 
+#### Scenario: Late cookie reads are classified before writing
+- **WHEN** an output hook or template processing reads an unregistered or registered cookie after the application render
+- **THEN** an unregistered read prevents every write and a registered read stores a marker and variant, so a later visitor never receives the earlier visitor's cookie-derived output
+
 ### Requirement: Cache dimensions and key normalization remain compatible
 
-Store code, significant query parameters and the configured A/B group SHALL continue separating cached output, including country markers and variants. Existing ignored-query normalization SHALL remain unchanged. Country-specific output MUST NOT be served from a different store or A/B group.
+Store code, significant query parameters and the configured A/B group SHALL continue separating cached output, including country markers and variants. The visitor-controlled A/B value SHALL be encoded in the key so it cannot form another entry's key or variant suffix. Existing ignored-query normalization SHALL remain unchanged. Country-specific output MUST NOT be served from a different store or A/B group.
 
 #### Scenario: Store and A/B dimensions compose with country
 - **WHEN** synthetic requests vary store code, A/B group and country bucket in both orders and repeat to reach hits
 - **THEN** normal entries, redirects, markers and variants remain separated by the applicable dimensions
+
+#### Scenario: A crafted A/B value cannot address a country variant
+- **WHEN** a visitor sends an A/B cookie whose value imitates a country-variant suffix after another visitor warmed that variant
+- **THEN** the crafted request neither reads nor overwrites the other visitor's variant
 
 #### Scenario: Page-key behavior is preserved
 - **WHEN** existing cache-key examples and additional repeated, blank, encoded and significant query cases are evaluated

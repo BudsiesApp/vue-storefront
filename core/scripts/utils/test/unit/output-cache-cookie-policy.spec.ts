@@ -57,3 +57,32 @@ describe('An unregistered cookie disables all writes', () => {
     if (!tagging) expect(safe.cache.set.mock.calls[0][2]).toEqual([]);
   });
 });
+
+describe('Cookie reads during output processing are classified before writing', () => {
+  it.each(['hook', 'processing'])('late reads in %s', async stage => {
+    for (const [cookie, first, second] of [['private-cookie', 'ALICE', 'BOB'], ['detected_country', 'US', 'FR']]) {
+      let ctx;
+      const h = serverHarness(value => {
+        ctx = value;
+        return 'User: none';
+      });
+      const late = output => {
+        const value = readCookie(ctx, cookie);
+        return output.replace('none', value || 'none');
+      };
+      if (stage === 'hook') h.hooks.beforeOutputRenderedResponse.mockImplementation(output => ({ output: late(output) }));
+      else h.processOutput.mockImplementation(late);
+      const alice = await h.visit('/late/', cookie + '=' + first);
+      const bob = await h.visit('/late/', cookie + '=' + second);
+      expect(alice.body).toBe('User: ' + first);
+      expect(bob.body).toBe('User: ' + second);
+      if (cookie === 'private-cookie') {
+        expect(h.cache.set).not.toHaveBeenCalled();
+        expect(h.logger.warn).toHaveBeenCalledTimes(2);
+      } else {
+        expect(h.cache.entries.get('page:main:/late/').entry).toEqual({ kind: 'variation', cookies: ['detected_country'] });
+        expect(h.logger.warn).not.toHaveBeenCalled();
+      }
+    }
+  });
+});

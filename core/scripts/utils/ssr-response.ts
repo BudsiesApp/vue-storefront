@@ -55,6 +55,7 @@ export function createRenderResponseHandler ({
       return;
     }
     if (!res.get('content-type')) res.setHeader('Content-Type', 'text/html');
+    const renderCookieReads = Array.from(context.output.cookieReads);
     const input: CacheWriteInput = {
       headersSent: res.headersSent,
       headers: {},
@@ -62,18 +63,28 @@ export function createRenderResponseHandler ({
       httpCode: res.statusCode,
       redirect: context.output.redirect,
       cacheTags: context.output.cacheTags,
-      cookieReads: Array.from(context.output.cookieReads)
+      cookieReads: renderCookieReads
     };
-    const dependencies = outputCache.prepare(cacheRequest, input);
-    if (tagging && input.cacheTags.size) {
-      res.setHeader('X-VS-Cache-Tags', Array.from(input.cacheTags).join(' '));
-    }
+    let dependencies = outputCache.prepare(cacheRequest, input);
+    const setCacheTagsHeader = () => {
+      if (tagging && input.cacheTags.size) {
+        res.setHeader('X-VS-Cache-Tags', Array.from(input.cacheTags).join(' '));
+      }
+    };
+    setCacheTagsHeader();
     const before = beforeOutput(output);
     if (typeof before === 'string') output = before;
     else if (typeof before?.output === 'string') output = before.output;
     output = processOutput(output);
+    // Output hooks and template processing can read cookies too; classify the complete read set.
+    const cookieReads = Array.from(context.output.cookieReads);
+    if (cookieReads.length !== renderCookieReads.length) {
+      dependencies = outputCache.prepare(cacheRequest, { ...input, cookieReads }, renderCookieReads);
+      setCacheTagsHeader();
+    }
     outputCache.write(cacheRequest, {
       ...input,
+      cookieReads,
       headersSent: res.headersSent,
       headers: res.getHeaders(),
       body: output,

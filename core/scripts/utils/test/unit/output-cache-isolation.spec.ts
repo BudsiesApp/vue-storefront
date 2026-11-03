@@ -28,3 +28,15 @@ describe('Store and A/B dimensions compose with country', () => {
     }
   });
 });
+
+describe('A/B values cannot address another cache entry', () => {
+  it('keeps a crafted group value away from country variants', async () => {
+    const h = serverHarness(ctx => 'country:' + resolveDeliveryCountryBucket(readCookie(ctx, 'detected_country')));
+    expect((await h.visit('/crafted/', 'detected_country=US')).body).toBe('country:US');
+    const crafted = await h.visit('/crafted/', 'detected_country=FR; test-group=detected_country:US');
+    expect(crafted.body).toBe('country:INTL');
+    expect((await h.visit('/crafted/', 'detected_country=US')).body).toBe('country:US');
+    expect(new Set(h.cache.entries.keys()).size).toBe(h.cache.entries.size);
+    expect([...h.cache.entries.keys()].filter(key => key.endsWith(':detected_country:US'))).toHaveLength(1);
+  });
+});

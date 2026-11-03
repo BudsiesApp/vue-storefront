@@ -19,7 +19,8 @@ export function createOutputCache ({
     const group = abCookie && extractCookieValue(abCookie, cookieHeader);
     return {
       ...url,
-      key: buildPageCacheKey(site, url.cleanUrl) + (group ? ':' + group : ''),
+      // Encoded so a visitor-controlled group can never form another entry's variant suffix.
+      key: buildPageCacheKey(site, url.cleanUrl) + (group ? ':' + encodeURIComponent(group) : ''),
       cookieHeader,
       abCookie
     };
@@ -42,8 +43,8 @@ export function createOutputCache ({
     return entry;
   }
 
-  function prepare (request: CacheRequest, input: CacheWriteInput) {
-    const dependencies = variations.resolveOutputCacheDependencies(input.cookieReads, { ...request, logger });
+  function prepare (request: CacheRequest, input: CacheWriteInput, alreadyClassified: Iterable<string> = []) {
+    const dependencies = variations.resolveOutputCacheDependencies(input.cookieReads, { ...request, logger }, alreadyClassified);
     for (const tag of dependencies.tags) {
       if (tag === 'no-cache' || config.server.useOutputCacheTagging) input.cacheTags.add(tag);
     }
