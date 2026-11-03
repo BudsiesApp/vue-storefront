@@ -83,7 +83,7 @@ The storefront SHALL use the Holiday Period presentation only when the Productio
 - **THEN** the widget retains its regular duration-and-ship-date presentation
 
 ### Requirement: Holiday delivery location is resolved and selectable
-The Holiday Period widget SHALL classify the delivery location as US or international. It SHALL initialize that location from the previously selected shipping country, then the detected-country cookie, then the configured default country, using the first available source. It SHALL display the selected location above the options and allow the customer to change it for the current product configuration.
+The Holiday Period widget SHALL classify the delivery location as US or international. It SHALL initialize that location from the previously selected shipping country, then the detected-country cookie, then a fixed US default, using the first nonblank source. It SHALL display the selected location above the options and allow the customer to change it for the current product configuration.
 
 #### Scenario: Previously selected shipping country exists
 - **WHEN** a previously selected shipping country is available
@@ -95,7 +95,7 @@ The Holiday Period widget SHALL classify the delivery location as US or internat
 
 #### Scenario: No customer country data exists
 - **WHEN** neither a previously selected shipping country nor a detected country is available
-- **THEN** the widget derives its initial location from the configured default country
+- **THEN** the widget initializes its location as US
 
 #### Scenario: Customer changes delivery location
 - **WHEN** the customer changes the widget location between US and international
