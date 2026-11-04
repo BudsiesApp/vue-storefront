@@ -4,7 +4,7 @@
 
 ### Requirement: Standard is the initial production-time selection
 
-The storefront SHALL select Standard when a production-time customization has no selected value. In Holiday mode, it MUST defer defaulting and reconciliation until browser location and applicable saved customization restoration are ready. It SHALL retain any selected value valid and visible for the resolved mode/location, and select Standard only when the ready selection is empty or invalid. Loading SHALL NOT clear or replace an existing selection.
+The storefront SHALL select Standard when a production-time customization has no selected value. In Holiday mode, it MUST defer defaulting and reconciliation until browser location and applicable saved customization restoration are ready. It SHALL retain any selected value valid and visible for the resolved mode/location, and select Standard only when the ready selection is empty or invalid. Loading SHALL NOT clear or replace an existing selection. On the product page, an unavailable previously locked Holiday value instead SHALL require explicit eligible customer choice.
 
 #### Scenario: New product configuration has no production-time value
 - **WHEN** the production-time customization is available and its selection is empty, with browser location and saved customization restoration complete for Holiday mode
@@ -15,7 +15,7 @@ The storefront SHALL select Standard when a production-time customization has no
 - **THEN** the storefront retains that selected option
 
 #### Scenario: Location change invalidates the selected upgrade
-- **WHEN** a customer changes the ready Holiday location and the selected upgrade does not apply to the new location
+- **WHEN** a customer changes the ready Holiday location and the selected upgrade does not apply to the new location, outside the product-page case requiring explicit choice for a previously locked value
 - **THEN** the storefront selects the Standard option for the new location
 
 #### Scenario: Holiday data is not ready
@@ -173,3 +173,26 @@ Required draft removal SHALL stay ordered before restoration readiness and later
 - **WHEN** a required draft removal never settles
 - **THEN** the widget may remain loading and new saving remains gated to avoid a later delete removing newly saved data
 - **AND** no timer, detached delete or early readiness release is introduced to force progress
+
+### Requirement: Unavailable previously locked product-page Holiday values require explicit choice
+
+On the product page, a previously locked Holiday production-time value unavailable for the resolved country SHALL require explicit eligible customer choice through the normal selection/validation flow before adding. Valid locks and other locking rules SHALL remain unchanged. Selection readiness and current eligibility MUST be enforced. Existing option prices and product total SHALL remain visible and agree with the chosen value under normal pricing.
+
+#### Scenario: Unavailable locked value exposes only eligible alternatives
+- **WHEN** product-page location, restoration and option data are ready and a previously locked Holiday value is unavailable for that country
+- **THEN** the normal field permits an explicit choice only among current-country eligible options and normal validation prevents adding an unavailable or unchosen value
+- **AND** Standard is not selected automatically, even if it is the sole eligible option; no eligible option means validation still prevents adding
+
+#### Scenario: Valid locked value and other locks remain unchanged
+- **WHEN** a locked Holiday value remains eligible, including a value shared across countries, or another existing locking rule applies
+- **THEN** the valid selection and applicable lock are preserved and other locking behavior is unchanged
+
+#### Scenario: Loading does not prematurely unlock or replace a value
+- **WHEN** location, restoration, option data or a required ordered-removal readiness gate is pending
+- **THEN** the product-page selection is preserved rather than invalidated, unlocked or defaulted from incomplete data
+- **AND** normal submission remains subject to readiness and an eligible selection
+
+#### Scenario: Explicit choice uses the normal visible price and validation
+- **WHEN** the customer chooses an eligible option on the product page
+- **THEN** the existing visible option price, product total and submitted value agree with that choice
+- **AND** a later location change that makes that previously locked selection invalid requires an eligible explicit choice again through the same field/validation flow
