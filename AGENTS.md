@@ -99,7 +99,7 @@ CodeGraph reflects only the current working directory state. It MUST NOT replace
   * The application uses a custom URL mapping fallback system that integrates Storyblok and a database-driven URL rewrite module. See `src/modules/vsf-storyblok-module/mappingFallback.ts` and `src/modules/url-rewrite/mappingFallback.ts`.
 - Server-Side Rendering (SSR): The application is fully server-side rendered.
   * SSR is stateless and doesn't have access to user session data.
-  * SSR caches HTML output based on the URL only. The list of query parameters which should be ignored for caching purposes is defined in `ignoredQueryKeys` constant in `core/scripts/server.ts`.
+  * SSR caches HTML output based on the URL only. The list of query parameters which should be ignored for caching purposes is defined in `ignoredQueryKeys` constant in `core/scripts/utils/page-cache-key.ts`.
   * Be mindful of code that accesses browser-specific globals like `window` or `document`. Always guard these calls with `!isServer`.
   * The initial HTML shell is defined in `.template.html` files (e.g., `src/themes/petsies-capybara/templates/index.template.html`).
 - Storyblok components:
