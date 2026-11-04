@@ -27,6 +27,7 @@ const getters: GetterTree<ProductState, RootState> = {
   getProductRelated: state => state.related,
   getCurrentCustomOptions: state => state.current_custom_options,
   getProductBySkuDictionary: state => state.productBySku,
+  productDiscountedPriceDictionary: state => state.productDiscountedPrice,
   getProductByIdDictionary: (state, getters) => {
     const dictionary: Record<Product['id'], Product> = {};
 

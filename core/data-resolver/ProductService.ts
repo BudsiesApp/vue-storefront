@@ -146,7 +146,11 @@ const getProductRenderList = async ({
   }
 }
 
-const getProduct = async (options: { [key: string]: string }, key: string): Promise<Product> => {
+const getProduct = async (
+  options: { [key: string]: string },
+  key: string,
+  prefetchGroupProducts = true
+): Promise<Product> => {
   let searchQuery = new SearchQuery()
   searchQuery = searchQuery.applyFilter({ key: key, value: { 'eq': options[key] } })
   const { items = [] } = await getProducts({
@@ -154,14 +158,18 @@ const getProduct = async (options: { [key: string]: string }, key: string): Prom
     size: 1,
     configuration: { sku: options.childSku },
     options: {
-      prefetchGroupProducts: true,
+      prefetchGroupProducts,
       assignProductConfiguration: true
     }
   })
   return items[0] || null
 }
 
-const getProductFromCache = async (options: { [key: string]: string }, key: string): Promise<Product> => {
+const getProductFromCache = async (
+  options: { [key: string]: string },
+  key: string,
+  prefetchGroupProducts = true
+): Promise<Product> => {
   try {
     const cacheKey = entityKeyName(key, options[key])
     const cache = StorageManager.get('elasticCache')
@@ -180,7 +188,7 @@ const getProductFromCache = async (options: { [key: string]: string }, key: stri
         attributes_metadata: [],
         configuration: { [key]: options.childSku || options.sku || options[key] },
         options: {
-          prefetchGroupProducts: true,
+          prefetchGroupProducts,
           setConfigurableProductOptions: config.cart.setConfigurableProductOptions,
           filterUnavailableVariants: config.products.filterUnavailableVariants,
           assignProductConfiguration: true
@@ -190,24 +198,29 @@ const getProductFromCache = async (options: { [key: string]: string }, key: stri
       })
       return product
     } else {
-      return getProduct(options, key)
+      return getProduct(options, key, prefetchGroupProducts)
     }
   } catch (err) {
     // report errors
     if (err) {
       Logger.error(err, 'product')()
     }
-    return getProduct(options, key)
+    return getProduct(options, key, prefetchGroupProducts)
   }
 }
 
-const getProductByKey = async ({ options, key, skipCache }: DataResolver.ProductByKeySearchOptions): Promise<Product> => {
+const getProductByKey = async ({
+  options,
+  key,
+  skipCache,
+  prefetchGroupProducts = true
+}: DataResolver.ProductByKeySearchOptions): Promise<Product> => {
   if (!isOnline()) {
-    return getProductFromCache(options, key)
+    return getProductFromCache(options, key, prefetchGroupProducts)
   }
   const result = skipCache
-    ? await getProduct(options, key)
-    : await getProductFromCache(options, key)
+    ? await getProduct(options, key, prefetchGroupProducts)
+    : await getProductFromCache(options, key, prefetchGroupProducts)
   return result
 }
 

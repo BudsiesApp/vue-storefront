@@ -1,13 +1,13 @@
-import Product from 'core/modules/catalog/types/Product';
-import { PriceHelper } from 'src/modules/shared';
+import type { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
+import * as PriceHelper from '@vue-storefront/core/helpers/price';
 
 import { getOptionValuePrice } from './get-option-value-price';
 import { OptionValue } from '../types/option-value.interface';
 
 export function getLowestPriceForOptionValues (
   optionValues: OptionValue[],
-  productBySkuDictionary: Record<string, Product>,
-  productPriceDictionary: Record<string, PriceHelper.ProductPrice>
+  productDiscountedPriceDictionary: Record<string, ProductDiscountedPrice> = {},
+  exchangeRate = 1
 ): PriceHelper.ProductPrice | undefined {
   let lowestPrice: number | undefined;
   let lowestProductPrice: PriceHelper.ProductPrice | undefined;
@@ -17,15 +17,7 @@ export function getLowestPriceForOptionValues (
       return;
     }
 
-    const price = getOptionValuePrice(
-      optionValue,
-      productBySkuDictionary,
-      productPriceDictionary
-    );
-
-    if (!price) {
-      return;
-    }
+    const price = getOptionValuePrice(optionValue, productDiscountedPriceDictionary, exchangeRate);
 
     const finalProductPrice = PriceHelper.getFinalPrice(price);
 

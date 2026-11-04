@@ -54,7 +54,8 @@ declare namespace DataResolver {
   interface ProductByKeySearchOptions {
     options: { [key: string]: string },
     key?: string,
-    skipCache?: boolean
+    skipCache?: boolean,
+    prefetchGroupProducts?: boolean
   }
 
   interface Customer {

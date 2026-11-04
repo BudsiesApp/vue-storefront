@@ -143,7 +143,8 @@ const actions: ActionTree<ProductState, RootState> = {
     options = {},
     setCurrentProduct = false,
     key = 'sku',
-    skipCache = false
+    skipCache = false,
+    prefetchGroupProducts = true
   } = {}) {
     if (setCurrentProduct) {
       Logger.warn('option `setCurrentProduct` is deprecated, will be not used from 1.13')()
@@ -154,7 +155,8 @@ const actions: ActionTree<ProductState, RootState> = {
     const product = await ProductService.getProductByKey({
       options,
       key,
-      skipCache
+      skipCache,
+      prefetchGroupProducts
     })
 
     await context.dispatch('tax/calculateTaxes', { products: [product] }, { root: true })
@@ -212,7 +214,14 @@ const actions: ActionTree<ProductState, RootState> = {
   /**
    * Load the product data and sets current product
    */
-  async loadProduct ({ dispatch, state }, { parentSku, childSku = null, route = null, skipCache = false, setCurrent = true }) {
+  async loadProduct ({ dispatch, state }, {
+    parentSku,
+    childSku = null,
+    route = null,
+    skipCache = false,
+    setCurrent = true,
+    prefetchGroupProducts = true
+  }) {
     Logger.info('Fetching product data asynchronously', 'product', { parentSku, childSku })()
 
     if (setCurrent) {
@@ -225,7 +234,8 @@ const actions: ActionTree<ProductState, RootState> = {
         childSku: childSku
       },
       key: 'sku',
-      skipCache
+      skipCache,
+      prefetchGroupProducts
     })
 
     if (!product) {

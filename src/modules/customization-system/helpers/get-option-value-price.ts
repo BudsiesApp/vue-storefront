@@ -1,38 +1,28 @@
-import Product from '@vue-storefront/core/modules/catalog/types/Product';
-import { PriceHelper } from 'src/modules/shared';
+import dayjs from 'dayjs';
 
-import { OptionValue } from '../types/option-value.interface';
+import type { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog/types/product-discounted-price.interface';
+import type { ProductPrice } from '@vue-storefront/core/helpers/price';
+
+import type { OptionValue } from '../types/option-value.interface';
 
 export function getOptionValuePrice (
   optionValue: OptionValue,
-  productBySkuDictionary: Record<string, Product>,
-  productPriceDictionary: Record<string, PriceHelper.ProductPrice>
-): PriceHelper.ProductPrice | undefined {
-  const defaultOptionValuePrice = optionValue.price
-    ? {
-      regular: optionValue.price,
-      special: null
-    }
-    : {
-      regular: 0,
-      special: null
-    }
+  productDiscountedPriceDictionary: Record<string, ProductDiscountedPrice> = {},
+  exchangeRate = 1
+): ProductPrice {
+  const adjustment = optionValue.productId == null
+    ? undefined
+    : productDiscountedPriceDictionary[optionValue.productId];
+  const regular = adjustment?.regular ?? optionValue.price ?? 0;
+  const now = dayjs();
+  const fromDate = optionValue.specialPriceFromDate ? dayjs(optionValue.specialPriceFromDate) : null;
+  const toDate = optionValue.specialPriceToDate ? dayjs(optionValue.specialPriceToDate) : null;
+  const isSpecialActive = (!fromDate || (fromDate.isValid() && !now.isBefore(fromDate))) &&
+    (!toDate || (toDate.isValid() && !now.isAfter(toDate)));
+  const final = adjustment?.final ?? (isSpecialActive ? optionValue.specialPrice : null) ?? optionValue.price ?? 0;
 
-  if (!optionValue.sku) {
-    return defaultOptionValuePrice;
-  }
-
-  const product = productBySkuDictionary[optionValue.sku];
-
-  if (!product || !product.id) {
-    return defaultOptionValuePrice;
-  }
-
-  const price = productPriceDictionary[product.id];
-
-  if (!price.regular) {
-    return defaultOptionValuePrice;
-  }
-
-  return price;
+  return {
+    regular: regular * exchangeRate,
+    special: final < regular ? final * exchangeRate : null
+  };
 }
