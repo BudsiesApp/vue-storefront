@@ -33,7 +33,7 @@ The storefront SHALL select Standard when a production-time customization has no
 
 #### Scenario: Unreadable saved data preserves a valid current selection
 - **WHEN** saved customer or applicable saved-form data cannot be read and the current production-time selection remains valid for the resolved fallback location
-- **THEN** the storefront retains that selection without an intervening Standard replacement or a failure-triggered write over saved customization data
+- **THEN** the storefront retains that selection without an intervening Standard replacement
 - **AND** failed reads do not keep selection reconciliation pending indefinitely
 
 ### Requirement: Holiday delivery location is resolved and selectable
@@ -98,3 +98,19 @@ In Holiday Period mode, the storefront SHALL remove production-time records with
 #### Scenario: Location variants share a Rush SKU
 - **WHEN** the location is ready and domestic and international Holiday Rush records share a SKU
 - **THEN** the widget displays the text and terms from the selected location's record while retaining the shared underlying option-value ID
+
+## ADDED Requirements
+
+### Requirement: Ambiguous saved draft absence permits normal persistence
+
+When a saved-draft result cannot distinguish an unreadable draft from absence, the storefront SHALL treat it as absent and allow normal persistence after readiness. It SHALL NOT add driver or read-status metadata checks to distinguish those cases. Normal saving is permitted even if it overwrites an unreadable draft; pending-read guards and valid current selection protection SHALL remain in effect.
+
+#### Scenario: Ambiguous empty result follows ordinary absent-draft behavior
+- **WHEN** draft restoration settles with a result indistinguishable from an absent draft
+- **THEN** the storefront completes readiness and follows ordinary absent-draft defaulting and persistence
+- **AND** ordinary saving is allowed despite the accepted risk of overwriting an unreadable draft, without a failure-specific write veto or new driver/metadata checks
+
+#### Scenario: Valid current selection remains protected while saving is allowed
+- **WHEN** draft restoration settles ambiguously as absent and the current production-time selection is valid for the ready location
+- **THEN** the storefront retains that selection and allows its normal persistence
+- **AND** it does not replace the valid selection with Standard merely because no saved draft was returned
