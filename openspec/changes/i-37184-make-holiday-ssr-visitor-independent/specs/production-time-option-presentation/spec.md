@@ -114,3 +114,26 @@ When a saved-draft result cannot distinguish an unreadable draft from absence, t
 - **WHEN** draft restoration settles ambiguously as absent and the current production-time selection is valid for the ready location
 - **THEN** the storefront retains that selection and allows its normal persistence
 - **AND** it does not replace the valid selection with Standard merely because no saved draft was returned
+
+### Requirement: Concurrent saved-data timeout callbacks are independent
+
+Saved-data reads sharing a storage instance SHALL have independent timeout callbacks at the existing 800 ms duration. Each supplied callback SHALL receive the existing success/fallback result at most once; another read MUST NOT cancel or reset its timeout. The shared returned promise SHALL retain its existing contract, including remaining pending when backend work hangs; timeout SHALL NOT force its settlement.
+
+#### Scenario: Two concurrent hanging reads keep their own deadlines
+- **WHEN** two saved-data reads on the same storage instance start at different times and their backing readiness or reads never complete
+- **THEN** each supplied callback independently receives the existing fallback at its own unchanged 800 ms deadline
+- **AND** neither read cancels or resets the other's timeout
+- **AND** returned promises retain the existing pending behavior rather than being forced to settle on timeout
+
+#### Scenario: Completing one read leaves another timeout active
+- **WHEN** concurrent reads share a storage instance and one returns successfully before the other hanging read's deadline
+- **THEN** the successful read keeps its existing result and the hanging read's supplied callback still receives its fallback at its own unchanged deadline
+
+#### Scenario: Backend completion after timeout cannot deliver a duplicate callback
+- **WHEN** a backing read resolves or rejects after its callback has already received the timeout fallback
+- **THEN** that callback is not invoked again and the returned promise retains its existing eventual success/error behavior
+
+#### Scenario: Promise-only read does not cancel another read's callback
+- **WHEN** a promise-only read starts while another read on the same storage instance is waiting for its timeout callback
+- **THEN** the earlier callback still receives its existing fallback at its own unchanged deadline
+- **AND** the promise-only read retains its existing contract without timeout-forced settlement
