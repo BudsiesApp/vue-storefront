@@ -21,22 +21,22 @@ describe('Store and A/B dimensions compose with country', () => {
         expect(mode.includes('redirect') ? result.get('location') : result.body).toBe(
           mode.includes('redirect') ? '/target/' + expected + '/' : expected);
       }
-      const renders = mode.startsWith('country') ? 12 : 6;
+      const renders = mode.startsWith('country') ? 24 : 6;
       expect(h.renderer.renderToString).toHaveBeenCalledTimes(renders);
-      expect(h.cache.entries.size).toBe(mode.startsWith('country') ? 18 : 6);
+      expect(h.cache.entries.size).toBe(mode.startsWith('country') ? 0 : 6);
       expect([...h.cache.entries.keys()].every(key => key.includes('?step=2'))).toBe(true);
     }
   });
 });
 
 describe('A/B values cannot address another cache entry', () => {
-  it('keeps a crafted group value away from country variants', async () => {
-    const h = serverHarness(ctx => 'country:' + resolveDeliveryCountryBucket(readCookie(ctx, 'detected_country')));
-    expect((await h.visit('/crafted/', 'detected_country=US')).body).toBe('country:US');
+  it('keeps a crafted group value away from another group', async () => {
+    const h = serverHarness(ctx => 'group:' + (readCookie(ctx, 'test-group') || 'none'));
+    expect((await h.visit('/crafted/', 'detected_country=US')).body).toBe('group:none');
     const crafted = await h.visit('/crafted/', 'detected_country=FR; test-group=detected_country:US');
-    expect(crafted.body).toBe('country:INTL');
-    expect((await h.visit('/crafted/', 'detected_country=US')).body).toBe('country:US');
+    expect(crafted.body).toBe('group:detected_country:US');
+    expect((await h.visit('/crafted/', 'detected_country=US')).body).toBe('group:none');
     expect(new Set(h.cache.entries.keys()).size).toBe(h.cache.entries.size);
-    expect([...h.cache.entries.keys()].filter(key => key.endsWith(':detected_country:US'))).toHaveLength(1);
+    expect([...h.cache.entries.keys()].filter(key => key.endsWith(':detected_country:US'))).toHaveLength(0);
   });
 });

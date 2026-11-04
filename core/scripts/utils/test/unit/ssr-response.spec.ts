@@ -114,11 +114,10 @@ describe('Response and cleanup failures are contained', () => {
     }
   });
 
-  it('completes a response before a pending variant write and retains inputs after cleanup', async () => {
+  it('completes a response before a pending write and retains inputs after cleanup', async () => {
     let ctx;
     const h = serverHarness(value => {
       ctx = value;
-      readCookie(value, 'detected_country');
       value.output.cacheTags.add('page');
       return 'country HTML';
     });
@@ -138,10 +137,9 @@ describe('Response and cleanup failures are contained', () => {
     expect(h.cache.entries.size).toBe(0);
     release();
     await settleWrites();
-    expect(h.cache.entries.get('page:main:/pending/').entry).toEqual({ kind: 'variation', cookies: ['detected_country'] });
-    expect(h.cache.entries.get('page:main:/pending/:detected_country:US').entry).toMatchObject({ body: 'country HTML' });
-    expect(h.cache.set.mock.calls[1][2]).toEqual(['page', 'detected_country']);
-    expect(res.get('x-vs-cache-tags')).toContain('detected_country');
+    expect(h.cache.entries.get('page:main:/pending/').entry).toMatchObject({ kind: 'response', body: 'country HTML' });
+    expect(h.cache.set.mock.calls[0][2]).toEqual(['page']);
+    expect(res.get('x-vs-cache-tags')).toContain('page');
     expect(res.redirect).not.toHaveBeenCalled();
   });
 

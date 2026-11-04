@@ -5,7 +5,6 @@ import { Context } from '../../../types';
 import { splitPageCacheUrl } from '../../../page-cache-key';
 import { createOutputCache, createCacheInvalidationHandler } from '../../../output-cache';
 import { createRenderResponseHandler, createSsrErrorHandler, renderSsrResponse, lookupSsrResponse } from '../../../ssr-response';
-import 'src/modules/customization-system/server';
 
 export class MemoryCache implements OutputCacheStorage {
   public now = 0;
@@ -100,7 +99,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
   const config = {
     server: {
       useOutputCache: true, useOutputCacheTagging: tagging,
-      availableCacheTags: ['page', 'redirect', 'detected_country'],
+      availableCacheTags: ['page', 'redirect'],
       invalidateCacheKey: 'synthetic-secret'
     },
     abTesting: { cookieKey: 'test-group' }

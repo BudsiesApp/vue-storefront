@@ -2,6 +2,7 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { isServer } from '@vue-storefront/core/helpers';
 import { StorefrontModule } from '@vue-storefront/core/lib/modules';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
+import { Logger } from '@vue-storefront/core/lib/logger';
 
 import { usePersistedEmail } from './composables/use-persisted-email';
 import { usePersistedPhoneNumber } from './composables/use-persisted-customer-phone-number';
@@ -23,6 +24,7 @@ const PERSISTED_CUSTOMER_FIRST_NAME = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.P
 const PERSISTED_CUSTOMER_LAST_NAME = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.PERSISTED_CUSTOMER_LAST_NAME}`;
 const PERSISTED_CUSTOMER_PHONE_NUMBER = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.PERSISTED_CUSTOMER_PHONE_NUMBER}`;
 const PERSISTED_CUSTOMER_SHIPPING_COUNTRY = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.PERSISTED_CUSTOMER_SHIPPING_COUNTRY}`;
+const PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED}`;
 const PERSISTED_CUSTOMER_VAT_ID = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.PERSISTED_CUSTOMER_VAT_ID}`;
 const PERSISTED_CUSTOMER_DATA = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.PERSISTED_CUSTOMER_DATA}`;
 const CUSTOMER_DATA_HASH = `${SN_PERSISTED_CUSTOMER_DATA}/${getters.CUSTOMER_DATA_HASH}`;
@@ -36,8 +38,19 @@ const SET_PERSISTED_CUSTOMER_VAT_ID = `${SN_PERSISTED_CUSTOMER_DATA}/${mutations
 const SET_PERSISTED_CUSTOMER_BILLING_ADDRESS = `${SN_PERSISTED_CUSTOMER_DATA}/${mutations.SET_PERSISTED_CUSTOMER_BILLING_ADDRESS}`;
 
 export const PersistedCustomerDataModule: StorefrontModule = async function ({ store }) {
-  StorageManager.init(SN_PERSISTED_CUSTOMER_DATA);
   store.registerModule(SN_PERSISTED_CUSTOMER_DATA, persistedCustomerDataStore)
+
+  let storageAvailable = true;
+  try {
+    StorageManager.init(SN_PERSISTED_CUSTOMER_DATA);
+  } catch (error) {
+    if (isServer) {
+      throw error;
+    }
+    storageAvailable = false;
+    Logger.error(error)();
+    store.commit(`${SN_PERSISTED_CUSTOMER_DATA}/${mutations.SET_PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED}`, true);
+  }
 
   if (isServer) {
     return;
@@ -48,9 +61,13 @@ export const PersistedCustomerDataModule: StorefrontModule = async function ({ s
     cacheHandlerFactory()
   );
 
-  store.subscribe(localStorageSynchronization.setItems);
+  if (storageAvailable) {
+    store.subscribe(localStorageSynchronization.setItems);
+  }
 
-  store.dispatch(`${SN_PERSISTED_CUSTOMER_DATA}/synchronize`);
+  if (storageAvailable) {
+    store.dispatch(`${SN_PERSISTED_CUSTOMER_DATA}/synchronize`);
+  }
   EventBus.$on('user-after-logout', () => {
     store.commit(SET_PERSISTED_CUSTOMER_EMAIL, undefined);
     store.commit(SET_PERSISTED_CUSTOMER_FIRST_NAME, undefined);
@@ -84,6 +101,7 @@ export {
   PERSISTED_CUSTOMER_LAST_NAME,
   PERSISTED_CUSTOMER_PHONE_NUMBER,
   PERSISTED_CUSTOMER_SHIPPING_COUNTRY,
+  PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED,
   PERSISTED_CUSTOMER_VAT_ID,
   PERSISTED_CUSTOMER_DATA,
   SET_PERSISTED_CUSTOMER_EMAIL,

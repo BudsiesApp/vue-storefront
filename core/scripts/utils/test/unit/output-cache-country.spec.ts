@@ -1,77 +1,88 @@
-import { readCookie, serverHarness } from './fixtures/output-cache';
-import { resolveDeliveryCountryBucket } from 'src/modules/customization-system/helpers/resolve-delivery-country-bucket';
+import { serverHarness } from './fixtures/output-cache';
+import Vue from 'vue';
+import { createRenderer } from 'vue-server-renderer';
+import Widget from 'theme/components/customization-system/widgets/production-time-timeline-widget.vue';
+
+const mockCookie = jest.fn();
+jest.mock('@vue-storefront/core/application-services', () => ({ useStore: () => ({ getters: { 'budsies/getProductRushAddons': () => [] } }) }));
+jest.mock('@vue-storefront/core/request-services', () => ({ useRequestServices: () => ({ getCookie: mockCookie }) }));
+jest.mock('src/modules/persisted-customer-data', () => ({ PERSISTED_CUSTOMER_SHIPPING_COUNTRY: 'persisted/country', PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED: 'persisted/settled' }));
+jest.mock('theme/helpers/use-error-accessibility', () => ({ useErrorAccessibility: () => ({ errorMessageId: 'error' }) }));
+jest.mock('theme/components/customization-system/production-time-option-card.vue', () => ({ render: h => h('span') }));
+jest.mock('src/modules/customization-system', () => {
+  const { computed } = require('vue');
+  return {
+    ...require('src/modules/customization-system/composables/use-holiday-delivery-location'),
+    ListWidgetInputType: { RADIO: 'radio' },
+    PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID: 'standard',
+    useListWidget: () => ({ inputType: computed(() => 'radio') }),
+    useOptionValuesPrice: () => ({ optionValuePriceDictionary: computed(() => ({})) })
+  };
+});
 
 function holiday (ctx) {
   ctx.output.cacheTags.add('page');
-  const bucket = resolveDeliveryCountryBucket(readCookie(ctx, 'detected_country'));
-  return bucket === 'US'
-    ? '<label>United States</label><option>In time for Christmas: 5 spots</option>'
-    : '<label>International</label><option>After Christmas: 3 spots</option>';
+  return '<p role="status">Loading delivery options…</p>';
 }
 
-describe('Country pages cache distinct first paints', () => {
-  it.each([['US', 'FR'], ['FR', 'US']])('%s then %s', async (first, second) => {
-    const h = serverHarness(holiday);
-    for (const country of [first, second, first, second]) {
-      const res = await h.visit('/holiday/', 'detected_country=' + country);
-      expect(res.body).toContain(country === 'US' ? 'United States' : 'International');
-      expect(res.body).toContain(country === 'US' ? '5 spots' : '3 spots');
+describe('Country-independent output shares a single response', () => {
+  it.each([['US', 'FR', '', undefined], [undefined, '', 'FR', 'US']])('reuses actual Holiday widget SSR for %s %s %s %s', async (...countries) => {
+    Vue.prototype.$t = key => key;
+    try {
+      let html: string;
+      let first: string;
+      mockCookie.mockClear();
+      const h = serverHarness(ctx => { ctx.output.cacheTags.add('page'); return html; });
+      for (const country of [...countries, ...countries]) {
+        mockCookie.mockReturnValue(country);
+        html = await createRenderer().renderToString(new Vue({ render: h => h(Widget, { props: { isHolidayPeriod: true, productId: 1 } }) }));
+        if (!first) first = html;
+        expect(html).toBe(first);
+        expect(html).toContain('Loading delivery options');
+        expect(html).not.toMatch(/United States|International|<input|<button/);
+        const response = await h.visit('/actual-holiday/', country === undefined ? undefined : 'detected_country=' + country);
+        expect(response.body).toBe(first);
+      }
+      expect(mockCookie).not.toHaveBeenCalled();
+      expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+      expect(h.cache.set).toHaveBeenCalledTimes(1);
+      expect(h.cache.entries.size).toBe(1);
+    } finally {
+      delete Vue.prototype.$t;
     }
-    expect(h.renderer.renderToString).toHaveBeenCalledTimes(2);
-    const base = 'page:main:/holiday/';
-    expect(h.cache.entries.get(base).entry).toEqual({ kind: 'variation', cookies: ['detected_country'] });
-    expect([...h.cache.entries.keys()].sort()).toEqual([base, base + ':detected_country:INTL', base + ':detected_country:US']);
-    expect(h.cache.set.mock.calls[0][0]).toContain(':detected_country:');
-    expect(h.cache.set.mock.calls[1][0]).toBe(base);
-    h.cache.entries.delete(base + ':detected_country:US');
-    expect((await h.visit('/holiday/', 'detected_country=US')).get('x-vs-cache')).toBe('Miss');
-    h.cache.entries.get(base + ':detected_country:INTL').expires = h.cache.now;
-    expect((await h.visit('/holiday/', 'detected_country=FR')).get('x-vs-cache')).toBe('Miss');
-    h.cache.now += 899;
-    expect((await h.visit('/holiday/', 'detected_country=US')).get('x-vs-cache')).toBe('Hit');
-    h.cache.now++;
-    expect((await h.visit('/holiday/', 'detected_country=US')).get('x-vs-cache')).toBe('Miss');
-    h.cache.entries.delete(base);
-    expect((await h.visit('/holiday/', 'detected_country=FR')).get('x-vs-cache')).toBe('Miss');
   });
-});
-
-describe('Missing or blank country uses the US bucket', () => {
-  it.each([undefined, 'detected_country=', 'detected_country=   '])('cookie %s', async cookie => {
+  it.each([['US', 'FR', '', undefined], [undefined, '', 'FR', 'US']])('reuses neutral output in order %s %s %s %s', async (...countries) => {
     const h = serverHarness(holiday);
-    expect((await h.visit('/holiday/', cookie)).body).toContain('United States');
-    for (const other of [undefined, 'detected_country=', 'detected_country=   ', 'detected_country=us']) {
-      const res = await h.visit('/holiday/', other);
-      expect(res.get('x-vs-cache')).toBe('Hit');
-      expect(res.body).toContain('United States');
+    let first;
+    for (const country of [...countries, ...countries]) {
+      const response = await h.visit('/holiday/', country === undefined ? undefined : 'detected_country=' + country);
+      if (!first) first = response.body;
+      expect(response.body).toBe(first);
+      expect(response.body).not.toMatch(/United States|International|Christmas/);
     }
     expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
-    expect([...h.cache.entries.keys()]).toContain('page:main:/holiday/:detected_country:US');
+    expect([...h.cache.entries.keys()]).toEqual(['page:main:/holiday/']);
+    expect(h.cache.entries.get('page:main:/holiday/').entry.kind).toBe('response');
+    h.cache.now += 900;
+    expect((await h.visit('/holiday/', 'detected_country=FR')).get('x-vs-cache')).toBe('Miss');
   });
-});
 
-describe('Country-independent pages retain a single entry', () => {
-  it.each([['US', 'FR'], ['FR', 'US']])('%s then %s', async (a, b) => {
+  it.each([['US', 'FR'], ['FR', 'US']])('retains non-Holiday sharing for %s then %s', async (first, second) => {
     const h = serverHarness(() => '<p>Shared page</p>');
-    for (const country of [a, b, a, b]) {
-      expect((await h.visit('/shared/', 'detected_country=' + country)).body).toBe('<p>Shared page</p>');
-    }
+    await h.visit('/shared/', 'detected_country=' + first);
+    expect((await h.visit('/shared/', 'detected_country=' + second)).get('x-vs-cache')).toBe('Hit');
     expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
-    expect([...h.cache.entries.keys()]).toEqual(['page:main:/shared/']);
-    expect(h.cache.entries.get('page:main:/shared/').entry.kind).toBe('response');
   });
-});
 
-describe('Page and country tags remove every country entry', () => {
-  it('removes marker and variants through authorized invalidation after reseeding', async () => {
+  it('invalidates page and wildcard tags after reseeding', async () => {
     const h = serverHarness(holiday);
-    for (const tag of ['page', 'detected_country', '*']) {
+    for (const tag of ['page', '*']) {
       await h.visit('/holiday/', 'detected_country=US');
       await h.visit('/holiday/', 'detected_country=FR');
-      expect(h.cache.entries.size).toBe(3);
-      for (const call of h.cache.set.mock.calls) expect(call[2]).toEqual(expect.arrayContaining(['page', 'detected_country']));
+      expect(h.cache.entries.size).toBe(1);
+      expect(h.cache.set.mock.calls[h.cache.set.mock.calls.length - 1][2]).toContain('page');
       await h.invalidate(tag, 'wrong-synthetic-secret');
-      expect(h.cache.entries.size).toBe(3);
+      expect(h.cache.entries.size).toBe(1);
       await h.invalidate(tag);
       expect(h.cache.entries.size).toBe(0);
       const count = h.renderer.renderToString.mock.calls.length;

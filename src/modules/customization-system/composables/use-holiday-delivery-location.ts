@@ -1,10 +1,10 @@
 import { useStore } from '@vue-storefront/core/application-services';
 import { useRequestServices } from '@vue-storefront/core/request-services';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { resolveDeliveryCountryBucket } from '../helpers/resolve-delivery-country-bucket';
 
 import { DETECTED_COUNTRY_COOKIE_KEY } from 'src/modules/shared/types/detected-country-cookie.key';
-import { PERSISTED_CUSTOMER_SHIPPING_COUNTRY } from 'src/modules/persisted-customer-data';
+import { PERSISTED_CUSTOMER_SHIPPING_COUNTRY, PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED } from 'src/modules/persisted-customer-data';
 
 export enum HolidayDeliveryLocation {
   DOMESTIC = 'domestic',
@@ -21,10 +21,14 @@ export function useHolidayDeliveryLocation () {
   const store = useStore();
   const request = useRequestServices();
   const manualLocation = ref<HolidayDeliveryLocation | undefined>();
+  const mounted = ref(false);
+  onMounted(() => { mounted.value = true; });
   const persistedCountry = computed<string | undefined>(() => {
     return store.getters[PERSISTED_CUSTOMER_SHIPPING_COUNTRY];
   });
-  const automaticLocation = computed<HolidayDeliveryLocation>(() => {
+  const ready = computed(() => mounted.value && !!store.getters[PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED]);
+  const automaticLocation = computed<HolidayDeliveryLocation | undefined>(() => {
+    if (!ready.value) return undefined;
     if (persistedCountry.value?.trim()) {
       return toDeliveryLocation(persistedCountry.value);
     }
@@ -33,7 +37,8 @@ export function useHolidayDeliveryLocation () {
 
     return toDeliveryLocation(detectedCountry);
   });
-  const location = computed<HolidayDeliveryLocation>(() => {
+  const location = computed<HolidayDeliveryLocation | undefined>(() => {
+    if (!ready.value) return undefined;
     return manualLocation.value || automaticLocation.value;
   });
 
@@ -41,5 +46,5 @@ export function useHolidayDeliveryLocation () {
     manualLocation.value = value;
   }
 
-  return { location, setLocation };
+  return { location, ready, setLocation };
 }

@@ -9,12 +9,7 @@ export interface CachedResponse {
   redirect: { code: 301 | 302; path: string } | null;
 }
 
-export interface VariationMarker {
-  kind: 'variation';
-  cookies: string[];
-}
-
-export type OutputCacheEntry = CachedResponse | VariationMarker;
+export type OutputCacheEntry = CachedResponse;
 
 export interface OutputCacheStorage {
   get: (key: string) => Promise<OutputCacheEntry | null>;

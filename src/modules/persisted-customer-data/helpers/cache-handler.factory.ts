@@ -9,7 +9,6 @@ import { EMAIL, FIRST_NAME, LAST_NAME, PHONE_NUMBER, SHIPPING_COUNTRY, VAT_ID } 
 export function cacheHandlerFactory () {
   return (mutation: MutationPayload) => {
     const type = mutation.type;
-    const persistedCustomerDataStorage = StorageManager.get(SN_PERSISTED_CUSTOMER_DATA);
 
     let localStorageKey: string | undefined;
 
@@ -41,6 +40,7 @@ export function cacheHandlerFactory () {
       return;
     }
 
+    const persistedCustomerDataStorage = StorageManager.get(SN_PERSISTED_CUSTOMER_DATA);
     if (!mutation.payload) {
       persistedCustomerDataStorage.removeItem(localStorageKey);
       return;

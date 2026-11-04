@@ -65,7 +65,7 @@ export function createRenderResponseHandler ({
       cacheTags: context.output.cacheTags,
       cookieReads: renderCookieReads
     };
-    let dependencies = outputCache.prepare(cacheRequest, input);
+    outputCache.prepare(cacheRequest, input);
     const setCacheTagsHeader = () => {
       if (tagging && input.cacheTags.size) {
         res.setHeader('X-VS-Cache-Tags', Array.from(input.cacheTags).join(' '));
@@ -79,7 +79,7 @@ export function createRenderResponseHandler ({
     // Output hooks and template processing can read cookies too; classify the complete read set.
     const cookieReads = Array.from(context.output.cookieReads);
     if (cookieReads.length !== renderCookieReads.length) {
-      dependencies = outputCache.prepare(cacheRequest, { ...input, cookieReads }, renderCookieReads);
+      outputCache.prepare(cacheRequest, { ...input, cookieReads }, renderCookieReads);
       setCacheTagsHeader();
     }
     outputCache.write(cacheRequest, {
@@ -90,7 +90,7 @@ export function createRenderResponseHandler ({
       body: output,
       httpCode: res.statusCode,
       redirect: context.output.redirect
-    }, dependencies).catch(error => logger.error('Output cache write failed:', req.url, error));
+    }).catch(error => logger.error('Output cache write failed:', req.url, error));
 
     const after = afterOutput(output);
     if (context.output.redirect) {

@@ -1,13 +1,11 @@
 import { extractCookieValue } from '../../helpers/extract-cookie-value.function';
 import { buildPageCacheKey, splitPageCacheUrl } from './page-cache-key';
-import * as defaultVariations from './output-cache-variations';
 import { CacheLogger, CacheRequest, CacheWriteInput, CachedResponse, OutputCacheConfig, OutputCacheStorage } from './output-cache-types';
 
 export function createOutputCache ({
-  cache, variations = defaultVariations, config, logger
+  cache, config, logger
 }: {
   cache: OutputCacheStorage | false;
-  variations?: typeof defaultVariations;
   config: OutputCacheConfig;
   logger: CacheLogger;
 }) {
@@ -19,40 +17,30 @@ export function createOutputCache ({
     const group = abCookie && extractCookieValue(abCookie, cookieHeader);
     return {
       ...url,
-      // Encoded so a visitor-controlled group can never form another entry's variant suffix.
+      // Encode visitor-controlled group values to keep cache keys distinct.
       key: buildPageCacheKey(site, url.cleanUrl) + (group ? ':' + encodeURIComponent(group) : ''),
       cookieHeader,
       abCookie
     };
   }
 
-  function variantKey (request: CacheRequest, dependencies: { cookie: string; bucket: string }[]): string {
-    return request.key + dependencies.map(({ cookie, bucket }) => ':' + cookie + ':' + encodeURIComponent(bucket)).join('');
-  }
-
   async function read (request: CacheRequest): Promise<CachedResponse | null> {
     if (!enabled || !cache) return null;
-    let entry = await cache.get(request.key);
-    if (entry?.kind === 'variation') {
-      const dependencies = entry.cookies.slice().sort().map(name =>
-        variations.resolveOutputCacheVariation(name, request.cookieHeader));
-      if (dependencies.some(dependency => !dependency)) return null;
-      entry = await cache.get(variantKey(request, dependencies));
-    }
-    if (!entry || entry.kind !== 'response') return null;
-    return entry;
+    return cache.get(request.key);
   }
 
   function prepare (request: CacheRequest, input: CacheWriteInput, alreadyClassified: Iterable<string> = []) {
-    const dependencies = variations.resolveOutputCacheDependencies(input.cookieReads, { ...request, logger }, alreadyClassified);
-    for (const tag of dependencies.tags) {
-      if (tag === 'no-cache' || config.server.useOutputCacheTagging) input.cacheTags.add(tag);
+    const reported = new Set(alreadyClassified);
+    for (const name of Array.from(new Set(input.cookieReads)).sort()) {
+      if (name === request.abCookie) continue;
+      input.cacheTags.add('no-cache');
+      if (!reported.has(name)) logger.warn('Unregistered SSR cookie dependency:', name);
     }
     if (input.redirect && config.server.useOutputCacheTagging) input.cacheTags.add('redirect');
-    return dependencies;
   }
 
-  async function write (request: CacheRequest, input: CacheWriteInput, dependencies = prepare(request, input)): Promise<void> {
+  async function write (request: CacheRequest, input: CacheWriteInput): Promise<void> {
+    prepare(request, input, input.cookieReads);
     // Capture every input before the first asynchronous cache operation and context cleanup.
     // Rendering uses the clean URL, so a redirect Location never carries the request's stripped values.
     if (input.headersSent || !enabled || !cache || input.cacheTags.has('no-cache')) return;
@@ -64,15 +52,7 @@ export function createOutputCache ({
       httpCode: input.httpCode,
       redirect: input.redirect ? { ...input.redirect } : null
     };
-    const key = request.key;
-    if (!dependencies.variations.length) {
-      await cache.set(key, entry, tags);
-      return;
-    }
-    const cookies = dependencies.variations.map(variation => variation.cookie);
-    const keyForVariant = variantKey(request, dependencies.variations);
-    await cache.set(keyForVariant, entry, tags);
-    await cache.set(key, { kind: 'variation', cookies }, tags);
+    await cache.set(request.key, entry, tags);
   }
 
   return { createRequest, read, prepare, write };

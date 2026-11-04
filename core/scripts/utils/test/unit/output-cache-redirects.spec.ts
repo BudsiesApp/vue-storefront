@@ -80,7 +80,7 @@ describe('Query-free redirects remain cacheable', () => {
 });
 
 describe('Application redirects follow the server redirect path', () => {
-  it.each(['request-services', 'country-dependent'])('%s redirect is recorded, sent once and cached', async mode => {
+  it.each(['request-services', 'country-dependent'])('%s redirect is recorded and sent once', async mode => {
     const h = serverHarness(ctx => {
       if (mode === 'country-dependent') readCookie(ctx, 'detected_country');
       ctx.output.cacheTags.add('page');
@@ -94,8 +94,9 @@ describe('Application redirects follow the server redirect path', () => {
       expect(res.get('location')).toBe('/rewritten/?step=1&' + visitorQuery(email));
       expect(res.end).not.toHaveBeenCalled();
     }
-    expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
-    expect(h.logger.warn).not.toHaveBeenCalled();
+    expect(h.renderer.renderToString).toHaveBeenCalledTimes(mode === 'country-dependent' ? 4 : 1);
+    if (mode === 'country-dependent') expect(h.cache.set).not.toHaveBeenCalled();
+    else expect(h.logger.warn).not.toHaveBeenCalled();
     expect(JSON.stringify([...h.cache.entries.values()])).not.toMatch(/alice|bob/);
   });
 });
@@ -105,7 +106,7 @@ describe('Redirect tag and wildcard remove redirects', () => {
     const fs = require('fs');
     // Deployments generate config/local.json from this template; its list replaces the default one.
     const template = fs.readFileSync('config/local.json.template', 'utf8');
-    expect(JSON.parse(template.match(/"availableCacheTags":\s*(\[[\s\S]*?\])/)[1])).toEqual(expect.arrayContaining(['redirect', 'detected_country']));
+    expect(JSON.parse(template.match(/"availableCacheTags":\s*(\[[\s\S]*?\])/)[1])).toEqual(expect.arrayContaining(['redirect']));
     const h = serverHarness(redirectRenderer('inherited'));
     for (const tag of ['redirect', '*']) {
       await h.visit('/source/');
