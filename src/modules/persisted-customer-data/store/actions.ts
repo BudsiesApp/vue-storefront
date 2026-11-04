@@ -13,14 +13,9 @@ import { SET_PERSISTED_CUSTOMER_EMAIL, SET_PERSISTED_CUSTOMER_FIRST_NAME, SET_PE
 
 export const actions: ActionTree<StoreState, RootState> = {
   async synchronize ({ commit }): Promise<void> {
-    let persistedCustomerDataStorage: ReturnType<typeof StorageManager.get>;
-    try {
-      persistedCustomerDataStorage = StorageManager.get(SN_PERSISTED_CUSTOMER_DATA);
-    } catch (error) {
-      commit(SET_PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED, true);
-      Logger.error(error)();
-      return;
-    }
+    const persistedCustomerDataStorage = StorageManager.get(
+      SN_PERSISTED_CUSTOMER_DATA
+    );
 
     const shippingCountry = await new Promise<string | null>((resolve) => {
       try {

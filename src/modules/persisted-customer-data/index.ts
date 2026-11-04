@@ -2,7 +2,6 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { isServer } from '@vue-storefront/core/helpers';
 import { StorefrontModule } from '@vue-storefront/core/lib/modules';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
-import { Logger } from '@vue-storefront/core/lib/logger';
 
 import { usePersistedEmail } from './composables/use-persisted-email';
 import { usePersistedPhoneNumber } from './composables/use-persisted-customer-phone-number';
@@ -38,19 +37,8 @@ const SET_PERSISTED_CUSTOMER_VAT_ID = `${SN_PERSISTED_CUSTOMER_DATA}/${mutations
 const SET_PERSISTED_CUSTOMER_BILLING_ADDRESS = `${SN_PERSISTED_CUSTOMER_DATA}/${mutations.SET_PERSISTED_CUSTOMER_BILLING_ADDRESS}`;
 
 export const PersistedCustomerDataModule: StorefrontModule = async function ({ store }) {
+  StorageManager.init(SN_PERSISTED_CUSTOMER_DATA);
   store.registerModule(SN_PERSISTED_CUSTOMER_DATA, persistedCustomerDataStore)
-
-  let storageAvailable = true;
-  try {
-    StorageManager.init(SN_PERSISTED_CUSTOMER_DATA);
-  } catch (error) {
-    if (isServer) {
-      throw error;
-    }
-    storageAvailable = false;
-    Logger.error(error)();
-    store.commit(`${SN_PERSISTED_CUSTOMER_DATA}/${mutations.SET_PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED}`, true);
-  }
 
   if (isServer) {
     return;
@@ -61,13 +49,9 @@ export const PersistedCustomerDataModule: StorefrontModule = async function ({ s
     cacheHandlerFactory()
   );
 
-  if (storageAvailable) {
-    store.subscribe(localStorageSynchronization.setItems);
-  }
+  store.subscribe(localStorageSynchronization.setItems);
 
-  if (storageAvailable) {
-    store.dispatch(`${SN_PERSISTED_CUSTOMER_DATA}/synchronize`);
-  }
+  store.dispatch(`${SN_PERSISTED_CUSTOMER_DATA}/synchronize`);
   EventBus.$on('user-after-logout', () => {
     store.commit(SET_PERSISTED_CUSTOMER_EMAIL, undefined);
     store.commit(SET_PERSISTED_CUSTOMER_FIRST_NAME, undefined);
