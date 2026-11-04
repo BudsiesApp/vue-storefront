@@ -65,7 +65,7 @@ The Holiday widget SHALL remain neutral during SSR/initial hydration. Once the b
 #### Scenario: Saved country cannot be read
 - **WHEN** the browser shipping-country attempt fails or reaches the existing storage fallback without a usable saved country
 - **THEN** the widget resolves from a nonblank detected country or US when that is absent/blank, instead of remaining in loading
-- **AND** applicable labels/options and the manual location control become available without clearing a valid current selection
+- **AND** applicable labels/options and the manual location control become available without clearing a valid current selection once any required draft removal has settled
 
 #### Scenario: Unrelated saved customer fields do not block location
 - **WHEN** the shipping-country attempt has settled but an email, name, phone, VAT or legacy-email read is still pending or has failed
@@ -137,3 +137,39 @@ Saved-data reads sharing a storage instance SHALL have independent timeout callb
 - **WHEN** a promise-only read starts while another read on the same storage instance is waiting for its timeout callback
 - **THEN** the earlier callback still receives its existing fallback at its own unchanged deadline
 - **AND** the promise-only read retains its existing contract without timeout-forced settlement
+
+### Requirement: Late reads cannot restore cache invalidated by same-key mutation
+
+A backend read started before a same-key write or removal SHALL NOT later repopulate local cache with its old result. Other keys and reads without intervening same-key mutation SHALL retain existing cache behavior. The guard SHALL preserve the original read's promise/callback contract and timeout duration and SHALL NOT add timers or draft-failure classification metadata.
+
+#### Scenario: Timed-out read completes after removal
+- **WHEN** a read times out, the same key is removed, the old backend read returns and the key is read again
+- **THEN** the old result does not resurrect removed local data and the reread uses the post-removal state or existing fallback, not a cache entry restored by that old read
+- **AND** the original read retains its existing returned-promise behavior
+
+#### Scenario: Timed-out read completes after a new write
+- **WHEN** a read times out, a new value is written to that key, the old backend read returns and the key is read again
+- **THEN** the late result does not displace the new cached value, including an allowed falsy or memory-only value
+- **AND** the reread retains existing value/fallback behavior without reviving the old cached result
+
+#### Scenario: Unrelated mutation does not suppress ordinary cache fill
+- **WHEN** a backend read completes with no intervening mutation of its key, including when a different key was written or removed
+- **THEN** its ordinary cache-fill behavior and unrelated cached entries remain unchanged
+
+### Requirement: Required draft removal stays ordered before readiness
+
+Required draft removal SHALL stay ordered before restoration readiness and later draft saving, including after read fallback. Rejection SHALL be handled so the current flow can resume; a never-settling removal SHALL keep readiness/saving gated to prevent late deletion of new data. No timer or detached delete SHALL bypass that gate. Existing captured-key and stale-restoration guards SHALL remain.
+
+#### Scenario: A pending delete cannot be overtaken by a new save
+- **WHEN** restoration requires draft removal and that removal is still pending
+- **THEN** restoration readiness and later saving remain gated rather than allowing new data to be saved ahead of the delete
+- **AND** successful removal allows the current restoration flow to proceed in order
+
+#### Scenario: Rejected draft removal releases the current flow
+- **WHEN** a required draft removal rejects
+- **THEN** the failure is handled, the existing operation lock is released and only the current restoration flow can resume readiness without clearing valid current selections
+
+#### Scenario: Never-settling delete retains the accepted loading state
+- **WHEN** a required draft removal never settles
+- **THEN** the widget may remain loading and new saving remains gated to avoid a later delete removing newly saved data
+- **AND** no timer, detached delete or early readiness release is introduced to force progress
