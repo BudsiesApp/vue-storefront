@@ -43,79 +43,80 @@ Every SSR redirect, whether produced by a router redirect or recorded by applica
 Application code SHALL request SSR redirects only through the request-services boundary, which records the status and path in the render context and never writes the HTTP response. This SHALL cover URL-rewrite and Storyblok mapping fallbacks, category rewrites, the checkout-to-cart redirect, configurable-child parent redirects and missing-product redirects. A redirect recorded during initial navigation SHALL skip page data loading. Recorded redirects SHALL be sent by the server under the same Location, caching and tagging rules as router redirects; a redirect that must not be shared SHALL carry `no-cache`.
 
 #### Scenario: A recorded redirect is sent once and cached
-- **WHEN** different visitors request a page whose render records a redirect, with and without a country dependency
+- **WHEN** different visitors request a safely shareable page whose render records a redirect
 - **THEN** each response is exactly one redirect carrying that visitor's stripped values, with no page body
-- **AND** the page renders once and cached entries contain no visitor values
+- **AND** the page renders once and the cached entry contains no visitor values
 
 #### Scenario: A navigation-time redirect skips page data
 - **WHEN** a navigation guard or mapping fallback records a redirect during initial navigation
 - **THEN** no page data is loaded and the server sends the recorded redirect with the current request's stripped values appended
 
+#### Scenario: A cookie-dependent recorded redirect is not shared
+- **WHEN** a fresh render records a redirect after reading a cookie not represented by the configured A/B dimension
+- **THEN** the server sends the current request's redirect once and does not cache the response
+
 ### Requirement: Redirect entries can be invalidated
 
-When output-cache tagging is enabled, every cached redirect SHALL carry the `redirect` tag in addition to applicable page and variation tags. The tag SHALL be accepted by cache invalidation and included in wildcard invalidation.
+When output-cache tagging is enabled, every cached redirect SHALL carry the `redirect` tag in addition to applicable page tags. The tag SHALL be accepted by cache invalidation and included in wildcard invalidation.
 
 #### Scenario: Redirect tag and wildcard remove redirects
 - **WHEN** output-cache tagging is enabled and a cached redirect is invalidated through the authorized invalidation endpoint using `tag=redirect` or, after reseeding, `tag=*`
 - **THEN** the entry is removed and the next query-free request resolves afresh
 
-### Requirement: Country-dependent output preserves first paint
-
-Only responses that read `detected_country` during SSR SHALL use country variants. A base marker SHALL select a US or INTL entry without rendering a different visitor's country content. A trimmed, upper-cased US value or a missing or blank cookie SHALL select US; every other country value SHALL select INTL. When output-cache tagging is enabled, marker and variants SHALL carry normal page tags and `detected_country`. Entries SHALL respect the existing cache lifetime.
-
-#### Scenario: Country pages cache distinct first paints
-- **WHEN** US and FR visitors request a country-dependent page in each order, starting cold and repeating until each bucket hits
-- **THEN** the base entry is a marker and each bucket has its own cached label and Holiday options
-- **AND** each response already contains the current bucket's content before hydration
-
-#### Scenario: Missing or blank country uses the US bucket
-- **WHEN** a country-dependent request has an absent, empty or whitespace-only cookie
-- **THEN** cold rendering and marker lookups both select the US bucket
-
-#### Scenario: Country-independent pages retain a single entry
-- **WHEN** US and FR requests render a page that never reads the country cookie
-- **THEN** both orders populate and reuse one normal entry with no country marker or variants
-
-#### Scenario: Page and country tags remove every country entry
-- **WHEN** output-cache tagging is enabled, both buckets have been cached and an authorized request invalidates a normal page tag or, after reseeding, `detected_country` or `*`
-- **THEN** the marker and both variants are removed and subsequent requests render fresh content
-
 ### Requirement: Cookie dependencies cannot silently become shared output
 
-SSR cookie reads SHALL be recorded separately for each render, including reads of absent cookies and reads made by output hooks or template processing; the complete read set SHALL be classified before any cache write. A response that reads a cookie other than the configured A/B key or a registered cache variation SHALL receive `no-cache`, SHALL produce no normal, redirect, marker or variant write, and SHALL log the dependency once per request without logging cookie values. Existing `no-cache` tags SHALL retain the same precedence. Component request services MUST remain narrow and MUST NOT expose tracking or cache-tag internals.
+SSR cookie reads SHALL be recorded separately per render, including absent cookies and late output processing. Before caching, any read other than the configured A/B cookie SHALL prevent sharing and produce `no-cache`, independently of tagging settings. Each such cookie name SHALL be logged at most once per request without its value. Existing `no-cache` SHALL take precedence, and component request services SHALL remain narrow.
 
 #### Scenario: An unregistered cookie disables all writes
-- **WHEN** a render reads a synthetic unregistered cookie, repeatedly or when absent, alone or alongside country and A/B cookies, or already carries `no-cache`
-- **THEN** no response entry or marker is stored, the response carries `no-cache`, and repeated reads produce at most one dependency warning for that request
-- **AND** interleaved renders retain separate dependency sets
+- **WHEN** a fresh render reads a synthetic non-A/B cookie, repeatedly or when absent, alone or alongside A/B cookies, or already carries `no-cache`
+- **THEN** no response is stored, the response carries `no-cache`, and repeated reads produce at most one dependency warning for that request
+- **AND** interleaved renders retain separate dependency sets and never log cookie values
 
 #### Scenario: Late cookie reads are classified before writing
-- **WHEN** an output hook or template processing reads an unregistered or registered cookie after the application render
-- **THEN** an unregistered read prevents every write and a registered read stores a marker and variant, so a later visitor never receives the earlier visitor's cookie-derived output
+- **WHEN** an output hook or template processing reads a non-A/B cookie after the application render
+- **THEN** that read prevents every cache write, so no cookie-derived response is stored for later visitors
+
+#### Scenario: Detected country is not an exception to the safeguard
+- **WHEN** a fresh render outside the neutral Holiday path reads the detected-country cookie during SSR
+- **THEN** it is not cached rather than being assigned a country variant or silently shared
 
 ### Requirement: Cache dimensions and key normalization remain compatible
 
-Store code, significant query parameters and the configured A/B group SHALL continue separating cached output, including country markers and variants. The visitor-controlled A/B value SHALL be encoded in the key so it cannot form another entry's key or variant suffix. Existing ignored-query normalization SHALL remain unchanged. Country-specific output MUST NOT be served from a different store or A/B group.
+Store code, significant query parameters and the configured A/B group SHALL continue separating cached output. Visitor-controlled A/B values SHALL be encoded so distinct groups cannot address each other's entries. Existing ignored-query normalization SHALL remain unchanged. Country cookies SHALL NOT add a cache dimension; safe shared responses SHALL retain existing cache lifetime and page-tag invalidation behavior.
 
 #### Scenario: Store and A/B dimensions compose with country
-- **WHEN** synthetic requests vary store code, A/B group and country bucket in both orders and repeat to reach hits
-- **THEN** normal entries, redirects, markers and variants remain separated by the applicable dimensions
+- **WHEN** synthetic requests vary store code, A/B group and country cookie in both orders and repeat to reach hits
+- **THEN** normal responses and redirects remain separated by store and A/B group while country-only differences reuse the same safe response
 
 #### Scenario: A crafted A/B value cannot address a country variant
-- **WHEN** a visitor sends an A/B cookie whose value imitates a country-variant suffix after another visitor warmed that variant
-- **THEN** the crafted request neither reads nor overwrites the other visitor's variant
+- **WHEN** a visitor sends an A/B value containing separators or resembling a former country suffix after another group warmed a response
+- **THEN** that request neither reads nor overwrites the other group's entry
 
 #### Scenario: Page-key behavior is preserved
 - **WHEN** existing cache-key examples and additional repeated, blank, encoded and significant query cases are evaluated
 - **THEN** ignored keys still have no effect on the page key, significant keys still distinguish it, the clean render URL matches that key's normalized path and query, and the stripped query keeps the request's ignored pairs in their original encoding
 
+#### Scenario: Safe shared Holiday responses respect invalidation and lifetime
+- **WHEN** a shared Holiday response expires or an authorized request invalidates its page tag or wildcard tags with tagging enabled
+- **THEN** the next request renders a fresh neutral response and subsequent requests reuse it without country variants
+
 ### Requirement: Holiday location and client query behavior remain compatible
 
-The Holiday composable and pre-render cache selection SHALL use the same country classification. Client location precedence SHALL be persisted shipping country, then detected cookie, then the US fallback defined by the Holiday location requirement; manual location changes SHALL remain intact. Coupon, artwork, attribution and product-customization query flows SHALL remain intact. The browser's current URL SHALL remain available after hydration.
+After browser readiness, Holiday location SHALL use persisted shipping country, then detected cookie, then US, with manual changes retained. If saved data is unreadable, it SHALL resolve via detected cookie/US rather than stay loading, preserving valid selections. SSR SHALL NOT choose a visitor location or use country cache selection. Coupon, artwork, attribution and customization query flows SHALL remain intact, with the browser's current URL available after hydration.
 
 #### Scenario: Shared country rule agrees with Holiday location
-- **WHEN** the location helper and composable receive US, lowercase or padded US, FR, empty or missing country values
-- **THEN** their automatic classification agrees with cache selection, empty or missing values select US, and existing persisted-country and manual overrides still apply
+- **WHEN** browser shipping-data loading completes with US, lowercase or padded US, FR, empty or missing country values
+- **THEN** nonblank persisted shipping country takes precedence over the cookie, US variants select domestic, other nonblank countries select international, and blank or missing sources ultimately select US
+- **AND** manual overrides remain intact
+
+#### Scenario: Current browser query remains usable after neutral hydration
+- **WHEN** a visitor opens a cached page with synthetic artwork, coupon, attribution and product-customization query values
+- **THEN** browser query consumers receive that visitor's supported values after hydration without injecting those values into shared HTML or cached redirects
+
+#### Scenario: Storage failure resolves only in this browser
+- **WHEN** a browser hydrates shared neutral HTML but cannot read saved customer data
+- **THEN** it resolves Holiday content from its detected country or US fallback, preserves valid current selections and allows manual location change
+- **AND** that browser-only fallback does not alter shared HTML, cached redirects or cache dimensions
 
 ### Requirement: Sent responses are never cached or sent twice
 
@@ -129,3 +130,21 @@ After application code has sent the HTTP response, SSR completion and error hand
 #### Scenario: Response and cleanup failures are contained
 - **WHEN** rendering or cache work fails before or after headers are sent, or the error handler or render cleanup throws
 - **THEN** render and lookup failures retain existing error redirects only for unsent responses, asynchronous write failures are logged without a redirect, cleanup is attempted, and terminal logging catches contain all remaining rejection paths
+
+### Requirement: Holiday SSR output is visitor-independent
+
+Shared Holiday pages SHALL render a neutral loading state during SSR and initial hydration, without visitor-derived country labels, delivery promises or selectable rush options. Once browser location data is ready, the widget SHALL display that visitor's applicable content. Different country cookies SHALL reuse one safe response within the existing store, significant-query and A/B dimensions, without country cache variants.
+
+#### Scenario: Different visitors receive the same neutral Holiday HTML
+- **WHEN** visitors with US, FR, blank and absent country cookies request the same Holiday page in both request orders, starting cold and repeating to reach cache hits
+- **THEN** each receives identical neutral HTML and serialized state, without a visitor-derived location, promise or option selection
+- **AND** the requests populate and reuse one shared response rather than country markers or variants
+
+#### Scenario: Hydration waits for this browser's location
+- **WHEN** a browser hydrates the shared Holiday response while its persisted shipping data is still loading
+- **THEN** its initial widget markup matches the neutral SSR markup and exposes a non-interactive accessible loading state
+- **AND** country labels, promises and rush controls appear only after that browser's location is ready
+
+#### Scenario: Country-independent pages continue sharing
+- **WHEN** US and FR visitors request a page without Holiday content in either order
+- **THEN** they reuse one safe response within their existing store and A/B group
