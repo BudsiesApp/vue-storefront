@@ -43,6 +43,7 @@ describe('SSR request boundary compatibility', () => {
           response: { redirect }
         },
         output: {
+          cookieReads: new Set(),
           cacheTags: new Set(),
           redirect: null
         }
@@ -89,7 +90,8 @@ describe('SSR request boundary compatibility', () => {
       return {
         extendedHead: extendedHead.inject(),
         html,
-        redirect
+        redirect,
+        recordedRedirect: context.output.redirect
       };
     }
 
@@ -112,17 +114,16 @@ describe('SSR request boundary compatibility', () => {
         'first-forwarded.test|First Agent|first|https://first-forwarded.test/canonical-request-fixture'
       );
       expect(first.html).not.toContain('second.test');
-      expect(first.redirect).toHaveBeenCalledWith(
-        302,
-        '/redirect/first-forwarded.test'
-      );
+      expect(first.recordedRedirect).toEqual({ code: 302, path: '/redirect/first-forwarded.test' });
+      expect(first.redirect).not.toHaveBeenCalled();
       expect(first.extendedHead).toBe('head:first-forwarded.test');
 
       expect(second.html).toContain(
         'second.test|Second Agent|second|https://second.test/canonical-request-fixture'
       );
       expect(second.html).not.toContain('first-forwarded.test');
-      expect(second.redirect).toHaveBeenCalledWith(302, '/redirect/second.test');
+      expect(second.recordedRedirect).toEqual({ code: 302, path: '/redirect/second.test' });
+      expect(second.redirect).not.toHaveBeenCalled();
       expect(second.extendedHead).toBe('head:second.test');
     } finally {
       if (documentDescriptor) {

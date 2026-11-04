@@ -2,6 +2,7 @@ import get from 'lodash-es/get'
 
 import config from 'config'
 import { AsyncDataLoader } from '@vue-storefront/core/lib/async-data-loader';
+import { setServerRedirect } from '@vue-storefront/core/request-services';
 import { removeStoreCodeFromRoute } from '@vue-storefront/core/lib/multistore'
 import storeCodeFromRoute from '@vue-storefront/core/lib/storeCodeFromRoute'
 
@@ -49,10 +50,7 @@ export const forStoryblok = async ({ dispatch, rootState }, { url, params }) => 
     AsyncDataLoader.push({
       execute: async ({ context }) => {
         if (context) {
-          context.server.response.redirect(
-            REDIRECT_CODE,
-            url.toLowerCase()
-          );
+          setServerRedirect(context, url.toLowerCase(), REDIRECT_CODE);
         }
       }
     });
