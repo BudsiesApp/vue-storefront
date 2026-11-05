@@ -1,10 +1,9 @@
-import { Request } from 'express';
 import fetch from '@vue-storefront/core/lib/fetch/server';
 
 import { serverHooksExecutors } from '@vue-storefront/core/server/hooks'
-import { extractCookieValue } from '../helpers/extract-cookie-value.function'
 import { cacheInstanceFactory } from './utils/cache-instance';
-import { generatePageCacheKey } from './utils/page-cache-key';
+import { createCacheInvalidationHandler, createOutputCache } from './utils/output-cache';
+import { createRenderResponseHandler, createSsrErrorHandler, renderSsrResponse, lookupSsrResponse } from './utils/ssr-response';
 
 const gracefulShutdown = require('http-graceful-shutdown')
 const qs = require('qs')
@@ -105,59 +104,12 @@ function forwardCacheInvalidation (url: string): void {
     .catch(error => console.error(error))
 }
 
-function invalidateCache (req, res) {
-  if (config.server.useOutputCache && cache) {
-    if (req.query.tag && req.query.key) { // clear cache pages for specific query tag
-      if (req.query.key !== config.server.invalidateCacheKey) {
-        console.error('Invalid cache invalidation key')
-        apiStatus(res, 'Invalid cache invalidation key', 500)
-        return
-      }
-      console.log(`Clear cache request for [${req.query.tag}]`)
-      let tags = []
-      if (req.query.tag === '*') {
-        tags = config.server.availableCacheTags
-      } else {
-        tags = req.query.tag.split(',')
-      }
-      const subPromises = []
-
-      serverHooksExecutors.beforeCacheInvalidated({ tags, req })
-
-      tags.forEach(tag => {
-        if (config.server.availableCacheTags.indexOf(tag) >= 0 || config.server.availableCacheTags.find(t => {
-          return tag.indexOf(t) === 0
-        })) {
-          subPromises.push(cache.invalidate(tag).then(() => {
-            console.log(`Tags invalidated successfully for [${tag}]`)
-          }))
-        } else {
-          console.error(`Invalid tag name ${tag}`)
-        }
-      })
-
-      Promise.all(subPromises).then(r => {
-        apiStatus(res, `Tags invalidated successfully [${req.query.tag}]`, 200)
-      }).catch(error => {
-        apiStatus(res, error, 500)
-        console.error(error)
-      }).finally(() => {
-        serverHooksExecutors.afterCacheInvalidated({ tags, req })
-      })
-
-      if (config.server.invalidateCacheForwarding) { // forward invalidate request to the next server in the chain
-        if (!req.query.forwardedFrom && config.server.invalidateCacheForwardUrl) { // don't forward forwarded requests
-          forwardCacheInvalidation(config.server.invalidateCacheForwardUrl + req.query.tag + '&forwardedFrom=vs')
-        }
-      }
-    } else {
-      apiStatus(res, 'Invalid parameters for Clear cache request', 500)
-      console.error('Invalid parameters for Clear cache request')
-    }
-  } else {
-    apiStatus(res, 'Cache invalidation is not required, output cache is disabled', 200)
-  }
-}
+const invalidateCache = createCacheInvalidationHandler({
+  config, cache, apiStatus,
+  beforeInvalidated: serverHooksExecutors.beforeCacheInvalidated,
+  afterInvalidated: serverHooksExecutors.afterCacheInvalidated,
+  forwardInvalidation: forwardCacheInvalidation
+})
 
 const serve = (path, cache, options?) => express.static(resolve(path), Object.assign({
   fallthrough: false,
@@ -172,7 +124,6 @@ const serve = (path, cache, options?) => express.static(resolve(path), Object.as
 }, options))
 
 const themeRoot = require('../build/theme-path')
-const TEST_GROUP_ID_COOKIE_KEY = config.abTesting?.cookieKey;
 
 if (config.server.helmet && config.server.helmet.enabled && isProd) {
   app.use(helmet(config.server.helmet.config))
@@ -194,13 +145,6 @@ function cacheVersion (req, res) {
   res.send(fs.readFileSync(resolve('core/build/cache-version.json')))
 }
 
-function generateCacheKey (site: string, req: Request) {
-  return generatePageCacheKey(
-    site,
-    `${req.protocol}://${req.get('host')}${req.originalUrl}`
-  );
-}
-
 app.get('/cache-version.json', cacheVersion)
 
 let globalContextConfig: any = null;
@@ -212,22 +156,13 @@ app.get('*', async (req, res, next) => {
   }
 
   const s = Date.now()
-  const errorHandler = err => {
-    if (err && err.code === 404) {
-      if (NOT_ALLOWED_SSR_EXTENSIONS_REGEX.test(req.path)) {
-        console.error(`Resource is not found : ${req.url}`)
-        return apiStatus(res, 'Vue Storefront: Resource is not found', 404)
-      } else {
-        console.error(`Redirect for resource not found : ${req.url}`)
-        return res.redirect('/page-not-found')
-      }
-    } else {
-      console.error(`Error during render : ${req.url}`)
-      console.error(err)
-      serverHooksExecutors.ssrException({ err, req, isProd })
-      return res.redirect('/error')
-    }
-  }
+  const errorHandler = createSsrErrorHandler({
+    res, req, logger: console,
+    isResourceNotFound: () => NOT_ALLOWED_SSR_EXTENSIONS_REGEX.test(req.path),
+    apiStatus,
+    onException: err => serverHooksExecutors.ssrException({ err, req, isProd })
+  })
+  const logFinalFailure = error => console.error('SSR request failed:', req.url, error)
 
   if (!req.path.endsWith('/')) {
     const hasQuery = Object.values(req.query).length;
@@ -240,135 +175,51 @@ app.get('*', async (req, res, next) => {
     return res.redirect(301, redirectUrl);
   }
 
-  const site = req.headers['x-vs-store-code'] || 'main'
-  let cacheKey = generateCacheKey(site, req);
-
-  if (TEST_GROUP_ID_COOKIE_KEY) {
-    const testGroupId = extractCookieValue(TEST_GROUP_ID_COOKIE_KEY, req?.headers?.cookie);
-
-    if (testGroupId) {
-      cacheKey += `:${testGroupId}`;
-    }
-  }
-
-  const dynamicRequestHandler = (renderer, config) => {
-    if (!renderer) {
-      res.setHeader('Content-Type', 'text/html')
-      res.status(202).end(HTMLContent)
-      return next()
-    }
-    const context = ssr.initSSRRequestContext(app, req, res, config)
-    renderer.renderToString(context).then(output => {
-      if (!res.get('content-type')) {
+  const dynamicCacheHandler = (requestConfig) => {
+    const outputCache = createOutputCache({ cache, config: requestConfig, logger: console })
+    const cacheRequest = outputCache.createRequest(
+      req.get('x-vs-store-code') || 'main',
+      `${req.protocol}://${req.get('host')}${req.originalUrl}`,
+      req.headers.cookie
+    )
+    const dynamicRequestHandler = () => {
+      if (!renderer) {
         res.setHeader('Content-Type', 'text/html')
+        res.status(202).end(HTMLContent)
+        return next()
       }
-      let tagsArray = []
-      if (config.server.useOutputCacheTagging && context.output.cacheTags && context.output.cacheTags.size > 0) {
-        tagsArray = Array.from(context.output.cacheTags)
-        const cacheTags = tagsArray.join(' ')
-        res.setHeader('X-VS-Cache-Tags', cacheTags)
-        console.log(`cache tags for the request: ${cacheTags}`)
-      }
-
-      const beforeOutputRenderedResponse = serverHooksExecutors.beforeOutputRenderedResponse({
-        req,
-        res,
-        context,
-        output,
-        isProd
-      })
-
-      if (typeof beforeOutputRenderedResponse.output === 'string') {
-        output = beforeOutputRenderedResponse.output
-      } else if (typeof beforeOutputRenderedResponse === 'string') {
-        output = beforeOutputRenderedResponse
-      }
-
-      output = ssr.applyAdvancedOutputProcessing(context, output, templatesCache, isProd);
-      if (config.server.useOutputCache && cache && !context.output.cacheTags.has('no-cache')) {
-        cache.set(
-          cacheKey,
-          {
-            headers: res.getHeaders(),
-            body: output,
-            httpCode: res.statusCode,
-            redirect: context.output.redirect
-          },
-          tagsArray
-        ).catch(errorHandler)
-      }
-
-      const afterOutputRenderedResponse = serverHooksExecutors.afterOutputRenderedResponse({
-        req,
-        res,
-        context,
-        output,
-        isProd
-      })
-
-      if (context.output.redirect) {
-        return res.redirect(
-          context.output.redirect.code,
-          context.output.redirect.path
-        );
-      }
-
-      if (typeof afterOutputRenderedResponse === 'string') {
-        res.end(afterOutputRenderedResponse)
-      } else if (typeof afterOutputRenderedResponse.output === 'string') {
-        res.end(afterOutputRenderedResponse.output)
-      } else {
-        res.end(output)
-      }
-
-      console.log(`${getProcessLogPrefix()} whole request [${req.url}]: ${Date.now() - s}ms`)
-      next()
-    }).catch(errorHandler)
-      .finally(() => {
-        ssr.clearContext(context)
-      })
-  }
-
-  const dynamicCacheHandler = (config) => {
-    if (config.server.useOutputCache && cache) {
-      cache.get(
-        cacheKey
-      ).then(output => {
-        if (output !== null) {
-          if (output.headers) {
-            for (const header of Object.keys(output.headers)) {
-              res.setHeader(header, output.headers[header])
-            }
-          }
-          res.setHeader('X-VS-Cache', 'Hit')
-
-          if (output.httpCode) {
-            res.status(output.httpCode)
-          }
-
-          if (output.redirect) {
-            res.redirect(output.redirect.code, output.redirect.path)
-            console.log(`${getProcessLogPrefix()} redirect cache hit [${req.url}], cached request: ${Date.now() - s}ms`)
-            return
-          }
-
-          if (output.body) {
-            res.end(output.body)
-          } else {
-            res.setHeader('Content-Type', 'text/html')
-            res.end(output)
-          }
-          console.log(`${getProcessLogPrefix()} cache hit [${req.url}], cached request: ${Date.now() - s}ms`)
+      const context = ssr.initSSRRequestContext(app, req, res, requestConfig, cacheRequest.cleanUrl)
+      const renderHandler = createRenderResponseHandler({
+        req, res, context, outputCache, cacheRequest,
+        tagging: requestConfig.server.useOutputCacheTagging,
+        logger: console,
+        beforeOutput: output => serverHooksExecutors.beforeOutputRenderedResponse({ req, res, context, output, isProd }),
+        afterOutput: output => serverHooksExecutors.afterOutputRenderedResponse({ req, res, context, output, isProd }),
+        processOutput: output => ssr.applyAdvancedOutputProcessing(context, output, templatesCache, isProd),
+        onComplete: () => {
+          console.log(`${getProcessLogPrefix()} whole request [${req.url}]: ${Date.now() - s}ms`)
           next()
-        } else {
-          res.setHeader('X-VS-Cache', 'Miss')
-          console.log(`${getProcessLogPrefix()} cache miss [${req.url}], request: ${Date.now() - s}ms`)
-          dynamicRequestHandler(renderer, config) // render response
         }
-      }).catch(errorHandler)
-    } else {
-      dynamicRequestHandler(renderer, config)
+      })
+      return renderSsrResponse({
+        render: () => renderer.renderToString(context),
+        renderHandler, errorHandler,
+        cleanup: () => ssr.clearContext(context),
+        logFinalFailure
+      })
     }
+    return lookupSsrResponse({
+      read: () => outputCache.read(cacheRequest),
+      cacheRequest,
+      onMiss: dynamicRequestHandler,
+      logCache: result => {
+        const message = result === 'miss'
+          ? `cache miss [${req.url}], request: ${Date.now() - s}ms`
+          : `${result === 'redirect' ? 'redirect ' : ''}cache hit [${req.url}], cached request: ${Date.now() - s}ms`
+        console.log(`${getProcessLogPrefix()} ${message}`)
+      },
+      res, onHit: next, errorHandler, logFinalFailure
+    })
   }
 
   let requestContextConfig: any = config.util.extendDeep({}, config);
@@ -399,7 +250,7 @@ app.get('*', async (req, res, next) => {
     requestContextConfig = config.util.extendDeep({}, globalContextConfig)
   }
 
-  dynamicCacheHandler(requestContextConfig)
+  return dynamicCacheHandler(requestContextConfig)
 })
 
 let port = process.env.PORT || config.server.port

@@ -4,6 +4,7 @@ import { WidgetOptionShape } from './widget-option-shape.type';
 export interface WidgetOptions {
   alignment?: WidgetOptionAlignment,
   hideTitle?: boolean,
+  isHolidayPeriod?: boolean,
   placeholder?: string,
   shape?: WidgetOptionShape,
   useCompactSpacing?: boolean
