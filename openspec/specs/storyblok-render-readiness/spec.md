@@ -42,7 +42,7 @@ The registry SHALL provide a loader that invokes every factory in the selected g
 
 ### Requirement: Story rendering notifications belong to the completed request
 
-Story components SHALL replace `story-ready` with `story-rendered`, carrying the full slug or slugs captured for the completed load. Product descriptions SHALL include the primary slug and the captured backup slug when fallback is used. For content-bearing results, notification SHALL wait for the core group and a subsequent render flush and timer turn. Missing stories and failed story requests SHALL complete their readiness notification without waiting for the component chunk. Only the latest load on that component SHALL notify, including when an earlier load becomes superseded during rendering waits.
+Story components SHALL replace `story-ready` with `story-rendered`, carrying the full slug or slugs captured for the completed load. Product descriptions SHALL include the primary slug and the captured backup slug when fallback is used. When the component renders story content after the load, including a cached backup rendered after a failed primary request, notification SHALL wait for the core group and a subsequent render flush and timer turn. When no content renders, such as a missing story or a failed request without rendered fallback content, notification SHALL complete without waiting for the component chunk. A core-group loading failure SHALL be logged and SHALL NOT prevent the notification. Only the latest load on that component SHALL notify, including when an earlier load becomes superseded during rendering waits.
 
 #### Scenario: First component chunk is delayed
 - **WHEN** a story with content finishes loading but core group loading remains pending
@@ -54,8 +54,16 @@ Story components SHALL replace `story-ready` with `story-rendered`, carrying the
 - **THEN** `story-rendered` reports that load's slug without waiting for the core group
 
 #### Scenario: Story request fails
-- **WHEN** the active story request rejects
+- **WHEN** the active story request rejects and no content renders
 - **THEN** its completion still reports `story-rendered` without waiting for the core group, allowing the page to finish readiness
+
+#### Scenario: Primary description fails while a cached backup renders
+- **WHEN** a product description's primary request rejects while its cached backup content is rendered
+- **THEN** the notification waits for the core group and rendering turn before reporting the captured primary slug
+
+#### Scenario: Core group fails to load
+- **WHEN** loading the core component group rejects
+- **THEN** the error is logged and the notification still completes after the rendering turn
 
 #### Scenario: Story is cached on mount
 - **WHEN** a component mounts with cached story content
@@ -163,8 +171,8 @@ Each page below SHALL emit `PAGE_RENDERED` through the shared deferred page-even
 - **THEN** it waits for the current type's top story and emits once for each navigation without waiting forever
 
 #### Scenario: Gift card page
-- **WHEN** the gift card product is available, its order form is mounted, and its rendered description reports completion
-- **THEN** GiftCards emits once after all three inputs are ready, including a missing or failed description
+- **WHEN** the gift card product is available and its rendered description reports completion
+- **THEN** GiftCards emits once after both inputs are ready, including a missing or failed description
 
 #### Scenario: Forevers customize later page
 - **WHEN** ForeversCustomizeLater has its selected product and mounted form
@@ -183,3 +191,4 @@ Each page below SHALL emit `PAGE_RENDERED` through the shared deferred page-even
 #### Scenario: Storyblok page or block route
 - **WHEN** the current page or block story finishes its request-bound rendering boundary
 - **THEN** its page emits once, including cached mount, missing/failed completion, and route reuse
+- **AND** a page destroyed before its request or rendering wait finishes emits nothing

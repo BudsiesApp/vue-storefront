@@ -62,8 +62,6 @@ export default {
     },
     async loadStoryAndEmitPageRendered () {
       const loadId = ++this.storyLoadId
-      const { fullSlug } = getStoryblokQueryParams(this.$route)
-      const storyFullSlug = this.storyblokPath || this.formatFullSlug(fullSlug)
       let story
 
       try {
@@ -84,7 +82,6 @@ export default {
         }
       }
 
-      this.$emit('story-rendered', [storyFullSlug])
       emitPageRenderedEvent()
     },
     async fetchStory () {
@@ -152,6 +149,9 @@ export default {
         }
       })
     }
+  },
+  beforeDestroy () {
+    this.storyLoadId++
   },
   watch: {
     '$route' (to, from) {

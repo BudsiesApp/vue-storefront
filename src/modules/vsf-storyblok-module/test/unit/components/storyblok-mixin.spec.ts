@@ -107,12 +107,11 @@ it.each([false, true])('waits for chunks and render turns on mount (cached: %s)'
   chunk.resolve();
   await flushRenderQueue();
 
-  expect(storyHarness.wrapper.emitted('story-rendered')).toBeUndefined();
+  expect(emitPageRenderedEvent).not.toHaveBeenCalled();
 
   jest.runOnlyPendingTimers();
   await flushRenderQueue();
 
-  expect(storyHarness.wrapper.emitted('story-rendered')).toEqual([[['A']]]);
   expect(emitPageRenderedEvent).toHaveBeenCalledTimes(1);
   expect(storyHarness.dispatch).toHaveBeenCalledTimes(1);
 
@@ -133,7 +132,6 @@ it.each([false, true])(
     await flushRenderQueue();
 
     expect(loader).not.toHaveBeenCalled();
-    expect(storyHarness.wrapper.emitted('story-rendered')).toEqual([[['A']]]);
     expect(emitPageRenderedEvent).toHaveBeenCalledTimes(1);
 
     if (failed) {
@@ -177,12 +175,58 @@ it.each(['request', 'chunk', 'timer'])(
     jest.runOnlyPendingTimers();
     await flushRenderQueue();
 
-    expect(storyHarness.wrapper.emitted('story-rendered')).toEqual([[['B']]]);
+    expect(storyHarness.dispatch).toHaveBeenLastCalledWith('storyblok/loadStory', { fullSlug: 'B' });
     expect(emitPageRenderedEvent).toHaveBeenCalledTimes(1);
 
     storyHarness.wrapper.destroy();
   }
 );
+
+it.each(['request', 'chunk', 'timer'])(
+  'does not emit the page event after the page is destroyed during the %s wait',
+  async stage => {
+    const chunk = deferred();
+
+    loader.mockReturnValueOnce(chunk.promise);
+
+    const storyHarness = harness();
+
+    if (stage !== 'request') {
+      storyHarness.requests.A.resolve({ content: {} });
+      await flushRenderQueue();
+    }
+
+    if (stage === 'timer') {
+      chunk.resolve();
+      await flushRenderQueue();
+    }
+
+    storyHarness.wrapper.destroy();
+
+    storyHarness.requests.A.resolve({ content: {} });
+    chunk.resolve();
+    await flushRenderQueue();
+    jest.runOnlyPendingTimers();
+    await flushRenderQueue();
+
+    expect(emitPageRenderedEvent).not.toHaveBeenCalled();
+  }
+);
+
+it('emits the page event when the component chunk fails to load', async () => {
+  loader.mockRejectedValueOnce(new Error('chunk failed'));
+
+  const storyHarness = harness(true);
+
+  await flushRenderQueue();
+  jest.runOnlyPendingTimers();
+  await flushRenderQueue();
+
+  expect(Logger.error).toHaveBeenCalledWith(expect.any(Error), 'storyblok');
+  expect(emitPageRenderedEvent).toHaveBeenCalledTimes(1);
+
+  storyHarness.wrapper.destroy();
+});
 
 it('fetches on SSR without rendering waits or page events', async () => {
   const dispatch = jest.fn().mockResolvedValue({ content: {} });
