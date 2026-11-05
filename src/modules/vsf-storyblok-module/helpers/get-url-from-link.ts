@@ -1,27 +1,31 @@
 import get from 'lodash-es/get';
 
 import config from 'config';
-import getHostFromHeaders from '@vue-storefront/core/helpers/get-host-from-headers.function';
-import { LinkField, LinkType } from 'src/modules/vsf-storyblok-module';
+import LinkField from '../types/link-field.interface';
+import { LinkType } from '../types/link-type.value';
 
 import isUrlExternal from './is-url-external';
+import { resolveStoryblokAssetUrl } from './storyblok-asset-url';
 
-function removeDomainFromUrl (url: string, ssrContext: any): string {
+function removeDomainFromUrl (url: string, host: string): string {
   const protocol = 'https://';
-  let host: string = ssrContext
-    ? getHostFromHeaders(ssrContext.server.request.headers)
-    : window.location.host;
 
   return url.replace(`${protocol}${host}`, '');
 }
 
 export default function getUrlFromLink (
   link: LinkField,
-  ssrContext?: any,
+  host: string,
   storeCode?: string
 ): string {
   const formatUrl = (url: string): string => {
-    url = removeDomainFromUrl(url, ssrContext);
+    const resolvedAssetUrl = resolveStoryblokAssetUrl(url);
+
+    if (resolvedAssetUrl !== url) {
+      return resolvedAssetUrl;
+    }
+
+    url = removeDomainFromUrl(url, host);
 
     if (isUrlExternal(url)) {
       return url;

@@ -3,107 +3,238 @@ name: Run VSF1 tests
 on:
   push:
     branches:
-      - master
-      - develop
-      - 'release/v**'
-      - 'hotfix/v**'
+      - petsies-theme
+      - bulkorders-theme
   pull_request:
-    branches:
-      - master
-      - develop
-      - 'release/v**'
-      - 'hotfix/v**'
+
+permissions:
+  contents: read
 
 jobs:
-  prepare_dependencies:
-    name: Prepare dependencies
+  resolve_theme_matrix:
+    name: Resolve theme matrix
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.resolve.outputs.matrix }}
+      payment_branch: ${{ steps.resolve.outputs.payment_branch }}
+      task_number: ${{ steps.resolve.outputs.task_number }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v7
         with:
-          node-version: '10'
+          node-version: '24.17.0'
 
-      - name: Clone default theme
-        run: git clone --quiet --single-branch --branch master https://github.com/vuestorefront/vsf-default.git ./src/themes/default
+      - name: Resolve submodule branches
+        id: resolve
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_API_URL: ${{ github.api_url }}
+          PR_BASE_BRANCH: ${{ github.base_ref }}
+          PR_HEAD_BRANCH: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          node --test .github/scripts/resolve-pr-ci-selection.test.js
+          node .github/scripts/resolve-pr-ci-selection.js
+
+  prepare_dependencies:
+    name: Prepare dependencies (${{ matrix.theme_branch }})
+    needs: resolve_theme_matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.resolve_theme_matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Checkout workspace submodules
+        env:
+          PAYMENT_BRAINTREE_BRANCH: ${{ needs.resolve_theme_matrix.outputs.payment_branch }}
+          THEME_BRANCH: ${{ matrix.theme_branch }}
+        run: |
+          git submodule update --init src/modules/payment-braintree src/themes/petsies-capybara
+          git -C src/modules/payment-braintree fetch origin "$PAYMENT_BRAINTREE_BRANCH"
+          git -C src/modules/payment-braintree checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara fetch origin "$THEME_BRANCH"
+          git -C src/themes/petsies-capybara checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara submodule update --init --recursive
+
+      - name: Setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24.17.0'
+
+      - name: Setup Yarn
+        run: |
+          corepack enable
+          corepack install --global yarn@4.17.1
+          test "$(yarn --version)" = "4.17.1"
 
       - name: Get cached dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v6
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-node-24.17.0-yarn-4.17.1-${{ needs.resolve_theme_matrix.outputs.payment_branch }}-${{ matrix.theme_branch }}-${{ hashFiles('yarn.lock', 'src/modules/payment-braintree/package.json', 'src/themes/petsies-capybara/package.json') }}
 
       - name: Install dependencies
-        run: yarn --frozen-lockfile
+        run: yarn install --immutable
 
   lint:
-    name: Lint
-    needs: prepare_dependencies
+    name: Lint (${{ matrix.theme_branch }})
+    needs:
+      - resolve_theme_matrix
+      - prepare_dependencies
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve_theme_matrix.outputs.matrix) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+
+      - name: Checkout workspace submodules
+        env:
+          PAYMENT_BRAINTREE_BRANCH: ${{ needs.resolve_theme_matrix.outputs.payment_branch }}
+          THEME_BRANCH: ${{ matrix.theme_branch }}
+        run: |
+          git submodule update --init src/modules/payment-braintree src/themes/petsies-capybara
+          git -C src/modules/payment-braintree fetch origin "$PAYMENT_BRAINTREE_BRANCH"
+          git -C src/modules/payment-braintree checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara fetch origin "$THEME_BRANCH"
+          git -C src/themes/petsies-capybara checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara submodule update --init --recursive
 
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v7
         with:
-          node-version: '10'
+          node-version: '24.17.0'
+
+      - name: Setup Yarn
+        run: |
+          corepack enable
+          corepack install --global yarn@4.17.1
+          test "$(yarn --version)" = "4.17.1"
 
       - name: Get cached dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v6
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-node-24.17.0-yarn-4.17.1-${{ needs.resolve_theme_matrix.outputs.payment_branch }}-${{ matrix.theme_branch }}-${{ hashFiles('yarn.lock', 'src/modules/payment-braintree/package.json', 'src/themes/petsies-capybara/package.json') }}
+
+      - name: Verify upgrade configuration lifecycle
+        run: yarn test:upgrade:config
 
       - name: Run linter
         run: yarn lint
 
   unit_tests:
-    name: Unit tests
-    needs: prepare_dependencies
+    name: Maintained unit tests (${{ matrix.theme_branch }})
+    needs:
+      - resolve_theme_matrix
+      - prepare_dependencies
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve_theme_matrix.outputs.matrix) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+
+      - name: Checkout workspace submodules
+        env:
+          PAYMENT_BRAINTREE_BRANCH: ${{ needs.resolve_theme_matrix.outputs.payment_branch }}
+          THEME_BRANCH: ${{ matrix.theme_branch }}
+        run: |
+          git submodule update --init src/modules/payment-braintree src/themes/petsies-capybara
+          git -C src/modules/payment-braintree fetch origin "$PAYMENT_BRAINTREE_BRANCH"
+          git -C src/modules/payment-braintree checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara fetch origin "$THEME_BRANCH"
+          git -C src/themes/petsies-capybara checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara submodule update --init --recursive
 
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v7
         with:
-          node-version: '10'
+          node-version: '24.17.0'
+
+      - name: Setup Yarn
+        run: |
+          corepack enable
+          corepack install --global yarn@4.17.1
+          test "$(yarn --version)" = "4.17.1"
 
       - name: Get cached dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v6
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-node-24.17.0-yarn-4.17.1-${{ needs.resolve_theme_matrix.outputs.payment_branch }}-${{ matrix.theme_branch }}-${{ hashFiles('yarn.lock', 'src/modules/payment-braintree/package.json', 'src/themes/petsies-capybara/package.json') }}
 
-      - name: Run unit tests
-        run: yarn test:unit
+      - name: Run maintained project unit tests
+        run: yarn test:unit:maintained
+
+      - name: Run stock Vue Storefront core unit tests (disabled)
+        if: ${{ false }}
+        run: yarn test:unit:core
 
   build:
-    name: Build
-    needs: prepare_dependencies
+    name: Build (${{ matrix.theme_branch }})
+    needs:
+      - resolve_theme_matrix
+      - prepare_dependencies
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.resolve_theme_matrix.outputs.matrix) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+
+      - name: Checkout workspace submodules
+        env:
+          PAYMENT_BRAINTREE_BRANCH: ${{ needs.resolve_theme_matrix.outputs.payment_branch }}
+          THEME_BRANCH: ${{ matrix.theme_branch }}
+        run: |
+          git submodule update --init src/modules/payment-braintree src/themes/petsies-capybara
+          git -C src/modules/payment-braintree fetch origin "$PAYMENT_BRAINTREE_BRANCH"
+          git -C src/modules/payment-braintree checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara fetch origin "$THEME_BRANCH"
+          git -C src/themes/petsies-capybara checkout --detach FETCH_HEAD
+          git -C src/themes/petsies-capybara submodule update --init --recursive
+
+      - name: Generate runtime configuration
+        env:
+          STORE_THEME: '@vue-storefront/theme-petsies-capybara'
+          NODEJS_KEEP_ALIVE_TIMEOUT: '61000'
+          SSR_OUTPUT_CACHE_ENABLE: 'false'
+          SSR_OUTPUT_CACHE_TTL: '1200'
+          HELMET_ENABLED: 'false'
+          DEFAULT_STORE_ID: '1'
+          REDIS_PORT: '6379'
+          REDIS_DB: '0'
+          SHOW_PRODUCT_RATING: 'true'
+          AMAZONPAY_SANDBOX: 'true'
+        run: |
+          envsubst < config/local.json.template > config/local.json
+          envsubst < ecosystem.json.template > ecosystem.json
 
       - name: Setup node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v7
         with:
-          node-version: '10'
+          node-version: '24.17.0'
 
-      - name: Clone default theme
-        run: git clone --quiet --single-branch --branch master https://github.com/vuestorefront/vsf-default.git ./src/themes/default
+      - name: Setup Yarn
+        run: |
+          corepack enable
+          corepack install --global yarn@4.17.1
+          test "$(yarn --version)" = "4.17.1"
 
       - name: Get cached dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v6
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-node-24.17.0-yarn-4.17.1-${{ needs.resolve_theme_matrix.outputs.payment_branch }}-${{ matrix.theme_branch }}-${{ hashFiles('yarn.lock', 'src/modules/payment-braintree/package.json', 'src/themes/petsies-capybara/package.json') }}
 
       - name: Run build
         run: yarn build

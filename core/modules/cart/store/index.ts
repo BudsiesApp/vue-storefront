@@ -13,6 +13,7 @@ export const cartStore: Module<CartState, any> = {
     platformTotalSegments: null,
     cartIsLoaded: false,
     cartServerToken: '', // server side ID to synchronize with Backend (for example Magento)
+    pendingCouponCode: null,
     shipping: [],
     payment: [],
     cartItemsHash: '',
@@ -25,6 +26,7 @@ export const cartStore: Module<CartState, any> = {
     productDiscountedPrice: {},
     isShippingMethodsSyncing: false,
     isCartSyncing: false,
+    syncPromise: null,
     isTotalsSyncing: false,
     isPaymentMethodsSyncing: false,
     isCouponProcessing: false,

@@ -1,5 +1,3 @@
-const config = require('config')
-
 module.exports = {
   rootDir: '../../',
   moduleFileExtensions: [
@@ -15,9 +13,17 @@ module.exports = {
   ],
   transform: {
     '^.+\\.js$': '<rootDir>/node_modules/babel-jest',
-    '^.+\\.ts$': '<rootDir>/node_modules/ts-jest',
-    '.*\\.(vue)$': '<rootDir>/node_modules/vue-jest'
+    '^.+\\.ts$': ['<rootDir>/node_modules/ts-jest', {
+      tsconfig: '<rootDir>/tsconfig-jest.json'
+    }],
+    '.*\\.(vue)$': '<rootDir>/node_modules/@vue/vue2-jest'
   },
+  globals: {
+    'vue-jest': {
+      tsConfig: 'tsconfig-jest.json'
+    }
+  },
+  testEnvironment: 'jsdom',
   snapshotSerializers: ['<rootDir>/node_modules/jest-serializer-vue'],
   coverageDirectory: '<rootDir>/test/unit/coverage',
   collectCoverageFrom: [
@@ -28,13 +34,13 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^src(.*)$': '<rootDir>/src$1',
-    '^theme(.*)$': `<rootDir>/node_modules/${config.theme}$1`,
+    '^theme(.*)$': '<rootDir>/src/themes/petsies-capybara$1',
+    '^@vue-storefront/unit-tests/utils$': '<rootDir>/test/unit/utils',
     '^.+\\.(css|less)$': '<rootDir>/test/unit/cssStub.js'
   },
   transformIgnorePatterns: [
     '(.*)storefront-query-builder/node_modules/(.*)',
-    '<rootDir>/node_modules/(?!lodash)',
-    '<rootDir>/node_modules/(?!lodash-es/.*)'
+    '<rootDir>/node_modules/(?!lodash(?:-es)?/|@storefront-ui/vue/src/components/molecules/SfSteps/_internal/SfStep\\.vue$)'
   ],
   setupFiles: [
     '<rootDir>/test/unit/setupTestEnvironment.ts'

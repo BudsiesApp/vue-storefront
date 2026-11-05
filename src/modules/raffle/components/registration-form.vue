@@ -61,6 +61,7 @@
               name="email"
               type="email"
               :label="$t('E-mail')"
+              autocomplete="email"
               :valid="!errors.length"
               :error-message="errors[0]"
             />
@@ -78,8 +79,8 @@
           {{ $t('You agree to receive email marketing from Budsies regarding our products and services.') }}
         </div>
 
-        <template v-if="$additionalContent.privacyPolicyAdditionalLinks">
-          <component :is="linkComponent.component" :key="linkComponent.key" v-for="linkComponent in $additionalContent.privacyPolicyAdditionalLinks" />
+        <template v-if="privacyPolicyLinks.length">
+          <component :is="linkComponent.component" :key="linkComponent.key" v-for="linkComponent in privacyPolicyLinks" />
         </template>
       </validation-observer>
     </form>
@@ -136,12 +137,17 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import Vue, { ref } from 'vue';
 import { extend, ValidationProvider, ValidationObserver } from 'vee-validate';
 import { email, required } from 'vee-validate/dist/rules';
 
 import i18n from '@vue-storefront/i18n'
 import { usePersistedEmail, usePersistedFirstName, usePersistedLastName } from 'src/modules/persisted-customer-data';
+import {
+  AdditionalContentEntry,
+  AdditionalContentOutlet,
+  useAdditionalContent
+} from '@vue-storefront/core/additional-content';
 
 import { SfButton, SfHeading, SfInput } from '@storefront-ui/vue';
 
@@ -158,7 +164,7 @@ extend('email', {
   message: 'Please, provide the correct email address'
 });
 
-export default defineComponent({
+export default Vue.extend({
   name: 'RaffleRegistrationForm',
   components: {
     SfButton,
@@ -178,6 +184,9 @@ export default defineComponent({
     }
   },
   setup () {
+    const privacyPolicyLinks = useAdditionalContent(
+      AdditionalContentOutlet.PRIVACY_POLICY_LINKS
+    );
     const email = ref<string | undefined>(undefined);
     const firstName = ref<string | undefined>(undefined);
     const lastName = ref<string | undefined>(undefined);
@@ -186,6 +195,8 @@ export default defineComponent({
       email,
       firstName,
       lastName,
+      privacyPolicyLinks: privacyPolicyLinks as unknown as
+        readonly AdditionalContentEntry[],
       ...usePersistedEmail(email),
       ...usePersistedFirstName(firstName),
       ...usePersistedLastName(lastName)

@@ -23,7 +23,8 @@
 </template>
 
 <script lang="ts">
-import { PropType, computed, defineComponent } from '@vue/composition-api';
+import { useI18n } from '@vue-storefront/core/application-services';
+import { PropType, computed, defineComponent } from 'vue';
 
 import { OrderItemShipment } from '../types/order-item-shipment';
 
@@ -39,7 +40,8 @@ export default defineComponent({
       default: undefined
     }
   },
-  setup (props, { root }) {
+  setup (props) {
+    const applicationI18n = useI18n();
     const showShipmentsList = computed<boolean>(() => {
       return props.shipments.length > 0;
     });
@@ -63,7 +65,7 @@ export default defineComponent({
         return;
       }
 
-      return root.$t('Shipment date') + ': ' + shipmentDate.toLocaleDateString();
+      return applicationI18n.t('Shipment date') + ': ' + shipmentDate.toLocaleDateString();
     });
 
     const formattedEstimatedShipmentDate = computed<string>(() => {

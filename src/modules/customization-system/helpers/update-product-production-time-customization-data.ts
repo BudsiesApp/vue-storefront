@@ -17,15 +17,13 @@ const SNEAK_PEEK_OPTION_VALUES_SKUS = [
   'specialty_commission_sneak_peek'
 ];
 
-const ADD_SNEAK_PEEK_AVAILABILITY_RULES = true;
-
-const DOMESTIC_COUNTRY_ID = 'US';
+const ADD_SNEAK_PEEK_AVAILABILITY_RULES = false;
 
 function buildStandardOptionValue (standardText?: string): OptionValue {
   return {
     id: PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID,
     isEnabled: true,
-    isDefault: false,
+    isDefault: true,
     sn: 0,
     name: standardText || ''
   };
@@ -42,19 +40,41 @@ function updateProductionTimeCustomization (
     return productionTimeCustomization;
   }
 
-  const addonBySku: Record<string, RushAddon> = {};
-  const standardAddon = availableAddons.find((addon) => !addon.id);
+  const isHolidayPeriod = !!productionTimeCustomization.optionData.displayWidgetOptions?.isHolidayPeriod;
+  let eligibleAddons = availableAddons;
 
-  for (const addon of availableAddons) {
-    if (addon.id) {
-      addonBySku[addon.id] = addon;
+  if (isHolidayPeriod) {
+    eligibleAddons = availableAddons.filter((addon) => addon.slotsLeft === undefined || addon.slotsLeft > 0);
+  }
+  const eligibleAddonSkus = new Set<string>();
+  const addonBySku: Record<string, RushAddon> = {};
+  const standardAddon = eligibleAddons.find((addon) => !addon.id);
+
+  for (const addon of eligibleAddons) {
+    if (!addon.id) {
+      continue;
     }
+
+    if (isHolidayPeriod) {
+      eligibleAddonSkus.add(addon.id);
+      continue;
+    }
+
+    addonBySku[addon.id] = addon;
   }
 
   const values: OptionValue[] = [];
 
   for (const value of (productionTimeCustomization.optionData.values || [])) {
     if (!value.sku) {
+      continue;
+    }
+
+    if (isHolidayPeriod) {
+      if (eligibleAddonSkus.has(value.sku)) {
+        values.push({ ...value });
+      }
+
       continue;
     }
 
@@ -66,7 +86,8 @@ function updateProductionTimeCustomization (
 
     values.push({
       ...value,
-      name: addon.text
+      name: addon.text,
+      description: value.description
     });
   }
 
@@ -157,10 +178,8 @@ export function updateProductProductionTimeCustomizationData (
   product: Product,
   store: Store<any>,
   options: {
-    shippingCountryId?: string,
     makeProductionTimeRequired: boolean
   } = {
-    shippingCountryId: undefined,
     makeProductionTimeRequired: true
   }
 ): Product {
@@ -168,7 +187,7 @@ export function updateProductProductionTimeCustomizationData (
     return product;
   }
 
-  const { shippingCountryId, makeProductionTimeRequired } = options;
+  const { makeProductionTimeRequired } = options;
 
   const productionTimeCustomization = product.customizations.find(
     (customization) => customization.optionData?.type === OptionType.PRODUCTION_TIME
@@ -180,14 +199,6 @@ export function updateProductProductionTimeCustomizationData (
 
   let availableAddons: RushAddon[] =
     store.getters['budsies/getProductRushAddons'](product.id);
-
-  if (shippingCountryId) {
-    const isDomesticShipping = shippingCountryId.toUpperCase() === DOMESTIC_COUNTRY_ID;
-
-    availableAddons = availableAddons.filter(
-      (addon) => addon.isDomestic === isDomesticShipping
-    );
-  }
 
   if (availableAddons.length === 0) {
     return removeProductionTimeCustomizationFromProduct(

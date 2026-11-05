@@ -1,5 +1,14 @@
 <template>
   <div class="order-item-actions">
+    <p
+      class="sr-only"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {{ reorderStatusMessage }}
+    </p>
+
     <div
       class="_actions-with-messages"
       v-if="actionsListGroups.blockingActionsList.length"
@@ -15,7 +24,8 @@
         <component
           :is="actionItem.component"
           :disabled="disabledItems[actionItem.action.code]"
-          class="_available-action sf-button color-secondary"
+          class="_available-action"
+          :class="actionItem.cssClasses"
           v-bind="actionItem.props"
           v-on="actionItem.handlers"
           v-if="actionItem.component"
@@ -34,7 +44,8 @@
       <component
         v-for="actionItem in actionsListGroups.nonBlockingActionsList"
         :key="actionItem.action.code + ';' + actionItem.action.name"
-        class="_available-action sf-button color-secondary"
+        class="_available-action"
+        :class="actionItem.cssClasses"
         :is="actionItem.component"
         :disabled="disabledItems[actionItem.action.code]"
         v-bind="actionItem.props"
@@ -47,12 +58,15 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { useI18n, useRouter, useStore } from '@vue-storefront/core/application-services';
+import { computed, defineComponent, PropType, ref } from 'vue';
 import { SfButton } from '@storefront-ui/vue';
 
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { IS_CART_SYNCING } from '@vue-storefront/core/modules/cart';
 import { FOREVERS_BUNDLE_SKUS } from 'src/modules/shared';
+
+import MSpinnerButton from 'theme/components/molecules/m-spinner-button.vue';
 
 import { OrderItem } from '../types/order-item';
 import { OrderItemAvailableAction } from '../types/order-item-available-action';
@@ -61,8 +75,9 @@ import { REORDER_ITEM_ACTION, IS_REORDERING_ITEM } from '..';
 
 interface ActionItem {
   action: OrderItemAvailableAction,
-  component?: 'SfButton' | 'a' | 'router-link',
-  props: Record<string, string | undefined>,
+  component?: 'SfButton' | 'MSpinnerButton' | 'a' | 'router-link',
+  cssClasses: string[],
+  props: Record<string, string | boolean | undefined>,
   handlers: Record<string, () => Promise<void>>
 }
 
@@ -118,7 +133,8 @@ function getProductSkuRouteNameMapping (): Record<string, string> {
 export default defineComponent({
   name: 'OrderItemActions',
   components: {
-    SfButton
+    SfButton,
+    MSpinnerButton
   },
   props: {
     orderItem: {
@@ -134,13 +150,22 @@ export default defineComponent({
       required: true
     }
   },
-  setup (props, { root }) {
+  setup (props) {
+    const applicationStore = useStore();
+    const applicationRouter = useRouter();
+    const applicationI18n = useI18n();
     const productSkuRouteNameMapping = getProductSkuRouteNameMapping();
+    const isReorderPending = ref(false);
+    const reorderStatusMessage = computed(() => {
+      return isReorderPending.value
+        ? applicationI18n.t('Item is being re-ordered')
+        : '';
+    });
 
     const disabledItems = computed<Record<string, boolean>>(() => {
       const items: Record<string, boolean> = {};
 
-      items[OrderItemAvailableActionCode.RE_ORDER] = root.$store.getters[IS_CART_SYNCING] || root.$store.getters[IS_REORDERING_ITEM];
+      items[OrderItemAvailableActionCode.RE_ORDER] = applicationStore.getters[IS_CART_SYNCING] || applicationStore.getters[IS_REORDERING_ITEM];
 
       return items;
     });
@@ -155,7 +180,7 @@ export default defineComponent({
         return;
       }
 
-      root.$router.push({
+      applicationRouter.push({
         name: routeName,
         query: {
           orderItemId: props.orderItem.item_id.toString(),
@@ -166,32 +191,36 @@ export default defineComponent({
     }
 
     async function onReorderActionClick (): Promise<void> {
-      if (disabledItems.value[OrderItemAvailableActionCode.RE_ORDER]) {
+      if (isReorderPending.value || disabledItems.value[OrderItemAvailableActionCode.RE_ORDER]) {
         return;
       }
 
+      isReorderPending.value = true;
+
       try {
-        await root.$store.dispatch(
+        await applicationStore.dispatch(
           REORDER_ITEM_ACTION,
           { orderItemId: props.orderItem.item_id }
         );
 
-        root.$store.dispatch('notification/spawnNotification', {
+        applicationStore.dispatch('notification/spawnNotification', {
           type: 'success',
-          message: root.$t('Product has been added to the cart!'),
-          action1: { label: root.$t('OK') }
+          message: applicationI18n.t('Product has been added to the cart!'),
+          action1: { label: applicationI18n.t('OK') }
         });
       } catch (error) {
-        root.$store.dispatch('notification/spawnNotification', {
+        applicationStore.dispatch('notification/spawnNotification', {
           type: 'danger',
-          message: (error as any)?.message || root.$t('Something went wrong'),
-          action1: { label: root.$t('OK') }
+          message: (error as any)?.message || applicationI18n.t('Something went wrong'),
+          action1: { label: applicationI18n.t('OK') }
         });
+      } finally {
+        isReorderPending.value = false;
       }
     }
 
     async function onDownloadResultsActionClick (): Promise<void> {
-      await root.$router.push({
+      await applicationRouter.push({
         name: 'order-item-deliverables-download',
         query: {
           'order_item_id': props.orderItem.item_id.toString()
@@ -200,7 +229,7 @@ export default defineComponent({
     }
 
     async function onDownloadPrintoutsActionClick (): Promise<void> {
-      await root.$router.push({
+      await applicationRouter.push({
         name: 'orders-printouts-download',
         query: {
           orderId: props.orderId.toString()
@@ -209,12 +238,25 @@ export default defineComponent({
     }
 
     async function onProvideTaxIdActionClick (): Promise<void> {
-      await root.$router.push({
+      await applicationRouter.push({
         name: 'tax-id-request',
         query: {
           orderId: props.orderId.toString()
         }
       });
+    }
+
+    function getActionAriaLabel (action: OrderItemAvailableAction): string {
+      const actionLabel = applicationI18n.t('{action}: {item}', {
+        action: action.name,
+        item: `${props.orderItem.display_id} ${props.orderItem.product.name}`
+      }).toString();
+
+      if (!action.open_in_new_tab) {
+        return actionLabel;
+      }
+
+      return `${actionLabel} ${applicationI18n.t('opens in new tab')}`;
     }
 
     const actionsListGroups = computed<ActionsListGroups>(() => {
@@ -225,13 +267,19 @@ export default defineComponent({
         const actionItem: ActionItem = {
           action,
           component: undefined,
-          props: {},
+          cssClasses: ['sf-button', 'color-secondary'],
+          props: {
+            'aria-label': getActionAriaLabel(action)
+          },
           handlers: {}
         };
 
         if (action.code === OrderItemAvailableActionCode.RE_ORDER) {
           actionItem.handlers.click = onReorderActionClick;
-          actionItem.component = 'SfButton';
+          actionItem.component = 'MSpinnerButton';
+          actionItem.cssClasses = [];
+          actionItem.props.buttonClass = 'color-secondary';
+          actionItem.props.showSpinner = isReorderPending.value;
           nonBlockingActionsList.push(actionItem);
           continue;
         }
@@ -276,13 +324,15 @@ export default defineComponent({
             actionItem.component = 'a';
             actionItem.props = {
               href: action.url,
-              target
+              target,
+              'aria-label': getActionAriaLabel(action)
             };
           } else {
             actionItem.component = 'router-link';
             actionItem.props = {
               to: action.url,
-              target
+              target,
+              'aria-label': getActionAriaLabel(action)
             };
           }
         }
@@ -307,7 +357,8 @@ export default defineComponent({
 
     return {
       actionsListGroups,
-      disabledItems
+      disabledItems,
+      reorderStatusMessage
     }
   }
 });

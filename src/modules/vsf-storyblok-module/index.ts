@@ -10,7 +10,8 @@ import AssetField from './types/asset-field.interface'
 import ColorPickerField from './types/color-picker-field.interface'
 import { ColumnsCountField } from './types/columns-count-field.type'
 import LinkField from './types/link-field.interface'
-import VideoUrlField from './types/video-url-field.interface'
+import { VideoSelectorField } from './types/video-selector-field.interface'
+import VideoSelectorOptions from './types/video-selector-options.interface'
 import { LinkType } from './types/link-type.value'
 import { SizeValue } from './types/size.value'
 import isUrlExternal from './helpers/is-url-external'
@@ -20,6 +21,11 @@ import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only
 import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
 import { Blok } from './components'
 import { useStoryblokReadinessTracker } from './composables/use-storyblok-readiness-tracker'
+import {
+  buildStoryblokImageUrl,
+  parseStoryblokAssetUrl,
+  resolveStoryblokAssetUrl
+} from './helpers/storyblok-asset-url'
 
 export const KEY = 'storyblok'
 
@@ -33,19 +39,28 @@ export {
   ComponentWidthCalculator,
   SizeValue,
   Alignment,
-  ItemData,
-  SpacingSettingsField,
   Display,
-  AssetField,
-  ColorPickerField,
-  LinkField,
   LinkType,
-  VideoUrlField,
   isUrlExternal,
   getUrlFromLink,
   hydrateInPreviewOrWhenVisible,
   getHeaderId,
   isStoryblokPreview,
   useStoryblokReadinessTracker,
+  buildStoryblokImageUrl,
+  parseStoryblokAssetUrl,
+  resolveStoryblokAssetUrl
+}
+
+export type { StoryblokAssetLocation } from './helpers/storyblok-asset-url'
+
+export type {
+  ItemData,
+  SpacingSettingsField,
+  AssetField,
+  ColorPickerField,
+  LinkField,
+  VideoSelectorField,
+  VideoSelectorOptions,
   ColumnsCountField
 }

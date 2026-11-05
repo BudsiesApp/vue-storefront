@@ -1,4 +1,5 @@
-import { computed, Ref, SetupContext, watch } from '@vue/composition-api';
+import { useRoute, useRouter } from '@vue-storefront/core/application-services';
+import { computed, Ref, watch } from 'vue';
 
 import Product from 'core/modules/catalog/types/Product';
 
@@ -14,9 +15,10 @@ export function useSelectedOptionValueUrlQuery (
   customizationOptionValue: Ref<Record<string, CustomizationOptionValue>>,
   currentProduct: Ref<Product | undefined>,
   mergeCustomizationState: (payload: CustomizationStateItem[]) => void,
-  removeUnavailableOptionValues: () => void,
-  { root }: SetupContext
+  removeUnavailableOptionValues: () => Record<string, CustomizationOptionValue>
 ) {
+  const applicationRouter = useRouter();
+  const currentRoute = useRoute();
   const currentProductSku = computed<string | undefined>(() => {
     return currentProduct.value?.sku;
   });
@@ -86,11 +88,11 @@ export function useSelectedOptionValueUrlQuery (
   });
 
   const queryString = computed<string>(() => {
-    return JSON.stringify(showInUrlQueryData);
+    return JSON.stringify(showInUrlQueryData.value);
   });
 
   const routeQuery = computed<Record<string, string | undefined |(string | null)[]>>(() => {
-    return root.$route.query;
+    return currentRoute.query;
   });
 
   function unhandledCustomizationsFilter (customizationId: string): boolean {
@@ -105,14 +107,14 @@ export function useSelectedOptionValueUrlQuery (
     const _showInUrlQueryData = showInUrlQueryData.value;
 
     const isChanged = Object.keys(_showInUrlQueryData).some((key) => {
-      return _showInUrlQueryData[key] !== root.$route.query[key];
+      return _showInUrlQueryData[key] !== currentRoute.query[key];
     });
 
     if (!isChanged) {
       return;
     }
 
-    root.$router.replace({ query: { ...root.$route.query, ..._showInUrlQueryData } });
+    applicationRouter.replace({ query: { ...currentRoute.query, ..._showInUrlQueryData } });
   }
 
   function updateCustomizationOptionValueFromQuery (): void {
@@ -123,7 +125,7 @@ export function useSelectedOptionValueUrlQuery (
         continue;
       }
 
-      const selectedValuesSkus = root.$route.query[customization.optionData?.sku];
+      const selectedValuesSkus = currentRoute.query[customization.optionData?.sku];
 
       if (!selectedValuesSkus) {
         continue;

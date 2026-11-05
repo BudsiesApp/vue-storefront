@@ -7,8 +7,11 @@ const factory: ObjectBuilderInterface<RushAddon, RushAddonApiResponse> = (data) 
     data.sku,
     data.text,
     +data.price,
-    !!data.isDomestic,
-    false
+    +data.turnaround_time,
+    false,
+    data.slots_left,
+    Boolean(data.is_domestic),
+    Boolean(data.is_in_time_for_christmas)
   );
 
   return value;

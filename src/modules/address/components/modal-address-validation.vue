@@ -46,13 +46,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType, SetupContext } from '@vue/composition-api';
+import { defineComponent, computed, PropType, SetupContext } from 'vue';
 import { SfModal, SfHeading } from '@storefront-ui/vue';
 
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import BaseAddressDetails from '@vue-storefront/core/modules/checkout/types/BaseAddressDetails';
 
 import googleMapsAttributionLogo from '../assets/google-maps-logo.svg';
+import { toAddressValidationDetails } from '../helpers/to-address-validation-details';
 import { AddressSelectedEvent, ADDRESS_VALIDATION_EVENTS } from '../types/address-validation-events';
 import { ADDRESS_VALIDATION_MODAL_NAME } from '../types/modal-names';
 
@@ -91,13 +92,13 @@ export default defineComponent({
       })
     }
   },
-  setup (props, { emit }: SetupContext) {
+  setup (props, { emit }: Pick<SetupContext, 'emit'>) {
     const enteredAddress = computed(() => {
-      return props.modalData.payload?.enteredAddress || {};
+      return toAddressValidationDetails(props.modalData.payload?.enteredAddress);
     });
 
     const suggestedAddress = computed(() => {
-      return props.modalData.payload?.suggestedAddress || {};
+      return toAddressValidationDetails(props.modalData.payload?.suggestedAddress);
     });
 
     const isConfirmMode = computed<boolean>(() => {

@@ -45,12 +45,10 @@ import PrivacyPolicyLink from './components/privacy-policy-link.vue';
 import StreamingVideo from './components/streaming-video.vue';
 
 export {
-  InjectType,
   isVue,
   AspectRatio,
   VideoProvider,
   StreamingVideo,
-  CustomerImage,
   ServerError,
   EmailSubmitForm,
   ProductEvent,
@@ -68,10 +66,7 @@ export {
   stateCodeAutocompleteOptionSearch,
   getCanonicalUrl,
   UserEvents,
-  CustomerDataChangedEventPayload,
   PAGE_RENDERED,
-  PersistedCustomerData,
-  PersistedBillingAddress,
   getCookieByName,
   MimeTypeValue,
   useMobileObserver,
@@ -93,5 +88,13 @@ export {
   ExpressCheckoutData,
   getFirstAndLastFromFullName,
   normalizeProductPurchaseFlow,
-  useExpressCheckoutTotals
+  useExpressCheckoutTotals,
+}
+
+export type {
+  InjectType,
+  CustomerImage,
+  CustomerDataChangedEventPayload,
+  PersistedCustomerData,
+  PersistedBillingAddress
 }

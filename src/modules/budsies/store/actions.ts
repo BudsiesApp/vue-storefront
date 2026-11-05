@@ -139,7 +139,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       return existingPromise;
     }
 
-    const loadingPromise = new Promise<void>(async (resolve) => {
+    const loadingPromise = (async (): Promise<void> => {
       const url = processURLAddress(`${config.budsies.endpoint}/plushies/products-rush-upgrades`);
 
       const result = await TaskQueue.execute({
@@ -161,8 +161,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       commit(types.SET_RUSH_ADDONS_LOADING_PROMISE, undefined);
       commit(types.SET_IS_RUSH_ADDONS_LOADED);
 
-      resolve();
-    });
+    })();
 
     commit(types.SET_RUSH_ADDONS_LOADING_PROMISE, loadingPromise);
 
@@ -295,12 +294,15 @@ export const actions: ActionTree<BudsiesState, RootState> = {
   },
   async loadRecoverableCart (
     { commit, state },
-    { recoveryId, recoveryCode }
+    { recoveryId, recoveryCode, applyPromoCode }
   ): Promise<any> {
     const url = processURLAddress(`${config.budsies.endpoint}/carts/recovery-requests`);
+    const applyPromoCodeQuery = typeof applyPromoCode === 'string'
+      ? `&applyPromoCode=${encodeURIComponent(applyPromoCode)}`
+      : '';
 
     const { result, resultCode, code } = await TaskQueue.execute({
-      url: `${url}?recoveryId=${recoveryId}&recoveryCode=${recoveryCode}&token={{token}}`,
+      url: `${url}?recoveryId=${recoveryId}&recoveryCode=${recoveryCode}&token={{token}}${applyPromoCodeQuery}`,
       payload: {
         headers: { 'Accept': 'application/json' },
         mode: 'cors',

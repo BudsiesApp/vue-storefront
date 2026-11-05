@@ -4,6 +4,7 @@ import RichTextItem from '../types/rich-text-item.interface'
 import { components } from '../components/index';
 import getHeaderId from './get-header-id';
 import RichTextTextComponent from '../components/global/rich-text/components/TextComponent.vue';
+import { resolveStoryblokAssetUrl } from './storyblok-asset-url';
 
 const genericComponentTag = 'sb-rich-text-generic-component';
 
@@ -75,7 +76,10 @@ export default function getRichTextItemData (data: any): RichTextItem {
         id: uuidv4(),
         component: genericComponentTag,
         rootTagName: 'img',
-        rootElementAttributes: data.attrs
+        rootElementAttributes: {
+          ...data.attrs,
+          src: resolveStoryblokAssetUrl(data.attrs?.src || '')
+        }
       }
     case 'paragraph':
       return {
@@ -91,7 +95,7 @@ export default function getRichTextItemData (data: any): RichTextItem {
         content: data.content,
         ...data.attrs
       }
-    case 'text':
+    case 'text': {
       const id = uuidv4();
       const link = data.marks?.find((mark: any) => mark.type === 'link');
 
@@ -112,10 +116,12 @@ export default function getRichTextItemData (data: any): RichTextItem {
         rootTagName: 'sb-router-link',
         rootElementAttributes: {
           isNewWindow: link.attrs.target ? link.attrs.target === '_blank' : undefined,
-          link: { url: link.attrs.href, anchor: link.attrs.anchor, linktype: link.attrs.linktype }
+          link: { url: link.attrs.href, anchor: link.attrs.anchor, linktype: link.attrs.linktype },
+          ariaLabel: data.text
         },
         content: [{ ...data, marks: data.marks.filter((mark: any) => mark.type !== 'link') }]
       }
+    }
 
     case 'list_item':
       return {

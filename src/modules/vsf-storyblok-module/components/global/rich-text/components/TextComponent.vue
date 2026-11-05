@@ -17,17 +17,19 @@
 </template>
 
 <script lang="ts">
+import { useStore } from '@vue-storefront/core/application-services';
 import { v4 as uuidv4 } from 'uuid';
-import { computed, defineComponent, PropType, Ref, ref } from '@vue/composition-api';
+import { computed, defineComponent, PropType, Ref, ref } from 'vue';
 
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { StatisticMetric } from 'src/modules/budsies/types/statistic-metric';
-import { DirectiveType, ProductPriceDirective, ProductSpecificPriceDirective, TextPart, useTextDirectives } from 'src/modules/shared/composables/use-text-directives';
+import { DirectiveType, PriceValueDirective, ProductPriceDirective, ProductSpecificPriceDirective, TextPart, useTextDirectives } from 'src/modules/shared/composables/use-text-directives';
 
 import RichTextItem from '../../../../types/rich-text-item.interface';
 
 import PriceComponent from './PriceComponent.vue';
 import SimplePriceComponent from './SimplePriceComponent.vue';
+import FixedPriceValueComponent from './FixedPriceValueComponent.vue';
 
 interface ProcessedTextPart {
   id: string,
@@ -41,6 +43,7 @@ interface ProcessedTextPart {
 export default defineComponent({
   name: 'StoryblokRichTextTextComponent',
   components: {
+    FixedPriceValueComponent,
     PriceComponent,
     SimplePriceComponent
   },
@@ -54,11 +57,12 @@ export default defineComponent({
     return {
     }
   },
-  setup (props, context) {
+  setup (props) {
+    const applicationStore = useStore();
     const processedTextParts = ref<ProcessedTextPart[]>([]);
 
     const productBySkuDictionary = computed<Record<string, Product>>(() => {
-      return context.root.$store.getters['product/getProductBySkuDictionary'];
+      return applicationStore.getters['product/getProductBySkuDictionary'];
     });
 
     const fontDecorationClasses = computed<string[]>(() => {
@@ -108,7 +112,7 @@ export default defineComponent({
     });
 
     function processOrderedPlushiesCountDirective (): ProcessedTextPart {
-      const metricValue = context.root.$store.getters['budsies/getStatisticValueByMetric'](
+      const metricValue = applicationStore.getters['budsies/getStatisticValueByMetric'](
         StatisticMetric.ORDERED_PLUSHIES_COUNT
       );
 
@@ -152,6 +156,19 @@ export default defineComponent({
       }
     }
 
+    function processPriceValueDirective (textPart: PriceValueDirective): ProcessedTextPart {
+      return {
+        id: uuidv4(),
+        text: '',
+        classes: classes.value,
+        styles: styles.value,
+        component: 'fixed-price-value-component',
+        props: {
+          amount: textPart.amount
+        }
+      }
+    }
+
     function processTextParts (textParts: TextPart[]): void {
       const list: ProcessedTextPart[] = [];
 
@@ -173,6 +190,10 @@ export default defineComponent({
               textPart
             )
           );
+        } else if (textPart.type === DirectiveType.PRICE_VALUE) {
+          list.push(
+            processPriceValueDirective(textPart)
+          );
         } else if (textPart.type === DirectiveType.PRODUCT_PRICE) {
           list.push(
             processProductPriceDirective(textPart)
@@ -187,7 +208,7 @@ export default defineComponent({
       (processedTextParts as Ref<ProcessedTextPart[]>).value = list;
     }
 
-    const { processDirectivesInText } = useTextDirectives(processTextParts, context);
+    const { processDirectivesInText } = useTextDirectives(processTextParts);
 
     return {
       processedTextParts,

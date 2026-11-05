@@ -5,7 +5,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, nextTick, onMounted, PropType, ref, watch } from '@vue/composition-api'
+import { useStore } from '@vue-storefront/core/application-services';
+import { computed, defineComponent, nextTick, onMounted, PropType, ref, watch } from 'vue'
 import config from 'config';
 
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
@@ -171,18 +172,17 @@ export default defineComponent({
       default: PaymentType.PAYMENT
     }
   },
-  setup (props, context) {
-    const emit = context.emit;
-    const root = context.root;
+  setup (props, { emit }) {
+    const applicationStore = useStore();
 
-    const { expressCheckoutTotals } = useExpressCheckoutTotals(context);
+    const { expressCheckoutTotals } = useExpressCheckoutTotals();
 
     const isExpressCheckout = computed<boolean>(() => {
       return props.type === PaymentType.EXPRESS_CHECKOUT;
     });
 
     const isShippingAddressRequired = computed<boolean>(() => {
-      return isExpressCheckout.value && !root.$store.getters['cart/isVirtualCart'];
+      return isExpressCheckout.value && !applicationStore.getters['cart/isVirtualCart'];
     });
 
     const canUseAmazonPay = computed<boolean>(() => {
@@ -274,12 +274,12 @@ export default defineComponent({
     }
 
     async function renderAmazonPayButton () {
-      if (!root.$store.hasModule(MODULE_NAME)) {
+      if (!applicationStore.hasModule(MODULE_NAME)) {
         return;
       }
 
       try {
-        await root.$store.dispatch(`${MODULE_NAME}/${ENSURE_SCRIPT_LOADED}`)
+        await applicationStore.dispatch(`${MODULE_NAME}/${ENSURE_SCRIPT_LOADED}`)
       } catch (error) {
         Logger.error('Error during Amazon script loading: ' + error, 'amazon-pay')();
       }
@@ -364,7 +364,7 @@ export default defineComponent({
             return generateUpdateDataObject(result);
           },
           onCompleteCheckout: async function (event) {
-            root.$store.commit(`${MODULE_NAME}/${SET_AMAZON_SESSION_ID}`, event.amazonCheckoutSessionId);
+            applicationStore.commit(`${MODULE_NAME}/${SET_AMAZON_SESSION_ID}`, event.amazonCheckoutSessionId);
 
             if (!isExpressCheckout.value) {
               emit('success');
@@ -434,3 +434,17 @@ export default defineComponent({
   }
 });
 </script>
+
+<style lang="scss" scoped>
+.payment-amazon-pay {
+  width: 100%;
+
+  ._amazon-pay-container {
+    width: 100% !important;
+    min-width: 150px;
+    max-width: 500px;
+    height: 45px !important;
+    min-height: 45px;
+  }
+}
+</style>

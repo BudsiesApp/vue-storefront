@@ -5,7 +5,8 @@
 </template>
 
 <script lang="ts">
-import { PropType, computed, defineComponent } from '@vue/composition-api';
+import { useStore } from '@vue-storefront/core/application-services';
+import { PropType, computed, defineComponent } from 'vue';
 
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
@@ -29,13 +30,14 @@ export default defineComponent({
       required: true
     }
   },
-  setup (props, { root }) {
+  setup (props) {
+    const applicationStore = useStore();
     const selectedCurrency = computed<Currency>(() => {
-      return root.$store.getters[GET_ACTIVE_CURRENCY];
+      return applicationStore.getters[GET_ACTIVE_CURRENCY];
     });
 
     const formattedPrice = computed<string>(() => {
-      const price = root.$store.getters['product/getProductPrice'](props.product);
+      const price = applicationStore.getters['product/getProductPrice'](props.product);
 
       if (!price) {
         return '';

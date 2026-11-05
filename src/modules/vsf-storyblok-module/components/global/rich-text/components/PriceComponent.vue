@@ -14,7 +14,8 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import { useStore } from '@vue-storefront/core/application-services';
+import { computed, defineComponent, PropType } from 'vue';
 
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
@@ -38,9 +39,10 @@ export default defineComponent({
       default: true
     }
   },
-  setup (props, { root }) {
+  setup (props) {
+    const applicationStore = useStore();
     const productPrice = computed<PriceHelper.ProductPrice>(() => {
-      return root.$store.getters[PRODUCT_LOCALIZED_PRICE_DICTIONARY][props.product.id];
+      return applicationStore.getters[PRODUCT_LOCALIZED_PRICE_DICTIONARY][props.product.id];
     });
 
     const finalPrice = computed<number>(() => {
@@ -53,7 +55,7 @@ export default defineComponent({
     });
 
     const selectedCurrency = computed<Currency>(() => {
-      return root.$store.getters[GET_ACTIVE_CURRENCY];
+      return applicationStore.getters[GET_ACTIVE_CURRENCY];
     });
 
     const formattedFinalPrice = computed<string>(() => {

@@ -22,6 +22,7 @@
             class="_input"
             :name="emailInputName"
             :label="$t('E-mail address')"
+            autocomplete="email"
             :disabled="isSubmitting"
             :valid="!errors.length"
             :error-message="errors[0]"
@@ -35,8 +36,8 @@
           {{ buttonText }}
         </SfButton>
 
-        <template v-if="$additionalContent.privacyPolicyAdditionalLinks">
-          <component :is="linkComponent.component" :key="linkComponent.key" v-for="linkComponent in $additionalContent.privacyPolicyAdditionalLinks" />
+        <template v-if="privacyPolicyLinks.length">
+          <component :is="linkComponent.component" :key="linkComponent.key" v-for="linkComponent in privacyPolicyLinks" />
         </template>
       </form>
     </validation-observer>
@@ -48,6 +49,12 @@ import { extend, ValidationProvider, ValidationObserver } from 'vee-validate';
 import { email, required } from 'vee-validate/dist/rules';
 import Vue, { PropType } from 'vue';
 import { SfButton, SfInput } from '@storefront-ui/vue';
+
+import {
+  AdditionalContentEntry,
+  AdditionalContentOutlet,
+  useAdditionalContent
+} from '@vue-storefront/core/additional-content';
 
 extend('required', {
   ...required,
@@ -81,6 +88,16 @@ export default Vue.extend({
       type: String,
       default: undefined
     }
+  },
+  setup () {
+    const privacyPolicyLinks = useAdditionalContent(
+      AdditionalContentOutlet.PRIVACY_POLICY_LINKS
+    );
+
+    return {
+      privacyPolicyLinks: privacyPolicyLinks as unknown as
+        readonly AdditionalContentEntry[]
+    };
   },
   data () {
     return {

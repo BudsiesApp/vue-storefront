@@ -1,12 +1,14 @@
-import { computed, nextTick, onMounted, ref, Ref, watch } from '@vue/composition-api';
+import { computed, nextTick, onMounted, ref, Ref, watch } from 'vue';
 import { Mutex } from 'async-mutex';
 
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
+import { Logger } from '@vue-storefront/core/lib/logger';
 import CartItem from 'core/modules/cart/types/CartItem';
 
 import { CustomizationStateItem } from '../types/customization-state-item.interface';
 import { STORAGE_NAME } from '../types/storage-name';
 import { PersistedData } from '../types/persisted-data.interface';
+import { CustomizationOptionValue } from '../types/customization-option-value';
 
 const STORAGE_BASE_KEY = 'form-state';
 
@@ -17,7 +19,7 @@ export function useCustomizationStatePreservation (
   unhandledCustomizationsFilters: ((customizationId: string) => boolean)[] = [],
   canRestorePreservedData: Ref<boolean>,
   mergeCustomizationState: (state: CustomizationStateItem[]) => void,
-  removeUnavailableOptionValues: () => void,
+  removeUnavailableOptionValues: () => Record<string, CustomizationOptionValue>,
   beforeCustomizationStateMerge?: (persistedData: PersistedData) => Promise<boolean>,
   afterCustomizationStateMerge?: (persistedData: PersistedData) => void,
   additionalData?: Ref<Record<string, any>> | undefined,
@@ -25,7 +27,6 @@ export function useCustomizationStatePreservation (
   resetCustomizationState?: () => void
 ) {
   const mutex = new Mutex();
-  const customizationSystemStorage = StorageManager.get(STORAGE_NAME);
   const canUpdateState = ref(false);
   const restorationId = ref(0);
 
@@ -52,6 +53,7 @@ export function useCustomizationStatePreservation (
       return;
     }
 
+    const key = storageItemKey.value;
     const mutexRelease = await mutex.acquire();
 
     const data: PersistedData = {
@@ -63,8 +65,8 @@ export function useCustomizationStatePreservation (
     }
 
     try {
-      await customizationSystemStorage.setItem(
-        storageItemKey.value,
+      await StorageManager.get(STORAGE_NAME).setItem(
+        key,
         data
       );
     } finally {
@@ -77,12 +79,15 @@ export function useCustomizationStatePreservation (
       return;
     }
 
+    const key = storageItemKey.value;
     const mutexRelease = await mutex.acquire();
 
     try {
-      await customizationSystemStorage.removeItem(
-        storageItemKey.value
+      await StorageManager.get(STORAGE_NAME).removeItem(
+        key
       );
+    } catch (error) {
+      Logger.error('Unable to remove preserved customization state', error)();
     } finally {
       mutexRelease();
     }
@@ -93,14 +98,21 @@ export function useCustomizationStatePreservation (
       return;
     }
 
+    const key = storageItemKey.value;
     const mutexRelease = await mutex.acquire();
 
     try {
-      const data: PersistedData | undefined = await customizationSystemStorage.getItem(storageItemKey.value);
+      const data = await new Promise<PersistedData | undefined>((resolve) => {
+        try {
+          const result = StorageManager.get(STORAGE_NAME).getItem(key, (error, value) => resolve(error ? undefined : value || undefined));
+          result.then(value => resolve(value || undefined), () => resolve(undefined));
+        } catch (error) {
+          resolve(undefined);
+        }
+      });
 
-      if (data?.customizationState) {
-        data.customizationState = data.customizationState.filter(filterCustomizationState);
-      }
+      if (!Array.isArray(data?.customizationState)) return undefined;
+      data.customizationState = data.customizationState.filter(filterCustomizationState);
 
       return data;
     } finally {
@@ -108,7 +120,7 @@ export function useCustomizationStatePreservation (
     }
   }
 
-  async function restorePreservedState (shouldResetState: boolean = false): Promise<void> {
+  async function restorePreservedState (shouldResetState = false): Promise<void> {
     const currentRestorationId = ++restorationId.value;
 
     canUpdateState.value = false;
@@ -163,6 +175,7 @@ export function useCustomizationStatePreservation (
 
       if (!isSuccess) {
         await removePreservedState();
+        if (isStaleRestoration(currentRestorationId)) return;
         canUpdateState.value = true;
         return;
       }
@@ -188,7 +201,7 @@ export function useCustomizationStatePreservation (
     }
 
     void restorePreservedState(true);
-  });
+  }, { flush: 'sync' });
 
   const watchProperties: Ref<any>[] = [filteredCustomizationState];
 
@@ -205,6 +218,7 @@ export function useCustomizationStatePreservation (
   });
 
   return {
+    restorationSettled: computed(() => canUpdateState.value),
     getPreservedData,
     removePreservedState
   }

@@ -1,3 +1,4 @@
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import toString from 'lodash-es/toString'
 import pick from 'lodash-es/pick'
 import config from 'config'
@@ -31,16 +32,16 @@ export const UserAccount = {
     }
   },
   beforeMount () {
-    this.$bus.$on('user-after-loggedin', this.onLoggedIn)
-    this.$bus.$on('myAccount-before-remainInEditMode', block => {
+    EventBus.$on('user-after-loggedin', this.onLoggedIn)
+    EventBus.$on('myAccount-before-remainInEditMode', block => {
       if (block === 'MyProfile') {
         this.remainInEditMode = true
       }
     })
   },
   beforeDestroy () {
-    this.$bus.$off('user-after-loggedin', this.onLoggedIn)
-    this.$bus.$off('myAccount-before-remainInEditMode')
+    EventBus.$off('user-after-loggedin', this.onLoggedIn)
+    EventBus.$off('myAccount-before-remainInEditMode')
   },
   mounted () {
     this.userCompany = this.getUserCompany()
@@ -105,7 +106,7 @@ export const UserAccount = {
               updatedProfile.addresses[index].firstname = this.currentUser.firstname || ''
               updatedProfile.addresses[index].lastname = this.currentUser.lastname || ''
               updatedProfile.addresses[index].company = this.userCompany.company || ''
-              updatedProfile.addresses[index].street = [this.userCompany.street, this.userCompany.house] || ['', '']
+              updatedProfile.addresses[index].street = [this.userCompany.street || '', this.userCompany.house || '']
               updatedProfile.addresses[index].city = this.userCompany.city || ''
               updatedProfile.addresses[index].region = {
                 region: this.userCompany.region ? this.userCompany.region : null
@@ -146,7 +147,7 @@ export const UserAccount = {
         }
       }
       if (this.password) {
-        this.$bus.$emit('myAccount-before-changePassword', {
+        EventBus.$emit('myAccount-before-changePassword', {
           currentPassword: this.oldPassword,
           newPassword: this.password
         })
@@ -155,7 +156,7 @@ export const UserAccount = {
       this.exitSection(null, updatedProfile)
     },
     exitSection (event, updatedProfile) {
-      this.$bus.$emit('myAccount-before-updateUser', updatedProfile)
+      EventBus.$emit('myAccount-before-updateUser', updatedProfile)
       userHooks.afterUserProfileUpdated(event => {
         if (event.resultCode === 200) {
           if (!updatedProfile) {

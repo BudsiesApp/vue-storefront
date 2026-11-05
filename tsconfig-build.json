@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
-    "esModuleInterop": true
+    "target": "es2024",
+    "useDefineForClassFields": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true
   },
   "exclude": [
     "**/*.spec.ts",

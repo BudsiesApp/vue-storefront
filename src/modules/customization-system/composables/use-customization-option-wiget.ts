@@ -1,8 +1,7 @@
-import { computed, Ref, SetupContext } from '@vue/composition-api';
+import { computed, Ref, SetupContext } from 'vue';
 
 import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
-import { OptionType } from '../types/option-type';
 import { OptionValue } from '../types/option-value.interface';
 import { WidgetType } from '../types/widget-type';
 import { WidgetOptionAlignment } from '../types/widget-option-alignment.type';
@@ -13,7 +12,7 @@ export function useCustomizationOptionWidget (
   customization: Ref<Customization>,
   values: Ref<OptionValue[]>,
   productId: Ref<number>,
-  { emit }: SetupContext,
+  { emit }: Pick<SetupContext, 'emit'>,
   addedToCartOptionValueId?: Ref<Record<string, boolean> | undefined>,
   expandConfig?: Ref<Record<string, {
     isExpandable: boolean,
@@ -21,6 +20,9 @@ export function useCustomizationOptionWidget (
   }> | undefined>,
   hiddenOptionValues?: Ref<Record<string, boolean> | undefined>
 ) {
+  const useCompactSpacing = computed<boolean>(() => {
+    return !!customization.value.optionData?.displayWidgetOptions?.useCompactSpacing;
+  });
   const selectedOption = computed<CustomizationOptionValue>({
     get: () => {
       return value.value;
@@ -110,7 +112,8 @@ export function useCustomizationOptionWidget (
           component: 'TextInputWidget',
           props: {
             placeholder: widgetOptions?.placeholder,
-            type: 'email'
+            type: 'email',
+            ariaLabelledby: customization.value.id
           }
         };
       case WidgetType.IMAGE_UPLOAD:
@@ -127,21 +130,24 @@ export function useCustomizationOptionWidget (
           component: 'SearchFieldWidget',
           props: {
             values: values.value,
-            placeholder: widgetOptions?.placeholder
+            placeholder: widgetOptions?.placeholder,
+            ariaLabelledby: customization.value.id
           }
         };
       case WidgetType.TEXT_AREA:
         return {
           component: 'TextAreaWidget',
           props: {
-            placeholder: widgetOptions?.placeholder
+            placeholder: widgetOptions?.placeholder,
+            ariaLabelledby: customization.value.id
           }
         };
       case WidgetType.TEXT_INPUT:
         return {
           component: 'TextInputWidget',
           props: {
-            placeholder: widgetOptions?.placeholder
+            placeholder: widgetOptions?.placeholder,
+            ariaLabelledby: customization.value.id
           }
         };
       case WidgetType.THUMBNAILS_LIST:
@@ -149,6 +155,18 @@ export function useCustomizationOptionWidget (
           component: 'ThumbnailsListWidget',
           props: listWidgetsProps
         };
+      case WidgetType.PRODUCTION_TIME_TIMELINE:
+        return {
+          component: 'ProductionTimeTimelineWidget',
+          props: {
+            ariaLabelledby: customization.value.id,
+            isHolidayPeriod: widgetOptions?.isHolidayPeriod,
+            maxValuesCount: maxValuesCount.value,
+            productId: productId.value,
+            radioGroupName: customization.value.id,
+            values: values.value
+          }
+        }
       default:
         throw new Error(`Unknown widget type: ${String(displayWidget)}`);
     }
@@ -157,6 +175,7 @@ export function useCustomizationOptionWidget (
   return {
     maxValuesCount,
     selectedOption,
+    useCompactSpacing,
     widget
   }
 }

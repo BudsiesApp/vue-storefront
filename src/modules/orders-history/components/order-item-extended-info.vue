@@ -54,7 +54,8 @@
 </template>
 
 <script lang="ts">
-import { PropType, computed, defineComponent, toRef, ComputedRef } from '@vue/composition-api';
+import { useStore } from '@vue-storefront/core/application-services';
+import { PropType, computed, defineComponent, toRef, ComputedRef } from 'vue';
 import { SfHeading } from '@storefront-ui/vue';
 
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
@@ -80,13 +81,14 @@ export default defineComponent({
       required: true
     }
   },
-  setup (props, { root }) {
+  setup (props) {
+    const applicationStore = useStore();
     const customizationState = computed<CustomizationStateItem[]>(() => {
       return (props.item.extension_attributes && props.item.extension_attributes.customization_states) || [];
     });
 
     const productBySkuDictionary: ComputedRef<Record<string, Product>> = computed(() => {
-      return root.$store.getters['product/getProductBySkuDictionary'] || {};
+      return applicationStore.getters['product/getProductBySkuDictionary'] || {};
     });
 
     const customizations = computed<Customization[]>(() => {

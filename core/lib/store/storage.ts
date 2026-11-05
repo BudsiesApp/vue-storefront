@@ -10,6 +10,8 @@ const DISABLE_PERSISTANCE_AFTER = 1
 const DISABLE_PERSISTANCE_AFTER_SAVE = 30
 
 const _globalCache = {}
+// Drivers for the same database and collection share the cache and its revisions.
+const _cacheRevisions = new WeakMap<object, Map<string, number>>()
 
 function roughSizeOfObject (object) {
   const objectList = []
@@ -37,7 +39,6 @@ function roughSizeOfObject (object) {
 }
 
 interface CacheTimeouts {
-  getItem: any,
   iterate: any,
   setItem: any,
   base: any
@@ -48,13 +49,13 @@ class LocalForageCacheDriver {
   private _dbName: string;
   private _lastError: any;
   private _localCache: any;
+  private _keyRevisions: Map<string, number>;
   private _localForageCollection: any;
   private _persistenceErrorNotified: boolean;
   private _useLocalCacheByDefault: boolean;
   private cacheErrorsCount: any;
   private _storageQuota: number;
   private _cacheTimeouts: CacheTimeouts = {
-    getItem: null,
     iterate: null,
     setItem: null,
     base: null
@@ -110,6 +111,10 @@ class LocalForageCacheDriver {
       }
       this._localCache = _globalCache[dbName][collectionName]
     }
+    if (!_cacheRevisions.has(this._localCache)) {
+      _cacheRevisions.set(this._localCache, new Map())
+    }
+    this._keyRevisions = _cacheRevisions.get(this._localCache)
     this._collectionName = collectionName
     this._dbName = dbName
     this._useLocalCacheByDefault = useLocalCacheByDefault
@@ -158,6 +163,7 @@ class LocalForageCacheDriver {
   // is `undefined`, we pass that value to the callback function.
   public getItem (key, callback?) {
     const isCallbackCallable = (typeof callback !== 'undefined' && callback)
+    const revision = this._keyRevisions.get(String(key))
     let isResolved = false
     if (this._useLocalCacheByDefault && this._localCache[key]) {
       // Logger.debug('Local cache fallback for GET', key)()
@@ -187,14 +193,14 @@ class LocalForageCacheDriver {
           if ((endTime - startTime) >= CACHE_TIMEOUT) {
             Logger.error('Cache promise resolved after [ms]' + key + (endTime - startTime))()
           }
-          if (!this._localCache[key] && clonedResult) {
+          if (revision === this._keyRevisions.get(String(key)) && !this._localCache[key] && clonedResult) {
             this._localCache[key] = clonedResult // populate the local cache for the next call
           }
           if (!isResolved) {
+            isResolved = true
             if (isCallbackCallable) {
               callback(null, clonedResult)
             }
-            isResolved = true
           } else {
             Logger.debug('Skipping return value as it was previously resolved')()
           }
@@ -202,15 +208,16 @@ class LocalForageCacheDriver {
         }).catch(err => {
           this._lastError = err
           if (!isResolved) {
+            isResolved = true
             const value = this.getLocalCache(key)
             if (isCallbackCallable) callback(null, value)
           }
           Logger.error(err)()
           isResolved = true
         }))
-        clearTimeout(this._cacheTimeouts.getItem)
-        this._cacheTimeouts.getItem = setTimeout(() => {
+        const timeout = setTimeout(() => {
           if (!isResolved) { // this is cache time out check
+            isResolved = true
             if (!this._persistenceErrorNotified) {
               Logger.error('Cache not responding for ' + key + '.', 'cache', { timeout: CACHE_TIMEOUT, errorsCount: this.cacheErrorsCount[this._collectionName] })()
               this._persistenceErrorNotified = true
@@ -221,6 +228,8 @@ class LocalForageCacheDriver {
             if (isCallbackCallable) callback(null, value)
           }
         }, CACHE_TIMEOUT)
+        // A rejected ready() keeps its existing timeout fallback; the returned promise is unchanged.
+        promise.then(() => clearTimeout(timeout), () => {})
         return promise
       }
     } else {
@@ -303,6 +312,7 @@ class LocalForageCacheDriver {
 
   // Remove an item from the store, nice and simple.
   public removeItem (key, callback?) {
+    this._keyRevisions.set(String(key), (this._keyRevisions.get(String(key)) || 0) + 1)
     if (typeof this._localCache[key] !== 'undefined') {
       delete this._localCache[key]
     }
@@ -316,6 +326,7 @@ class LocalForageCacheDriver {
   public setItem (key, value, callback?, memoryOnly = false) {
     const isCallbackCallable = (typeof callback !== 'undefined' && callback)
     const copiedValue = cloneDeep(value)
+    this._keyRevisions.set(String(key), (this._keyRevisions.get(String(key)) || 0) + 1)
     this._localCache[key] = copiedValue
     if (memoryOnly) {
       return new Promise((resolve, reject) => {
@@ -367,7 +378,7 @@ class LocalForageCacheDriver {
         return promise
       }
     } else {
-      return new Promise((resolve, reject) => resolve())
+      return new Promise<void>((resolve) => resolve())
     }
   }
 }

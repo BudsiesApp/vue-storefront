@@ -4,16 +4,13 @@ services:
     image: 'redis:4-alpine'
 
   app:
-    build:
-      context: .
-      dockerfile: docker/vue-storefront/Dockerfile
+    image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/app:2026-11-05.27.1
+    user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
     depends_on:
       - redis
     environment:
       - VS_ENV
       - APPVERSION
-      - NODE_CONFIG_ENV=docker
-      - PM2_ARGS=--no-daemon
       - HELMET_ENABLED
       - HELMET_FRAME_ANCESTORS
 
@@ -23,7 +20,6 @@ services:
       - NODEJS_KEEP_ALIVE_TIMEOUT
       - PM2_WORKER_INTERVAL
 
-      - SSR_USE_HTML_MINIFIER
       - SSR_OUTPUT_CACHE_ENABLE
       - SSR_OUTPUT_CACHE_TTL
 
@@ -55,7 +51,6 @@ services:
       - ERROR_LOGGING_SERVICE_URL
 
       - GTM_ID
-      - GOOGLE_ANALYTICS_TRACKING_ID
       - GTM_SCRIPT_SOURCE
 
       - AFFIRM_PUBLIC_KEY
@@ -77,25 +72,7 @@ services:
       - LETSENCRYPT_HOST=${DOMAIN}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
     volumes:
-      - './config/local.json.template:/var/www/config/local.json.template'
-      - './babel.config.js:/var/www/babel.config.js'
-      - './core:/var/www/core'
-      - './ecosystem.json.template:/var/www/ecosystem.json.template'
-      - './.eslintignore:/var/www/.eslintignore'
-      - './.eslintrc.js:/var/www/.eslintrc.js'
-      - './lerna.json:/var/www/lerna.json'
-      - './tsconfig-build-dev.json:/var/www/tsconfig-build-dev.json'
-      - './tsconfig-build.json:/var/www/tsconfig-build.json'
-      - './shims.d.ts:/var/www/shims.d.ts'
-      - './package.json:/var/www/package.json'
-      - './src:/var/www/src'
-      - './var:/var/www/var'
-      - './packages:/var/www/packages'
-      - './node_modules:/var/www/node_modules'
-      - './yarn.lock:/var/www/yarn.lock'
-      - './test:/var/www/test'
-      - cache:/usr/local/share/.cache
-      - dist:/var/www/dist
+      - .:/var/www
     networks:
       - default
       - reverseproxy
@@ -104,9 +81,8 @@ services:
       - 3000
 
   tests:
-      build:
-        context: .
-        dockerfile: docker/tests/Dockerfile
+      image: 472532368511.dkr.ecr.us-east-1.amazonaws.com/budsies.com/store/ui/dev/tests:2026-11-05.27.1
+      user: '${HOST_UID:-1000}:${HOST_GID:-1000}'
       security_opt:
         - seccomp:unconfined
       environment:
@@ -119,10 +95,9 @@ services:
         - ~/.agents:/home/ubuntu/.agents
         #- ~/.codex:/root/.codex
         - ~/.codex:/home/ubuntu/.codex
-
-volumes:
-  cache:
-  dist:
+        - ~/.copilot:/home/ubuntu/.copilot
+        # - ~/.config/gorbunov-studio-skills:/root/.config/gorbunov-studio-skills
+        - ~/.config/gorbunov-studio-skills:/home/ubuntu/.config/gorbunov-studio-skills
 
 networks:
   reverseproxy:

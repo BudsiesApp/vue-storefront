@@ -30,11 +30,13 @@ import { getCustomizationSelectedValues } from './helpers/get-customization-sele
 import { getCustomizationSystemThumbnail } from './helpers/get-customization-system-thumbnail';
 import { getCustomizationValueIdFieldKey } from './helpers/get-customization-value-id-field-key';
 import { getCustomizationAvailabilityFlowByProductPurchaseFlow } from './helpers/get-customization-availability-flow-by-product-purchase-flow';
+import { getOptionValueId } from './helpers/get-option-value-id';
 import { getOptionValuePrice } from './helpers/get-option-value-price';
 import { getSelectedOptionValuesByCustomizationState } from './helpers/get-selected-options-values-by-customization-state';
 import { isEmailCustomization } from './helpers/is-email-customization';
 import { fetchOrderItemCustomizationsState, fetchOrderItemDeliverables, fetchOrderItemsCustomizationsStates, saveOrderItemCustomizationsState, submitOrderItemCustomizationsState } from './helpers/order-items-customizations.service';
 import { requiredCustomizationsFilter } from './helpers/required-customizations-filter';
+import { toOptionValueArray } from './helpers/to-option-value-array';
 import { updateCartItemProductionTimeCustomizationState } from './helpers/update-cart-item-production-time-customization-state';
 import { updateProductProductionTimeCustomizationData } from './helpers/update-product-production-time-customization-data';
 
@@ -59,33 +61,23 @@ import { WidgetOptionShape } from './types/widget-option-shape.type';
 import { WidgetType } from './types/widget-type';
 import { WidgetOptionAlignment } from './types/widget-option-alignment.type';
 import { WidgetOptions } from './types/widget-options.interface';
+import { HolidayDeliveryLocation, useHolidayDeliveryLocation } from './composables/use-holiday-delivery-location';
 
 import CartItemConfiguration from './components/cart-item-configuration.vue';
 import CartItemShipmentPromise from './components/cart-item-shipment-promise.vue';
 
 export {
+  HolidayDeliveryLocation,
+  useHolidayDeliveryLocation,
   CartItemConfiguration,
   CartItemShipmentPromise,
-  Customization,
   CustomizationAvailabilityFlow,
   CustomizationType,
   ProductCustomizationMode,
-  CustomizationOptionValue,
-  CustomizationStateItem,
-  Deliverable,
-  DraftOrderItem,
-  EstimatedShipment,
-  ExtensionAttributes,
-  FileUploadValue,
   ListWidgetInputType,
   FilterType as LockedCustomizationsFilterType,
   OptionType,
-  OptionValue,
-  PersistedData,
   PRODUCTION_TIME_SELECTOR_STANDARD_OPTION_VALUE_ID,
-  WidgetOptionAlignment,
-  WidgetOptions,
-  WidgetOptionShape,
   WidgetType,
 
   fetchOrderItemCustomizationsState,
@@ -96,6 +88,7 @@ export {
   getCustomizationSelectedValues,
   getCustomizationSystemThumbnail,
   getCustomizationValueIdFieldKey,
+  getOptionValueId,
   getOptionValuePrice,
   getSelectedOptionValuesByCustomizationState,
   getCustomizationAvailabilityFlowByProductPurchaseFlow,
@@ -104,6 +97,7 @@ export {
   requiredCustomizationsFilter,
   saveOrderItemCustomizationsState,
   submitOrderItemCustomizationsState,
+  toOptionValueArray,
   updateCartItemProductionTimeCustomizationState,
   updateProductProductionTimeCustomizationData,
   useAvailableCustomizations,
@@ -129,8 +123,24 @@ export {
   useOptionValuesPrice,
   useLockedCustomizations,
   useSelectedOptionValueUrlQuery,
-  CartItemConfigurationGroup,
-  CartItemConfigurationProperty,
   useValuesSort,
   useWidgetBusyState
+}
+
+export type {
+  Customization,
+  CustomizationOptionValue,
+  CustomizationStateItem,
+  Deliverable,
+  DraftOrderItem,
+  EstimatedShipment,
+  ExtensionAttributes,
+  FileUploadValue,
+  OptionValue,
+  PersistedData,
+  WidgetOptionAlignment,
+  WidgetOptions,
+  WidgetOptionShape,
+  CartItemConfigurationGroup,
+  CartItemConfigurationProperty
 }

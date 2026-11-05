@@ -1,7 +1,7 @@
 <template>
   <div class="currency-selector">
     <span
-      id="currency-selector-label"
+      :id="labelId"
       class="_label"
     >
       {{ $t('Select Currency') }}
@@ -10,7 +10,7 @@
     <SfSelect
       v-model="selectedCurrency"
       class="_select"
-      label-id="currency-selector-label"
+      :label-id="labelId"
     >
       <SfSelectOption
         v-for="currency in availableCurrencies"
@@ -28,7 +28,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from '@vue/composition-api';
+import { useStore } from '@vue-storefront/core/application-services';
+import { defineComponent, computed } from 'vue';
 import { SfSelect } from '@storefront-ui/vue';
 
 import { GET_ACTIVE_CURRENCY, GET_AVAILABLE_CURRENCIES } from '../types/getters';
@@ -40,18 +41,25 @@ export default defineComponent({
   components: {
     SfSelect
   },
-  setup (_, { root }) {
+  props: {
+    labelId: {
+      type: String,
+      required: true
+    }
+  },
+  setup () {
+    const applicationStore = useStore();
     const selectedCurrency = computed<string>({
       get: () => {
-        return root.$store.getters[`${MODULE_NAME}/${GET_ACTIVE_CURRENCY}`].code;
+        return applicationStore.getters[`${MODULE_NAME}/${GET_ACTIVE_CURRENCY}`].code;
       },
       set: (value: string) => {
-        root.$store.dispatch(`${MODULE_NAME}/${UPDATE_ACTIVE_CURRENCY}`, value);
+        applicationStore.dispatch(`${MODULE_NAME}/${UPDATE_ACTIVE_CURRENCY}`, value);
       }
     });
 
     const availableCurrencies = computed(() => {
-      return root.$store.getters[`${MODULE_NAME}/${GET_AVAILABLE_CURRENCIES}`];
+      return applicationStore.getters[`${MODULE_NAME}/${GET_AVAILABLE_CURRENCIES}`];
     });
 
     return {

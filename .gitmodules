@@ -1,12 +1,11 @@
 [submodule "src/modules/vsf-cache-varnish"]
 	path = src/modules/vsf-cache-varnish
-	url = https://github.com/wmycco1/vsf-cache-varnish-1
-	branch = master
+	url = https://github.com/BudsiesApp/vsf-cache-varnish-1.git
+	branch = budsies
 [submodule "src/themes/petsies-capybara"]
 	path = src/themes/petsies-capybara
-	url = git@github.com:BudsiesApp/vsf-capybara.git
-	branch = 24251-petsies-demo
+	url = https://github.com/BudsiesApp/vsf-capybara.git
 [submodule "src/modules/payment-braintree"]
     path = src/modules/payment-braintree
-    url = git@github.com:BudsiesApp/vsf-payment-braintree.git
+    url = https://github.com/BudsiesApp/vsf-payment-braintree.git
     branch = optimuspro
