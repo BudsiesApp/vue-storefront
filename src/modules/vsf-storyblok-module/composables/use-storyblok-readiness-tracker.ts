@@ -16,8 +16,7 @@ export function useStoryblokReadinessTracker (
     () => {
       renderedStoryFullSlugs.value = renderedStoryFullSlugs.value.filter(fullSlug => storyDependencies.value.includes(fullSlug));
       hasEmitted.value = false;
-    },
-    { flush: 'sync' }
+    }
   );
 
   onMounted(() => {

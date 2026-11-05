@@ -1,4 +1,5 @@
-import Vue, { ref } from 'vue';
+import Vue, { computed, ref } from 'vue';
+import Vuex from 'vuex';
 import { mount } from '@vue/test-utils';
 import { useStoryblokReadinessTracker } from '../../../composables/use-storyblok-readiness-tracker';
 
@@ -136,4 +137,52 @@ it('emits across empty-list keys and excludes absent conditional stories', async
   expect(harnessResult.onReady).toHaveBeenCalledTimes(3);
 
   harnessResult.wrapper.destroy();
+});
+
+it('keeps computed inputs over Vuex getters fresh after the store rebuilds its getters', async () => {
+
+  Vue.use(Vuex);
+
+  const store = new Vuex.Store({
+    modules: {
+      cart: {
+        namespaced: true,
+        state: { items: [{ qty: '1' }] },
+        getters: { items: state => state.items },
+        mutations: {
+          clear (state) {
+            state.items = [];
+          }
+        }
+      }
+    }
+  });
+  const onReady = jest.fn();
+  let totalItems!: { value: number };
+  const wrapper = mount(Vue.extend({
+    setup () {
+      totalItems = computed(() => store.getters['cart/items'].length);
+      const storyDependencies = computed(() => totalItems.value ? ['blocks/cart_shipping_handling'] : []);
+
+      useStoryblokReadinessTracker(ref('cart'), storyDependencies, onReady);
+
+      return {};
+    },
+    render: h => h('div')
+  }));
+
+  await Vue.nextTick();
+  // Lazy module registration rebuilds the getters, which reorders their subscriptions.
+  store.registerModule('lazy', { state: {} });
+  // A later reader, such as a mapGetters computed during render, evaluates the rebuilt getter
+  // and subscribes it after the tracker's existing subscriptions.
+  expect(store.getters['cart/items']).toHaveLength(1);
+  await Vue.nextTick();
+  store.commit('cart/clear');
+  await Vue.nextTick();
+
+  expect(totalItems.value).toBe(0);
+  expect(onReady).toHaveBeenCalledTimes(1);
+
+  wrapper.destroy();
 });
