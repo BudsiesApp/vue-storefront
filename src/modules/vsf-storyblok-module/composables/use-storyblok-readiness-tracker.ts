@@ -4,7 +4,7 @@ import {
   Ref,
   ref,
   watch
-} from '@vue/composition-api';
+} from 'vue';
 
 type StoryReadyPayload = string | string[];
 
