@@ -142,3 +142,24 @@ The error-logging module SHALL send a report to Graylog even when it cannot read
 #### Scenario: Failed delivery is not restored as sent
 - **WHEN** Graylog rejects a report, sent-message storage writes fail, and the page is reloaded
 - **THEN** the restored sent-message list does not contain that report, and an identical later report is still sent
+
+### Requirement: TaskQueue response errors keep existing customer messages
+Other storefront features that show a caught error's message SHALL show their existing fallback text when the error is a TaskQueue `TaskResponseError`, which means an HTTP response could not be processed. They SHALL keep their existing behavior for every other error. This applies to removable cart item options and the Tax ID request page. The legacy password reset page is excluded, because customers no longer sign in with a password.
+
+#### Scenario: Cart item option update receives a gateway error page
+- **WHEN** removing or restoring a cart item option fails because the cart API returns an HTML 502 response
+- **THEN** the notification shows "Something went wrong"
+- **THEN** it does not show the request URL, token, or cart ID
+
+#### Scenario: Cart item option update fails with a server message
+- **WHEN** removing or restoring a cart item option fails with an error that has its own message, such as a cart `ServerError` or a network failure
+- **THEN** the notification shows that message, as before
+
+#### Scenario: Tax ID request receives a gateway error page
+- **WHEN** submitting a Tax ID fails because the API returns an HTML 503 response
+- **THEN** the page shows the translated "Failed to submit Tax ID" fallback and not the technical response error
+
+#### Scenario: Tax ID request fails without an HTTP response
+- **WHEN** submitting a Tax ID fails because of a network failure
+- **THEN** the page shows the same message as before this change
+

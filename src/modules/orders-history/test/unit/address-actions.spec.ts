@@ -5,7 +5,8 @@ import { reportAddressApiFailure } from 'src/modules/shared';
 import { actions } from '../../store/actions';
 import {
   REQUEST_ORDER_SHIPPING_ADDRESS_UPDATE,
-  REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION
+  REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION,
+  SUBMIT_TAX_ID_UPDATE_REQUEST
 } from '../../types/store/actions';
 
 jest.mock('config', () => ({ budsies: { endpoint: 'https://api.example.com' } }));
@@ -70,3 +71,24 @@ describe('order address failures', () => {
   });
 });
 
+
+describe('Tax ID submit failures', () => {
+  beforeEach(() => {
+    (TaskQueue.execute as jest.Mock).mockReset();
+  });
+
+  it('uses the translated fallback for a response that cannot be processed', async () => {
+    (TaskQueue.execute as jest.Mock).mockRejectedValue(new TaskResponseError('Error with response - bad content-type! https://api.example.com/order/taxid-update-requests?token=secret', 503));
+
+    await expect((actions as any)[SUBMIT_TAX_ID_UPDATE_REQUEST]({}, { orderId: '7', taxId: 'X1' }))
+      .rejects.toThrow(new Error('Failed to submit Tax ID'));
+  });
+
+  it('keeps a network failure unchanged', async () => {
+    const networkError = new TypeError('Failed to fetch');
+    (TaskQueue.execute as jest.Mock).mockRejectedValue(networkError);
+
+    await expect((actions as any)[SUBMIT_TAX_ID_UPDATE_REQUEST]({}, { orderId: '7', taxId: 'X1' }))
+      .rejects.toBe(networkError);
+  });
+});

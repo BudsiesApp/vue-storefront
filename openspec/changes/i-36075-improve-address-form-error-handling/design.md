@@ -19,11 +19,12 @@ See `proposal.md` for motivation and the address form spec for required behavior
 - Release the storefront and theme revisions together.
 
 **Non-Goals:**
-- Return a `Task` to form callers or add a custom error class.
+- Return a `Task` to form callers or add a custom error class for address failures.
 - Classify errors by reading their message text or choose display text from HTTP status.
 - Change checkout forms or background cart requests.
 - Change Magento or VSF API response contracts.
 - Change the TaskQueue notification behavior of the address removal request.
+- Change the legacy password reset page. Customers sign in by email only, nothing links to the page that requests a reset email, and only an old reset link opens the page.
 
 ## Decisions
 
@@ -89,6 +90,19 @@ The order address page and account add/edit forms catch the action's rejected pr
 When setting a default shipping or billing address fails, the account address list sends the caught message, or its translated fallback, to the same visible `notification/spawnNotification` path. The notification component is already a `role="alert"` region, so these failures do not also write the screen-reader-only alert text; that avoids a duplicate announcement. Address removal still uses a non-silent TaskQueue request that shows its own notification, so its failure keeps the existing screen-reader-only alert and gets no extra notification.
 
 The order page may also call the shared customer address update action to update the default shipping address. A failure there follows the same rejection contract and produces one form notification. No component inspects `Task` or calls the reporting service.
+
+### Keep existing customer messages for TaskQueue response errors
+
+Before this change, TaskQueue rejected a non-JSON response with a plain string. Callers that show `error.message || fallback` therefore showed their fallback for gateway error pages. A `TaskResponseError` has a technical `message` that includes the request URL, and the URL can contain the customer token and cart ID because `users.tokenInHeader` is `false`. Callers that can receive a raw TaskQueue rejection and show its message must map only `TaskResponseError` to their existing fallback and keep every other error unchanged:
+
+- Removable cart item options (`use-cart-item-removable-options.ts`, theme) receive cart errors through `useAddToCart` with `propagateAllErrors`. The core cart actions do not catch TaskQueue rejections, so the mapping is in the theme's notification message function.
+- The Tax ID submit action catches a `TaskResponseError` from its TaskQueue request and throws the translated "Failed to submit Tax ID" fallback, which the page already uses. It rethrows other rejections unchanged, so the page keeps its current behavior for them. This matches the address actions, which own API failure handling.
+
+The product page and customization form add-to-cart flows log errors other than `ServerError` and are not affected. The core `AddToCart` mixin is not used by the theme. The difference that remains is that an unparsable JSON body now shows the fallback instead of the `SyntaxError` text.
+
+**Alternative:** Show only `ServerError` messages in the cart item options and use the fallback for every Tax ID rejection. This would also hide network-failure and other messages that customers see today, which goes beyond restoring the earlier behavior.
+
+**Alternative:** Remove the URL from the `TaskResponseError` message. The message would still be technical text shown to customers, and the console and Graylog would lose the URL that diagnostics rely on.
 
 ### Release the storefront and theme together
 

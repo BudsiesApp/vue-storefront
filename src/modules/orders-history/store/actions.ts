@@ -113,16 +113,27 @@ export const actions: ActionTree<OrdersHistoryState, RootState> = {
   async [SUBMIT_TAX_ID_UPDATE_REQUEST] ({ commit }, { orderId, taxId }: { orderId: string, taxId: string }): Promise<void> {
     const url = processURLAddress(`${config.budsies.endpoint}/order/taxid-update-requests?token={{token}}`);
 
-    const { resultCode, result } = await TaskQueue.execute({
-      url,
-      payload: {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taxId, orderId, type: 'shipping' })
-      },
-      silent: true
-    });
+    let response;
+    try {
+      response = await TaskQueue.execute({
+        url,
+        payload: {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taxId, orderId, type: 'shipping' })
+        },
+        silent: true
+      });
+    } catch (error) {
+      if (error instanceof TaskResponseError) {
+        throw new Error(i18n.t('Failed to submit Tax ID').toString());
+      }
+
+      throw error;
+    }
+
+    const { resultCode, result } = response;
 
     if (resultCode !== 200) {
       const errorMessage = result?.errorMessage || 'Failed to submit Tax ID';

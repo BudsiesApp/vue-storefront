@@ -38,3 +38,9 @@
 - [x] 5.4 Run the affected unit tests, type check, and lint.
 - [x] 5.5 Validate the parsed VSF API envelope in TaskQueue and reject a JSON body without a numeric `code` with a `TaskResponseError` carrying the HTTP status; verify JSON 403 and 503 responses without `code` keep their status through TaskQueue, an address action, and the reporter.
 
+## 6. Customer messages for TaskQueue response errors
+
+- [x] 6.1 Show the existing "Something went wrong" fallback for a `TaskResponseError` in removable cart item option notifications, keeping every other error message unchanged; verify a gateway error shows the fallback and a `ServerError` still shows its message.
+- [x] 6.2 Make the Tax ID submit action throw the translated "Failed to submit Tax ID" fallback for a `TaskResponseError` and rethrow other rejections unchanged; verify an HTML 503 shows the fallback and a network failure keeps its previous message.
+- [x] 6.3 Run the affected unit tests, type check, and lint.
+
