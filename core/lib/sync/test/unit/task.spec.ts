@@ -46,6 +46,24 @@ describe('TaskQueue response failures', () => {
     expect(error.status).toBe(502);
   });
 
+  it.each([403, 503])('keeps HTTP %i when a JSON body has no VSF API code', async (status) => {
+    (fetch as jest.Mock).mockResolvedValue(createResponse(status, 'application/json', async () => ({ message: 'Forbidden' })));
+
+    const error = await execute(createTask()).catch((reason) => reason);
+
+    expect(error).toBeInstanceOf(TaskResponseError);
+    expect(error.status).toBe(status);
+  });
+
+  it.each([null, 'Forbidden'])('keeps the HTTP status when a JSON body is %p', async (body) => {
+    (fetch as jest.Mock).mockResolvedValue(createResponse(503, 'application/json', async () => body));
+
+    const error = await execute(createTask()).catch((reason) => reason);
+
+    expect(error).toBeInstanceOf(TaskResponseError);
+    expect(error.status).toBe(503);
+  });
+
   it('keeps the original rejection for a network failure', async () => {
     const networkError = new TypeError('Failed to fetch');
     (fetch as jest.Mock).mockRejectedValue(networkError);

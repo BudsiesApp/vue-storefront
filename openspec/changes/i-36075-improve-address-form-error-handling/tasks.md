@@ -36,4 +36,5 @@
 - [x] 5.2 Track pending reports in memory and persist only reports that Graylog accepted; verify a failed delivery with failing storage writes is not restored as sent after a reload, and identical concurrent reports are still suppressed.
 - [x] 5.3 Move `reportAddressApiFailure` to `src/modules/shared/services/address-api-failure-reporter.ts` and keep its shared module exports.
 - [x] 5.4 Run the affected unit tests, type check, and lint.
+- [x] 5.5 Validate the parsed VSF API envelope in TaskQueue and reject a JSON body without a numeric `code` with a `TaskResponseError` carrying the HTTP status; verify JSON 403 and 503 responses without `code` keep their status through TaskQueue, an address action, and the reporter.
 

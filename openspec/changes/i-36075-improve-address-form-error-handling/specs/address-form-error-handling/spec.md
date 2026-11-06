@@ -49,7 +49,7 @@ Order address update and confirmation actions and customer address create and up
 - **THEN** no TaskQueue notification is shown in addition to it
 
 ### Requirement: Report only server and no-response transport failures
-For HTTP statuses 500 through 599 and for network or timeout failures without an HTTP response, the system SHALL write a contextual browser console warning and submit an address-specific report to the error-logging module for Graylog delivery. It SHALL NOT produce either for any other HTTP status. A request that receives an HTTP response which cannot be processed, such as an HTML error page or an unparsable JSON body, SHALL be classified by that response's HTTP status. Only a failure without any HTTP response SHALL use status `none`. The console warning SHALL contain the same message and limited context as the address report. It SHALL NOT depend on the error-logging configuration or console verbosity. The warning SHALL NOT use `console.error`, which the error-logging module forwards to Graylog as a second report. Reporting SHALL NOT delay or prevent form feedback.
+For HTTP statuses 500 through 599 and for network or timeout failures without an HTTP response, the system SHALL write a contextual browser console warning and submit an address-specific report to the error-logging module for Graylog delivery. It SHALL NOT produce either for any other HTTP status. A request that receives an HTTP response which cannot be processed, such as an HTML error page, an unparsable JSON body, or a JSON body without a numeric VSF API response `code`, SHALL be classified by that response's HTTP status. Only a failure without any HTTP response SHALL use status `none`. The console warning SHALL contain the same message and limited context as the address report. It SHALL NOT depend on the error-logging configuration or console verbosity. The warning SHALL NOT use `console.error`, which the error-logging module forwards to Graylog as a second report. Reporting SHALL NOT delay or prevent form feedback.
 
 #### Scenario: HTTP 500 response
 - **WHEN** an address request returns HTTP 500 with or without a server message
@@ -80,6 +80,11 @@ For HTTP statuses 500 through 599 and for network or timeout failures without an
 - **WHEN** an address request receives an HTML response with HTTP 503
 - **THEN** the form shows its translated fallback
 - **THEN** the console warning and the address failure report have status 503, not `none`
+
+#### Scenario: JSON HTTP response without a VSF API code
+- **WHEN** an address request receives HTTP 403 or 503 with `Content-Type: application/json` and the body `{"message":"Forbidden"}`, which has no `code`
+- **THEN** the form shows its translated fallback
+- **THEN** HTTP 403 produces no console warning or address-specific report, and HTTP 503 produces both with status 503, not `none`
 
 #### Scenario: No-response transport failure
 - **WHEN** an address request fails without an HTTP response
