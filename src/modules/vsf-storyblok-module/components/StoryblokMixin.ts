@@ -82,7 +82,7 @@ export default {
         }
       }
 
-      emitPageRenderedEvent()
+      emitPageRenderedEvent(() => loadId === this.storyLoadId)
     },
     async fetchStory () {
       if (this.storyblok.fetchStory === false) {

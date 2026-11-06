@@ -4,6 +4,8 @@ import { mount } from '@vue/test-utils';
 import StoryblokMixin from '../../../components/StoryblokMixin';
 import { loadStoryblokComponentGroup } from '../../../components';
 import { emitPageRenderedEvent } from 'src/modules/shared';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+import { PAGE_RENDERED } from 'src/modules/shared/types/page-rendered.event';
 
 jest.mock('@vue-storefront/core/lib/logger', () => ({
   Logger: { error: jest.fn(() => jest.fn()) }
@@ -11,6 +13,7 @@ jest.mock('@vue-storefront/core/lib/logger', () => ({
 
 jest.mock('src/modules/vsf-storyblok-module', () => ({ KEY: 'storyblok' }));
 jest.mock('src/modules/shared', () => ({ emitPageRenderedEvent: jest.fn() }));
+jest.mock('@vue-storefront/core/helpers', () => ({ isServer: false }));
 jest.mock('@vue-storefront/core/lib/multistore', () => ({ currentStoreView: () => ({}) }));
 jest.mock('../../../components', () => ({
   loadStoryblokComponentGroup: jest.fn(),
@@ -83,7 +86,7 @@ function harness (cached = false) {
 beforeEach(() => {
   jest.useFakeTimers();
   loader.mockReset().mockResolvedValue(undefined);
-  (emitPageRenderedEvent as jest.Mock).mockClear();
+  (emitPageRenderedEvent as jest.Mock).mockReset();
 });
 afterEach(() => {
   jest.useRealTimers();
@@ -227,6 +230,44 @@ it('emits the page event when the component chunk fails to load', async () => {
 
   storyHarness.wrapper.destroy();
 });
+
+it.each(['destroy', 'reuse'])(
+  'cancels the final deferred event when the page is invalidated by %s',
+  async invalidation => {
+    const realEmitter = jest.requireActual('src/modules/shared/helpers/emit-page-rendered-event.function');
+    const emitSpy = jest.spyOn(EventBus, '$emit');
+    (emitPageRenderedEvent as jest.Mock).mockImplementation(realEmitter.emitPageRenderedEvent);
+
+    const storyHarness = harness();
+    storyHarness.requests.A.resolve(undefined);
+    await flushRenderQueue();
+
+    expect(emitPageRenderedEvent).toHaveBeenCalledTimes(1);
+    expect(jest.getTimerCount()).toBe(1);
+
+    if (invalidation === 'destroy') {
+      storyHarness.wrapper.destroy();
+    } else {
+      await storyHarness.wrapper.setProps({ routeInput: { path: '/B', query: {} } });
+      await flushRenderQueue();
+    }
+
+    jest.runOnlyPendingTimers();
+    await flushRenderQueue();
+    expect(emitSpy).not.toHaveBeenCalledWith(PAGE_RENDERED);
+
+    if (invalidation === 'reuse') {
+      storyHarness.requests.B.resolve(undefined);
+      await flushRenderQueue();
+      jest.runOnlyPendingTimers();
+      expect(emitSpy).toHaveBeenCalledTimes(1);
+      expect(emitSpy).toHaveBeenCalledWith(PAGE_RENDERED);
+      storyHarness.wrapper.destroy();
+    }
+
+    emitSpy.mockRestore();
+  }
+);
 
 it('fetches on SSR without rendering waits or page events', async () => {
   const dispatch = jest.fn().mockResolvedValue({ content: {} });
