@@ -9,6 +9,7 @@ export interface Context {
     appendHead: (context: any) => string,
     template: string,
     cacheTags: Set<any>,
+    cookieReads: Set<string>,
     redirect: { code: 301 | 302, path: string } | null
   },
   server: {

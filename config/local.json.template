@@ -10,6 +10,7 @@
     "useOutputCache": ${SSR_OUTPUT_CACHE_ENABLE},
     "outputCacheDefaultTtl": ${SSR_OUTPUT_CACHE_TTL},
     "availableCacheTags": [
+      "redirect",
       "attribute",
       "category_",
       "category",

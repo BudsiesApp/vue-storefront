@@ -8,6 +8,7 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import Composite from '@vue-storefront/core/mixins/composite'
 import { currentStoreView, localizedRoute } from '@vue-storefront/core/lib/multistore'
 import { isServer } from '@vue-storefront/core/helpers'
+import { setServerRedirect } from '@vue-storefront/core/request-services'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION } from '@vue-storefront/core/modules/checkout';
 
@@ -371,13 +372,13 @@ export default {
   asyncData ({ store, route, context }) { // this is for SSR purposes to prefetch data
     return new Promise((resolve, reject) => {
       if (!context) {
-        resolve();
+        return resolve();
       }
 
       const resolvedRoute = router.resolve({ name: 'detailed-cart' });
 
       context.output.cacheTags.add(`checkout`)
-      context.server.response.redirect(localizedRoute(resolvedRoute.href));
+      setServerRedirect(context, localizedRoute(resolvedRoute.href));
       resolve()
     })
   }
