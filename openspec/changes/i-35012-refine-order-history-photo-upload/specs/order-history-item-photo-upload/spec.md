@@ -53,6 +53,14 @@ The upload field SHALL reserve room for a browse area plus a row of three photos
 - **WHEN** the customer has zero, one, two, or three photos selected
 - **THEN** the status line and the Submit and Cancel actions keep their position
 
+#### Scenario: No blank space for absent messages
+- **WHEN** no upload-limit warning or field validation message is present
+- **THEN** no blank height or margin is reserved for them between the upload field and the status line, and the status line and the actions are separated by one normal gap
+
+#### Scenario: Real messages take the room they need
+- **WHEN** an upload-limit warning, a field validation message, or a longer status message appears
+- **THEN** it is shown, announced politely, and wraps as needed, moving the controls below it only by the room it takes
+
 #### Scenario: Reserved space is only a floor
 - **WHEN** the selection needs more room than the reserved space
 - **THEN** the field grows instead of clipping its photos or its browse control
