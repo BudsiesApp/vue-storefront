@@ -19,7 +19,9 @@ import getHeaderId from './helpers/get-header-id'
 import getUrlFromLink from './helpers/get-url-from-link'
 import { hydrateInPreviewOrWhenVisible } from './helpers/hydrate-in-preview-only-or-when-visible.function'
 import { isStoryblokPreview } from './helpers/is-storyblok-preview.function'
-import { Blok } from './components'
+import { Blok, StoryblokComponentGroup, loadStoryblokComponentGroup } from './components'
+import { waitForStoryblokContentRender } from './helpers/wait-for-storyblok-content-render.function'
+import { useStoryblokReadinessTracker } from './composables/use-storyblok-readiness-tracker'
 import {
   buildStoryblokImageUrl,
   parseStoryblokAssetUrl,
@@ -35,6 +37,9 @@ export const StoryblokModule: StorefrontModule = function ({ store, router, appC
 
 export {
   Blok,
+  StoryblokComponentGroup,
+  loadStoryblokComponentGroup,
+  waitForStoryblokContentRender,
   ComponentWidthCalculator,
   SizeValue,
   Alignment,
@@ -45,6 +50,7 @@ export {
   hydrateInPreviewOrWhenVisible,
   getHeaderId,
   isStoryblokPreview,
+  useStoryblokReadinessTracker,
   buildStoryblokImageUrl,
   parseStoryblokAssetUrl,
   resolveStoryblokAssetUrl
