@@ -2,6 +2,7 @@ import { extractCookieValue } from '@vue-storefront/core/helpers/extract-cookie-
 import getHostFromHeaders from '@vue-storefront/core/helpers/get-host-from-headers.function';
 import { Context } from '@vue-storefront/core/scripts/utils/types';
 
+import { setServerRedirect } from './set-server-redirect';
 import { RequestServices } from './types';
 
 export function createRequestServices (
@@ -24,6 +25,9 @@ export function createRequestServices (
     host,
     userAgent,
     getCookie: (name: string) => {
+      if (request) {
+        context.output.cookieReads?.add(name);
+      }
       const cookie = request
         ? request.headers.cookie
         : typeof document !== 'undefined'
@@ -35,7 +39,7 @@ export function createRequestServices (
 
   if (response) {
     services.redirect = (path, statusCode = 302) => {
-      response.redirect(statusCode, path);
+      setServerRedirect(context, path, statusCode);
     };
   }
 
