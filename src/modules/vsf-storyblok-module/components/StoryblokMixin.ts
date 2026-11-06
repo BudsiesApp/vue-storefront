@@ -1,7 +1,10 @@
 import config from 'config'
 import { mapState } from 'vuex'
+import { Logger } from '@vue-storefront/core/lib/logger'
 import { currentStoreView } from '@vue-storefront/core/lib/multistore'
+import { emitPageRenderedEvent } from 'src/modules/shared';
 import { KEY } from '..'
+import { waitForStoryblokContentRender } from '../helpers/wait-for-storyblok-content-render.function'
 import { StoryblokState } from '../types/State'
 import { loadScript, getStoryblokQueryParams } from '../helpers'
 import get from 'lodash-es/get'
@@ -40,6 +43,7 @@ export default {
   },
   data () {
     return {
+      storyLoadId: 0,
       storyblok: {
         prependStorecode: false,
         path: '',
@@ -55,6 +59,30 @@ export default {
         return `${storeCodeToAdd}/${fullSlug}`
       }
       return fullSlug
+    },
+    async loadStoryAndEmitPageRendered () {
+      const loadId = ++this.storyLoadId
+      let story
+
+      try {
+        story = await this.fetchStory()
+      } catch (error) {
+        Logger.error(error, 'storyblok')()
+      }
+
+      if (loadId !== this.storyLoadId) {
+        return
+      }
+
+      if (story?.content) {
+        await waitForStoryblokContentRender()
+
+        if (loadId !== this.storyLoadId) {
+          return
+        }
+      }
+
+      emitPageRenderedEvent(() => loadId === this.storyLoadId)
     },
     async fetchStory () {
       if (this.storyblok.fetchStory === false) {
@@ -97,9 +125,7 @@ export default {
     })
   },
   async mounted () {
-    if (!this.story) {
-      await this.fetchStory()
-    }
+    await this.loadStoryAndEmitPageRendered()
 
     if (this.previewToken) {
       const url = `https://app.storyblok.com/f/storyblok-v2-latest.js`
@@ -124,10 +150,13 @@ export default {
       })
     }
   },
+  beforeDestroy () {
+    this.storyLoadId++
+  },
   watch: {
     '$route' (to, from) {
       if (!this.isStatic && from.path !== to.path) {
-        this.fetchStory()
+        this.loadStoryAndEmitPageRendered()
       }
     }
   }
