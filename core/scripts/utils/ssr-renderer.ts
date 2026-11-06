@@ -100,9 +100,13 @@ function initTemplatesCache (config, compileOptions) {
   return templatesCache
 }
 
-function initSSRRequestContext (app, req, res, config): Context {
+/**
+ * @param renderUrl path and query the application renders; the page server passes the URL without
+ * cache-ignored query parameters so rendered output matches its cache key.
+ */
+function initSSRRequestContext (app, req, res, config, renderUrl: string = req.url): Context {
   return {
-    url: decodeURI(req.url),
+    url: decodeURI(renderUrl),
     output: {
       prepend: (context) => { return ''; },
       append: (context) => { return ''; },
@@ -110,6 +114,7 @@ function initSSRRequestContext (app, req, res, config): Context {
       appendHead: (context) => { return ''; },
       template: 'default',
       cacheTags: new Set(),
+      cookieReads: new Set(),
       redirect: null
     },
     server: {
@@ -128,6 +133,7 @@ function initSSRRequestContext (app, req, res, config): Context {
 
 function clearContext (context) {
   Object.keys(context.server).forEach(key => delete context.server[key])
+  delete context.output['cookieReads']
   delete context.output['cacheTags']
   delete context['meta']
   delete context.output['redirect']

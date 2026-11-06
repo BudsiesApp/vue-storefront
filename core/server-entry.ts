@@ -78,18 +78,19 @@ export default async context => {
     context.meta = meta
     context.extendedHead = head
     router.onReady(() => {
-      const matchedComponents = router.getMatchedComponents()
+      // Defensive: application code must record redirects in the render context instead of sending them.
+      if (context.server.response.headersSent) return resolve(app)
 
       if (router.currentRoute.redirectedFrom && router.currentRoute.redirectedFrom !== router.currentRoute.fullPath) {
-        // We don't want to cache redirects to the 'sign-in' page since they may contain user email in query params
-        if (router.currentRoute.name === 'sign-in') {
-          (app as any).$cacheTags.add('no-cache');
-        }
-
         context.output.redirect = { code: 301, path: router.currentRoute.fullPath };
 
         return resolve(app);
       }
+
+      // A navigation guard or mapping fallback has already recorded a redirect; skip page data loading.
+      if (context.output.redirect) return resolve(app)
+
+      const matchedComponents = router.getMatchedComponents()
 
       if (!matchedComponents.length || !matchedComponents[0]) {
         return reject(new HttpError('No components matched', 404)) // TODO - don't redirect if already on page-not-found
