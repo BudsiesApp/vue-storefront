@@ -5,7 +5,7 @@ import { processURLAddress } from '@vue-storefront/core/helpers'
 import { ActionTree, Commit } from 'vuex'
 import config from 'config'
 import i18n from '@vue-storefront/i18n'
-import { AddressFailure, reportAddressApiFailure } from 'src/modules/shared';
+import { AddressFailure, getApiErrorMessage, reportAddressApiFailure } from 'src/modules/shared';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 
 import { BudsiesState } from '../types/State'
@@ -467,7 +467,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     if (response.resultCode !== 200) {
-      const message = response.result?.errorMessage || fallbackMessage;
+      const message = getApiErrorMessage(response.result, fallbackMessage);
       failure.status = response.resultCode;
       failure.message = message;
       reportAddressApiFailure(failure);
@@ -500,7 +500,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
     }
 
     if (response.resultCode !== 200) {
-      const message = response.result?.errorMessage || fallbackMessage;
+      const message = getApiErrorMessage(response.result, fallbackMessage);
       failure.status = response.resultCode;
       failure.message = message;
       reportAddressApiFailure(failure);

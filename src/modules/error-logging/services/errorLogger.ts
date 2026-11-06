@@ -18,8 +18,8 @@ async function resolveIpWithCache (): Promise<string> {
   return clientIpCache;
 }
 
-export default async function logError (errorMessage: ErrorMessage): Promise<void> {
-  const messageAlreadySent = await checkMessageAlreadySent(errorMessage);
+async function deliver (errorMessage: ErrorMessage): Promise<void> {
+  const messageAlreadySent = checkMessageAlreadySent(errorMessage);
   const userAgent = navigator.userAgent;
 
   if (messageAlreadySent || userAgent.toLowerCase().includes('bot')) {
@@ -36,5 +36,13 @@ export default async function logError (errorMessage: ErrorMessage): Promise<voi
     await sendErrorMessage(errorMessage, userAgent, clientIp, traceId);
   } catch (e) {
     await removeMessage(errorMessage);
+  }
+}
+
+export default async function logError (errorMessage: ErrorMessage): Promise<void> {
+  try {
+    await deliver(errorMessage);
+  } catch {
+    // Reporting must never raise a new error into the page.
   }
 }

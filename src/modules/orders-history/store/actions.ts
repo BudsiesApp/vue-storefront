@@ -5,7 +5,7 @@ import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
 import RootState from '@vue-storefront/core/types/RootState';
 import i18n from '@vue-storefront/i18n';
-import { AddressFailure, reportAddressApiFailure } from 'src/modules/shared';
+import { AddressFailure, getApiErrorMessage, reportAddressApiFailure } from 'src/modules/shared';
 
 import { FETCH_ORDERS_HISTORY, FETCH_SUGGESTED_PRODUCTS, REORDER_ITEM, FETCH_ORDER_DETAILS, SUBMIT_TAX_ID_UPDATE_REQUEST, REQUEST_ORDER_SHIPPING_ADDRESS_UPDATE, REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION } from '../types/store/actions';
 import { OrdersHistoryState } from '../types/store/state';
@@ -178,7 +178,7 @@ export const actions: ActionTree<OrdersHistoryState, RootState> = {
     }
 
     if (response.resultCode !== 200) {
-      const message = response.result?.errorMessage || fallbackMessage;
+      const message = getApiErrorMessage(response.result, fallbackMessage);
       failure.status = response.resultCode;
       failure.message = message;
       reportAddressApiFailure(failure);
@@ -209,7 +209,7 @@ export const actions: ActionTree<OrdersHistoryState, RootState> = {
     }
 
     if (response.resultCode !== 200) {
-      const message = response.result?.errorMessage || fallbackMessage;
+      const message = getApiErrorMessage(response.result, fallbackMessage);
       failure.status = response.resultCode;
       failure.message = message;
       reportAddressApiFailure(failure);

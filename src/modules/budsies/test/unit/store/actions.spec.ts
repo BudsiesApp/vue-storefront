@@ -17,6 +17,7 @@ jest.mock('@vue-storefront/i18n', () => ({
 }));
 
 jest.mock('src/modules/shared', () => ({
+  ...jest.requireActual('src/modules/shared/helpers/get-api-error-message'),
   reportAddressApiFailure: jest.fn()
 }));
 
@@ -98,5 +99,12 @@ describe('customer address failures', () => {
     await expect((actions as any).createNewAddress(context, { address: {} })).rejects.toThrow('Unable to add new address');
     expect(reportAddressApiFailure).toHaveBeenCalledWith({ operation: 'customer-address-create', message: 'Unable to add new address', status: undefined, userId: 4 });
     expect(EventBus.$emit).not.toHaveBeenCalled();
+  });
+
+  it('uses the fallback instead of a whitespace-only server message', async () => {
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500, result: { errorMessage: '  ' } });
+
+    await expect((actions as any).updateAddress(context, { address: { id: 9 } })).rejects.toThrow(new Error('Unable to update address'));
+    expect(reportAddressApiFailure).toHaveBeenCalledWith(expect.objectContaining({ message: 'Unable to update address', status: 500 }));
   });
 });

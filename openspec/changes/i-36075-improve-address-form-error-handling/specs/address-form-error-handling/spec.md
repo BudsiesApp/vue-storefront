@@ -7,7 +7,7 @@ This capability shows the actual address API failure message in order and custom
 ## ADDED Requirements
 
 ### Requirement: Address forms show API failure messages
-The system SHALL show the server error message unchanged when an order address update or confirmation, or a customer address create or update, fails. If the response has no non-empty error message, the system SHALL show a translated fallback for that operation. The status code SHALL NOT change which available server message is displayed. The system SHALL show one form-level error notification and SHALL NOT put server validation messages on individual input fields.
+The system SHALL show the server error message unchanged when an order address update or confirmation, or a customer address create or update, fails. A server error message is usable only when it is a string with non-whitespace text. If the response has no usable error message, the system SHALL show a translated fallback for that operation. The status code SHALL NOT change which available server message is displayed. The system SHALL show one form-level error notification and SHALL NOT put server validation messages on individual input fields.
 
 #### Scenario: Order address is no longer editable
 - **WHEN** the order address update API returns HTTP 400 with the message "This order address can no longer be edited. Please contact customer support for assistance."
@@ -22,6 +22,11 @@ The system SHALL show the server error message unchanged when an order address u
 #### Scenario: No server message is available
 - **WHEN** an order or customer address request fails without an error message
 - **THEN** its form shows a translated fallback in one error notification
+
+#### Scenario: Server message is not a string
+- **WHEN** an address request returns HTTP 500 and its `errorMessage` is an object, or an empty or whitespace-only string
+- **THEN** its form shows the translated fallback in one error notification and never shows `[object Object]`
+- **THEN** the address report uses the translated fallback as its message text
 
 #### Scenario: Request has no HTTP response
 - **WHEN** an order or customer address request fails because of a network error or timeout
@@ -38,13 +43,28 @@ Order address update and confirmation actions and customer address create and up
 - **WHEN** an account address list operation uses the customer address update action and its request fails
 - **THEN** the list receives a rejected action and does not present the operation as successful
 
+#### Scenario: Setting a stale address as default fails
+- **WHEN** a customer sets an address as the default shipping or billing address from the account address list and the update fails, for example with HTTP 404 because the address was deleted in another tab
+- **THEN** the list shows the failure message, or its translated fallback, in one visible error notification
+- **THEN** no TaskQueue notification is shown in addition to it
+
 ### Requirement: Report only server and no-response transport failures
-The system SHALL submit an address-specific report directly to the error-logging module for Graylog delivery for HTTP statuses 500 through 599 and for network or timeout failures without an HTTP response. It SHALL NOT submit an address-specific report for any other HTTP status. Reporting SHALL NOT depend on console verbosity and SHALL NOT delay or prevent form feedback.
+For HTTP statuses 500 through 599 and for network or timeout failures without an HTTP response, the system SHALL write a contextual browser console warning and submit an address-specific report to the error-logging module for Graylog delivery. It SHALL NOT produce either for any other HTTP status. The console warning SHALL contain the same message and limited context as the address report. It SHALL NOT depend on the error-logging configuration or console verbosity. The warning SHALL NOT use `console.error`, which the error-logging module forwards to Graylog as a second report. Reporting SHALL NOT delay or prevent form feedback.
 
 #### Scenario: HTTP 500 response
 - **WHEN** an address request returns HTTP 500 with or without a server message
 - **THEN** the form shows the server message if present, or a translated fallback
 - **THEN** the error-logging module receives an address failure report with status 500 for Graylog
+
+#### Scenario: Handled HTTP 503 response is visible in the console
+- **WHEN** an address request returns a valid JSON response with HTTP 503 and the form handles the error
+- **THEN** the browser console shows one warning with the message, operation, endpoint path, status 503, and the applicable IDs
+- **THEN** the warning has no token, full URL, request or response body, or address data
+
+#### Scenario: Error logging is not configured
+- **WHEN** an address request returns HTTP 503 and `errorLogging.serviceUrl` is not configured
+- **THEN** the browser console still shows the contextual warning
+- **THEN** no Graylog report is sent
 
 #### Scenario: Expected HTTP 4xx response
 - **WHEN** an address request returns HTTP 400, 401, 403, 404, 409, or 422
@@ -57,7 +77,7 @@ The system SHALL submit an address-specific report directly to the error-logging
 - **THEN** the form still shows its translated fallback
 
 ### Requirement: Address reports contain limited context
-Each address-specific Graylog report SHALL contain exactly these structured context fields: operation, fixed API endpoint path without origin or query, status or `none`, and numeric user ID, order ID, and address ID only when applicable and available. Unavailable IDs SHALL be omitted. Its message text SHALL include the API error message when available, or the translated fallback otherwise, along with controlled operation, status, and applicable IDs. The reporter SHALL NOT add the raw error object, request or response body, token, full URL, name, email, phone, street, or postcode. Its page URL SHALL have no query or fragment. Existing Graylog transport metadata is outside this address-specific field list.
+Each address-specific Graylog report SHALL contain exactly these structured context fields: operation, fixed API endpoint path without origin or query, status or `none`, and numeric user ID, order ID, and address ID only when applicable and available. Unavailable IDs SHALL be omitted. Its message text SHALL include the usable API error message when available, or the translated fallback otherwise, along with controlled operation, status, and applicable IDs. The reporter SHALL NOT add the raw error object, request or response body, token, full URL, name, email, phone, street, or postcode. Its page URL SHALL have no query or fragment. Existing Graylog transport metadata is outside this address-specific field list.
 
 #### Scenario: Order address update returns HTTP 503
 - **WHEN** the order address update returns HTTP 503 and user, order, and address IDs are available
@@ -84,3 +104,22 @@ Each address-specific Graylog report SHALL contain exactly these structured cont
 #### Scenario: Graylog delivery fails
 - **WHEN** Graylog cannot accept an address failure report
 - **THEN** the form still shows its error and remains usable
+
+### Requirement: Sent-message storage does not block error reporting
+The error-logging module SHALL send a report to Graylog even when it cannot read or write its stored list of sent messages. A report SHALL count as sent for duplicate suppression only after Graylog accepts it. This applies to address reports and to console error, window error, and unhandled rejection reports. A storage failure SHALL NOT produce an unhandled promise rejection or stop error-logging listeners from being registered.
+
+#### Scenario: Sent-message storage write fails
+- **WHEN** error logging is initialized, the next sent-message storage write rejects with `QuotaExceededError`, and an unexpected address API error occurs while Graylog is reachable
+- **THEN** the address report is sent to Graylog
+
+#### Scenario: Delivery fails after a storage failure
+- **WHEN** sent-message storage cannot be written and Graylog rejects the report
+- **THEN** the report is not counted as sent, and an identical later report is still sent
+
+#### Scenario: Console or window error during a storage failure
+- **WHEN** sent-message storage cannot be written and a console error or window error is reported
+- **THEN** the report is sent to Graylog and no unhandled promise rejection is produced
+
+#### Scenario: Stored sent messages cannot be restored
+- **WHEN** reading or parsing the stored sent-message list fails during error-logging initialization
+- **THEN** the module starts with an empty sent-message list and still registers its error listeners

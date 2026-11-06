@@ -36,10 +36,6 @@ export function reportAddressApiFailure ({ operation, message, status, userId, o
     return;
   }
 
-  if (isServer || !config.errorLogging?.serviceUrl) {
-    return;
-  }
-
   const context: Record<string, string | number> = {
     operation,
     endpoint: endpoints[operation],
@@ -60,6 +56,12 @@ export function reportAddressApiFailure ({ operation, message, status, userId, o
 
   if (addressId !== undefined) {
     context.addressId = addressId;
+  }
+
+  console.warn('Address API failure:', message, context);
+
+  if (isServer || !config.errorLogging?.serviceUrl) {
+    return;
   }
 
   const messageParts = [message, operation, String(context.status)];

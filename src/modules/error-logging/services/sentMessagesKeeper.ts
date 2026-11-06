@@ -15,9 +15,32 @@ function getMessage (errorMessage: ErrorMessage): SentMessage | undefined {
 }
 
 async function saveMessagesInLocalStorage (): Promise<void> {
-  const errorLoggingStorage = StorageManager.get(LOCAL_STORAGE_KEY);
+  try {
+    const errorLoggingStorage = StorageManager.get(LOCAL_STORAGE_KEY);
 
-  await errorLoggingStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sentMessages));
+    await errorLoggingStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sentMessages));
+  } catch {
+    // Persistence is best effort: the in-memory list still prevents duplicates.
+  }
+}
+
+async function readMessagesFromLocalStorage (): Promise<SentMessage[]> {
+  try {
+    const errorLoggingStorage = StorageManager.get(LOCAL_STORAGE_KEY);
+    const storageValue = await errorLoggingStorage.getItem(LOCAL_STORAGE_KEY);
+
+    if (!storageValue) {
+      return [];
+    }
+
+    const data = JSON.parse(storageValue);
+
+    return data
+      .map((item: any) => new SentMessage(item.hash, item.expirationTime))
+      .filter((message: SentMessage) => !message.isExpired);
+  } catch {
+    return [];
+  }
 }
 
 async function addMessage (errorMessage: ErrorMessage): Promise<void> {
@@ -62,32 +85,6 @@ export function checkMessageAlreadySent (errorMessage: ErrorMessage): boolean {
 }
 
 export async function restoreMessagesFromStorage (): Promise<void> {
-  const errorLoggingStorage = StorageManager.get(LOCAL_STORAGE_KEY);
-
-  const storageValue = await errorLoggingStorage.getItem(
-    LOCAL_STORAGE_KEY
-  );
-
-  if (!storageValue) {
-    sentMessages = [];
-    return;
-  }
-
-  const data = JSON.parse(storageValue);
-
-  const messages: SentMessage[] = [];
-
-  data.forEach((item: any) => {
-    const message = new SentMessage(
-      item.hash,
-      item.expirationTime
-    );
-
-    if (!message.isExpired) {
-      messages.push(message);
-    }
-  });
-
-  sentMessages = messages;
-  await errorLoggingStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sentMessages));
+  sentMessages = await readMessagesFromLocalStorage();
+  await saveMessagesInLocalStorage();
 }
