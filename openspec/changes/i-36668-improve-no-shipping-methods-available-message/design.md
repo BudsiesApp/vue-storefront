@@ -6,7 +6,9 @@ The shipping form binds its address with `v-model`, and `o-base-address-form` em
 
 Lookups are started by un-awaited `cart/syncTotals` calls and by Retry, without cancellation or ordering. The single `isShippingMethodsSyncing` boolean is cleared by whichever lookup finishes first, and each response replaces methods and error state when it arrives.
 
-`saveDataToCheckout()` calls `sendDataToCheckout()`, which immediately activates the payment step, and only then awaits the forced `cart/syncTotals` that performs the first lookup with the full address.
+`saveDataToCheckout()` calls `sendDataToCheckout()`, which immediately activates the payment step, and only then awaits the forced `cart/syncTotals` that performs the first lookup with the full address. `sendDataToCheckout()` emits the component's current `shipping` object, and the address fields stay editable unless the default-address option is selected.
+
+On the order-review step, `o-confirm-order` lets customers apply a coupon. Coupon processing runs a forced `cart/syncTotals`, which repeats the shipping-method lookup and clears methods and the selected carrier and method when the lookup fails or returns no methods. The place-order disabled condition checks coupon, totals, and payment-method synchronization but not shipping state, so it becomes enabled again once those finish. The same disabled state is passed to payment-method components as `is-order-placement-disabled`; the PayPal button is hidden while it is set.
 
 ## Goals / Non-Goals
 
@@ -20,13 +22,14 @@ Lookups are started by un-awaited `cart/syncTotals` calls and by Retry, without 
 - Make every lookup started from the shipping step use the displayed form address.
 - Let the most recently started lookup control methods, selection, error, and loading state.
 - Prevent advancing past the shipping step without a valid shipping method for the submitted address.
+- Prevent advancing with an address other than the one the final lookup checked.
+- Prevent payment initiation and order placement for a physical cart without a valid selected shipping method.
 - Cover these behaviors with regression unit tests.
 
 **Non-Goals:**
 
 - Changing shipping-method defaulting beyond clearing an invalid selection after a failed lookup.
 - Adding automatic retries, retry limits, or end-to-end browser scenarios.
-- Adding shipping-method guards to order confirmation or its place-order controls.
 - Serializing totals and payment-method synchronization beyond the shipping-method lookup.
 - Changing any API contract, virtual-cart checkout, or express checkout flows.
 
@@ -81,6 +84,24 @@ Otherwise checkout stays on the shipping step and displays the applicable error,
 
 The submission spans form validation, the address-validation dialog, the shipping-method lookup, and the payment-method and totals steps that `cart/syncTotals` runs after the lookup. The existing syncing and address-validating flags cover only parts of it, so `o-shipping` will hold a component-local submitting flag from the start of `saveDataToCheckout()` until it advances or stops. The flag is part of the Continue disabled condition, and `saveDataToCheckout()` returns immediately while it is set, so repeated activation cannot start a second submission.
 
+### Lock and confirm the submitted address during the final lookup
+
+Right before Continue writes the displayed address and starts the forced `cart/syncTotals`, `o-shipping` takes a copy of the displayed address fields (excluding carrier and method) and sets a component-local address-lock flag until the submission ends. While the flag is set, the address fields are disabled through `o-base-address-form`'s `is-form-fields-disabled` prop and the default-address checkbox is disabled. The lock starts after form and address validation, so focusing the first invalid field and applying an address-validation suggestion keep working.
+
+After the lookup, `sendDataToCheckout()` is called only when the displayed address still equals the copy. This also covers changes that do not come from typing, such as a login or checkout-load handler replacing the form address. If it differs, checkout stays on the shipping step; Continue becomes available again and a new submission checks the changed address.
+
+Automatically re-running the lookup for a changed address was rejected: with the lock in place, the address can change only through non-form paths, and stopping on the shipping step lets the customer see the result for the changed address before advancing.
+
+### Guard order placement on the order-review step
+
+`o-confirm-order` will treat the shipping method as confirmed when the cart is virtual, or when shipping-method synchronization is neither pending nor failed and the selected carrier and method exactly match an available method. The fallback selection of `getAvailableShippingMethod()` is not used, because it would report a method the customer did not select as valid.
+
+- The confirmed state is added to the place-order disabled condition, so the place-order button and the PayPal button (through `is-order-placement-disabled`) are disabled while a lookup is pending, after a failure, or with no valid selection.
+- `onPlaceOrder()` returns before starting payment, and `placeOrder()` returns without emitting `checkout-before-placeOrder` (resetting the in-progress flag), when the shipping method is not confirmed. This covers completion callbacks of payment components started before the shipping method became invalid.
+- When synchronization is not pending and the method is not confirmed for a physical cart, an alert explains `The selected shipping method is no longer available. Please review your shipping details.` with an Edit shipping button that emits `checkout-before-edit` for the shipping step, where the existing error, empty, and Retry states apply.
+
+A cart-level getter was rejected because only these two components need the check and `o-shipping` already compares against the selection captured when Continue was activated.
+
 ### Invalidate shipping methods after every failed lookup
 
 An unsuccessful response already replaces shipping methods with an empty list and clears the selected carrier and method. The thrown-request path will perform the same invalidation before it rethrows: it must not leave a previously valid shipping method associated with an address whose current lookup failed. This makes both failure paths represent the same unavailable result.
@@ -94,7 +115,8 @@ An unsuccessful response already replaces shipping methods with an empty list an
 Regression coverage will use Jest unit tests with mocked `CartService` and store boundaries:
 
 - `core/modules/cart/test/unit/store/methodsActions.spec.ts` for successful, empty, unsuccessful, thrown, and out-of-order lookups and the loading and error flags.
-- A theme component spec for `o-shipping` (display states, lookup address, Retry, and Continue).
+- A theme component spec for `o-shipping` (display states, lookup address, Retry, Continue, and address changes during the final lookup).
+- A theme component spec for `o-confirm-order` (order-review guard after failed and empty lookups, pending lookups, unavailable selection, and virtual carts).
 
 ## Risks / Trade-offs
 
@@ -105,4 +127,6 @@ Regression coverage will use Jest unit tests with mocked `CartService` and store
 - [Risk] The unvalidated displayed address is written to checkout state, and its persisted copy, before Continue. → Accepted: this matches the behavior before the form emitted copies, and Continue overwrites it with the validated address.
 - [Risk] A superseded lookup's `cart/syncTotals` still runs its payment-method and totals steps. → Accepted: those steps read the current checkout state; serializing them is a non-goal.
 - [Risk] A failed or empty lookup on Continue now keeps the customer on the shipping step. → Intended: the customer sees the error or empty feedback instead of leaving the shipping step without a valid method.
-- [Risk] A shipping-method lookup started after the shipping step fails or invalidates the selected method while the customer is on a later step. → Accepted: order confirmation is not guarded by this change; Continue to payment guarantees a valid method for the submitted address when the customer leaves the shipping step.
+- [Risk] A shipping-method lookup started after the shipping step fails or invalidates the selected method while the customer is on the order-review step. → Mitigation: order placement is disabled and refused until the customer returns to the shipping step and selects an available method.
+- [Risk] A payment component reports success after the shipping method became invalid, so payment was authorized without an order. → Accepted: refusing the order is preferable to placing it without a valid shipping method. Payment-provider handling of the unused authorization is not verified.
+- [Risk] A successful lookup on the order-review step silently replaces an unavailable selected method with the default method. → Accepted: existing behavior; the replacement is a valid method and is shown in the review summary.

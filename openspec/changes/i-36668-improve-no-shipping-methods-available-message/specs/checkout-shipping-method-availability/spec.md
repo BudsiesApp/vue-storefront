@@ -112,7 +112,43 @@ Checkout SHALL advance from the shipping step only after a shipping-method looku
 - **THEN** checkout stays on the shipping step
 - **AND** `o-shipping` displays the updated shipping methods
 
+#### Scenario: Address changes while the final lookup is pending
+- **WHEN** a customer has activated Continue to payment and the shipping-method lookup for the submitted address is pending
+- **THEN** the shipping address fields and the default-address option cannot be changed
+- **AND** checkout advances only if the displayed address still equals the address that lookup checked
+
 #### Scenario: Submission is in progress
 - **WHEN** a customer has activated Continue to payment and checkout has neither advanced nor stopped on the shipping step
 - **THEN** Continue to payment is disabled for the whole submission, including form and address validation and the totals synchronization that follows the shipping-method lookup
 - **AND** activating it again does not start another submission
+
+### Requirement: Order placement requires a valid shipping method
+On the order-review step of a cart with physical items, checkout SHALL NOT initiate payment or order placement unless shipping-method synchronization is neither pending nor failed and the selected shipping carrier and method are among the available shipping methods. Virtual carts SHALL keep their existing order-placement behavior.
+
+#### Scenario: Lookup on the review step fails
+- **WHEN** a shipping-method lookup started on the order-review step (for example by applying a coupon) fails and coupon, payment-method, and totals synchronization have finished
+- **THEN** the place-order button and the PayPal button are disabled
+- **AND** activating order placement does not initiate payment or emit order placement
+- **AND** the review step explains that the selected shipping method is no longer available and offers to edit shipping
+
+#### Scenario: Lookup on the review step returns no methods
+- **WHEN** a shipping-method lookup started on the order-review step returns no shipping methods
+- **THEN** the place-order button and the PayPal button are disabled
+- **AND** the review step explains that the selected shipping method is no longer available and offers to edit shipping
+
+#### Scenario: Lookup on the review step is pending
+- **WHEN** a shipping-method lookup is pending on the order-review step
+- **THEN** the place-order button and the PayPal button are disabled
+
+#### Scenario: Payment completes after the shipping method became invalid
+- **WHEN** a payment component reports success while the shipping method is not valid
+- **THEN** order placement is not emitted
+- **AND** the place-order controls leave the in-progress state
+
+#### Scenario: Valid shipping method
+- **WHEN** shipping-method synchronization is neither pending nor failed and the selected shipping method is available
+- **THEN** order placement follows its existing conditions
+
+#### Scenario: Virtual cart
+- **WHEN** the cart contains only virtual items
+- **THEN** order placement does not depend on shipping-method state

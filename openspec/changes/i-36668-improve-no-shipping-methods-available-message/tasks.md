@@ -31,3 +31,19 @@
 - [x] 6.1 Cart action tests: successful, empty, unsuccessful, thrown, and overlapping lookups in both completion orders, including the loading and error flags.
 - [x] 6.2 `o-shipping` tests: loading, error, empty, and available states; Retry payload uses the edited guest address and the signed-in default address; Retry does not advance; Continue advances only after a successful lookup with the selected method and stays on failure, empty result, or unavailable selection; Continue stays disabled and ignores repeated clicks until the submission ends.
 - [x] 6.3 Run applicable lint, type checks, and unit tests.
+
+## 7. Address Lock During the Final Lookup
+
+- [x] 7.1 In `o-shipping`, copy the displayed address and lock the address fields and default-address option from the start of the final lookup until the submission ends; advance only when the displayed address still equals the copy.
+
+## 8. Order-Review Guard
+
+- [x] 8.1 In `o-confirm-order`, derive a confirmed-shipping-method state (virtual cart, or no pending or failed lookup and an exact match of the selected carrier and method) and add it to the place-order disabled condition.
+- [x] 8.2 Refuse `onPlaceOrder()` and `placeOrder()` without a confirmed shipping method, resetting the in-progress flag.
+- [x] 8.3 Show the localized unavailable-shipping-method alert with an Edit shipping button for physical carts when no lookup is pending and the method is not confirmed; update i18n files.
+
+## 9. Follow-up Regression Coverage
+
+- [x] 9.1 `o-shipping` tests: address fields and default-address option locked while the final lookup is pending; checkout does not advance when the displayed address changes during that lookup.
+- [x] 9.2 `o-confirm-order` tests: after a failed or empty lookup the place-order and PayPal controls are disabled, the alert is shown, and neither payment nor order placement starts; disabled while a lookup is pending; payment success without a valid method does not place the order; valid method and virtual cart keep existing behavior.
+- [x] 9.3 Run applicable lint, type checks, and unit tests.
