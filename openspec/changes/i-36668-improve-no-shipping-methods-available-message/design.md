@@ -92,6 +92,10 @@ After the lookup, `sendDataToCheckout()` is called only when the displayed addre
 
 Automatically re-running the lookup for a changed address was rejected: with the lock in place, the address can change only through non-form paths, and stopping on the shipping step lets the customer see the result for the changed address before advancing.
 
+### Abandon the submission when the customer leaves the shipping step
+
+Checkout renders only the active step, so leaving the shipping step (Edit contact or the step header) destroys `o-shipping` while `saveDataToCheckout()` may still be awaiting the totals synchronization. `sendDataToCheckout()` emits a checkout event rather than touching the component, so a destroyed component would still advance checkout to payment. `o-shipping` will set a component-local left-step flag in `beforeDestroy()`, and the advance condition will require it to be unset. Disabling Edit contact and the step header during the submission was rejected: it would block navigation for the whole totals synchronization and still not cover other ways of leaving the step.
+
 ### Guard order placement on the order-review step
 
 `o-confirm-order` will treat the shipping method as confirmed when the cart is virtual, or when shipping-method synchronization is neither pending nor failed and the selected carrier and method exactly match an available method. The fallback selection of `getAvailableShippingMethod()` is not used, because it would report a method the customer did not select as valid.
@@ -115,7 +119,7 @@ An unsuccessful response already replaces shipping methods with an empty list an
 Regression coverage will use Jest unit tests with mocked `CartService` and store boundaries:
 
 - `core/modules/cart/test/unit/store/methodsActions.spec.ts` for successful, empty, unsuccessful, thrown, and out-of-order lookups and the loading and error flags.
-- A theme component spec for `o-shipping` (display states, lookup address, Retry, Continue, and address changes during the final lookup).
+- A theme component spec for `o-shipping` (display states, lookup address, Retry, Continue, address changes during the final lookup, and leaving the step during submission).
 - A theme component spec for `o-confirm-order` (order-review guard after failed and empty lookups, pending lookups, unavailable selection, and virtual carts).
 
 ## Risks / Trade-offs

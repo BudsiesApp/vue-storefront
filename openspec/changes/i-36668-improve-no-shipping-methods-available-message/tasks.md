@@ -47,3 +47,9 @@
 - [x] 9.1 `o-shipping` tests: address fields and default-address option locked while the final lookup is pending; checkout does not advance when the displayed address changes during that lookup.
 - [x] 9.2 `o-confirm-order` tests: after a failed or empty lookup the place-order and PayPal controls are disabled, the alert is shown, and neither payment nor order placement starts; disabled while a lookup is pending; payment success without a valid method does not place the order; valid method and virtual cart keep existing behavior.
 - [x] 9.3 Run applicable lint, type checks, and unit tests.
+
+## 10. Leaving the Shipping Step
+
+- [x] 10.1 In `o-shipping`, mark the step as left in `beforeDestroy()` and advance only while it is not marked.
+- [x] 10.2 `o-shipping` test: leaving the shipping step while the submission's totals synchronization is pending does not advance checkout.
+- [x] 10.3 Run applicable lint, type checks, and unit tests.

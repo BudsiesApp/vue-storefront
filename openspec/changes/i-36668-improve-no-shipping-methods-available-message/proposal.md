@@ -17,6 +17,7 @@ A follow-up review found two remaining paths to an order without a valid shippin
 - Let only the most recently started lookup control the displayed methods, selection, error, and loading state.
 - Make Continue to payment wait for the lookup for the submitted address and advance only when it succeeds and the selected shipping method is still available.
 - Lock the shipping address fields and the default-address option while Continue waits for the final lookup, and advance only when the displayed address still matches the address that lookup checked.
+- Abandon a pending Continue submission when the customer leaves the shipping step, so it cannot advance checkout afterwards.
 - On the order-review step of a physical cart, disable the place-order button and the PayPal button while a shipping-method lookup is pending, after it fails, or when the selected shipping method is not among the available methods; explain the problem with a link back to the shipping step, and refuse order placement in that state. Virtual carts keep their current behavior.
 - Add regression unit coverage for successful, empty, failed, retried, and overlapping lookups, for the Continue-to-payment guard including address changes during the final lookup, and for the order-review guard.
 

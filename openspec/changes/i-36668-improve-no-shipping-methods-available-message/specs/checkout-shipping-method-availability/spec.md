@@ -117,6 +117,10 @@ Checkout SHALL advance from the shipping step only after a shipping-method looku
 - **THEN** the shipping address fields and the default-address option cannot be changed
 - **AND** checkout advances only if the displayed address still equals the address that lookup checked
 
+#### Scenario: Customer leaves the shipping step during submission
+- **WHEN** a customer has activated Continue to payment and leaves the shipping step before the submission ends
+- **THEN** the submission does not advance checkout when it completes
+
 #### Scenario: Submission is in progress
 - **WHEN** a customer has activated Continue to payment and checkout has neither advanced nor stopped on the shipping step
 - **THEN** Continue to payment is disabled for the whole submission, including form and address validation and the totals synchronization that follows the shipping-method lookup
