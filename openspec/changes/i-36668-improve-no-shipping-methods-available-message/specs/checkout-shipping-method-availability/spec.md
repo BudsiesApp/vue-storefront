@@ -121,6 +121,11 @@ Checkout SHALL advance from the shipping step only after a shipping-method looku
 - **WHEN** a customer has activated Continue to payment and leaves the shipping step before the submission ends
 - **THEN** the submission does not advance checkout when it completes
 
+#### Scenario: Customer leaves the shipping step during address validation
+- **WHEN** a customer has activated Continue to payment and leaves the shipping step while form or address validation is pending
+- **THEN** after validation completes, the submission does not persist customer data, does not change checkout shipping details, does not start a shipping-method lookup, and does not advance checkout
+- **AND** an address submitted from the shipping step after returning is kept
+
 #### Scenario: Submission is in progress
 - **WHEN** a customer has activated Continue to payment and checkout has neither advanced nor stopped on the shipping step
 - **THEN** Continue to payment is disabled for the whole submission, including form and address validation and the totals synchronization that follows the shipping-method lookup

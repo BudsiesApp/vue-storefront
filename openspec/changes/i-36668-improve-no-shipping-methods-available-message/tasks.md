@@ -53,3 +53,9 @@
 - [x] 10.1 In `o-shipping`, mark the step as left in `beforeDestroy()` and advance only while it is not marked.
 - [x] 10.2 `o-shipping` test: leaving the shipping step while the submission's totals synchronization is pending does not advance checkout.
 - [x] 10.3 Run applicable lint, type checks, and unit tests.
+
+## 11. Leaving During Validation
+
+- [x] 11.1 In `o-shipping`, stop `saveDataToCheckout()` when the shipping step was left after form validation and after address validation, before persisting data, writing the address, or starting synchronization.
+- [x] 11.2 `o-shipping` test: leaving during delayed address validation, returning, and submitting a new address keeps the new address, starts no lookup for the old address, and advances only once.
+- [x] 11.3 Run applicable lint, type checks, and unit tests.
