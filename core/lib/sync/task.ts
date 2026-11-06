@@ -6,6 +6,7 @@ import rootStore from '@vue-storefront/core/store'
 import { adjustMultistoreApiUrl, currentStoreView } from '@vue-storefront/core/lib/multistore'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import Task from '@vue-storefront/core/lib/sync/types/Task'
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import * as entities from '@vue-storefront/core/lib/store/entities'
@@ -98,15 +99,18 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
 
   url = eventPayload.url;
 
+  let responseStatus: number
+
   return fetch(url, payload).then((response) => {
+    responseStatus = response.status
     const contentType = response.headers.get('content-type')
-    if (contentType && contentType.includes('application/json')) {
-      return response.json()
-    } else {
-      const msg = i18n.t('Error with response - bad content-type! ' + url)
-      Logger.error(msg.toString(), 'sync')()
-      reject(msg)
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new TaskResponseError(i18n.t('Error with response - bad content-type! ' + url).toString(), responseStatus)
     }
+
+    return response.json().catch((error) => {
+      throw new TaskResponseError(error?.message || String(error), responseStatus)
+    })
   }).then((jsonResponse) => {
     if (jsonResponse) {
       const responseCode = parseInt(jsonResponse.code)
@@ -188,9 +192,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
         resolve(task)
       }
     } else {
-      const msg = i18n.t('Unhandled error, wrong response format! ' + url)
-      Logger.error(msg.toString(), 'sync')()
-      reject(msg)
+      throw new TaskResponseError(i18n.t('Unhandled error, wrong response format! ' + url).toString(), responseStatus)
     }
   }).catch((err) => {
     Logger.error(err, 'sync')()

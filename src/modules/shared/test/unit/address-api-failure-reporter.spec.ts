@@ -1,6 +1,6 @@
 import config from 'config';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
-import { REPORT_ERROR, reportAddressApiFailure } from '../../helpers/report-address-api-failure';
+import { REPORT_ERROR, reportAddressApiFailure } from '../../services/address-api-failure-reporter';
 
 jest.mock('config', () => ({ errorLogging: { serviceUrl: 'https://graylog.example.com' } }));
 jest.mock('@vue-storefront/core/helpers', () => ({ isServer: false }));

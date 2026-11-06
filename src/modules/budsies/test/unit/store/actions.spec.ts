@@ -1,5 +1,6 @@
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import { reportAddressApiFailure } from 'src/modules/shared';
 
@@ -107,4 +108,12 @@ describe('customer address failures', () => {
     await expect((actions as any).updateAddress(context, { address: { id: 9 } })).rejects.toThrow(new Error('Unable to update address'));
     expect(reportAddressApiFailure).toHaveBeenCalledWith(expect.objectContaining({ message: 'Unable to update address', status: 500 }));
   });
+
+  it('keeps the HTTP status of a non-JSON update response', async () => {
+    (TaskQueue.execute as jest.Mock).mockRejectedValue(new TaskResponseError('Error with response - bad content-type!', 403));
+
+    await expect((actions as any).updateAddress(context, { address: { id: 9 } })).rejects.toThrow(new Error('Unable to update address'));
+    expect(reportAddressApiFailure).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+  });
 });
+

@@ -1,4 +1,5 @@
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError';
 import { reportAddressApiFailure } from 'src/modules/shared';
 
 import { actions } from '../../store/actions';
@@ -58,4 +59,14 @@ describe('order address failures', () => {
       message: 'Unable to update order shipping address', status: 500
     }));
   });
+
+  it.each([403, 503])('keeps the HTTP %i status of a non-JSON response', async (status) => {
+    (TaskQueue.execute as jest.Mock).mockRejectedValue(new TaskResponseError('Error with response - bad content-type!', status));
+
+    await expect((actions as any)[REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION](context, {
+      addressId: 9, orderId: 7
+    })).rejects.toThrow(new Error('Unable to confirm address'));
+    expect(reportAddressApiFailure).toHaveBeenCalledWith(expect.objectContaining({ status }));
+  });
 });
+

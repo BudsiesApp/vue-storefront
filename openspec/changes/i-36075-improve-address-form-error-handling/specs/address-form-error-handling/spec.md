@@ -49,7 +49,7 @@ Order address update and confirmation actions and customer address create and up
 - **THEN** no TaskQueue notification is shown in addition to it
 
 ### Requirement: Report only server and no-response transport failures
-For HTTP statuses 500 through 599 and for network or timeout failures without an HTTP response, the system SHALL write a contextual browser console warning and submit an address-specific report to the error-logging module for Graylog delivery. It SHALL NOT produce either for any other HTTP status. The console warning SHALL contain the same message and limited context as the address report. It SHALL NOT depend on the error-logging configuration or console verbosity. The warning SHALL NOT use `console.error`, which the error-logging module forwards to Graylog as a second report. Reporting SHALL NOT delay or prevent form feedback.
+For HTTP statuses 500 through 599 and for network or timeout failures without an HTTP response, the system SHALL write a contextual browser console warning and submit an address-specific report to the error-logging module for Graylog delivery. It SHALL NOT produce either for any other HTTP status. A request that receives an HTTP response which cannot be processed, such as an HTML error page or an unparsable JSON body, SHALL be classified by that response's HTTP status. Only a failure without any HTTP response SHALL use status `none`. The console warning SHALL contain the same message and limited context as the address report. It SHALL NOT depend on the error-logging configuration or console verbosity. The warning SHALL NOT use `console.error`, which the error-logging module forwards to Graylog as a second report. Reporting SHALL NOT delay or prevent form feedback.
 
 #### Scenario: HTTP 500 response
 - **WHEN** an address request returns HTTP 500 with or without a server message
@@ -70,6 +70,16 @@ For HTTP statuses 500 through 599 and for network or timeout failures without an
 - **WHEN** an address request returns HTTP 400, 401, 403, 404, 409, or 422
 - **THEN** the form shows the server message if present, or a translated fallback
 - **THEN** the error-logging module receives no address-specific report for that response
+
+#### Scenario: Non-JSON HTTP error response
+- **WHEN** an address request receives an HTML response with HTTP 403
+- **THEN** the form shows its translated fallback
+- **THEN** no console warning or address-specific report is produced
+
+#### Scenario: Non-JSON HTTP server error response
+- **WHEN** an address request receives an HTML response with HTTP 503
+- **THEN** the form shows its translated fallback
+- **THEN** the console warning and the address failure report have status 503, not `none`
 
 #### Scenario: No-response transport failure
 - **WHEN** an address request fails without an HTTP response
@@ -106,7 +116,7 @@ Each address-specific Graylog report SHALL contain exactly these structured cont
 - **THEN** the form still shows its error and remains usable
 
 ### Requirement: Sent-message storage does not block error reporting
-The error-logging module SHALL send a report to Graylog even when it cannot read or write its stored list of sent messages. A report SHALL count as sent for duplicate suppression only after Graylog accepts it. This applies to address reports and to console error, window error, and unhandled rejection reports. A storage failure SHALL NOT produce an unhandled promise rejection or stop error-logging listeners from being registered.
+The error-logging module SHALL send a report to Graylog even when it cannot read or write its stored list of sent messages. A report SHALL count as sent for duplicate suppression only after Graylog accepts it, and only accepted reports SHALL be written to the stored sent-message list. A report that is still being delivered SHALL suppress identical concurrent reports only in memory. This applies to address reports and to console error, window error, and unhandled rejection reports. A storage failure SHALL NOT produce an unhandled promise rejection or stop error-logging listeners from being registered.
 
 #### Scenario: Sent-message storage write fails
 - **WHEN** error logging is initialized, the next sent-message storage write rejects with `QuotaExceededError`, and an unexpected address API error occurs while Graylog is reachable
@@ -123,3 +133,7 @@ The error-logging module SHALL send a report to Graylog even when it cannot read
 #### Scenario: Stored sent messages cannot be restored
 - **WHEN** reading or parsing the stored sent-message list fails during error-logging initialization
 - **THEN** the module starts with an empty sent-message list and still registers its error listeners
+
+#### Scenario: Failed delivery is not restored as sent
+- **WHEN** Graylog rejects a report, sent-message storage writes fail, and the page is reloaded
+- **THEN** the restored sent-message list does not contain that report, and an identical later report is still sent

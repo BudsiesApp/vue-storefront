@@ -7,12 +7,7 @@ import SentMessage from '../type/SentMessage';
 
 const KEEPING_LIMIT = 10;
 let sentMessages: SentMessage[] = [];
-
-function getMessage (errorMessage: ErrorMessage): SentMessage | undefined {
-  const hash = getMessageHash(errorMessage);
-
-  return sentMessages.find((message) => message.hash === hash);
-}
+const pendingHashes = new Set<string>();
 
 async function saveMessagesInLocalStorage (): Promise<void> {
   try {
@@ -43,45 +38,38 @@ async function readMessagesFromLocalStorage (): Promise<SentMessage[]> {
   }
 }
 
-async function addMessage (errorMessage: ErrorMessage): Promise<void> {
+export function checkMessageAlreadySent (errorMessage: ErrorMessage): boolean {
   const hash = getMessageHash(errorMessage);
 
-  const message = new SentMessage(hash);
+  if (pendingHashes.has(hash)) {
+    return true;
+  }
+
+  const message = sentMessages.find((sentMessage) => sentMessage.hash === hash);
+
+  return !!message && !message.isExpired;
+}
+
+export function markMessagePending (errorMessage: ErrorMessage): void {
+  pendingHashes.add(getMessageHash(errorMessage));
+}
+
+export function releasePendingMessage (errorMessage: ErrorMessage): void {
+  pendingHashes.delete(getMessageHash(errorMessage));
+}
+
+export async function keepSentMessage (errorMessage: ErrorMessage): Promise<void> {
+  const hash = getMessageHash(errorMessage);
+
+  sentMessages = sentMessages.filter((message) => message.hash !== hash);
 
   if (sentMessages.length >= KEEPING_LIMIT) {
     sentMessages.shift();
   }
 
-  sentMessages.push(message);
+  sentMessages.push(new SentMessage(hash));
 
-  return saveMessagesInLocalStorage();
-}
-
-export async function keepMessage (errorMessage: ErrorMessage): Promise<void> {
-  const message = getMessage(errorMessage);
-
-  if (!message) {
-    await addMessage(errorMessage);
-    return;
-  }
-
-  if (!message.isExpired) {
-    return;
-  }
-
-  message.refresh();
-}
-
-export async function removeMessage (errorMessage: ErrorMessage): Promise<void> {
-  const messageHash = getMessageHash(errorMessage);
-  sentMessages = sentMessages.filter((message) => message.hash !== messageHash);
-  return saveMessagesInLocalStorage();
-}
-
-export function checkMessageAlreadySent (errorMessage: ErrorMessage): boolean {
-  const message = getMessage(errorMessage);
-
-  return !!message && !message.isExpired;
+  await saveMessagesInLocalStorage();
 }
 
 export async function restoreMessagesFromStorage (): Promise<void> {

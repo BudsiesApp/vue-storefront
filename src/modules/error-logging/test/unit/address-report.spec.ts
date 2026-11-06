@@ -9,8 +9,9 @@ jest.mock('@vue-storefront/core/store', () => ({
 jest.mock('../../helpers/resolveIp', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('../../services/sentMessagesKeeper', () => ({
   checkMessageAlreadySent: jest.fn(() => false),
-  keepMessage: jest.fn(),
-  removeMessage: jest.fn()
+  keepSentMessage: jest.fn(),
+  markMessagePending: jest.fn(),
+  releasePendingMessage: jest.fn()
 }));
 jest.mock('../../services/errorSender', () => ({ sendErrorMessage: jest.fn() }));
 

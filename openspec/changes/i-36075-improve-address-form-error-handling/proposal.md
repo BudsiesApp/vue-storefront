@@ -26,7 +26,8 @@ None.
 ## Impact
 
 - Storefront: order address actions and page, customer address actions and their account form and address list callers.
-- Shared module: one address failure reporting helper and one API error message helper.
+- Shared module: one address failure reporting service and one API error message helper.
+- Core TaskQueue: failures after an HTTP response reject with an error that keeps the HTTP status.
 - Error logging: allowlisted address context fields in the existing Graylog sender; address reports use a page URL without query or fragment data; sent-message storage is best effort for every reporting path.
 - Release: the storefront PR must update the `src/themes/petsies-capybara` submodule pin to the theme PR revision. Both PRs are released together.
 - Magento and VSF API contracts: no change.

@@ -33,13 +33,15 @@ The order address update and confirmation actions and the customer address creat
 
 A shared pure helper, `getApiErrorMessage(result, fallback)` in `src/modules/shared/helpers/get-api-error-message.ts`, returns `result.errorMessage` only when it is a string with non-whitespace text, and the fallback otherwise. Both the thrown message and the reported message come from it, so neither the UI nor the logging service receives a non-string value.
 
+TaskQueue resolves a JSON response of any status, but rejects when the response is not JSON or its JSON cannot be processed. It currently rejects with a string or a `SyntaxError`, which loses the HTTP status, and network failures never carry a response. TaskQueue therefore rejects every failure that happened after an HTTP response with a `TaskResponseError`, defined in `core/lib/sync/types/TaskResponseError.ts`, that carries that response's HTTP `status` and keeps the existing message text. Network and timeout failures keep their original rejection. The address actions take the status only from a `TaskResponseError`, so an HTML 403 is an expected 4xx failure and an HTML 503 is reported as 503. Only a failure without an HTTP response is reported with status `none`. Both kinds of rejection show the translated fallback, because a response that cannot be processed has no usable server message.
+
 **Alternative:** Return failed `Task` objects and let each caller inspect `resultCode`. This changes the existing rejection contract, including other callers of `budsies/updateAddress`, and makes an unchecked failure look like success.
 
 **Alternative:** Serialize a non-string `errorMessage` into the displayed text. The object is not written for customers and may contain internal details.
 
 ### Report only 5xx and no-response failures
 
-Put the side-effecting `reportAddressApiFailure` helper in `src/modules/shared/helpers/report-address-api-failure.ts` and export it from the shared module index. The Budsies and orders-history actions consume that public export after receiving a failed `Task` or catching a TaskQueue rejection. The helper converts a numeric `resultCode` or numeric string to an HTTP status, then reports only statuses 500 through 599 and a transport rejection with no HTTP response. Every other HTTP status, including 400, 401, 403, 404, 409, and 422, produces form feedback without a console warning or address report. The helper does not decide the text shown to the user.
+Put the side-effecting `reportAddressApiFailure` service in `src/modules/shared/services/address-api-failure-reporter.ts` and export it from the shared module index. It is a service, not a helper, because it writes console output and emits an EventBus event; helpers stay pure. The Budsies and orders-history actions consume that public export after receiving a failed `Task` or catching a TaskQueue rejection. The service converts a numeric `resultCode` or numeric string to an HTTP status, then reports only statuses 500 through 599 and a transport rejection with no HTTP response. Every other HTTP status, including 400, 401, 403, 404, 409, and 422, produces form feedback without a console warning or address report. The service does not decide the text shown to the user.
 
 Extend the error-logging module's `ErrorMessage` with an optional generic `context` map. The sender maps its entries to separate Graylog GELF fields. The address reporter constructs only these fields:
 
@@ -70,13 +72,15 @@ Address code does not import the error-logging module, because the Graylog sende
 
 **Alternative:** Call the Graylog endpoint from address actions. That would duplicate the existing reporting transport, deduplication, and metadata.
 
-### Make sent-message storage best effort
+### Persist only delivered reports
 
-The in-memory sent-message list remains the source of truth for duplicate suppression. Saving it to `localStorage` becomes best effort: the sent-message keeper catches storage read, write, and parse failures and never rejects because of them. `logError` therefore always continues to the sender after keeping a report. If the sender fails, `logError` removes the report from the in-memory list, so it is not counted as sent. `logError` catches every internal failure and does not reject, so the console error, window error, and unhandled rejection listeners cannot create unhandled rejections. That also prevents a feedback loop through the unhandled rejection listener. If restoring stored messages fails during initialization, the module starts with an empty list and still registers its listeners.
+The sent-message keeper holds two in-memory sets: confirmed reports and reports whose delivery is pending. `logError` checks both sets, then marks the report pending synchronously, before any `await`, so identical concurrent reports are suppressed. After Graylog accepts the report, the keeper moves it to the confirmed list, replacing an expired entry with the same hash, and persists only that confirmed list. When delivery fails, the keeper only clears the pending mark, so nothing undelivered is ever written to storage. A failed storage cleanup can therefore no longer leave an undelivered report that is restored as sent after a reload. Pending marks are never persisted.
+
+Saving the confirmed list to `localStorage` is best effort: the keeper catches storage read, write, and parse failures and never rejects because of them. If the confirmed list cannot be saved, an identical report may be sent again after a reload; a duplicate is preferable to a lost report. `logError` catches every internal failure and does not reject, so the console error, window error, and unhandled rejection listeners cannot create unhandled rejections. That also prevents a feedback loop through the unhandled rejection listener. If restoring stored messages fails during initialization, the module starts with an empty list and still registers its listeners.
 
 A storage failure cannot be written with `console.error`, because the console interceptor would send it back through `logError`. The keeper ignores storage failures silently, because the report itself is still delivered.
 
-**Alternative:** Keep the report only after delivery succeeds. That leaves a window in which concurrent identical reports all pass the duplicate check. Removing the report on delivery failure keeps the current ordering and meets the requirement.
+**Alternative:** Persist the report before delivery and remove it if delivery fails. A failed removal write leaves an undelivered report in storage, which suppresses identical reports after a reload.
 
 ### Show one message at the submitting UI
 

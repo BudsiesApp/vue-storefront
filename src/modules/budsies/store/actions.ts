@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import RootState from '@vue-storefront/core/types/RootState'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError'
 import { processURLAddress } from '@vue-storefront/core/helpers'
 import { ActionTree, Commit } from 'vuex'
 import config from 'config'
@@ -461,7 +462,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
         silent: true
       });
     } catch (error) {
-      failure.status = error?.response?.status;
+      failure.status = error instanceof TaskResponseError ? error.status : undefined;
       reportAddressApiFailure(failure);
       throw new Error(fallbackMessage);
     }
@@ -494,7 +495,7 @@ export const actions: ActionTree<BudsiesState, RootState> = {
         silent: true
       });
     } catch (error) {
-      failure.status = error?.response?.status;
+      failure.status = error instanceof TaskResponseError ? error.status : undefined;
       reportAddressApiFailure(failure);
       throw new Error(fallbackMessage);
     }

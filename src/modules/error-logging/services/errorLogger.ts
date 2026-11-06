@@ -3,7 +3,12 @@ import rootStore from '@vue-storefront/core/store'
 import ErrorMessage from '../type/ErrorMessage';
 import { SN_ERROR_LOGGING } from '../type/StoreMutations';
 import resolveIp from '../helpers/resolveIp';
-import { checkMessageAlreadySent, keepMessage, removeMessage } from './sentMessagesKeeper'
+import {
+  checkMessageAlreadySent,
+  keepSentMessage,
+  markMessagePending,
+  releasePendingMessage
+} from './sentMessagesKeeper'
 import { sendErrorMessage } from './errorSender';
 
 let clientIpCache: string | undefined;
@@ -19,23 +24,22 @@ async function resolveIpWithCache (): Promise<string> {
 }
 
 async function deliver (errorMessage: ErrorMessage): Promise<void> {
-  const messageAlreadySent = checkMessageAlreadySent(errorMessage);
   const userAgent = navigator.userAgent;
 
-  if (messageAlreadySent || userAgent.toLowerCase().includes('bot')) {
+  if (checkMessageAlreadySent(errorMessage) || userAgent.toLowerCase().includes('bot')) {
     return;
   }
 
-  const clientIp = await resolveIpWithCache().catch(() => 'Unable to resolve ip');
-
-  await keepMessage(errorMessage);
-
-  const traceId = rootStore.getters[`${SN_ERROR_LOGGING}/traceId`];
+  markMessagePending(errorMessage);
 
   try {
+    const clientIp = await resolveIpWithCache().catch(() => 'Unable to resolve ip');
+    const traceId = rootStore.getters[`${SN_ERROR_LOGGING}/traceId`];
+
     await sendErrorMessage(errorMessage, userAgent, clientIp, traceId);
-  } catch (e) {
-    await removeMessage(errorMessage);
+    await keepSentMessage(errorMessage);
+  } finally {
+    releasePendingMessage(errorMessage);
   }
 }
 

@@ -5,7 +5,7 @@
 - [x] 1.1 Add translated fallback messages for order update, order confirmation, customer create, and customer update; run `yarn update-i18n-files` and verify the keys are present.
 - [x] 1.2 Subscribe the error-logging module to the shared `REPORT_ERROR` EventBus event and extend its message type and sender with a generic structured context map; verify the address reporter supplies only operation, endpoint, status, and applicable numeric user, order, and address IDs.
 - [x] 1.3 Let `logError` send a report when IP lookup rejects by using an unavailable-IP value; verify a reachable Graylog endpoint still receives the report.
-- [x] 1.4 Add `reportAddressApiFailure` in `src/modules/shared/helpers/report-address-api-failure.ts` and export it from the shared module index; verify it handles numeric and numeric-string status codes, calls `logError` for HTTP 500–599 and no-response transport failures, and skips all other HTTP statuses.
+- [x] 1.4 Add `reportAddressApiFailure` in `src/modules/shared/services/address-api-failure-reporter.ts` and export it from the shared module index; verify it handles numeric and numeric-string status codes, submits a report for HTTP 500–599 and no-response transport failures, and skips all other HTTP statuses.
 - [x] 1.5 Send the API error message or translated fallback with controlled operation and ID context, build a page URL without query or fragment, guard browser-only reporting and missing service configuration, and catch the `logError` promise in the EventBus listener without awaiting it; verify no raw error object, request payload, or query string is added to the report and no reporting failure changes form feedback.
 
 ## 2. Order and customer requests
@@ -29,4 +29,11 @@
 - [x] 4.4 Write one contextual `console.warn` for each qualifying 5xx or no-response address failure before the browser and service configuration checks; verify it contains only the message and controlled context, and that no warning is written for other statuses.
 - [x] 4.5 Run the affected unit tests, type check, and lint.
 - [ ] 4.6 Update the storefront `src/themes/petsies-capybara` submodule pin to the theme PR revision that contains these changes, and confirm the pin in the storefront PR diff.
+
+## 5. Second review fixes
+
+- [x] 5.1 Make TaskQueue reject failures after an HTTP response with a `TaskResponseError` that carries the HTTP status, and take the reported status only from it in all four address actions; verify an HTML 403 is not reported, an HTML 503 is reported with status 503, an unparsable JSON body keeps its status, and a network failure is reported with status `none`.
+- [x] 5.2 Track pending reports in memory and persist only reports that Graylog accepted; verify a failed delivery with failing storage writes is not restored as sent after a reload, and identical concurrent reports are still suppressed.
+- [x] 5.3 Move `reportAddressApiFailure` to `src/modules/shared/services/address-api-failure-reporter.ts` and keep its shared module exports.
+- [x] 5.4 Run the affected unit tests, type check, and lint.
 
