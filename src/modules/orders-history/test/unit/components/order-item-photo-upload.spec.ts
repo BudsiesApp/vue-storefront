@@ -21,17 +21,23 @@ jest.mock('../../..', () => ({
   IS_REORDERING_ITEM: 'ordersHistory/isReorderingItem'
 }));
 
-const form = { name: 'PhotoForm', props: { orderItemId: { type: Number, required: true }, productSku: { type: String, required: true } }, render: h => h('div') };
+const form = {
+  name: 'PhotoForm',
+  props: { orderItemId: { type: Number, required: true }, productSku: { type: String, required: true } },
+  render (h) {
+    const alternative = this.$scopedSlots['alternative-action'];
+    return h('div', { class: 'photo-form' }, alternative ? [h('div', { class: 'photo-form-alternative' }, alternative())] : []);
+  }
+};
 const dispatch = jest.fn().mockResolvedValue(undefined);
 const action = (code: string) => ({ code, name: '', message: code, blocking_progress: true, url: null, open_in_new_tab: false });
-const photosMessage = "We're waiting for your photos. Please upload them here or send them by email.";
 const orderItem = { item_id: 42, product: { sku: 'pet' }, extension_attributes: {} };
 
-function mountActions (actionsList = [action('awaiting_artwork'), action('awaiting_customization')]) {
+function mountActions (actionsList = [action('awaiting_artwork'), action('awaiting_customization')], injectForm = true, item = orderItem) {
   return shallowMount(OrderItemActions, {
-    propsData: { orderItem, actionsList, orderId: 1 },
+    propsData: { orderItem: item, actionsList, orderId: 1 },
     provide: {
-      OrderItemPhotoUploadForm: form,
+      ...(injectForm ? { OrderItemPhotoUploadForm: form } : {}),
       [i18nInjectionKey as symbol]: { t: (key: string) => key },
       [routerInjectionKey as symbol]: { push: jest.fn() },
       [storeInjectionKey as symbol]: { dispatch, getters: {} }
@@ -66,13 +72,80 @@ describe('inline photo form in order item actions', () => {
     expect(messages(wrapper)).toEqual(['awaiting_artwork', 'awaiting_customization']);
   });
 
-  it('replaces only the awaiting artwork message once ready', async () => {
+  it('hides only the generic awaiting artwork prompt once the form is ready', async () => {
     const actionsList = [action('awaiting_artwork'), action('awaiting_customization')];
     const wrapper = mountActions(actionsList);
     wrapper.findComponent(form).vm.$emit('ready-changed', true);
     await wrapper.vm.$nextTick();
-    expect(messages(wrapper)).toEqual([photosMessage, 'awaiting_customization']);
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
+    expect(wrapper.text()).not.toContain("We're waiting for your photos.");
+    expect(wrapper.findAllComponents(form)).toHaveLength(1);
     expect(actionsList[0].message).toBe('awaiting_artwork');
+  });
+
+  it('marks the photo panel only while the form is ready', async () => {
+    const wrapper = mountActions();
+    expect(wrapper.classes()).not.toContain('-photo-panel');
+    expect(wrapper.findAll('._action-with-message-container.-photo-panel')).toHaveLength(0);
+    wrapper.findComponent(form).vm.$emit('ready-changed', true);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.classes()).toContain('-photo-panel');
+    expect(wrapper.findAll('._action-with-message-container.-photo-panel')).toHaveLength(1);
+    wrapper.findComponent(form).vm.$emit('ready-changed', false);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.classes()).not.toContain('-photo-panel');
+    expect(messages(wrapper)).toEqual(['awaiting_artwork', 'awaiting_customization']);
+  });
+
+  it('keeps the backend message and action when the form is not injected', async () => {
+    const wrapper = mountActions([{ ...action('awaiting_artwork'), url: 'https://example.test/send' }], false);
+    await wrapper.vm.$nextTick();
+    expect(messages(wrapper)).toEqual(['awaiting_artwork']);
+    expect(wrapper.find('a._available-action').attributes('href')).toBe('https://example.test/send');
+    expect(wrapper.classes()).not.toContain('-photo-panel');
+  });
+
+  it('forwards a real alternative action into the form slot and hides the generic one when ready', async () => {
+    const alternative = { ...action('awaiting_artwork'), name: 'Send by email', url: 'https://example.test/send', open_in_new_tab: true };
+    const wrapper = mountActions([alternative]);
+    expect(wrapper.findAll('a._available-action')).toHaveLength(1);
+    wrapper.findComponent(form).vm.$emit('ready-changed', true);
+    await wrapper.vm.$nextTick();
+    const link = wrapper.findComponent(form).find('a');
+    expect(wrapper.findAll('a')).toHaveLength(1);
+    expect(link.attributes('href')).toBe('https://example.test/send');
+    expect(link.attributes('target')).toBe('_blank');
+    expect(link.attributes('aria-label')).toBe('{action}: {item} opens in new tab');
+    expect(link.text()).toBe('Send by email');
+  });
+
+  it('does not invent an alternative action when the API supplies no URL', async () => {
+    const wrapper = mountActions();
+    wrapper.findComponent(form).vm.$emit('ready-changed', true);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.findComponent(form).find('a').exists()).toBe(false);
+    expect(wrapper.find('a').exists()).toBe(false);
+  });
+
+  it('keeps unrelated actions intact beside the ready panel', async () => {
+    const reorder = { ...action('re-order'), name: 'Re-order', message: '', blocking_progress: false };
+    const support = { ...action('contact_support'), name: 'Contact Support', message: '', blocking_progress: false, url: 'https://example.test/support' };
+    const wrapper = mountActions([action('awaiting_artwork'), action('awaiting_customization'), reorder, support]);
+    wrapper.findComponent(form).vm.$emit('ready-changed', true);
+    await wrapper.vm.$nextTick();
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
+    expect(wrapper.find('._available-actions a').attributes('href')).toBe('https://example.test/support');
+    expect(wrapper.findAll('._available-actions ._available-action')).toHaveLength(2);
+  });
+
+  it('does not share readiness between items', async () => {
+    const first = mountActions();
+    const second = mountActions(undefined, true, { ...orderItem, item_id: 43 });
+    first.findComponent(form).vm.$emit('ready-changed', true);
+    await first.vm.$nextTick();
+    expect(messages(first)).toEqual(['awaiting_customization']);
+    expect(messages(second)).toEqual(['awaiting_artwork', 'awaiting_customization']);
+    expect(second.findComponent(form).props()).toEqual({ orderItemId: 43, productSku: 'pet' });
   });
 
   it('refreshes the order history after submission', () => {

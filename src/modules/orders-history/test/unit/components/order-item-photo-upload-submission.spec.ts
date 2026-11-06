@@ -17,7 +17,12 @@ import OrderItemActions from '../../../components/order-item-actions.vue';
 jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => jest.fn()) } }));
 jest.mock('@vue-storefront/core/modules/cart', () => ({ IS_CART_SYNCING: 'cart/isSyncing' }));
 jest.mock('@storefront-ui/vue', () => ({
-  SfButton: { name: 'SfButton', render (h) { return h('button', { on: { click: () => this.$emit('click') } }, this.$slots.default); } }
+  SfButton: {
+    name: 'SfButton',
+    props: { disabled: Boolean },
+    render (h) { return h('button', { attrs: { disabled: this.disabled }, on: { click: () => this.$emit('click') } }, this.$slots.default); }
+  },
+  SfIcon: { name: 'SfIcon', render (h) { return h('span', this.$slots.default); } }
 }));
 jest.mock('src/modules/shared', () => ({ FOREVERS_BUNDLE_SKUS: [] }));
 jest.mock('theme/components/molecules/m-spinner-button.vue', () => ({
@@ -81,7 +86,7 @@ async function mountReadyActions () {
 }
 
 async function submitPhotos (wrapper: Awaited<ReturnType<typeof mountReadyActions>>) {
-  await wrapper.find('button').trigger('click');
+  await wrapper.find('button._open-button').trigger('click');
   await wrapper.find('button._submit-button').trigger('click');
   await flush();
 }
@@ -150,12 +155,42 @@ describe('order item photo submission with the real form', () => {
     expect(wrapper.find('.-spinner').exists()).toBe(false);
     expect(wrapper.text()).not.toContain('Your photos have been submitted.');
     expect(refresh).not.toHaveBeenCalled();
-    expect(notifications()).toEqual([expect.objectContaining({ type: 'danger', message: 'Something went wrong. Please try again.' })]);
+    expect(notifications()).toEqual([]);
+    expect(wrapper.find('._status').text()).toBe('Something went wrong. Please try again.');
+    expect(wrapper.find('._status').classes()).toContain('-error');
+    expect(wrapper.find('._actions').text()).not.toContain('Something went wrong');
 
     await wrapper.find('button._submit-button').trigger('click');
     await flush();
     expect(submit).toHaveBeenCalledTimes(2);
     expect(wrapper.text()).toContain('Your photos have been submitted.');
     expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the editor and allows a retry after a save failure without refreshing', async () => {
+    save.mockRejectedValueOnce(new Error('network'));
+    const wrapper = await mountReadyActions();
+    await submitPhotos(wrapper);
+
+    expect(submit).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(notifications()).toEqual([]);
+    expect(wrapper.find('._status').text()).toBe('Something went wrong. Please try again.');
+    expect(wrapper.find('._submit-button').exists()).toBe(true);
+    expect(wrapper.find('.-spinner').exists()).toBe(false);
+
+    await wrapper.find('button._submit-button').trigger('click');
+    await flush();
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain('Your photos have been submitted.');
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the form prompt once and no generic awaiting artwork message beside the real panel', async () => {
+    const wrapper = await mountReadyActions();
+    expect(wrapper.text().split("We're waiting for your photos.")).toHaveLength(2);
+    expect(wrapper.text()).not.toContain('Awaiting artwork');
+    expect(wrapper.find('._action-with-message').exists()).toBe(false);
   });
 });

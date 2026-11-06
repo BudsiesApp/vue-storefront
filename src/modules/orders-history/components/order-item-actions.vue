@@ -1,5 +1,8 @@
 <template>
-  <div class="order-item-actions">
+  <div
+    class="order-item-actions"
+    :class="{ '-photo-panel': hasPhotoPanel }"
+  >
     <p
       class="sr-only"
       role="status"
@@ -17,10 +20,13 @@
         v-for="actionItem in actionsListGroups.blockingActionsList"
         :key="actionItem.action.code + ';' + actionItem.action.name"
         class="_action-with-message-container"
-        :class="{'-blocking': actionItem.action.blocking_progress}"
+        :class="{
+          '-blocking': actionItem.action.blocking_progress,
+          '-photo-panel': isPhotoPanelAction(actionItem)
+        }"
       >
         <span
-          v-if="!isSubmittedPhotoAction(actionItem)"
+          v-if="!isPhotoPanelAction(actionItem)"
           class="_action-with-message"
         >
           {{ actionItem.action.message }}
@@ -33,7 +39,7 @@
           :class="actionItem.cssClasses"
           v-bind="actionItem.props"
           v-on="actionItem.handlers"
-          v-if="actionItem.component && !isSubmittedPhotoAction(actionItem)"
+          v-if="actionItem.component && !isPhotoPanelAction(actionItem)"
         >
           <span class="_action-name">
             {{ actionItem.action.name }}
@@ -48,7 +54,25 @@
           :product-sku="orderItem.product.sku"
           @ready-changed="isPhotoUploadReady = $event"
           @submitted="onPhotosSubmitted"
-        />
+        >
+          <template
+            v-if="actionItem.component"
+            #alternative-action
+          >
+            <component
+              :is="actionItem.component"
+              :disabled="disabledItems[actionItem.action.code]"
+              class="_alternative-action sf-button--text"
+              :class="actionItem.cssClasses"
+              v-bind="actionItem.props"
+              v-on="actionItem.handlers"
+            >
+              <span class="_action-name">
+                {{ actionItem.action.name }}
+              </span>
+            </component>
+          </template>
+        </component>
       </div>
     </div>
 
@@ -292,19 +316,12 @@ export default defineComponent({
       }
     }
 
-    function isSubmittedPhotoAction (actionItem: ActionItem): boolean {
-      return isPhotoUploadSubmitted.value && actionItem.action.code === OrderItemAvailableActionCode.AWAITING_ARTWORK;
-    }
-
-    function getDisplayedAction (action: OrderItemAvailableAction): OrderItemAvailableAction {
-      if (!isPhotoUploadReady.value || action.code !== OrderItemAvailableActionCode.AWAITING_ARTWORK) {
-        return action;
+    function isPhotoPanelAction (actionItem: ActionItem): boolean {
+      if (actionItem.action.code !== OrderItemAvailableActionCode.AWAITING_ARTWORK) {
+        return false;
       }
 
-      return {
-        ...action,
-        message: applicationI18n.t("We're waiting for your photos. Please upload them here or send them by email.").toString()
-      };
+      return isPhotoUploadSubmitted.value || (!!photoUploadFormComponent && isPhotoUploadReady.value);
     }
 
     const actionsListGroups = computed<ActionsListGroups>(() => {
@@ -313,7 +330,7 @@ export default defineComponent({
 
       for (const action of props.actionsList) {
         const actionItem: ActionItem = {
-          action: getDisplayedAction(action),
+          action,
           component: undefined,
           cssClasses: ['sf-button', 'color-secondary'],
           props: {
@@ -403,11 +420,16 @@ export default defineComponent({
       }
     });
 
+    const hasPhotoPanel = computed<boolean>(() => {
+      return actionsListGroups.value.blockingActionsList.some(isPhotoPanelAction);
+    });
+
     return {
       actionsListGroups,
       disabledItems,
+      hasPhotoPanel,
+      isPhotoPanelAction,
       isPhotoUploadReady,
-      isSubmittedPhotoAction,
       onPhotosSubmitted,
       OrderItemAvailableActionCode,
       photoUploadFormComponent,
@@ -450,6 +472,16 @@ export default defineComponent({
     flex-wrap: wrap;
     row-gap: var(--spacer-xs);
     column-gap: var(--spacer-xs);
+  }
+
+  ._action-with-message-container.-photo-panel {
+    align-self: stretch;
+    align-items: stretch;
+  }
+
+  &.-photo-panel ._available-actions {
+    padding-top: var(--spacer-sm);
+    border-top: 1px solid var(--c-divider);
   }
 
   ._available-action {
