@@ -6,6 +6,8 @@ import {
   storeInjectionKey
 } from '@vue-storefront/core/application-services';
 
+import { Logger } from '@vue-storefront/core/lib/logger';
+
 import OrderItemActions from '../../../components/order-item-actions.vue';
 
 jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => jest.fn()) } }));
@@ -36,6 +38,8 @@ function mountActions (actionsList = [action('awaiting_artwork'), action('awaiti
     }
   });
 }
+
+const flush = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
 
 function messages (wrapper: ReturnType<typeof mountActions>): string[] {
   return wrapper.findAll('._action-with-message').wrappers.map(message => message.text());
@@ -75,6 +79,55 @@ describe('inline photo form in order item actions', () => {
     const wrapper = mountActions();
     wrapper.findComponent(form).vm.$emit('submitted');
     expect(dispatch).toHaveBeenCalledWith('ordersHistory/FETCH_ORDERS_HISTORY', { filters: { excludeAlterationProducts: true } });
+  });
+
+  it('replaces the awaiting artwork prompt with the form confirmation at once while the refresh is slow', async () => {
+    let finishRefresh: () => void;
+    dispatch.mockImplementationOnce(() => new Promise<void>(resolve => { finishRefresh = resolve; }));
+    const wrapper = mountActions();
+    wrapper.findComponent(form).vm.$emit('ready-changed', true);
+    wrapper.findComponent(form).vm.$emit('submitted');
+    await wrapper.vm.$nextTick();
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
+    expect(wrapper.findComponent(form).exists()).toBe(true);
+    finishRefresh();
+    await flush();
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the submitted state when a refresh still returns the awaiting artwork action', async () => {
+    const wrapper = mountActions();
+    wrapper.findComponent(form).vm.$emit('submitted');
+    await flush();
+    await wrapper.setProps({ actionsList: [action('awaiting_artwork'), action('awaiting_customization')] });
+    expect(wrapper.findComponent(form).exists()).toBe(true);
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
+  });
+
+  it('removes the form once a refresh no longer returns the awaiting artwork action', async () => {
+    const wrapper = mountActions();
+    wrapper.findComponent(form).vm.$emit('submitted');
+    await flush();
+    await wrapper.setProps({ actionsList: [action('awaiting_customization')] });
+    expect(wrapper.findComponent(form).exists()).toBe(false);
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
+  });
+
+  it('logs a failed refresh and shows a non-blocking notice without reviving the prompt', async () => {
+    const failure = new Error('refresh failed');
+    dispatch.mockRejectedValueOnce(failure);
+    const wrapper = mountActions();
+    wrapper.findComponent(form).vm.$emit('submitted');
+    await flush();
+    expect(Logger.error).toHaveBeenCalledWith(failure, 'order-history');
+    expect(dispatch).toHaveBeenLastCalledWith('notification/spawnNotification', {
+      type: 'warning',
+      message: "Your photos were submitted, but we couldn't refresh the order status. Please refresh the page to see the latest status.",
+      action1: { label: 'OK' }
+    });
+    expect(wrapper.findComponent(form).exists()).toBe(true);
+    expect(messages(wrapper)).toEqual(['awaiting_customization']);
   });
 
   it('does not mount the form without awaiting artwork', () => {

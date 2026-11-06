@@ -19,7 +19,12 @@
         class="_action-with-message-container"
         :class="{'-blocking': actionItem.action.blocking_progress}"
       >
-        <span class="_action-with-message">{{ actionItem.action.message }}</span>
+        <span
+          v-if="!isSubmittedPhotoAction(actionItem)"
+          class="_action-with-message"
+        >
+          {{ actionItem.action.message }}
+        </span>
 
         <component
           :is="actionItem.component"
@@ -28,7 +33,7 @@
           :class="actionItem.cssClasses"
           v-bind="actionItem.props"
           v-on="actionItem.handlers"
-          v-if="actionItem.component"
+          v-if="actionItem.component && !isSubmittedPhotoAction(actionItem)"
         >
           <span class="_action-name">
             {{ actionItem.action.name }}
@@ -168,6 +173,7 @@ export default defineComponent({
     const isReorderPending = ref(false);
     const photoUploadFormComponent = inject('OrderItemPhotoUploadForm', undefined);
     const isPhotoUploadReady = ref(false);
+    const isPhotoUploadSubmitted = ref(false);
     const reorderStatusMessage = computed(() => {
       return isReorderPending.value
         ? applicationI18n.t('Item is being re-ordered')
@@ -272,11 +278,22 @@ export default defineComponent({
     }
 
     async function onPhotosSubmitted (): Promise<void> {
+      isPhotoUploadSubmitted.value = true;
+
       try {
         await applicationStore.dispatch(FETCH_ORDERS_HISTORY_ACTION, { filters: { excludeAlterationProducts: true } });
       } catch (error) {
         Logger.error(error, 'order-history')();
+        applicationStore.dispatch('notification/spawnNotification', {
+          type: 'warning',
+          message: applicationI18n.t("Your photos were submitted, but we couldn't refresh the order status. Please refresh the page to see the latest status."),
+          action1: { label: applicationI18n.t('OK') }
+        });
       }
+    }
+
+    function isSubmittedPhotoAction (actionItem: ActionItem): boolean {
+      return isPhotoUploadSubmitted.value && actionItem.action.code === OrderItemAvailableActionCode.AWAITING_ARTWORK;
     }
 
     function getDisplayedAction (action: OrderItemAvailableAction): OrderItemAvailableAction {
@@ -390,6 +407,7 @@ export default defineComponent({
       actionsListGroups,
       disabledItems,
       isPhotoUploadReady,
+      isSubmittedPhotoAction,
       onPhotosSubmitted,
       OrderItemAvailableActionCode,
       photoUploadFormComponent,

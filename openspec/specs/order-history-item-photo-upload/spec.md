@@ -94,17 +94,23 @@ The storefront SHALL save the image-only state through the existing order-item s
 
 ### Requirement: Feedback and refreshed order state
 
-After successful submission the storefront SHALL show a translated success notification and then refresh the displayed order data. The form SHALL disappear when refreshed data no longer contains the awaiting-artwork action. A failed refresh SHALL show the generic translated error notification and retain the form and selected photos.
+After successful submission the storefront SHALL treat the submission as final, replacing the form controls with a translated submitted confirmation and preventing resubmission, while refreshing the displayed order data in the background. The form SHALL disappear when refreshed data no longer contains the awaiting-artwork action. A failed refresh SHALL be logged and SHALL show a non-blocking translated notice instead of restoring the controls.
 
 #### Scenario: Successful submission and refresh
 - **WHEN** saving, submission, and order refresh succeed
-- **THEN** a success notification is shown and the item displays the refreshed progress and available actions
+- **THEN** the submitted confirmation replaces the upload, edit, cancel, and submit controls and the awaiting-artwork prompt is not shown beside it, while the refresh is pending
+- **AND** the item then displays the refreshed progress and available actions
 - **AND** the upload form disappears because the awaiting-artwork action is absent
+
+#### Scenario: Slow refresh or stale awaiting-artwork action
+- **WHEN** the item has been submitted successfully and the refresh is slow or still returns the awaiting-artwork action
+- **THEN** the submitted confirmation remains, no pending spinner is shown, and no upload, edit, cancel, or submit control is available
+- **AND** no further save or submit request can be sent for that item
 
 #### Scenario: Order refresh fails after successful submission
 - **WHEN** the item has been submitted successfully but refreshing the order fails
-- **THEN** the generic translated error notification is shown
-- **AND** the form and selected photos remain available after the pending operation ends
+- **THEN** the error is logged and a non-blocking translated notice states that the photos were submitted, the order status could not be refreshed, and the page should be refreshed for the latest status
+- **AND** the submitted confirmation remains and the pending state has ended
 
 ### Requirement: Other order behavior remains compatible
 

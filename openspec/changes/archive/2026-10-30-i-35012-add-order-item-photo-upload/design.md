@@ -52,9 +52,9 @@ Use an empty array when that draft entry is absent, and pass only the selected c
 
 Pass the image-only state and loaded draft refs to the existing `useCustomizeAction` unchanged. It provides the existing save-before-submit sequence and error checks without another API integration.
 
-After `confirmCustomization()` succeeds, show the success notification and dispatch `FETCH_ORDERS_HISTORY_ACTION` with `{ filters: { excludeAlterationProducts: true } }`. The existing getters update the rendered list and the action's disappearance removes the form, so no reload event chain or navigation is needed.
+After `confirmCustomization()` succeeds, mark the submission final with a separate `isSubmitted` flag, end the pending state, and replace the form controls with a translated submitted confirmation; the success toast is not shown, to avoid duplicating that confirmation. The existing `submitted` event makes the order-item actions hide the awaiting-artwork prompt and dispatch `FETCH_ORDERS_HISTORY_ACTION` with `{ filters: { excludeAlterationProducts: true } }` as background synchronization. The existing getters update the rendered list and the action's disappearance removes the form, so no reload event chain or navigation is needed.
 
-Catch save, submit, and refresh failures with the generic translated error notification and retain the form and selected photos. A refresh failure follows the same error path without a separate submission state; the API rejects a later submission once the item has left AWAITING_ARTWORK.
+Catch save and submit failures with the generic translated error notification and retain the form and selected photos. A refresh failure is not a submission failure: log it and show a non-blocking translated notice that the photos were submitted but the order status could not be refreshed. The submitted confirmation stays and the form stays locked even while the refresh is slow, fails, or still returns AWAITING_ARTWORK; no awaitable callback or retry workflow is added.
 
 Use `useStore()` and `useI18n()` from `core/application-services`. New strings are “Submit photos”, “Your photos have been submitted.”, “Something went wrong. Please try again.”, and “We could not load photo upload. Please try again later.”; translate them with `t()` and reuse translated “OK”.
 
@@ -64,7 +64,8 @@ Use `useStore()` and `useI18n()` from `core/application-services`. New strings a
 | --- | --- |
 | Widget busy state | Saving before photo uploads finish processing. |
 | Validation plus a nonempty image selection | Sending invalid values or requesting review without images when the field is configured as optional. |
-| Local pending latch set before awaiting validation and released in `finally` | Double activation during asynchronous validation or submission, including the refresh wait. |
+| Local pending latch set before awaiting validation and released after a failure | Double activation during asynchronous validation or submission. |
+| Separate submitted flag set after a successful save and submit | Resubmission while the order refresh is slow, fails, or returns a stale awaiting-artwork action. |
 | Disable editing while that operation is pending | Changing the selected image list after the save payload has been captured. |
 
 Use a setup-owned typed `ValidationObserver` ref to validate the field; a parent or child refs-map traversal is unnecessary for this single field.

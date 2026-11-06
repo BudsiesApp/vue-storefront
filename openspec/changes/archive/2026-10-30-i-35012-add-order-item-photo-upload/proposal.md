@@ -8,7 +8,7 @@ Customers whose order items are awaiting artwork currently see a request to chec
 
 - Add inline photo upload for items with the `awaiting_artwork` available action and an unlocked image-upload customization available in `customize-later-completion`; retain the existing message otherwise.
 - Reuse the existing customization widget, image limits, draft state, and `useCustomizeAction` to submit only the selected image customization, preserving its existing photos alongside newly uploaded photos.
-- Report success or failure through translated notifications and refresh the displayed orders after submission.
+- Report failure through translated notifications, show a submitted confirmation after success, and refresh the displayed orders in the background after submission.
 
 ## Capabilities
 
