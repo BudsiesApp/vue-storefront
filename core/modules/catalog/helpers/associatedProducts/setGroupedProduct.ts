@@ -18,6 +18,7 @@ export default async function setGroupedProduct (product: Product, { includeFiel
     const query = buildQuery(skus)
     const { items } = await ProductService.getProducts({
       query,
+      size: skus.length,
       excludeFields,
       includeFields,
       options: {
