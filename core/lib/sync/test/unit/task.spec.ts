@@ -55,6 +55,22 @@ describe('TaskQueue response failures', () => {
     expect(error.status).toBe(status);
   });
 
+  it.each([
+    ['text/html', async () => ({}), '/api/address/update?token={{token}}#fragment-secret', '/api/address/update'],
+    ['application/json', async () => ({ message: 'Forbidden' }), 'https://user:password@example.com/api/address/update?token={{token}}#fragment-secret', 'https://example.com/api/address/update'],
+    ['application/json', async () => ({}), 'http://[invalid?token={{token}}', '[invalid request URL]']
+  ])('sanitizes the URL in %s response errors', async (contentType, json, url, expectedUrl) => {
+    (fetch as jest.Mock).mockResolvedValue(createResponse(503, contentType, json));
+    const task = { ...createTask(), url };
+
+    const error = await execute(task, 'dummy-secret').catch((reason) => reason);
+
+    expect(error).toBeInstanceOf(TaskResponseError);
+    expect(error.status).toBe(503);
+    expect(error.message).toContain(expectedUrl);
+    expect(error.message).not.toMatch(/dummy-secret|password|fragment-secret/);
+  });
+
   it.each([null, 'Forbidden'])('keeps the HTTP status when a JSON body is %p', async (body) => {
     (fetch as jest.Mock).mockResolvedValue(createResponse(503, 'application/json', async () => body));
 

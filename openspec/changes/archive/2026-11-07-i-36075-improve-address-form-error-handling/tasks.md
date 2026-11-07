@@ -28,7 +28,7 @@
 - [x] 4.3 Show a visible error notification for failed default shipping and billing updates in the account address list without the duplicate screen-reader-only alert; verify address removal keeps its existing feedback.
 - [x] 4.4 Write one contextual `console.warn` for each qualifying 5xx or no-response address failure before the browser and service configuration checks; verify it contains only the message and controlled context, and that no warning is written for other statuses.
 - [x] 4.5 Run the affected unit tests, type check, and lint.
-- [ ] 4.6 Update the storefront `src/themes/petsies-capybara` submodule pin to the theme PR revision that contains these changes, and confirm the pin in the storefront PR diff.
+- [x] 4.6 Update the storefront `src/themes/petsies-capybara` submodule pin to the theme PR revision that contains these changes, and confirm the pin in the storefront PR diff.
 
 ## 5. Second review fixes
 
@@ -43,4 +43,3 @@
 - [x] 6.1 Show the existing "Something went wrong" fallback for a `TaskResponseError` in removable cart item option notifications, keeping every other error message unchanged; verify a gateway error shows the fallback and a `ServerError` still shows its message.
 - [x] 6.2 Make the Tax ID submit action throw the translated "Failed to submit Tax ID" fallback for a `TaskResponseError` and rethrow other rejections unchanged; verify an HTML 503 shows the fallback and a network failure keeps its previous message.
 - [x] 6.3 Run the affected unit tests, type check, and lint.
-

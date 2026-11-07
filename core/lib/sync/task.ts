@@ -52,6 +52,19 @@ function getUrl (task, currentToken, currentCartId) {
   return url
 }
 
+function getSafeUrl (url: string): string {
+  try {
+    const base = 'http://localhost'
+    const parsed = new URL(url, base)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '[invalid request URL]'
+    return /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)
+      ? `${parsed.origin}${parsed.pathname}`
+      : parsed.pathname
+  } catch {
+    return '[invalid request URL]'
+  }
+}
+
 function getPayload (task, currentToken) {
   const payload = {
     ...task.payload,
@@ -105,7 +118,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
     responseStatus = response.status
     const contentType = response.headers.get('content-type')
     if (!contentType || !contentType.includes('application/json')) {
-      throw new TaskResponseError(i18n.t('Error with response - bad content-type! ' + url).toString(), responseStatus)
+      throw new TaskResponseError(i18n.t('Error with response - bad content-type! ' + getSafeUrl(url)).toString(), responseStatus)
     }
 
     return response.json().catch((error) => {
@@ -115,7 +128,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
     const responseCode = parseInt(jsonResponse?.code)
 
     if (typeof jsonResponse !== 'object' || jsonResponse === null || Number.isNaN(responseCode)) {
-      throw new TaskResponseError(i18n.t('Unhandled error, wrong response format! ' + url).toString(), responseStatus)
+      throw new TaskResponseError(i18n.t('Unhandled error, wrong response format! ' + getSafeUrl(url)).toString(), responseStatus)
     }
 
     if (responseCode !== 200) {
