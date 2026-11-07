@@ -3,5 +3,6 @@ export default interface ErrorMessage {
   fullMessage: string,
   currentUrl: string,
   line?: number,
-  file?: string
+  file?: string,
+  context?: Record<string, string | number>
 }
