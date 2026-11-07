@@ -102,8 +102,12 @@ const methodsActions = {
       .filter(method => !method.hasOwnProperty('available') || method.available)
     await dispatch('checkout/replaceShippingMethods', newShippingMethods, { root: true })
   },
-  async syncShippingMethods ({ commit, getters, rootGetters, dispatch }, { forceServerSync = false }) {
+  async syncShippingMethods ({ commit, state, getters, rootGetters, dispatch }, { forceServerSync = false }) {
     if (getters.canUpdateMethods && (getters.isTotalsSyncRequired || forceServerSync)) {
+      commit(types.START_SHIPPING_METHODS_LOOKUP);
+      const lookupId = state.shippingMethodsLookupId;
+      const isLatestLookup = () => lookupId === state.shippingMethodsLookupId;
+
       commit(types.SET_IS_SHIPPING_METHODS_SYNCING, true);
       commit(types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR, false);
 
@@ -118,6 +122,11 @@ const methodsActions = {
           countryId: shippingDetails.country || storeView.tax.defaultCountry
         }
         const task = await CartService.getShippingMethods(address);
+
+        if (!isLatestLookup()) {
+          return;
+        }
+
         const isSuccessful = task.resultCode === 200;
 
         if (!isSuccessful) {
@@ -127,6 +136,10 @@ const methodsActions = {
         const result = isSuccessful ? task.result : [];
 
         await dispatch('updateShippingMethods', { shippingMethods: result })
+
+        if (!isLatestLookup()) {
+          return;
+        }
 
         const availableMethods = rootGetters['checkout/getShippingMethods'];
         const availableShippingMethod = getAvailableShippingMethod(
@@ -151,13 +164,19 @@ const methodsActions = {
           commit(types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR, false);
         }
       } catch (error) {
+        if (!isLatestLookup()) {
+          return;
+        }
+
         commit(types.SET_IS_SHIPPING_METHODS_SYNCING_ERROR, true);
         await dispatch('updateShippingMethods', { shippingMethods: [] })
         commit('checkout/checkout/UPDATE_PROP_VALUE', ['shippingCarrier', ''], { root: true });
         commit('checkout/checkout/UPDATE_PROP_VALUE', ['shippingMethod', ''], { root: true });
         throw error;
       } finally {
-        commit(types.SET_IS_SHIPPING_METHODS_SYNCING, false);
+        if (isLatestLookup()) {
+          commit(types.SET_IS_SHIPPING_METHODS_SYNCING, false);
+        }
       }
     } else {
       Logger.debug('Shipping methods does not need to be updated', 'cart')()
