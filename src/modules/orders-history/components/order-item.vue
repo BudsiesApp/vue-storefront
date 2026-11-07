@@ -4,7 +4,10 @@
     :class="{ '-extendable': isExtendedInfoAvailable }"
   >
     <div class="_content">
-      <div class="_info-container">
+      <div
+        class="_info-container"
+        :class="{ '-photo-upload': hasAwaitingArtworkAction }"
+      >
         <div class="_image-container">
           <BaseImage
             alt=""
@@ -29,14 +32,15 @@
           <div class="_cancelled" v-if="isOrderCancelledOrOnHoldOrCompleted">
             {{ isOrderCancelled ? $t('Order is Cancelled') : isOrderCompleted ? $t('Order is Completed') : $t('Order is On Hold') }}
           </div>
-
-          <order-item-actions
-            :actions-list="item.available_actions"
-            :order-item="item"
-            :order-id="orderId"
-            v-if="showActions"
-          />
         </div>
+
+        <order-item-actions
+          class="_actions"
+          :actions-list="item.available_actions"
+          :order-item="item"
+          :order-id="orderId"
+          v-if="showActions"
+        />
       </div>
     </div>
 
@@ -74,6 +78,7 @@ import Product from '@vue-storefront/core/modules/catalog/types/Product';
 
 import { useOrderItemProgressTracker } from '../composables/use-order-item-progress-tracker';
 import { OrderItem } from '../types/order-item';
+import { OrderItemAvailableActionCode } from '../types/order-item-available-action.code';
 
 import OrderItemActions from './order-item-actions.vue';
 import OrderItemExtendedInfo from './order-item-extended-info.vue';
@@ -111,6 +116,11 @@ export default defineComponent({
 
     const showActions = computed<boolean>(() => {
       return props.item.available_actions.length > 0;
+    });
+    const hasAwaitingArtworkAction = computed<boolean>(() => {
+      return props.item.available_actions.some(
+        action => action.code === OrderItemAvailableActionCode.AWAITING_ARTWORK
+      );
     });
     const orderItemImage = computed<string>(() => {
       const defaultImage = props.item.product.thumbnail;
@@ -157,6 +167,7 @@ export default defineComponent({
       alterationProductFormComponent,
       canShowExtendedProgressTracker,
       canShowProgressTracker,
+      hasAwaitingArtworkAction,
       isExtendedInfoAvailable,
       isOrderCancelled,
       isOrderCompleted,
@@ -186,8 +197,11 @@ export default defineComponent({
   }
 
   ._info-container {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 4fr);
     column-gap: var(--spacer-sm);
+    row-gap: var(--spacer-sm);
+    align-items: start;
   }
 
   ._product-name {
@@ -197,14 +211,24 @@ export default defineComponent({
   ._image-container {
     display: flex;
     align-items: flex-start;
-    flex: 1;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    min-width: 0;
   }
 
   ._base-info-container {
-    flex: 4;
+    grid-column: 2;
+    grid-row: 1;
     display: flex;
     flex-direction: column;
     row-gap: var(--spacer-sm);
+    min-width: 0;
+  }
+
+  ._actions {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
   }
 
   ._item-details {
@@ -229,6 +253,21 @@ export default defineComponent({
 
   .alteration-product-form {
     margin-top: var(--spacer-sm);
+  }
+
+  // The photo upload panel needs the full card width, so it moves below the thumbnail and name.
+  @media (max-width: 425px) {
+    ._info-container.-photo-upload {
+      grid-template-columns: 72px minmax(0, 1fr);
+
+      ._image-container {
+        grid-row: 1;
+      }
+
+      ._actions {
+        grid-column: 1 / -1;
+      }
+    }
   }
 
   @media (min-width: 426px) {
