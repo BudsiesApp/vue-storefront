@@ -5,6 +5,7 @@ import { StorefrontModule } from '@vue-storefront/core/lib/modules'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 
 import { useOrderCreation } from './composables/use-order-creation'
+import { useRedirectedSectionHashRemoval } from './composables/use-redirected-section-hash-removal'
 import { checkoutModule } from './store/checkout'
 import { paymentModule } from './store/payment'
 import { shippingModule } from './store/shipping'
@@ -65,6 +66,7 @@ const CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION = `checkout/${types.CHECKOUT_U
 
 export {
   useOrderCreation,
+  useRedirectedSectionHashRemoval,
   CHECKOUT_UPDATE_PAYMENT_DETAILS_MUTATION,
   CHECKOUT_UPDATE_SHIPPING_DETAILS_MUTATION,
   CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION,
