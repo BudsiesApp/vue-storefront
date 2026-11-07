@@ -94,6 +94,7 @@ CodeGraph reflects only the current working directory state. It MUST NOT replace
   * Do not split mechanically; preserve module boundaries and split by responsibility.
 - Vue components:
   * Use single-file components (`.vue` files) with `<template>`, `<script lang="ts">`, and `<style lang="scss" scoped>` sections.
+  * In tables and grids, right-align numbers, center-align short text and dates, and left-align long text.
 - Routing:
   * Routes are defined in themes (`src/themes/petsies-capybara/router/index.js`).
   * The application uses a custom URL mapping fallback system that integrates Storyblok and a database-driven URL rewrite module. See `src/modules/vsf-storyblok-module/mappingFallback.ts` and `src/modules/url-rewrite/mappingFallback.ts`.
