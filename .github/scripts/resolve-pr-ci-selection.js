@@ -4,7 +4,7 @@ const fs = require('fs')
 
 const DEFAULT_PAYMENT_BRANCH = 'optimuspro'
 const DEFAULT_THEMES_BY_BASE_BRANCH = {
-  'petsies-theme': ['petsies-theme', 'budsies-theme', 'waggables-theme'],
+  'petsies-theme': ['petsies-theme', 'budsies-theme', 'budsies-education-theme', 'waggables-theme'],
   'bulkorders-theme': ['bulkorders-theme']
 }
 const ALL_DEFAULT_THEMES = Object.values(DEFAULT_THEMES_BY_BASE_BRANCH).flat()
