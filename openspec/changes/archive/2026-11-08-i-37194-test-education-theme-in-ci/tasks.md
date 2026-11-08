@@ -6,4 +6,4 @@
 ## 2. Verification
 
 - [x] 2.1 Run the resolver tests.
-- [ ] 2.2 Confirm that the pull request's CI runs the four `petsies-theme` theme jobs, Education included.
+- [x] 2.2 Confirm that the pull request's CI runs the four `petsies-theme` theme jobs, Education included.
