@@ -2,45 +2,50 @@
 
 ## Context
 
-Every product read in the storefront ends up in `quickSearchByQuery()` (`core/lib/search.ts`): `product/findProducts`, `product/single` and `product/loadProduct` go through `ProductService`, then `getProducts()`, then `quickSearchByQuery()`.
+See proposal.md for the ticket's motivation and scope. This revision changes the existing PR plan, not a new feature branch. D1–D5 refer to #37123's recorded decisions. App paths below are relative to the app repository; `API@fbb5408` means `/home/andre/projects/budsies/store-ui/api` at image-tag commit `fbb5408ae6dd1dc68c789b35a5a3c2febd914492`, inspected through local Git objects only (D5).
 
-`quickSearchByQuery()` already has a request-level cache. It hashes the `SearchRequest` (including `_sourceInclude`/`_sourceExclude`) with `sha3_224` into `cacheKey` and uses `StorageManager.get('elasticCache')`, whose `getItem`/`setItem` `cloneDeep` the values. The gap is the time between a cache miss and the response being stored, when concurrent identical calls all miss. On the Forevers page this happens because every `TextComponent` runs `useTextDirectives().processDirectivesInText()` in `serverPrefetch` and `beforeMount`. Each one checks `product/getProductBySkuDictionary`, finds nothing, and dispatches the same `findProducts` (`sku in [ForeversDog_bundle]`, `size: 1`).
+The current app already has pending-search sharing, independent result copies and the existing hashed query-cache read path (`core/lib/search.ts:15–30,57–93,109–147`). Product preparation/configuration follows search, separately for each caller (`core/data-resolver/ProductService.ts:58–97`); bundle attachment and configurable-child selection can mutate the returned data (`core/modules/catalog/helpers/configure/configureProductAsync.ts:47–88`).
 
-`findProducts` and `single` then commit every product to `PRODUCT_SET_PRODUCT_BY_SKU`, which does `Vue.set(state.productBySku, product.sku, product)`. That is a full replacement. The detail of a product varies by load:
+Catalog writes already use MERGE from `findProducts`, `single` and the bundle-prefetch hook (`core/modules/catalog/store/product/actions.ts:126–128,165–167`; `core/modules/catalog/index.ts:31–35`). The outstanding defect is MERGE's `lodash-es/merge({}, existing, product)` (`core/modules/catalog/store/product/mutations.ts:105–112`), which the prior design chose for positional arrays. D2 rejects that mechanism, and D4 rejects its retention of absent members.
 
-| Load | Field projection | Bundle link products |
-|---|---|---|
-| `single` / `loadProduct` (product page, PayPal, Affirm) | full | yes |
-| `findProducts`, client defaults (text directives, Banner) | full | yes |
-| `findProducts` with `prefetchGroupProducts: false` (Storyblok blocks, related products), and any SSR `findProducts` | full | no |
-| `category-next/loadCategoryProducts` / `loadMoreCategoryProducts` (theme `Category.vue`) | `entities.productList` (excludes `customizations`, `bundle_options`, `product_links`, `media_gallery`, `stock.*`, `configurable_children[].media_gallery`/`stock.*`, …) | no |
+### Configured response shape, not frontend types alone
 
-Consumers that read these details from the dictionary:
-- `Product.vue:269`: `setCurrentProduct` reads the dictionary, and `:237` uses `configurable_children[].media_gallery`;
-- `GiftCards.vue:461`;
-- customization price composables, which read `customizations`;
-- `m-product-option-bundle.vue`, which reads link products;
-- `get-product-max-sale-quantity.function.ts`, which reads link products and `stock.max_sale_qty`;
-- `use-related-products.ts:142`, which already treats a missing `media_gallery` as not fully loaded.
+The API template at the image-tag revision enables additive request filtering (`API@fbb5408:config/local.json.template:44–46`; `src/lib/elastic.js:35–61`). Its base include list contains whole `customizations`, `bundle_options`, `product_links` and the child SKU; these identity fields are not excluded (`config/local.json.template:288–352`). The API startup script generates local configuration from that template (`docker/vue-storefront-api/vue-storefront-api.sh:4–5`). Its default-only filter value is false, so the template matters (`config/default.json:46–47`).
+
+Two UI projections are checked in:
+
+| UI configuration | Shape under the API template contract |
+| --- | --- |
+| `config/default.json:239–307`: include list with `*sku`, excludes gallery/detail fields | API whole-array includes preserve customization IDs and complete bundle option/link identities when those arrays are returned; this is not the sku-only shape produced by a filter-disabled API. |
+| `config/local.json.template:447–477`: empty include list, explicit detail exclusions | Whole `customizations`, `bundle_options`, `product_links`, `custom_options` and `configurable_options` are omitted; configurable children keep SKU while gallery and selected stock detail are excluded. API inclusion does not cancel explicit request exclusions. |
+
+Full product projection is also configuration-driven (`config/local.json.template:516–519`; `core/modules/catalog/helpers/search.ts:70–78`). `getProducts` defaults bundle prefetch to `!isServer`, while `getProduct` requests it explicitly (`core/data-resolver/ProductService.ts:22–38,149–160`). A non-prefetching load therefore lacks link `product` enrichment even when the API returns the option/link arrays.
+
+Evidence and limits: `task-management/tickets/37123-prevent-concurrent-product-requests/queries/09-local-api-configuration.md` and `09-local-api-evidence.txt`. The relevant tracked API files are unchanged between the image-tag commit and local HEAD. This proves the source/configuration contract selected by D5, not a fresh production response or the absence of live runtime overrides. Do not add runtime configuration detection or missing-key recovery to compensate for a producer/configuration outside that contract (F1.2; handling.md step 2).
+
+The multi-product page explicitly SETs a transformed product (`src/themes/petsies-capybara/helpers/use-multi-products-page.ts:48–57`). The transform filters rush choices and inserts a synthetic Standard ID (`src/modules/customization-system/helpers/update-product-production-time-customization-data.ts:22–30,66–105`). Product-page preparation rebuilds these choices before rendering (`src/themes/petsies-capybara/helpers/use-product-page.ts:31–54`), so identity-based retention would not itself leave that page's positional duplicates unfixed; instead it would retain synthetic/unfiltered membership in dictionary consumers. F1.1 corrects this distinction, and D4 selects removal on the next returned array.
+
+Correct dictionary detail remains important because the product page reads its entry directly and the bundle quantity limit reads the selected/default link's product (`src/themes/petsies-capybara/pages/Product.vue:275–284`; `helpers/get-product-max-sale-quantity.function.ts:21–38` in that theme).
 
 ## Goals / Non-Goals
 
 **Goals:**
 - One backend request per distinct catalog search in flight, for every catalog consumer, without changing call sites.
-- A dictionary entry is never less detailed than the most detailed load of that product.
+- Omitted fields stay on the product and corresponding surviving items, while every returned array has the new membership/order (D1, D2, D4).
 
 **Non-Goals:**
 - Merging searches that differ in shape but resolve to the same product (a SKU filter vs an ID filter, `size: 1` vs a batched `sku in [...]`). Decision 6 only removes the `eq`/`in` operator difference for the same key.
 - Reusing an in-flight full-data request for a list-projection request.
-- Changing consumers that check `if (!dictionary[sku])` before loading so that they look for a specific detail. They already treat list-projection entries as loaded today, and the ones found only read fields the projection keeps.
-- Grouped-product links (`product_links[].product`). The theme only references `grouped` in legacy template conditions.
+- Changing dictionary-existence checks into completeness checks (D1; example: `src/modules/shared/composables/use-text-directives.ts:230–242`).
+- Adding grouped-link product enrichment to the dictionary (D1); the grouped hook currently only processes attribute metadata (`core/modules/catalog/index.ts:35`).
 - Deduplicating non-catalog requests (for example `budsies/fetchStatisticValuesByMetric`).
+- Configuring or changing the API, repairing persisted data, introducing malformed-input recovery, or performing further production access (D3, D5).
 
 ## Decisions
 
 ### 1. Coalesce in `quickSearchByQuery()`, keyed by `cacheKey`
 
-Add a module-level `Map<string, Promise<SearchResponse>>` of in-flight searches, keyed by the existing `cacheKey`. Wrap the existing `searchAdapter.search(Request).then(resultProcessor + cache.setItem)` block in a shared promise stored under that key, and delete the entry in `finally`. A caller that finds an entry awaits it instead of calling the adapter.
+Retain the module-level `Map<string, Promise<SearchResponse>>`, keyed by the complete existing `cacheKey`, and its `finally` deletion. A caller finding an entry awaits it instead of calling the adapter. The shared work remains adapter search, result processing and cache population (`core/lib/search.ts:15–30,75–77,109–117`). Source: D1.
 
 Reusing `cacheKey` keeps a single definition of "identical request". Once a request completes, the query cache already treats such requests as interchangeable.
 
@@ -51,54 +56,60 @@ Alternatives considered:
 
 ### 2. Field projection stays in the identity; post-processing stays per caller
 
-`cacheKey` includes `_sourceInclude`/`_sourceExclude`. Full loads send `[]` through `getOptimizedFields()`, while list loads send the `entities.productList` field lists, so a full-data caller never waits on a list request. This property is what makes request-level coalescing safe for detail. It is a spec requirement, so the key must not be "normalized" later.
+`cacheKey` includes `_sourceInclude`/`_sourceExclude` (`core/lib/search.ts:68–77`). Resolve full/list field lists through the existing configuration path rather than assuming every full load literally sends `[]` (`core/modules/catalog/helpers/search.ts:70–78`). Requests with different projections remain separate even if the API's base include list overlaps them. Source: D1.
 
-The shared result is the raw `resultProcessor` output. Prefetching (`setBundleProducts`, which itself goes through `quickSearchByQuery()`), configuration and tax calculation still run separately for each caller with its own options. A prefetching caller that shares a request with a non-prefetching one still gets link products.
+The shared result is the search result-processor output (`core/lib/search.ts:109–117`). Keep preparation, prefetch/configuration and tax calculation per caller (`core/data-resolver/ProductService.ts:74–97`; `core/modules/catalog/store/product/actions.ts:124,160`). A prefetching caller still gets its requested link products. Source: D1.
 
-The reverse case, a list request reusing an in-flight full request, would save little and needs subset logic, so it is rejected.
+Reusing a differently projected full request for a list caller would require new projection-subset logic and is outside D1's identical-request scope.
 
 ### 3. Clone the shared result for every caller
 
-Each caller, including the initiator, receives `cloneDeep(result)` (`lodash-es/cloneDeep`, already used in core). Callers with the same request still post-process differently: `single` assigns a child `configuration`, while `findProducts` uses its own options. `prepareProducts`, `configureProducts` and `calculateTaxes` change products in place, so a shared object would leak one caller's processing into another's. This matches what a cache hit returns. On failure, the rejection goes through each waiter's existing `catch` branch, and the `finally` deletion lets the next call retry.
+Keep `cloneDeep(result)` for every caller, including the initiator (`core/lib/search.ts:21–30`). Caller configuration differs (`core/data-resolver/ProductService.ts:82–97,149–160`) and is mutable (`core/modules/catalog/helpers/configure/configureProductAsync.ts:47–88`), so sharing result objects would mix caller detail. Storage already clones cached values (`core/lib/store/storage.ts:158,192,328`). Preserve each waiter's existing error path and cleanup; do not add a new retry policy (`core/lib/search.ts:25,125–147`). Source: D1.
 
-The map is module-level, so concurrent SSR renders also share identical requests. That is safe because SSR is stateless, `cacheKey` includes the store code, and every caller gets its own copy.
+The map remains module-level, including during concurrent SSR renders. Keep the complete existing cache identity, including store and configured group identity, and caller copies (`core/lib/search.ts:15–30,57–77`); do not redesign its dimensions. Source: D1.
 
-### 4. Catalog loads deep-merge into the existing entry
+### 4. Preserve omitted detail; replace array membership and match enrichment by identity
 
-Add a `PRODUCT_MERGE_PRODUCT_BY_SKU` mutation and commit it from `findProducts` and `single`:
+Replace only the existing MERGE mutation's positional merge with a focused pure helper under `core/modules/catalog/helpers/`, retaining the mutation type, its three writers and `Vue.set` (`core/modules/catalog/store/product/mutations.ts:105–112`; `actions.ts:126–128,165–167`; `core/modules/catalog/index.ts:31–35`). Source: D1, D2, D4; pure helpers and synchronous reactive mutations follow `AGENTS.md:82–87`.
 
-```ts
-const existingProduct = state.productBySku[product.sku]
-Vue.set(state.productBySku, product.sku, existingProduct ? merge({}, existingProduct, product) : product)
-```
+For an existing entry, build a new product graph without mutating either input. Missing properties retain the old value; returned objects merge their provided properties recursively; returned scalar/null values take the returned value. A wholly omitted array stays. A present array, including `[]`, always supplies the result's membership and order. Iterate the incoming array, not a union of old and incoming members (D4).
 
-`lodash-es/merge` recurses into objects and merges arrays by index. Anything the loaded product lacks stays, and anything it contains takes the loaded value. One rule covers every load order:
-- A Category list load leaves out excluded fields, so `customizations`, `bundle_options`, `stock.max_sale_qty` and `configurable_children[].media_gallery` of a full entry stay.
-- A full load after a list load adds those fields, including nested ones, because `stock` and `configurable_children` items are merged rather than kept or replaced as a whole.
-- A load without bundle prefetch has links without `product`, so prefetched link products stay.
-- Values both loads contain take the later value, so entries do not go stale.
+For the following domain collections, enrich each incoming item only from the corresponding old item, then recurse with the same membership rule:
 
-The merge target is a new object, so the stored entry is replaced, new fields are reactive, and the previous entry is not changed. Vue's non-enumerable `__ob__` is not copied.
+| Collection | Matching key and scope | Why it survives the inspected projections |
+| --- | --- | --- |
+| `customizations[]` | `id` within the product | API includes the whole array when not explicitly excluded. |
+| `customizations[].optionData.values[]` | `id` within the same customization | Whole customization includes values; `OptionValue.id` is required, `sku` is optional, and synthetic Standard has an ID but no SKU. |
+| `bundle_options[]` | `option_id` within the product | API includes the whole option array when not excluded. |
+| `bundle_options[].product_links[]` | `sku` within the corresponding bundle option | API includes full links; associated-product attachment already uses SKU. Never use the link's `option_id`. |
+| `configurable_children[]` | `sku` within the product | API explicitly includes child SKU and neither checked-in UI projection excludes it. |
 
-The decision does not depend on which fields a load requested, so `findProducts` does not need to tell projected and full loads apart.
+Key evidence: the configuration subsection above and `queries/09-local-api-configuration.md`; app `core/modules/catalog/helpers/associatedProducts/setBundleProducts.ts:38–43`, `core/modules/catalog/types/BundleOption.ts:3–24`, `src/modules/customization-system/types/customization.interface.ts:7–24`, `option-value.interface.ts:5–21`. For customization values, `id` is required and `sku` optional (`option-value.interface.ts:5–8`); synthetic Standard supplies an ID without a SKU (`src/modules/customization-system/helpers/update-product-production-time-customization-data.ts:22–29`). Approach review 1 E4 found no repeated value IDs in the imported local catalog, and E5 found unique link SKUs and nullable link `option_id`; these are not live production measurements. Holiday location records share one underlying option-value ID (`openspec/specs/production-time-option-presentation/spec.md:160–162`); that scenario does not establish two catalog option values with the same SKU and is not the rationale for this key.
 
-Alternatives considered:
-- **Shallow merge in a direction chosen per load (projected loads fill gaps, full loads win).** An existing `stock` object or `configurable_children` array is kept or replaced as a whole, so a full load after a list load loses nested fields. It also needs a flag on every write and separate handling of bundle link products.
-- **`defaultsDeep` (existing values win).** Never refreshes values once they are set.
+Apply product collection rules recursively inside retained associated `product` objects as well. Other arrays, such as `category_ids`, `disabled_upgrades` and whole gallery arrays, take a deep-cloned incoming value without item enrichment; no stable partial-item enrichment contract was established for them (`core/modules/catalog/types/Product.ts:17–24,40,84–92`). This also prevents positional mixing in every remaining array (D2, D4). Do not infer a universal `id`-then-`sku` key, concatenate unmatched old members, use array index as fallback, or add missing-key recovery. The checked-in API/configuration is our producer; a discrepancy belongs there (F1.2; handling.md step 2).
+
+If a SKU has no entry, keep the existing store-as-returned behavior (D1). If it has an entry, commit the helper's new graph using `Vue.set`; omitted detail remains reactive and the old entry remains unchanged. Reuse `cloneDeep` for copying where needed, not a new dependency (`core/lib/search.ts:5,29`). `findProducts` does not need an extra projection/fullness flag because the checked-in shapes provide either omitted arrays or corresponding item keys.
+
+Consequences required by D1, D2 and D4:
+- Category projection omitting whole arrays keeps them; a returned child array keeps omitted gallery/stock only on the corresponding surviving child.
+- A returned non-prefetched link keeps its own old `product`, but a new SKU cannot inherit another link's product. Removed options/links and removed children disappear.
+- A raw Production Time load after the multi-product SET removes synthetic Standard if absent from the returned values. The next frontend preparation still filters eligible rush choices and builds Standard once; it does not rely on stale membership (`src/modules/customization-system/helpers/update-product-production-time-customization-data.ts:66–105`).
+
+Alternatives rejected:
+- **Positional lodash merge:** the defect D2 rejects; it can duplicate a filtered value or transfer link detail to a different SKU.
+- **Identity union retaining missing members:** D4 rejects that membership, including stale Standard, removed links and unavailable variants.
+- **Replace every object array wholesale:** loses the omitted detail D1 requires on projected children and non-prefetched links.
+- **Shallow merge or `defaultsDeep`:** respectively drops omitted nested detail or prevents returned values from refreshing. Neither meets D1.
 
 ### 5. Explicit writes keep replacing the entry
 
-`PRODUCT_SET_PRODUCT_BY_SKU` stays a plain replacement. It is committed outside catalog loads on purpose: `use-multi-products-page.ts:56` writes a product whose Production Time values were filtered by rush availability, and a merge by index would bring the removed values back.
+Keep `PRODUCT_SET_PRODUCT_BY_SKU` as a plain replacement (`core/modules/catalog/store/product/mutations.ts:102–104`). The multi-product page uses it after transforming rush values (`src/themes/petsies-capybara/helpers/use-multi-products-page.ts:48–57`). This explicit write and its intentional removals are not converted to MERGE. Source: D1.
 
-The `afterSetBundleProducts` hook (`core/modules/catalog/index.ts`) stores the products prefetched for bundle option links. That prefetch calls `ProductService.getProducts()` directly instead of `findProducts`, but it is still a catalog load, so the hook commits `PRODUCT_MERGE_PRODUCT_BY_SKU`. With a replacement, a full prefetch would drop fields an earlier load added, for example `sgn`, which the API returns only for requests with `_source_exclude` (Category list loads). Grouped product prefetches do not write to the dictionary. After this change, every catalog load merges, and `use-multi-products-page.ts` is the only writer that replaces.
+Retain MERGE in the bundle hook because its direct `ProductService.getProducts` call is a catalog load (`core/modules/catalog/helpers/associatedProducts/setBundleProducts.ts:21–36`; `core/modules/catalog/index.ts:31–35`). It preserves an omitted list-only field such as `sgn` when present; the API signature processor is conditional on the original request (`API@fbb5408:src/processor/product.js:79–104`), so do not assume every list supplies it. The grouped hook still does not write dictionary products (`core/modules/catalog/index.ts:35`). Source: D1.
 
 ### 6. Single-product lookups use the `in` operator
 
-`ProductService.getProduct()` (behind `product/single` and `loadProduct`) filters with `{ in: [options[key]] }` instead of `{ eq: options[key] }`.
-
-On client-side navigation to the Forevers page, three Storyblok blocks load product `73` in the same mount cycle with an empty store: `PayPalPayLaterMessage` and `AffirmMonthlyPayment` call `product/single` with key `id`, and `ProductStructuredData` calls `findProducts` with `id in ["73"]`. Both paths use `size: 1`, `from: 0`, `sort: ''` and the default field projection, so the operator was the only difference in `cacheKey`, and Decision 1 could not coalesce them. With `in`, the `SearchRequest` is byte-identical and the three calls share one request.
-
-`storefront-query-builder` maps both `eq` and `in` to a `terms` filter, so the Elasticsearch query and its results do not change for any key (`sku`, `id`, `url_key`). `single` rejects an empty key value, and core callers pass scalar strings, so the array always holds one value. `getProductsIdsFromSearchQuery` already reads `in` for cache tags.
+Keep the existing `{ in: [options[key]] }` lookup with size 1 (`core/data-resolver/ProductService.ts:149–160`). D1 requires the same product result and compatibility with an equivalent one-value list search. The Forevers payment/structured-data blocks for product `73` remain the approved integration acceptance case; do not convert that recorded case into a claim of a newly measured page configuration. Verify ID and SKU query shapes with the existing resolver tests (`core/data-resolver/test/unit/ProductService.spec.ts:49–70`).
 
 Alternatives considered:
 - **Rely only on a product dictionary check in the PayPal and Affirm blocks.** On client-side navigation all blocks start before any response, so a dictionary check does not prevent the duplicate; it only helps hydrated SSR state. Decision 7 adds the check for that case, on top of this decision.
@@ -106,28 +117,28 @@ Alternatives considered:
 
 ### 7. PayPal and Affirm blocks load in the browser and reuse the dictionary
 
-`PayPalPayLaterMessage` and `AffirmMonthlyPayment` loaded their product in `created`. During SSR that sent a request nobody awaited: the blocks render nothing useful on the server (PayPal has `v-if="amount > 0"`, Affirm's widget is initialized by its browser script). In the browser, `created` ran again and always dispatched `product/single`, even when the SSR state already held the product.
-
-Both blocks now load in `mounted`. Before dispatching `product/single`, they take the product from `product/getProductByIdDictionary` when it is there (for example, put into the SSR state by `ProductStructuredData`). `mounted` rather than `beforeMount`: the PayPal message is under `v-if`, so having the product before the hydration render would produce markup the server did not render. The `item` watcher of the Affirm block keeps reloading through the same method, so editor preview changes still apply.
+Retain browser `mounted` loading and ID-dictionary reuse (`src/themes/petsies-capybara/components/storyblok/PayPalPayLaterMessage.vue:64–89`; `src/modules/payment-affirm/components/storyblok/AffirmMonthlyPayment.vue:53–81`). Reuse the existing getter rather than another cache (`core/modules/catalog/store/product/getters.ts:29–37`). `mounted` also keeps PayPal's `v-if="amount > 0"` from changing its hydration markup before mounting (theme `PayPalPayLaterMessage.vue:9–15`). Preserve Affirm's item watcher (`AffirmMonthlyPayment.vue:103–106`). Source: D1.
 
 Alternatives considered:
 - **`serverPrefetch` in both blocks.** Their output is not rendered during SSR, so prefetching only adds server work.
 
 ### 8. Linked product prefetches size the query by their SKU count
 
-`setBundleProducts()` and `setGroupedProduct()` load all linked products with one `sku in [...]` query through `ProductService.getProducts()`, but did not pass `size`, so the default of 50 applied. A bundle with more than 50 linked products left the rest of its `product_links` without `product`, which breaks the option's product, price, and max-quantity data. The Custom Pajamas bundle links exactly 50 SKUs today.
+Retain `size: skus.length` in both helpers (`core/modules/catalog/helpers/associatedProducts/setBundleProducts.ts:16–34`; `setGroupedProduct.ts:15–32`) rather than the resolver default of 50 (`core/data-resolver/ProductService.ts:22–26`). Their returned links attach products by SKU (`setBundleProducts.ts:38–43`; `setGroupedProduct.ts:36–39`). Source: D1's explicit >50 requirements.
 
-Both helpers now pass `size: skus.length`. The SKU list can repeat a SKU that appears in several options, so its length is never below the number of distinct products, and no deduplication is needed. An empty list still falls back to the default size in `quickSearchByQuery()`, but those helpers only run for products that have links.
+No SKU deduplication, empty-list guard or extra batching is added. The requested count is not smaller than the number of distinct requested products, and the existing search size fallback stays unchanged (`core/lib/search.ts:49–52`). The imported local catalog has 50 Custom Pajamas links according to approach review E5; production counts were not checked in this revision.
 
 ## Risks / Trade-offs
 
-- [Persisted query cache entries for single-product lookups change key] → They miss once after deployment and are refilled; the cache already tolerates misses.
+- [R1: Different query shapes for one product still fetch separately] → Accepted by D1; no entity-level coalescer. Likelihood: no data; ordinary impact. Recorded in the ticket's `risks.md`.
+- [R2: Dictionary-existence consumers still treat a list entry as loaded] → Accepted by D1; completeness checks remain out of scope. Likelihood: no data; ordinary impact. Recorded in `risks.md`; this does not accept new merge corruption.
+- [R3: Persisted exact-match lookup cache keys miss after the `in` shape change] → Accepted by D1; retain normal cache miss/refill behavior. Likelihood: no data; ordinary impact. Recorded in `risks.md`.
+- [Incoming `null` refreshes the value rather than preserving old data] → Preserve the approved provided-value rule (D1); omission, not null, represents a projected-out field.
+- [Copying results and merged graphs allocates additional objects] → Reuse existing `cloneDeep`/`Vue.set` patterns (D1); no unmeasured timing claim, optimization layer or memory limit is added.
+- [Unknown live runtime configuration overrides] → D5 requires local revision/configuration evidence, not another production query. The source contract is explicit above; this is an evidence limitation, not acceptance of a corrupt merge or authorization to add defensive fallback behavior.
 
-- [Different query shapes for the same product are still fetched separately] → Accepted as a non-goal. The dominant duplication (N identical directive or block queries) is removed.
-- [A catalog load never removes fields or array items] → Arrays are merged by index, so a load that legitimately returns fewer items (for example `configurable_children` with `products.filterUnavailableVariants`, which is off) keeps the extra items of the existing entry. Writes that must remove data use `PRODUCT_SET_PRODUCT_BY_SKU`.
-- [`null` in a later load overwrites an existing value] → That is a refresh of the value; list projections omit excluded fields rather than sending `null`.
-- [Extra `cloneDeep` per caller and a new object per dictionary write] → Each costs about the same as the clone `cache.setItem` already does on every response, and much less than a network round trip.
+The previous accepted risk that catalog loads retain removed array members is deleted: D4 explicitly supersedes it. Positional merging is a rejected mechanism, not an accepted trade-off.
 
 ## Migration Plan
 
-No data or config migration. Deploy normally; to roll back, revert the commit. Dictionary state is per session and per SSR request, so nothing persists across versions.
+No API, configuration or data migration is introduced. D3 keeps work on the existing app/theme PR branches and preserves local merges and unrelated files. This writing round does not deploy, commit, change production state or start implementation. After review, implement the open tasks and rerun local acceptance checks; any deployment or rollback remains a separate authorized workflow.

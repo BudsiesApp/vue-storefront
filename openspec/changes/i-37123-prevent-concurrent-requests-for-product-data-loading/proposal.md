@@ -2,29 +2,24 @@
 
 ## Why
 
-Product data is reused only after it reaches the Vuex store (`product/getProductBySkuDictionary`) or the catalog query cache (`elasticCache`). Several components that need the same missing product all pass that check before the first response arrives, so each sends its own identical catalog request. On the Storyblok Forevers page (`/forevers-pet-plush/`), five requests for the `ForeversDog_bundle` product go out. Each rich-text block with a `{{productPrice(...)}}` directive (`TextComponent` → `useTextDirectives`) loads independently during SSR `serverPrefetch` and again on client `beforeMount`.
+The origin report records five concurrent loads of the Forevers bundle product on `/forevers-pet-plush/` (#33413 note #231423); D1 adopts the existing PR's request-sharing and product-detail preservation scope. D2 requires correcting that PR's positional array merge, and D4 clarifies that returned arrays replace membership while omitted fields and arrays stay.
 
-The product dictionary has a related problem: every write fully replaces the entry, so whichever load finishes last decides how much detail is kept. Loads differ in detail along two axes:
-
-- **Field projection.** The Category page (`category-next/loadCategoryProducts`) loads products with the `entities.productList` projection. It drops `customizations`, `bundle_options`, `product_links`, `media_gallery`, `stock.max_sale_qty`, `configurable_children[].media_gallery`, and more.
-- **Bundle prefetch.** Loads with `prefetchGroupProducts: false` (Storyblok product blocks, every SSR `findProducts`) have no `bundle_options[].product_links[].product`.
-
-When a less detailed load finishes last, it removes data that the product page (`setCurrentProduct` reads the dictionary), customization pricing, the bundle options UI, and the cart max-quantity check depend on.
+The existing branch already shares pending requests and routes catalog writes through a merge mutation, but still uses `merge({}, existingProduct, product)` (`core/lib/search.ts:15–30`; `core/modules/catalog/store/product/actions.ts:126–128,165–167`; `core/modules/catalog/store/product/mutations.ts:105–112`). Category data varies with both UI and API configuration: the UI template explicitly omits whole detail arrays and child fields, while the default UI include-list projection receives full customization/bundle identities through the API's additive filter (`config/local.json.template:447–477`; `config/default.json:239–307`; API `config/local.json.template:44–46,288–352`, `src/lib/elastic.js:35–61` at `fbb5408ae6dd1dc68c789b35a5a3c2febd914492`). Neither form permits associating array items by position. D5 establishes this contract from local source, not a new live production response.
 
 ## What Changes
 
-- Identical catalog search requests that are already in flight are coalesced. A later caller waits for the pending request instead of sending a new one. Each caller receives its own copy of the result, exactly like a catalog query cache hit. A request that has settled, successfully or not, is no longer shared.
-- Single-product lookups (`product/single`) filter by the key with `in: [value]` instead of `eq: value`. Both operators produce the same Elasticsearch `terms` filter, so results do not change, but a lookup by ID or SKU now has the same request identity as an equivalent `findProducts` search. On the Forevers page this lets the PayPal and Affirm blocks (`product/single`, key `id`) share the request of the `ProductStructuredData` block (`findProducts`, `id in [...]`) on client-side navigation.
-- The PayPal Pay Later and Affirm Storyblok blocks load their product only in the browser after mounting, and first reuse the product from the product dictionary when it is already there. They no longer send a request during SSR, where their result was never rendered, or after a full page load whose SSR state already holds the product.
-- The field projection is part of request identity. A full-data request never waits on a list-projection request, so coalescing can never limit a caller to less detail than it asked for.
-- Catalog loads (`findProducts`, `single`, and the bundle option prefetch) deep-merge the loaded product into the existing dictionary entry instead of replacing it. Fields, nested fields, and array items the load lacks are kept, and fields it contains are updated, so a list projection or a load without bundle prefetch never removes data. Direct writes outside catalog loads still replace the entry, so intentional removals (filtered Production Time options) are kept.
-- Bundle option and grouped product prefetches request as many products as they have linked SKUs. Before, they used the default page size of 50, so any linked product after the 50th was never attached. Custom Pajamas already links exactly 50 SKUs.
+- Preserve coalescing of identical pending catalog searches, independent result copies per caller, and cleanup after success or failure (D1).
+- Preserve the one-value `in` shape for single-product lookups, with unchanged product results and compatibility with equivalent list searches (D1).
+- Preserve browser-after-mount product loading and loaded-dictionary reuse in the PayPal Pay Later and Affirm blocks (D1).
+- Keep field projection in request identity and caller-specific post-processing outside the shared search (D1).
+- Catalog merges preserve omitted fields, nested fields and whole omitted arrays. A returned array supplies its membership and order, including clearing with `[]`; absent old members are removed. Corresponding customization values, bundle options/links and configurable children keep omitted detail by domain identity, never by position. This prevents duplicate Production Time values and wrong link-product associations (D1, D2, D4).
+- Explicit writes still replace the entry, and bundle/grouped prefetches still request the linked-SKU count instead of relying on the default page size (D1).
 
 ## Capabilities
 
 ### New Capabilities
 - `catalog-search-request-deduplication`: coalescing of concurrent identical catalog search requests, isolation of each caller's result, and field projection as part of request identity.
-- `catalog-product-data-merge`: merging of product writes into the product-by-SKU dictionary without losing detail.
+- `catalog-product-data-merge`: preserving omitted product detail while refreshing array membership and enriching corresponding items without positional mixing.
 
 ### Modified Capabilities
 <!-- None -->
@@ -36,13 +31,15 @@ When a less detailed load finishes last, it removes data that the product page (
   - `core/data-resolver/ProductService.ts` (`getProduct` filter operator);
   - `core/modules/catalog/helpers/associatedProducts/setBundleProducts.ts` and `setGroupedProduct.ts` (prefetch size);
   - `src/modules/payment-affirm/components/storyblok/AffirmMonthlyPayment.vue` and the theme `components/storyblok/PayPalPayLaterMessage.vue` (product loading);
-  - `core/modules/catalog/store/product/` (`actions.ts` `findProducts` and `single`, a new `PRODUCT_MERGE_PRODUCT_BY_SKU` mutation in `mutations.ts` and `mutation-types.ts`);
+  - `core/modules/catalog/store/product/` (existing MERGE mutation and catalog writers) and a focused pure helper under `core/modules/catalog/helpers/` for the revised merge;
   - unit tests for these.
-- The existing `PRODUCT_SET_PRODUCT_BY_SKU` mutation keeps replacing the entry, and theme code that commits it (`use-multi-products-page.ts`) keeps working unchanged. The `afterSetBundleProducts` hook in `core/modules/catalog/index.ts`, which stores prefetched bundle option products, switches to the merge mutation.
-- Other existing call sites need no changes. That includes `useTextDirectives`, the Storyblok `Product`/`ProductStructuredData` blocks, and the Category page.
-- SSR: concurrent renders in the same process may share an identical in-flight request. That is safe because SSR is stateless and each caller gets its own copy.
+- Keep SET as a replacement and retain the three catalog MERGE writers (`core/modules/catalog/store/product/mutations.ts:102–112`; `actions.ts:126–128,165–167`; `core/modules/catalog/index.ts:31–35`). The multi-product page's explicit transformed write remains unchanged (`src/themes/petsies-capybara/helpers/use-multi-products-page.ts:48–57`).
+- Other catalog consumers require no call-site changes. No API/configuration changes, new dependencies or data migration are planned. The API checkout is a read-only source for F1.2, not an affected implementation repository (D5).
+- Preserve the existing process-level sharing and complete cache key, with cloned results per caller (`core/lib/search.ts:15–30,57–77`).
 - Out of scope:
   - Requests that differ in shape but target the same product (a SKU filter vs an ID filter, or extra filters such as `status`) are not merged into one request. Only the `eq`/`in` operator difference for the same key is aligned.
   - A single-product lookup still persists a new query cache entry; previously persisted `eq` entries miss once and are refilled.
-  - Consumers that check `if (!dictionary[sku])` before loading still treat a list-projection entry as loaded. That is existing behavior, and the affected consumers only read fields the projection keeps.
+  - Consumers that check only dictionary entry existence remain unchanged (D1; for example `src/modules/shared/composables/use-text-directives.ts:230–242`).
   - Non-catalog requests are not deduplicated.
+
+Sources: D1–D5 are recorded in ticket #37123's `decisions.md`; API revision/configuration evidence is in `task-management/tickets/37123-prevent-concurrent-product-requests/queries/09-local-api-configuration.md`. The full-change path and existing app/theme branch locations remain as confirmed by D3 and approach review 1.
