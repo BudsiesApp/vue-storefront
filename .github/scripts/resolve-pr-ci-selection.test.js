@@ -70,7 +70,7 @@ test('uses defaults when the storefront branch has no task number', async () => 
   })
 
   assert.equal(selection.paymentBranch, DEFAULT_PAYMENT_BRANCH)
-  assert.deepEqual(selection.themeBranches, ['petsies-theme', 'budsies-theme', 'waggables-theme'])
+  assert.deepEqual(selection.themeBranches, ['petsies-theme', 'budsies-theme', 'budsies-education-theme', 'waggables-theme'])
 })
 
 test('uses every default theme for an unrecognized target branch', async () => {
@@ -83,6 +83,7 @@ test('uses every default theme for an unrecognized target branch', async () => {
   assert.deepEqual(selection.themeBranches, [
     'petsies-theme',
     'budsies-theme',
+    'budsies-education-theme',
     'waggables-theme',
     'bulkorders-theme'
   ])
@@ -181,5 +182,5 @@ test('uses default themes when no task-specific theme pull request is relevant',
     baseBranch: 'petsies-theme'
   })
 
-  assert.deepEqual(selection.themeBranches, ['petsies-theme', 'budsies-theme', 'waggables-theme'])
+  assert.deepEqual(selection.themeBranches, ['petsies-theme', 'budsies-theme', 'budsies-education-theme', 'waggables-theme'])
 })
