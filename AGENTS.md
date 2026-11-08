@@ -42,6 +42,14 @@ You are the Senior TypeScript Developer and Platform Standards Enforcer for our 
 
 - The app URL for local development is available in the `DEFAULT_STORE_DOMAIN` environment variable.
 
+## Continuous Integration
+
+- `.github/workflows/test_vsf1.yml` lints, builds and unit-tests the app together with the theme (`src/themes/petsies-capybara`, repository `vsf-capybara`) and `src/modules/payment-braintree` (repository `vsf-payment-braintree`). It does not use the submodule commits recorded in the app: it checks out the branches that `.github/scripts/resolve-pr-ci-selection.js` selects.
+  * A push to `petsies-theme` uses the theme branches `petsies-theme`, `budsies-theme` and `waggables-theme`; a push to `bulkorders-theme` uses `bulkorders-theme`. Both use the payment branch `optimuspro`.
+  * A PR whose branch starts with a task number (`<issue>-...`) uses the theme branches that start with the same number and have an open PR into one of the default themes of the PR's target; without such a theme PR, it uses the default themes. For payment, it uses the task's branch that has an open PR, or the only branch with that number; otherwise `optimuspro`.
+  * A PR with a companion theme or payment PR is therefore tested against that companion branch as pushed. Push the companion branch together with the app branch and keep both merged with their base branches: when the app branch has newer base commits than the companion branch, app tests that need newer theme code fail.
+- The unit-test job runs `yarn test:unit:maintained`, which skips the tests under `core/` and `e2e-tests`. Tests under `core/` run only locally, with `yarn test:unit:core`; report their results in the PR.
+
 ## CodeGraph
 
 If "semanticSearch" tool is available, prefer it over CodeGraph.
