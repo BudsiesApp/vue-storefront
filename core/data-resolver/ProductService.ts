@@ -148,7 +148,7 @@ const getProductRenderList = async ({
 
 const getProduct = async (options: { [key: string]: string }, key: string): Promise<Product> => {
   let searchQuery = new SearchQuery()
-  searchQuery = searchQuery.applyFilter({ key: key, value: { 'eq': options[key] } })
+  searchQuery = searchQuery.applyFilter({ key: key, value: { 'in': [options[key]] } })
   const { items = [] } = await getProducts({
     query: searchQuery,
     size: 1,
