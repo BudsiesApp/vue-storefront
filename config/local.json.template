@@ -212,7 +212,20 @@
       },
       "MX": {},
       "AR": {},
-      "CL": {}
+      "CL": {},
+      "BG": { "isStateNonPostal": true },
+      "HR": { "isStateNonPostal": true },
+      "CZ": { "isStateNonPostal": true },
+      "EE": { "isStateNonPostal": true },
+      "FI": { "isStateNonPostal": true },
+      "HU": { "isStateNonPostal": true },
+      "LT": { "isStateNonPostal": true },
+      "LU": { "isStateNonPostal": true },
+      "PL": { "isStateNonPostal": true },
+      "PT": { "isStateNonPostal": true },
+      "PR": { "isStateNonPostal": true },
+      "SK": { "isStateNonPostal": true },
+      "SI": { "isStateNonPostal": true }
     }
   },
   "privacyPolicy": {
