@@ -225,7 +225,9 @@
       "PT": { "isStateNonPostal": true },
       "PR": { "isStateNonPostal": true },
       "SK": { "isStateNonPostal": true },
-      "SI": { "isStateNonPostal": true }
+      "SI": { "isStateNonPostal": true },
+      "CO": {},
+      "MY": {}
     }
   },
   "privacyPolicy": {
