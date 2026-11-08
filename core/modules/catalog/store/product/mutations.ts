@@ -4,7 +4,7 @@ import * as types from './mutation-types'
 import ProductState, { PagedProductList } from '../../types/ProductState'
 import Vue from 'vue'
 import { ProductDiscountedPrice } from '../../types/product-discounted-price.interface'
-import merge from 'lodash-es/merge'
+import { mergeProductData } from '../../helpers/mergeProductData'
 
 const mutations: MutationTree<ProductState> = {
   [types.PRODUCT_SET_PAGED_PRODUCTS] (state, searchResult) {
@@ -108,7 +108,7 @@ const mutations: MutationTree<ProductState> = {
     Vue.set(
       state.productBySku,
       product.sku,
-      existingProduct ? merge({}, existingProduct, product) : product
+      existingProduct ? mergeProductData(existingProduct, product) : product
     );
   },
   [types.PRODUCT_UNSET_CURRENT] (state) {
