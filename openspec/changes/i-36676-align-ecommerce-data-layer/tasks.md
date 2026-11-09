@@ -46,5 +46,5 @@
 - [x] 6.6 Default a missing, zero, negative, or non-numeric bundle selection quantity to 1 in bundle campaign prices (Decision 4); verify bundle campaign price tests for each case.
 - [x] 6.7 Skip `add_to_cart` when a server response of the add failed (Decision 5); verify `add_to_cart` tests through `cart/addItem` for a rejected and an accepted add.
 - [x] 6.8 Round purchase `custom_fields.subtotal_value` and `affiliate_total` to cents (Decision 1); verify a listener test with grand total 25.21, shipping 6.95, and tax 2.06 reporting `subtotal_value: 16.2`.
-- [ ] 6.9 Verify special-price cases in the browser after reindexing: a simple product and an upgrade with a special price, and a simple product, an upgrade, and a bundle size with both a special price and a campaign discount; check displayed prices, cart line totals, and item `price`/`discount` in `view_item`, `add_to_cart`, `view_cart`, and checkout events.
+- [x] 6.9 Verify special-price cases in the browser after reindexing: a simple product and an upgrade with a special price, and a simple product, an upgrade, and a bundle size with both a special price and a campaign discount; check displayed prices, cart line totals, and item `price`/`discount` in `view_item`, `add_to_cart`, `view_cart`, and checkout events.
 
