@@ -93,7 +93,7 @@ describe('add_to_cart through the cart addItem action', () => {
     } as unknown as CartItem;
   }
 
-  async function addToCart (product: CartItem, itemTotals?: ItemTotals) {
+  async function addToCart (product: CartItem, itemTotals?: ItemTotals, serverResponses: Record<string, any>[] = []) {
     const context = {
       commit: jest.fn(),
       dispatch: jest.fn(async (name: string, { productsToAdd }: { productsToAdd: CartItem[] }) => {
@@ -116,7 +116,7 @@ describe('add_to_cart through the cart addItem action', () => {
           });
         }
 
-        return { serverResponses: [] };
+        return { serverResponses };
       })
     };
 
@@ -161,6 +161,20 @@ describe('add_to_cart through the cart addItem action', () => {
       ecommerce: { value: 90, items: [{ price: 90, discount: 10, quantity: 1 }] }
     });
     expect(store.state.cart.cartItems[0].qty).toBe(4);
+  });
+
+  it('does not report an item that the server rejected', async () => {
+    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
+    const rejected = [{ status: 500, sku: 'PLUSH-1', result: 'Provided email is not valid' }];
+
+    expect(await addToCart(createProduct(1), itemTotals, rejected)).toBeUndefined();
+  });
+
+  it('reports an item when every server response succeeded', async () => {
+    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
+    const accepted = [{ status: 200, sku: 'PLUSH-1', result: {} }];
+
+    expect(await addToCart(createProduct(1), itemTotals, accepted)).toMatchObject({ event: 'add_to_cart' });
   });
 
   it('reports the categories of the added product', async () => {

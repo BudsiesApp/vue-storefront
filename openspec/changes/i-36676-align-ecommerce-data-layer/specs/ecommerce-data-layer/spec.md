@@ -8,12 +8,13 @@ Define the existing storefront ecommerce Data Layer's GA4-compatible item fields
 
 ### Requirement: Event values keep their current sources
 
-Existing ecommerce events SHALL keep their current `value` and `currency` sources. `view_cart`, `begin_checkout`, `add_shipping_info`, and `add_payment_info` SHALL report the cart grand total; `purchase` SHALL report the order grand total with the order currency; `view_item`, `add_to_cart`, and `remove_from_cart` SHALL report the product or line price. Purchase SHALL retain its transaction ID, coupon (empty when absent), items, and separate numeric shipping and tax fields.
+Existing ecommerce events SHALL keep their current `value` and `currency` sources. `view_cart`, `begin_checkout`, `add_shipping_info`, and `add_payment_info` SHALL report the cart grand total; `purchase` SHALL report the order grand total with the order currency; `view_item`, `add_to_cart`, and `remove_from_cart` SHALL report the product or line price. Purchase SHALL retain its transaction ID, coupon (empty when absent), items, and separate numeric shipping and tax fields. Its `custom_fields.subtotal_value` and `custom_fields.affiliate_total` SHALL be rounded to cents.
 
 #### Scenario: Purchase value
 - **WHEN** a confirmed purchase is reported
 - **THEN** `value` is the order grand total and `currency` is the order currency
 - **AND** shipping, tax, transaction ID, coupon, and items are reported separately
+- **AND** a grand total of 25.21 with shipping 6.95 and tax 2.06 reports `subtotal_value: 16.2`, not `16.200000000000003`
 
 #### Scenario: Cart and checkout values
 - **WHEN** `view_cart`, `begin_checkout`, `add_shipping_info`, or `add_payment_info` is emitted
@@ -81,7 +82,7 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 
 ### Requirement: Added cart items use synchronized pricing
 
-`add_to_cart` SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from product data.
+`add_to_cart` SHALL be reported only after the add and its server synchronization succeed. It SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from product data.
 
 #### Scenario: Undiscounted product with quantity two
 - **WHEN** a product with a unit price of 100 is added with quantity 2
@@ -94,6 +95,10 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 #### Scenario: Adding to an existing line
 - **WHEN** a product already in the cart is added again
 - **THEN** the item reports only the added quantity
+
+#### Scenario: Add rejected by the server
+- **WHEN** the server rejects the added item, for example with "Provided email is not valid"
+- **THEN** no `add_to_cart` event is reported
 
 #### Scenario: Categories of the added product
 - **WHEN** the synchronized cart line does not yet carry categories

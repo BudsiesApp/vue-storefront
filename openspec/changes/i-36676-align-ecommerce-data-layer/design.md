@@ -42,7 +42,7 @@ Keep the current listener and helper structure. Reuse `PriceHelper.getCartItemPr
 
 Keep product tax-exclusive mapping separate. Resolve catalog unit amounts from `PriceHelper.getProductPriceData` with the default-bundle calculation and `getProductDiscountedPrice`, not the cached `GET_PRODUCT_PRICE` getter. Remove tax once using the matching current and original net/gross pairs, falling back to the available pair. Retain gift-card amounts and default bundle/campaign resolution, honor zero-valued overrides, and ignore product quantity during unit-price resolution.
 
-Restore the previous `value` and `currency` expressions in each handler. Item revenue is not reconciled with `value`.
+Restore the previous `value` and `currency` expressions in each handler. Item revenue is not reconciled with `value`. Round the purchase `custom_fields.subtotal_value` and `affiliate_total` to cents; both are subtractions of order totals and otherwise carry floating-point noise.
 
 ### 2. Normalize cart item quantity once
 
@@ -64,7 +64,7 @@ In `getBundleOptionDiscountedPrice`, resolve each child's campaign final and reg
 
 ### 5. Map `add_to_cart` from the synchronized line
 
-After `addItem` completes, find the store line matching the added product and map it with the action quantity and the added product's `category`/`category_ids`; compute `value` from the same quantity-adjusted line. When no line or no item totals exist, use the tax-exclusive product price mapping with the action quantity. `remove_from_cart` keeps mapping the store line it receives.
+After `addItem` completes, find the store line matching the added product and map it with the action quantity and the added product's `category`/`category_ids`; compute `value` from the same quantity-adjusted line. When no line or no item totals exist, use the tax-exclusive product price mapping with the action quantity. `remove_from_cart` keeps mapping the store line it receives. The cart's `afterAddToCart` hook runs before server errors are checked, so skip the event when any server response in the hook's diff log failed, the same rule `throwServerErrorFromDiffLog` uses to show the error.
 
 ### 6. Report one category level
 

@@ -260,6 +260,27 @@ describe('GA4 ecommerce listener', () => {
     });
   });
 
+  it('rounds purchase integration totals to cents', async () => {
+    const { pushes, emit } = setup();
+    const order = {
+      products: [item],
+      paymentDetails: {
+        order_currency_code: 'USD',
+        coupon_code: 'TEST',
+        base_grand_total: 25.21,
+        base_shipping_amount: 6.95,
+        base_tax_amount: 2.06,
+        base_subtotal: 21.6,
+        base_discount_amount: 1.8
+      },
+      personalDetails: { emailAddress: 'buyer@example.com', firstName: 'A', lastName: 'B' }
+    };
+
+    await emit('order-after-placed', { order, confirmation: { magentoOrderId: '109' } });
+
+    expect(pushes[1].ecommerce.custom_fields).toMatchObject({ subtotal_value: 16.2, affiliate_total: 19.8 });
+  });
+
   it('uses the placed order after cart state changes and keeps the order grand total and currency', async () => {
     const { pushes, store, emit } = setup();
     const order = {

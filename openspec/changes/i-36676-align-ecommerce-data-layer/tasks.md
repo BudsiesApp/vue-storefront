@@ -44,4 +44,7 @@
 - [x] 6.4 Treat a finite campaign final price of 0 as present in `getProductPrice` (Decision 4); verify `getProductDefaultPrice` tests for a free upgrade, a non-zero campaign price, no campaign price, and a bundle with a free default child, and in the browser that the `memory_pocket` upgrade's displayed price is `{ regular: 15, special: 0 }` with campaign 180.
 - [x] 6.5 Report only the first named category as `item_category`, replacing the ancestry logic from 1.3 and 5.6 (Decision 6), because product data has no category paths; verify mapper tests for several categories, nameless categories, and no categories.
 - [x] 6.6 Default a missing, zero, negative, or non-numeric bundle selection quantity to 1 in bundle campaign prices (Decision 4); verify bundle campaign price tests for each case.
+- [x] 6.7 Skip `add_to_cart` when a server response of the add failed (Decision 5); verify `add_to_cart` tests through `cart/addItem` for a rejected and an accepted add.
+- [x] 6.8 Round purchase `custom_fields.subtotal_value` and `affiliate_total` to cents (Decision 1); verify a listener test with grand total 25.21, shipping 6.95, and tax 2.06 reporting `subtotal_value: 16.2`.
+- [ ] 6.9 Verify special-price cases in the browser after reindexing: a simple product and an upgrade with a special price, and a simple product, an upgrade, and a bundle size with both a special price and a campaign discount; check displayed prices, cart line totals, and item `price`/`discount` in `view_item`, `add_to_cart`, `view_cart`, and checkout events.
 

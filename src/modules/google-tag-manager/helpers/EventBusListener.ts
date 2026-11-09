@@ -16,6 +16,7 @@ import { PlushieWizardEvents } from 'src/modules/budsies';
 import { PriceHelper, ProductEvent, UserEvents, PersistedCustomerData, CustomerDataChangedEventPayload, DEFAULT_CURRENCY_CODE } from 'src/modules/shared';
 
 import CartItem from 'core/modules/cart/types/CartItem';
+import type { DiffLog } from 'core/modules/cart/helpers/createDiffLog';
 import { GET_PRODUCT_PRICE } from '@vue-storefront/core/modules/catalog';
 import { GET_CART_ITEM_PRICE } from '@vue-storefront/core/modules/cart';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
@@ -33,6 +34,14 @@ import { FETCH_ORDERS_HISTORY_ACTION } from 'src/modules/orders-history';
 import { PERSISTED_CUSTOMER_DATA } from 'src/modules/persisted-customer-data';
 
 const shareasaleSSCIDCookieName = 'shareasaleMagentoSSCID';
+
+function hasFailedServerResponse (diffLog: DiffLog | undefined): boolean {
+  return !!diffLog?.serverResponses?.some((response) => String(response.status) !== '200');
+}
+
+function roundMoneyAmount (amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
 
 export default class EventBusListener {
   private trackEcommerceEvent;
@@ -226,10 +235,16 @@ export default class EventBusListener {
   }
 
   private onAfterAddToCartHookHandler ({
-    cartItem
+    cartItem,
+    diffLog
   }: {
-    cartItem: CartItem
+    cartItem: CartItem,
+    diffLog?: DiffLog
   }) {
+    if (hasFailedServerResponse(diffLog)) {
+      return;
+    }
+
     const addedCartLine = findAddedCartLine(cartItem, this.store.getters['cart/getCartItems']);
     const price: PriceHelper.ProductPrice = addedCartLine
       ? PriceHelper.getCartItemPrice(addedCartLine, this.store.state.cart.productDiscountedPrice)
@@ -461,8 +476,10 @@ export default class EventBusListener {
       custom_fields: {
         shareasale_sscid: getCookieByName(shareasaleSSCIDCookieName),
         is_new_customer: isNewCustomer,
-        subtotal_value: orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount,
-        affiliate_total: orderPaymentDetails.base_subtotal - orderPaymentDetails.base_discount_amount
+        subtotal_value: roundMoneyAmount(
+          orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount
+        ),
+        affiliate_total: roundMoneyAmount(orderPaymentDetails.base_subtotal - orderPaymentDetails.base_discount_amount)
       }
     }
 
