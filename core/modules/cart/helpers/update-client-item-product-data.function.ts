@@ -1,4 +1,4 @@
-const productFieldsAllowedToUpdate = [
+export const productFieldsAllowedToUpdate = [
   'category_ids',
   'category',
   'customizations',

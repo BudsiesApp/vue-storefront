@@ -1,7 +1,8 @@
 export interface CustomerDataChangedEventPayload {
   customerId: string,
   customerEmail: string,
-  customerEmailHashed: string,
+  customerEmailHashed?: string,
+  customerEmailHashedSha3?: string,
   customerFirstName: string,
   customerLastName: string,
   customerFullName: string,

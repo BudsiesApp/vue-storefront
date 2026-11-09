@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Store } from 'vuex';
 import VueGtm from '@gtm-support/vue2-gtm';
-import { sha3_256 } from 'js-sha3'
 
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
@@ -17,6 +16,7 @@ import { PlushieWizardEvents } from 'src/modules/budsies';
 import { PriceHelper, ProductEvent, UserEvents, PersistedCustomerData, CustomerDataChangedEventPayload, DEFAULT_CURRENCY_CODE } from 'src/modules/shared';
 
 import CartItem from 'core/modules/cart/types/CartItem';
+import type { DiffLog } from 'core/modules/cart/helpers/createDiffLog';
 import { GET_PRODUCT_PRICE } from '@vue-storefront/core/modules/catalog';
 import { GET_CART_ITEM_PRICE } from '@vue-storefront/core/modules/cart';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
@@ -24,14 +24,24 @@ import ShippingDetails from 'core/modules/checkout/types/ShippingDetails';
 import { ORDER_ERROR_EVENT } from '@vue-storefront/core/modules/checkout';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
+import { findAddedCartLine, prepareAddedCartItemData } from './prepare-added-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
 import { trackEcommerceEventFactory } from './track-ecommerce-event.factory';
+import { getCustomerEmailHashes } from './get-customer-email-hashes.function';
 import { A_B_TEST_GROUP_CHANGED } from 'src/modules/a-b-testing';
 import { FETCH_ORDERS_HISTORY_ACTION } from 'src/modules/orders-history';
 import { PERSISTED_CUSTOMER_DATA } from 'src/modules/persisted-customer-data';
 
 const shareasaleSSCIDCookieName = 'shareasaleMagentoSSCID';
+
+function hasFailedServerResponse (diffLog: DiffLog | undefined): boolean {
+  return !!diffLog?.serverResponses?.some((response) => String(response.status) !== '200');
+}
+
+function roundMoneyAmount (amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
 
 export default class EventBusListener {
   private trackEcommerceEvent;
@@ -112,15 +122,15 @@ export default class EventBusListener {
     EventBus.$on(
       CartEvents.CART_VIEWED,
       ({ products, platformTotals }: { products: CartItem[], platformTotals: any }) => {
+        const items = products.map((cartItem) => prepareCartItemData(cartItem, this.store));
+
         this.trackEcommerceEvent({
           event: GoogleTagManagerEvents.VIEW_CART,
           ecommerce: {
             currency: platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
             value: platformTotals?.base_grand_total || 0,
-            items: products.map((cartItem) => prepareCartItemData(
-              cartItem,
-              this.store
-            ))
+            coupon: platformTotals?.coupon_code,
+            items
           }
         })
       }
@@ -212,28 +222,30 @@ export default class EventBusListener {
   }
 
   private onProductPageShowEventHandler (product: Product): void {
-    const price = this.store.getters[GET_PRODUCT_PRICE](product);
+    const price: PriceHelper.ProductPrice = this.store.getters[GET_PRODUCT_PRICE](product);
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.VIEW_ITEM,
       ecommerce: {
         currency: DEFAULT_CURRENCY_CODE,
         value: PriceHelper.getFinalPrice(price),
-        items: [
-          prepareProductItemData(
-            product,
-            this.store
-          )
-        ]
+        items: [prepareProductItemData(product, this.store)]
       }
     });
   }
 
   private onAfterAddToCartHookHandler ({
-    cartItem
+    cartItem,
+    diffLog
   }: {
-    cartItem: CartItem
+    cartItem: CartItem,
+    diffLog?: DiffLog
   }) {
+    if (hasFailedServerResponse(diffLog)) {
+      return;
+    }
+
+    const addedCartLine = findAddedCartLine(cartItem, this.store.getters['cart/getCartItems']);
     const price: PriceHelper.ProductPrice = this.store.getters[GET_CART_ITEM_PRICE](cartItem);
 
     this.trackEcommerceEvent({
@@ -241,12 +253,7 @@ export default class EventBusListener {
       ecommerce: {
         currency: this.store.state.cart.platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
         value: PriceHelper.getFinalPrice(price),
-        items: [
-          prepareCartItemData(
-            cartItem,
-            this.store
-          )
-        ]
+        items: [prepareAddedCartItemData(cartItem, addedCartLine, this.store)]
       }
     });
   }
@@ -284,15 +291,13 @@ export default class EventBusListener {
   private sendBeginCheckoutEvent (isExpressCheckout = false): void {
     const platformTotals = this.store.state.cart.platformTotals;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
+    const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
-      currency: platformTotals.quote_currency_code,
-      value: platformTotals.base_grand_total,
-      coupon: platformTotals.coupon_code,
-      items: cartItems.map((cartItem) => prepareCartItemData(
-        cartItem,
-        this.store
-      )),
+      currency: platformTotals?.quote_currency_code,
+      value: platformTotals?.base_grand_total,
+      coupon: platformTotals?.coupon_code,
+      items,
       custom_fields: {
         express_checkout: isExpressCheckout
       }
@@ -307,18 +312,14 @@ export default class EventBusListener {
   private onCheckoutAfterPaymentDetailsEventHandler (paymentDetails: PaymentDetails) {
     const platformTotals = this.store.state.cart.platformTotals;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
+    const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
-      currency: platformTotals.quote_currency_code,
-      value: platformTotals.base_grand_total,
-      coupon: platformTotals.coupon_code,
+      currency: platformTotals?.quote_currency_code,
+      value: platformTotals?.base_grand_total,
+      coupon: platformTotals?.coupon_code,
       payment_type: paymentDetails.paymentMethod,
-      items: cartItems.map(
-        (cartItem) => prepareCartItemData(
-          cartItem,
-          this.store
-        )
-      )
+      items
     };
 
     this.trackEcommerceEvent({
@@ -330,18 +331,14 @@ export default class EventBusListener {
   private onCheckoutAfterShippingDetailsEventHandler (shippingDetails: ShippingDetails) {
     const platformTotals = this.store.state.cart.platformTotals;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
+    const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
-      currency: platformTotals.quote_currency_code,
-      value: platformTotals.base_grand_total,
-      coupon: platformTotals.coupon_code,
+      currency: platformTotals?.quote_currency_code,
+      value: platformTotals?.base_grand_total,
+      coupon: platformTotals?.coupon_code,
       shipping_tier: shippingDetails.shippingMethod,
-      items: cartItems.map(
-        (cartItem) => prepareCartItemData(
-          cartItem,
-          this.store
-        )
-      )
+      items
     };
 
     this.trackEcommerceEvent({
@@ -361,13 +358,16 @@ export default class EventBusListener {
   ) {
     if (customerEmail) {
       const customerData = this.store.getters[PERSISTED_CUSTOMER_DATA];
-      const eventData = this.getCustomerEventData(customerData);
-
-      eventData.customerEmail = customerEmail;
-      eventData.customerEmailHashed = sha3_256(customerEmail);
+      const {
+        customerEmailHashed,
+        customerEmailHashedSha3,
+        ...eventData
+      } = this.getCustomerEventData(customerData);
 
       this.trackEvent({
         ...eventData,
+        customerEmail,
+        ...getCustomerEmailHashes(customerEmail),
         event: GoogleTagManagerEvents.USER_DATA_CHANGED
       });
     }
@@ -428,6 +428,7 @@ export default class EventBusListener {
       return;
     }
 
+    const orderItems = order.products.map((cartItem) => prepareCartItemData(cartItem as CartItem, this.store));
     const currentUser = this.store.state.user.current;
 
     let ordersHistory = [];
@@ -467,19 +468,16 @@ export default class EventBusListener {
       transaction_id: confirmation.magentoOrderId,
       value: orderPaymentDetails.base_grand_total,
       coupon: couponCode,
-      shipping: orderPaymentDetails.base_shipping_amount,
-      tax: orderPaymentDetails.base_tax_amount,
-      items: order.products.map(
-        (cartItem) => prepareCartItemData(
-          cartItem as CartItem,
-          this.store
-        )
-      ),
+      shipping: orderPaymentDetails.base_shipping_amount ?? 0,
+      tax: orderPaymentDetails.base_tax_amount ?? 0,
+      items: orderItems,
       custom_fields: {
         shareasale_sscid: getCookieByName(shareasaleSSCIDCookieName),
         is_new_customer: isNewCustomer,
-        subtotal_value: orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount,
-        affiliate_total: orderPaymentDetails.base_subtotal - orderPaymentDetails.base_discount_amount
+        subtotal_value: roundMoneyAmount(
+          orderPaymentDetails.base_grand_total - orderPaymentDetails.base_shipping_amount - orderPaymentDetails.base_tax_amount
+        ),
+        affiliate_total: roundMoneyAmount(orderPaymentDetails.base_subtotal - orderPaymentDetails.base_discount_amount)
       }
     }
 
@@ -487,7 +485,7 @@ export default class EventBusListener {
       event: GoogleTagManagerEvents.PURCHASE,
       ecommerce: data,
       customerEmail: orderPersonalDetails.emailAddress,
-      customerEmailHashed: sha3_256(orderPersonalDetails.emailAddress),
+      ...getCustomerEmailHashes(orderPersonalDetails.emailAddress),
       customerFullName: `${orderPersonalDetails.firstName} ${orderPersonalDetails.lastName}`,
       customerId: currentUser ? currentUser.id : ''
     });
@@ -506,7 +504,7 @@ export default class EventBusListener {
     return {
       customerId: customerData.id,
       customerEmail: customerData.email,
-      customerEmailHashed: sha3_256(customerData.email),
+      ...getCustomerEmailHashes(customerData.email),
       customerFirstName: customerData.firstName || customerData.billingAddress.firstName,
       customerLastName: customerData.lastName || customerData.billingAddress.lastName,
       customerFullName: `${customerData.firstName} ${customerData.lastName}`,

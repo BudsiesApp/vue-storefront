@@ -1,9 +1,13 @@
 import Product from 'core/modules/catalog/types/Product';
 
-export function prepareProductCategories (product: Product) {
-  if (!product.category || product.category.length === 0) {
-    return '';
+export function prepareProductCategories (product: Product): { item_category?: string } {
+  const category = (product.category || []).find(
+    (category) => typeof category.name === 'string' && category.name.trim()
+  );
+
+  if (!category) {
+    return {};
   }
 
-  return product.category.map((category) => category.name).join('|');
+  return { item_category: category.name.trim() };
 }
