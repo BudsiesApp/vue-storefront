@@ -2,13 +2,15 @@
 
 ## Purpose
 TBD - created by archiving change i-36838-cross-repo-pr-ci-selection. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Pull-request task context
 The CI resolver SHALL extract the leading numeric task identifier from the storefront pull-request source branch and SHALL use the pull-request target branch to determine default relevant themes.
 
 #### Scenario: Task-prefixed Petsies pull request
 - **WHEN** a storefront pull request has source branch `36838-ci-selection` and target branch `petsies-theme`
-- **THEN** the resolver uses task identifier `36838` and default themes `petsies-theme`, `budsies-theme`, and `waggables-theme`
+- **THEN** the resolver uses task identifier `36838` and default themes `petsies-theme`, `budsies-theme`, `budsies-education-theme`, and `waggables-theme`
 
 #### Scenario: Pull request has no task prefix
 - **WHEN** a storefront pull request source branch does not begin with a numeric task identifier
@@ -67,3 +69,6 @@ The CI workflow SHALL use the resolver's payment branch and theme matrix for dep
 - **WHEN** the workflow runs for a configured push branch
 - **THEN** it uses the existing static payment and theme branch mapping without pull-request discovery
 
+#### Scenario: Push to the main store branch tests every brand built from it
+- **WHEN** the workflow runs for a push to `petsies-theme`
+- **THEN** the theme matrix contains `petsies-theme`, `budsies-theme`, `budsies-education-theme`, and `waggables-theme`
