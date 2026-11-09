@@ -246,9 +246,7 @@ export default class EventBusListener {
     }
 
     const addedCartLine = findAddedCartLine(cartItem, this.store.getters['cart/getCartItems']);
-    const price: PriceHelper.ProductPrice = addedCartLine
-      ? PriceHelper.getCartItemPrice(addedCartLine, this.store.state.cart.productDiscountedPrice)
-      : this.store.getters[GET_CART_ITEM_PRICE](cartItem);
+    const price: PriceHelper.ProductPrice = this.store.getters[GET_CART_ITEM_PRICE](cartItem);
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.ADD_TO_CART,

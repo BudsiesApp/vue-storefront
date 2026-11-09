@@ -42,6 +42,23 @@ describe('GA4 catalog unit prices using real price resolvers', () => {
     expect(getter).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['missing', undefined, 1],
+    ['NaN', NaN, 1],
+    ['infinite', Infinity, 1],
+    ['zero', 0, 1],
+    ['numeric string', '3', 3]
+  ])('reports a %s product quantity as %s', (_, qty, expected) => {
+    const store = { state: { product: { productDiscountedPrice: {} } } } as unknown as Store<RootState>;
+
+    expect(prepareProductItemData({ ...productWithTax(80), qty } as unknown as Product, store).quantity).toBe(expected);
+  });
+
+  it('reports zero amounts for non-numeric catalog prices', () => {
+    expect(prepareProductPrice({ ...createSimpleProduct(), price: NaN, price_incl_tax: NaN, original_price_incl_tax: NaN }, {}))
+      .toEqual({ price: 0, discount: 0 });
+  });
+
   it('does not depend on the presence of raw regular_price', () => {
     const product = productWithTax(100);
     delete product.regular_price;

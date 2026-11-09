@@ -3,12 +3,10 @@ import { remove as removeAccents } from 'remove-accents'
 import { formatCategoryLink } from '@vue-storefront/core/modules/url/helpers'
 import Vue from 'vue'
 import config from 'config'
-import { sha3_224 } from 'js-sha3'
 import store from '@vue-storefront/core/store'
 import { adjustMultistoreApiUrl } from '@vue-storefront/core/lib/multistore'
 import { coreHooksExecutors } from '@vue-storefront/core/hooks';
 import getApiEndpointUrl from '@vue-storefront/core/helpers/getApiEndpointUrl';
-import omit from 'lodash-es/omit'
 import * as PriceHelper from './price';
 
 export const processURLAddress = (url = '') => {
@@ -233,14 +231,7 @@ export const serial = async promises => {
 }
 
 // helper to calculate the hash of the shopping cart
-export const calcItemsHmac = (items = [], token) => {
-  return sha3_224(JSON.stringify({
-    // we need to omit those properties because they are loaded async and added to product data
-    // and they are not needed to compare products
-    items: items.map(item => omit(item, ['stock', 'totals'])),
-    token: token
-  }))
-}
+export { calcItemsHmac } from './calc-items-hmac'
 
 export function extendStore (moduleName: string | string[], module: any) {
   const merge = function (object: any = {}, source: any) {

@@ -56,6 +56,7 @@ Vue.use(Vuex);
 interface ItemTotals { regular_price: number, savings_amount: number, discount_amount: number, final_price: number }
 
 describe('add_to_cart through the cart addItem action', () => {
+  const cartItemPriceGetter = jest.fn(() => ({ regular: 999, special: null }));
   const pushes: Record<string, any>[] = [];
   const gtm = Object.assign(VueGtm, {
     dataLayer: jest.fn(() => pushes),
@@ -69,7 +70,7 @@ describe('add_to_cart through the cart addItem action', () => {
     },
     getters: {
       'cart/getCartItems': (state) => state.cart.cartItems,
-      'cart/getCartItemPrice': () => () => ({ regular: 999, special: null })
+      'cart/getCartItemPrice': () => cartItemPriceGetter
     }
   });
   const category = [{ category_id: 4, name: 'Plushies', slug: 'plushies-4', path: 'plushies/plushies-4' }];
@@ -134,7 +135,7 @@ describe('add_to_cart through the cart addItem action', () => {
     const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
 
     expect(await addToCart(createProduct(2), itemTotals)).toMatchObject({
-      ecommerce: { value: 200, items: [{ item_id: 'PLUSH-1', price: 100, discount: 0, quantity: 2 }] }
+      ecommerce: { value: 999, items: [{ item_id: 'PLUSH-1', price: 100, discount: 0, quantity: 2 }] }
     });
   });
 
@@ -142,7 +143,7 @@ describe('add_to_cart through the cart addItem action', () => {
     const itemTotals = { regular_price: 100, savings_amount: -20, discount_amount: 0, final_price: 80 };
 
     expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({
-      ecommerce: { value: 80, items: [{ price: 80, discount: 20, quantity: 1 }] }
+      ecommerce: { value: 999, items: [{ price: 80, discount: 20, quantity: 1 }] }
     });
   });
 
@@ -158,9 +159,19 @@ describe('add_to_cart through the cart addItem action', () => {
     await addToCart(createProduct(3), itemTotals);
 
     expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({
-      ecommerce: { value: 90, items: [{ price: 90, discount: 10, quantity: 1 }] }
+      ecommerce: { value: 999, items: [{ price: 90, discount: 10, quantity: 1 }] }
     });
     expect(store.state.cart.cartItems[0].qty).toBe(4);
+  });
+
+  it('keeps the cart item price getter of the added product as the event value source', async () => {
+    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
+    const product = createProduct(2);
+
+    cartItemPriceGetter.mockClear();
+
+    expect(await addToCart(product, itemTotals)).toMatchObject({ ecommerce: { value: 999 } });
+    expect(cartItemPriceGetter).toHaveBeenCalledWith(product);
   });
 
   it('does not report an item that the server rejected', async () => {

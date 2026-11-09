@@ -10,6 +10,7 @@ See `proposal.md` for motivation. `EventBusListener.ts` already creates all requ
 - `getBundleOptionDiscountedPrice` resolves child prices with `||`, so a zero campaign price falls back to the normal price, and it ignores selection quantities. It feeds displayed product prices and cart items without item totals. Displayed prices then pass through `getProductPrice` in `core/helpers/price.ts`, which also treats a campaign final price of 0 as missing (`productDiscountedFinalPrice || priceInclTax`), so a free upgrade is offered at its regular price. Product price fields come from the API's server-side tax calculation: an unset or expired special price has `special_price: null` and `special_price_incl_tax: 0`, while an active zero special price also sets `price_incl_tax` to 0.
 - `platformTotals` is not restored on page load and is set by the first server totals response. The checkout page emits `BEGIN_CHECKOUT` in `beforeMount`, and the handler reads `platformTotals.coupon_code`, so the event is lost whenever checkout mounts before that response. A server-rendered checkout request always redirects to the cart (`asyncData` in `core/pages/Checkout.js`), so this happens only after in-app navigation, for example right after a full load of another page.
 - Product documents store their categories as `{category_id, name, position}` only, without a path or parent; the ID paths exist only on category documents, which item mapping does not load.
+- After a cart merge, the totals sync and the product-data refresh run in parallel. The cart hash covers every item field except `stock` and `totals`, and the totals step stores it when it ends; if the product-data refresh finishes later, the catalog fields it writes change the hash, `isTotalsSyncRequired` stays true, and no further sync repairs it.
 - `customerEmailHashed` is the SHA3-256 digest of the raw email at three call sites, including for blank emails.
 
 ## Goals / Non-Goals
@@ -46,7 +47,7 @@ Restore the previous `value` and `currency` expressions in each handler. Item re
 
 ### 2. Normalize cart item quantity once
 
-Parse the item quantity once: a finite positive number, including a numeric string, is used for both the reported `quantity` and the unit-amount division. Any other value reports `quantity: 0` with zero price and discount. Product events without a quantity keep reporting `1`.
+Parse the item quantity once: a finite positive number, including a numeric string, is used for both the reported `quantity` and the unit-amount division. Any other value reports `quantity: 0` with zero price and discount. Product events report a finite positive quantity, including a numeric string, and otherwise `1`. One helper normalizes quantities for both mappers. Unit amounts that are not finite, or not positive, are reported as 0, so invalid custom totals or catalog prices never emit NaN or Infinity.
 
 Round unit `price` and `discount` to four decimal places, the precision of Magento's item totals, in both the cart and product mappers. This removes floating-point noise from divisions and subtractions without losing allocated coupon precision.
 
@@ -64,7 +65,7 @@ In `getBundleOptionDiscountedPrice`, resolve each child's campaign final and reg
 
 ### 5. Map `add_to_cart` from the synchronized line
 
-After `addItem` completes, find the store line matching the added product and map it with the action quantity and the added product's `category`/`category_ids`; compute `value` from the same quantity-adjusted line. When no line or no item totals exist, use the tax-exclusive product price mapping with the action quantity. `remove_from_cart` keeps mapping the store line it receives. The cart's `afterAddToCart` hook runs before server errors are checked, so skip the event when any server response in the hook's diff log failed, the same rule `throwServerErrorFromDiffLog` uses to show the error.
+After `addItem` completes, find the store line matching the added product and map it with the action quantity and the added product's `category`/`category_ids`; keep `value` on its previous source, the cart item price getter for the added product, so the event value is unchanged by this mapping. When no line or no item totals exist, use the tax-exclusive product price mapping with the action quantity. `remove_from_cart` keeps mapping the store line it receives. The cart's `afterAddToCart` hook runs before server errors are checked, so skip the event when any server response in the hook's diff log failed, the same rule `throwServerErrorFromDiffLog` uses to show the error.
 
 ### 6. Report one category level
 
@@ -75,6 +76,8 @@ Alternatives rejected: deriving ancestry from path segments matched against slug
 ### 7. Shared readiness for cart and checkout events
 
 Extract the readiness computation of the cart-page composable into a shared composable used by the cart page (`view_cart`) and the checkout page (`begin_checkout`): mounted, local cart data loaded, a successful totals timestamp, no totals sync required, and idle cart, totals, and coupon processing. Empty or offline carts follow the existing cart-view rules. The checkout page emits once per mounted visit and only for a nonempty cart; express checkout keeps its trigger. Checkout handlers read `platformTotals` with null guards.
+
+The cart hash (`calcItemsHmac`) also omits the catalog fields the product-data refresh writes (`productFieldsAllowedToUpdate`, except `sku`), alongside `stock` and `totals`, so readiness no longer depends on which parallel step finishes last. Quantity, SKU, selected options, and extension attributes still change the hash. Alternative rejected: storing the hash again after both steps finish, which could absorb a quantity change made in between and let the following sync be skipped.
 
 ### 8. Customer email hashes
 
@@ -87,6 +90,7 @@ Add `js-sha256` and one helper that returns both digests for a nonblank email: S
 - Paid-option items → the order summary's regular subtotal and savings come from Magento totals based on base prices and stay inconsistent with the corrected line price.
 - `customerEmailHashed` changes value → `customerEmailHashedSha3` carries the previous digest for consumers that need it.
 - Shared `discount` and category semantics change for non-GA consumers → document the before/after shapes.
+- The cart hash covers fewer fields → after deployment, stored cart hashes no longer match once, causing one extra cart synchronization per visitor.
 
 ## Migration Plan
 

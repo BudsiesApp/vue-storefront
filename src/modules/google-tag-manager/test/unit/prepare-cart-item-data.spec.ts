@@ -95,6 +95,16 @@ describe('GA4 cart item mapping with the existing price helper', () => {
     });
   });
 
+  it.each([
+    ['NaN', NaN],
+    ['infinite', Infinity],
+    ['non-numeric', 'abc']
+  ])('reports zero amounts for a %s custom final price', (_, finalPrice) => {
+    const item = createItem(120, finalPrice as unknown as number);
+
+    expect(prepareCartItemData(item, store)).toMatchObject({ price: 0, discount: 0, quantity: 2 });
+  });
+
   it('reports a numeric string quantity as its number and uses it for unit amounts', () => {
     expect(prepareCartItemData({ ...createItem(), qty: '2' } as unknown as CartItem, store)).toMatchObject({
       quantity: 2,

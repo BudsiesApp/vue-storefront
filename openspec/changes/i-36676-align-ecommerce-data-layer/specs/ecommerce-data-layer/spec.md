@@ -24,7 +24,7 @@ Existing ecommerce events SHALL keep their current `value` and `currency` source
 #### Scenario: Item event values
 - **WHEN** `view_item`, `add_to_cart`, or `remove_from_cart` is emitted
 - **THEN** `value` is the product price or the price of the added or removed line
-- **AND** for `add_to_cart` the line price covers only the added quantity
+- **AND** `add_to_cart` keeps deriving `value` from the cart item price of the added product, independently of the synchronized line used for its item
 
 #### Scenario: Applied coupon in cart views
 - **WHEN** a `view_cart` event is emitted for a cart with an applied coupon
@@ -33,7 +33,7 @@ Existing ecommerce events SHALL keep their current `value` and `currency` source
 
 ### Requirement: Item prices and discounts are unit monetary values
 
-Existing product and cart item payloads SHALL emit a numeric, discounted, tax-exclusive unit `price` and a numeric unit `discount`, with zero discount when none applies. Cart, checkout, and purchase items SHALL include backend-applied merchandise discounts exactly once, including transaction-level discounts allocated to items, and SHALL reflect the latest server-calculated item totals. Item amounts SHALL use unlocalized prices independently of the selected display currency. Emitted amounts SHALL be finite, and the reported `quantity` SHALL be the same quantity used to derive unit amounts.
+Existing product and cart item payloads SHALL emit a numeric, discounted, tax-exclusive unit `price` and a numeric unit `discount`, with zero discount when none applies. Cart, checkout, and purchase items SHALL include backend-applied merchandise discounts exactly once, including transaction-level discounts allocated to items, and SHALL reflect the latest server-calculated item totals. Item amounts SHALL use unlocalized prices independently of the selected display currency. Emitted amounts SHALL be finite and non-negative, and the reported `quantity` SHALL be the same quantity used to derive unit amounts. Product events SHALL report a finite positive quantity, defaulting to 1.
 
 #### Scenario: Backend price already includes a coupon
 - **WHEN** a backend item price already includes a transaction coupon discount
@@ -63,6 +63,11 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 - **WHEN** a cart item quantity is zero, negative, missing, non-numeric, NaN, or infinite
 - **THEN** the item reports `quantity: 0`, `price: 0`, and `discount: 0`
 - **AND** a numeric string quantity is reported as its number and used for unit amounts
+
+#### Scenario: Non-numeric amounts or product quantity
+- **WHEN** item totals or catalog prices are NaN, infinite, or non-numeric, or a product event's quantity is missing, zero, NaN, or infinite
+- **THEN** the item reports `price: 0` and `discount: 0` for the invalid amounts
+- **AND** the product item reports `quantity: 1`, and a numeric string quantity is reported as its number
 
 #### Scenario: Quantity and rounding
 - **WHEN** a discounted line has multiple units and its total discount does not divide evenly into currency minor units
@@ -149,6 +154,11 @@ An online, nonempty cart SHALL report `view_cart` only after the page mounts, lo
 - **THEN** it emits one cart view
 - **AND** further synchronization or coupon changes during that visit do not emit another view
 - **AND** a new cart-page visit can emit its own view
+
+#### Scenario: Catalog data refreshed after totals
+- **WHEN** a cart synchronization finishes its totals before the product catalog data refresh, or after it
+- **THEN** the cart view and the checkout start are reported once synchronization is idle in both orders
+- **AND** catalog fields added to cart items (categories, descriptions, media, catalog prices) do not mark totals as requiring synchronization
 
 #### Scenario: Leaving before totals are ready
 - **WHEN** the cart page is destroyed before synchronization completes

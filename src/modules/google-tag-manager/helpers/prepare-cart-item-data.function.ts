@@ -6,19 +6,13 @@ import { normalizeProductPurchaseFlow, PriceHelper } from 'src/modules/shared';
 
 import { prepareBaseItemData } from './prepare-base-item-data.function';
 import { getComposedSku } from './get-composed-sku.function';
-import { roundUnitAmount } from './round-unit-amount.function';
-
-function normalizeQuantity (qty: unknown): number {
-  const quantity = typeof qty === 'string' && qty.trim() ? Number(qty) : qty;
-
-  return typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0 ? quantity : 0;
-}
+import { normalizeItemQuantity, normalizeUnitAmount } from './normalize-item-amounts.function';
 
 export function prepareCartItemData (
   cartItem: CartItem,
   store: Store<RootState>
 ) {
-  const quantity = normalizeQuantity(cartItem.qty);
+  const quantity = normalizeItemQuantity(cartItem.qty, 0);
   const purchaseFlow = cartItem.extension_attributes?.flow;
   const baseData = prepareBaseItemData(cartItem);
 
@@ -40,7 +34,7 @@ export function prepareCartItemData (
     quantity,
     purchase_flow: normalizeProductPurchaseFlow(purchaseFlow),
     item_variant: getComposedSku(cartItem),
-    price: roundUnitAmount(PriceHelper.getFinalPrice(price) / quantity),
-    discount: roundUnitAmount(Math.max(0, PriceHelper.getProductDiscount(price).discount) / quantity)
+    price: normalizeUnitAmount(PriceHelper.getFinalPrice(price) / quantity),
+    discount: normalizeUnitAmount(PriceHelper.getProductDiscount(price).discount / quantity)
   }
 }
