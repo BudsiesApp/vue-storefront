@@ -165,8 +165,9 @@ function getProductPrice (
   productPriceData: ProductPriceData
 ) {
   const quantity = (product.qty || 1);
-  const productDiscountedFinalPrice = productDiscountedPriceValue?.final !== undefined
-    ? productDiscountedPriceValue.final * quantity
+  const campaignFinalPrice = productDiscountedPriceValue?.final;
+  const productDiscountedFinalPrice = typeof campaignFinalPrice === 'number' && Number.isFinite(campaignFinalPrice)
+    ? campaignFinalPrice * quantity
     : undefined;
 
   const productDiscountedRegularPrice = productDiscountedPriceValue?.regular;
@@ -179,9 +180,9 @@ function getProductPrice (
 
   const original = productDiscountedRegularPrice ? productDiscountedRegularPrice * quantity : originalPriceInclTax
   const regular = product.regular_price || priceInclTax
-  let special = productDiscountedFinalPrice || priceInclTax
+  let special = productDiscountedFinalPrice ?? priceInclTax
 
-  const isSpecialPrice = (!!productDiscountedFinalPrice ||
+  const isSpecialPrice = (productDiscountedFinalPrice !== undefined ||
     (specialPrice && priceInclTax && originalPriceInclTax) ||
     specialPrice === 0) &&
     special < original;
@@ -203,12 +204,14 @@ export function getCartItemPrice (
   const itemTotals = cartItem.extension_attributes?.budsies_quote_item_totals;
 
   if (itemTotals?.final_price !== undefined && itemTotals?.regular_price !== undefined) {
-    const isEqual = itemTotals.final_price === itemTotals.regular_price;
     const quantity = cartItem.qty || 1;
+    const unitRegularPrice = itemTotals.savings_amount === undefined
+      ? Math.max(itemTotals.regular_price, itemTotals.final_price)
+      : itemTotals.regular_price + Math.max(0, itemTotals.savings_amount);
 
     return {
-      regular: itemTotals.regular_price * quantity,
-      special: isEqual ? null : itemTotals.final_price * quantity
+      regular: unitRegularPrice * quantity,
+      special: itemTotals.final_price < unitRegularPrice ? itemTotals.final_price * quantity : null
     }
   }
 

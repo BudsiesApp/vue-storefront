@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Store } from 'vuex';
 import VueGtm from '@gtm-support/vue2-gtm';
-import { sha3_256 } from 'js-sha3'
 
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
@@ -14,18 +13,21 @@ import { Logger } from '@vue-storefront/core/lib/logger';
 import getCookieByName from 'src/modules/shared/helpers/get-cookie-by-name.function';
 import CartEvents from 'src/modules/shared/types/cart-events';
 import { PlushieWizardEvents } from 'src/modules/budsies';
-import { ProductEvent, UserEvents, PersistedCustomerData, CustomerDataChangedEventPayload, DEFAULT_CURRENCY_CODE } from 'src/modules/shared';
+import { PriceHelper, ProductEvent, UserEvents, PersistedCustomerData, CustomerDataChangedEventPayload, DEFAULT_CURRENCY_CODE } from 'src/modules/shared';
 
 import CartItem from 'core/modules/cart/types/CartItem';
+import { GET_PRODUCT_PRICE } from '@vue-storefront/core/modules/catalog';
+import { GET_CART_ITEM_PRICE } from '@vue-storefront/core/modules/cart';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
 import ShippingDetails from 'core/modules/checkout/types/ShippingDetails';
 import { ORDER_ERROR_EVENT } from '@vue-storefront/core/modules/checkout';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
+import { findAddedCartLine, prepareAddedCartItemData } from './prepare-added-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
-import { getEcommerceValue } from './get-ecommerce-value.function';
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
 import { trackEcommerceEventFactory } from './track-ecommerce-event.factory';
+import { getCustomerEmailHashes } from './get-customer-email-hashes.function';
 import { A_B_TEST_GROUP_CHANGED } from 'src/modules/a-b-testing';
 import { FETCH_ORDERS_HISTORY_ACTION } from 'src/modules/orders-history';
 import { PERSISTED_CUSTOMER_DATA } from 'src/modules/persisted-customer-data';
@@ -116,8 +118,8 @@ export default class EventBusListener {
         this.trackEcommerceEvent({
           event: GoogleTagManagerEvents.VIEW_CART,
           ecommerce: {
-            currency: DEFAULT_CURRENCY_CODE,
-            value: getEcommerceValue(items),
+            currency: platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
+            value: platformTotals?.base_grand_total || 0,
             coupon: platformTotals?.coupon_code,
             items
           }
@@ -211,14 +213,14 @@ export default class EventBusListener {
   }
 
   private onProductPageShowEventHandler (product: Product): void {
-    const items = [prepareProductItemData(product, this.store)];
+    const price: PriceHelper.ProductPrice = this.store.getters[GET_PRODUCT_PRICE](product);
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.VIEW_ITEM,
       ecommerce: {
         currency: DEFAULT_CURRENCY_CODE,
-        value: getEcommerceValue(items),
-        items
+        value: PriceHelper.getFinalPrice(price),
+        items: [prepareProductItemData(product, this.store)]
       }
     });
   }
@@ -228,14 +230,17 @@ export default class EventBusListener {
   }: {
     cartItem: CartItem
   }) {
-    const items = [prepareCartItemData(cartItem, this.store)];
+    const addedCartLine = findAddedCartLine(cartItem, this.store.getters['cart/getCartItems']);
+    const price: PriceHelper.ProductPrice = addedCartLine
+      ? PriceHelper.getCartItemPrice(addedCartLine, this.store.state.cart.productDiscountedPrice)
+      : this.store.getters[GET_CART_ITEM_PRICE](cartItem);
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.ADD_TO_CART,
       ecommerce: {
-        currency: DEFAULT_CURRENCY_CODE,
-        value: getEcommerceValue(items),
-        items
+        currency: this.store.state.cart.platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
+        value: PriceHelper.getFinalPrice(price),
+        items: [prepareAddedCartItemData(cartItem, addedCartLine, this.store)]
       }
     });
   }
@@ -245,14 +250,14 @@ export default class EventBusListener {
   }: {
     cartItem: CartItem
   }) {
-    const items = [prepareCartItemData(cartItem, this.store)];
+    const price: PriceHelper.ProductPrice = this.store.getters[GET_CART_ITEM_PRICE](cartItem);
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.REMOVE_FORM_CART,
       ecommerce: {
         currency: DEFAULT_CURRENCY_CODE,
-        value: getEcommerceValue(items),
-        items
+        value: PriceHelper.getFinalPrice(price),
+        items: [prepareCartItemData(cartItem, this.store)]
       }
     })
   }
@@ -276,9 +281,9 @@ export default class EventBusListener {
     const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
-      currency: DEFAULT_CURRENCY_CODE,
-      value: getEcommerceValue(items),
-      coupon: platformTotals.coupon_code,
+      currency: platformTotals?.quote_currency_code,
+      value: platformTotals?.base_grand_total,
+      coupon: platformTotals?.coupon_code,
       items,
       custom_fields: {
         express_checkout: isExpressCheckout
@@ -297,9 +302,9 @@ export default class EventBusListener {
     const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
-      currency: DEFAULT_CURRENCY_CODE,
-      value: getEcommerceValue(items),
-      coupon: platformTotals.coupon_code,
+      currency: platformTotals?.quote_currency_code,
+      value: platformTotals?.base_grand_total,
+      coupon: platformTotals?.coupon_code,
       payment_type: paymentDetails.paymentMethod,
       items
     };
@@ -316,9 +321,9 @@ export default class EventBusListener {
     const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
-      currency: DEFAULT_CURRENCY_CODE,
-      value: getEcommerceValue(items),
-      coupon: platformTotals.coupon_code,
+      currency: platformTotals?.quote_currency_code,
+      value: platformTotals?.base_grand_total,
+      coupon: platformTotals?.coupon_code,
       shipping_tier: shippingDetails.shippingMethod,
       items
     };
@@ -340,13 +345,16 @@ export default class EventBusListener {
   ) {
     if (customerEmail) {
       const customerData = this.store.getters[PERSISTED_CUSTOMER_DATA];
-      const eventData = this.getCustomerEventData(customerData);
-
-      eventData.customerEmail = customerEmail;
-      eventData.customerEmailHashed = sha3_256(customerEmail);
+      const {
+        customerEmailHashed,
+        customerEmailHashedSha3,
+        ...eventData
+      } = this.getCustomerEventData(customerData);
 
       this.trackEvent({
         ...eventData,
+        customerEmail,
+        ...getCustomerEmailHashes(customerEmail),
         event: GoogleTagManagerEvents.USER_DATA_CHANGED
       });
     }
@@ -443,9 +451,9 @@ export default class EventBusListener {
 
     const data = {
       affiliation: storeName,
-      currency: DEFAULT_CURRENCY_CODE,
+      currency: orderPaymentDetails.order_currency_code,
       transaction_id: confirmation.magentoOrderId,
-      value: getEcommerceValue(orderItems),
+      value: orderPaymentDetails.base_grand_total,
       coupon: couponCode,
       shipping: orderPaymentDetails.base_shipping_amount ?? 0,
       tax: orderPaymentDetails.base_tax_amount ?? 0,
@@ -462,7 +470,7 @@ export default class EventBusListener {
       event: GoogleTagManagerEvents.PURCHASE,
       ecommerce: data,
       customerEmail: orderPersonalDetails.emailAddress,
-      customerEmailHashed: sha3_256(orderPersonalDetails.emailAddress),
+      ...getCustomerEmailHashes(orderPersonalDetails.emailAddress),
       customerFullName: `${orderPersonalDetails.firstName} ${orderPersonalDetails.lastName}`,
       customerId: currentUser ? currentUser.id : ''
     });
@@ -481,7 +489,7 @@ export default class EventBusListener {
     return {
       customerId: customerData.id,
       customerEmail: customerData.email,
-      customerEmailHashed: sha3_256(customerData.email),
+      ...getCustomerEmailHashes(customerData.email),
       customerFirstName: customerData.firstName || customerData.billingAddress.firstName,
       customerLastName: customerData.lastName || customerData.billingAddress.lastName,
       customerFullName: `${customerData.firstName} ${customerData.lastName}`,

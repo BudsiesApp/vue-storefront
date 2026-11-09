@@ -3,6 +3,8 @@ import type { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalo
 import { getProductDiscountedPrice } from '@vue-storefront/core/helpers/product-discounted-price';
 import { calculateProductDefaultBundleOptionsPrice, getProductPriceData } from '@vue-storefront/core/helpers/price';
 
+import { roundUnitAmount } from './round-unit-amount.function';
+
 function finiteAmount (value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
@@ -30,7 +32,7 @@ export function prepareProductPrice (
   const paid = Math.max(0, finiteAmount(paidGross * (paidRatio ?? regularRatio ?? 1)) ?? 0);
 
   return {
-    price: Math.min(regular, paid),
-    discount: Math.max(0, regular - paid)
+    price: roundUnitAmount(Math.min(regular, paid)),
+    discount: roundUnitAmount(Math.max(0, regular - paid))
   };
 }

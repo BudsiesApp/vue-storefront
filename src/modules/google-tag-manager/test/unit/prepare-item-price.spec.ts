@@ -5,7 +5,6 @@ import { createSimpleProduct, createBundleProduct } from '@vue-storefront/core/m
 import { calculateProductTax } from '@vue-storefront/core/modules/catalog/helpers/taxCalc';
 import { prepareProductPrice } from '../../helpers/prepare-item-price.function';
 import { prepareProductItemData } from '../../helpers/prepare-product-item-data.function';
-import { getEcommerceValue } from '../../helpers/get-ecommerce-value.function';
 
 jest.mock('@vue-storefront/core/modules/catalog/helpers', () => ({
   isBundleProduct: (product: Product) => product.type_id === 'bundle'
@@ -40,7 +39,6 @@ describe('GA4 catalog unit prices using real price resolvers', () => {
     } as unknown as Store<RootState>;
     const item = prepareProductItemData(product, store);
     expect(item).toMatchObject({ price: 80, discount: 20, quantity: qty });
-    expect(getEcommerceValue([item])).toBe(80 * qty);
     expect(getter).not.toHaveBeenCalled();
   });
 
@@ -66,6 +64,15 @@ describe('GA4 catalog unit prices using real price resolvers', () => {
     }] }];
     expect(prepareProductPrice(bundle, { [child.id]: { regular: 120, final: 60 } })).toEqual({ price: 50, discount: 50 });
     expect(prepareProductPrice(bundle, {})).toEqual({ price: 80, discount: 20 });
+  });
+
+  it('keeps a free default bundle child in a campaign', () => {
+    const child = productWithTax(80);
+    const bundle = { ...createBundleProduct(), price: 80, price_incl_tax: 96, original_price: 100, original_price_incl_tax: 120 };
+    bundle.bundle_options = [{ ...bundle.bundle_options[0], product_links: [{
+      ...bundle.bundle_options[0].product_links[0], product: child, is_default: true
+    }] }];
+    expect(prepareProductPrice(bundle, { [child.id]: { regular: 120, final: 0 } })).toEqual({ price: 0, discount: 100 });
   });
 
   it('retains configured gift-card amounts', () => {

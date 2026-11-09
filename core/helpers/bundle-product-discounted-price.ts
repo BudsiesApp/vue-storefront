@@ -4,6 +4,16 @@ import { getBundleOptionsValues, getDefaultBundleOptions } from '@vue-storefront
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
 
+function getCampaignAmount (value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function getSelectionQuantity (qty: number | string | undefined): number {
+  const quantity = typeof qty === 'string' ? parseFloat(qty) : qty;
+
+  return typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+}
+
 function getBundleOptionDiscountedPrice (
   bundleOptionValues: BundleOptionsProductLink[],
   productDiscountedPrice: Record<string, ProductDiscountedPrice>
@@ -12,11 +22,12 @@ function getBundleOptionDiscountedPrice (
 
   const price = bundleOptionValues.map((optionValue) => {
     const product = optionValue.product;
+    const quantity = getSelectionQuantity(optionValue.qty);
 
     if (!product || !product.id) {
       return {
-        regular: optionValue.price || 0,
-        final: optionValue.price || 0
+        regular: (optionValue.price || 0) * quantity,
+        final: (optionValue.price || 0) * quantity
       };
     }
 
@@ -26,17 +37,20 @@ function getBundleOptionDiscountedPrice (
       isDiscounted = true;
     }
 
+    const final = getCampaignAmount(productPrice?.final) ??
+      (product.special_price_incl_tax ||
+      product.priceInclTax ||
+      product.price_incl_tax ||
+      0);
+    const regular = getCampaignAmount(productPrice?.regular) ??
+      (product.original_price_incl_tax ||
+      product.priceInclTax ||
+      product.price_incl_tax ||
+      0);
+
     return {
-      final: productPrice?.final ||
-        product.special_price_incl_tax ||
-        product.priceInclTax ||
-        product.price_incl_tax ||
-        0,
-      regular: productPrice?.regular ||
-        product.original_price_incl_tax ||
-        product.priceInclTax ||
-        product.price_incl_tax ||
-        0
+      final: final * quantity,
+      regular: regular * quantity
     };
   }).reduce((productPrice, totalPrice) => {
     return {
