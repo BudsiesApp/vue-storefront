@@ -3,15 +3,12 @@ import { BundleOptionsProductLink, SelectedBundleOption } from '@vue-storefront/
 import { getBundleOptionsValues, getDefaultBundleOptions } from '@vue-storefront/core/modules/catalog/helpers/bundleOptions';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
-
-function getCampaignAmount (value: number | undefined): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
+import { toFiniteNumber } from './to-finite-number';
 
 function getSelectionQuantity (qty: number | string | undefined): number {
-  const quantity = typeof qty === 'string' ? Number(qty) : qty;
+  const quantity = toFiniteNumber(typeof qty === 'string' ? Number(qty) : qty);
 
-  return typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+  return quantity !== undefined && quantity > 0 ? quantity : 1;
 }
 
 function getBundleOptionDiscountedPrice (
@@ -37,12 +34,12 @@ function getBundleOptionDiscountedPrice (
       isDiscounted = true;
     }
 
-    const final = getCampaignAmount(productPrice?.final) ??
+    const final = toFiniteNumber(productPrice?.final) ??
       (product.special_price_incl_tax ||
       product.priceInclTax ||
       product.price_incl_tax ||
       0);
-    const regular = getCampaignAmount(productPrice?.regular) ??
+    const regular = toFiniteNumber(productPrice?.regular) ??
       (product.original_price_incl_tax ||
       product.priceInclTax ||
       product.price_incl_tax ||
