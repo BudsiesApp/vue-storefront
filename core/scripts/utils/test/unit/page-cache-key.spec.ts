@@ -34,6 +34,7 @@ describe('Page-key behavior is preserved', () => {
     ['?%65mail=alice%40example.test&image-url=https%3A%2F%2Fexample.test%2Falice.png', '/page/', '%65mail=alice%40example.test&image-url=https%3A%2F%2Fexample.test%2Falice.png'],
     ['?step=a%26email%3Db&step=c+d&coupon_code=', '/page/?step=a%26email%3Db&step=c+d', 'coupon_code='],
     ['?step=2', '/page/?step=2', ''],
+    ['?aleid=a%2Bb&alart=c%2Fd&step=2', '/page/?step=2', 'aleid=a%2Bb&alart=c%2Fd'],
     ['', '/page/', '']
   ])('splits %s once', (query, cleanUrl, strippedQuery) => {
     const { splitPageCacheUrl } = require('../../page-cache-key');
@@ -49,10 +50,19 @@ describe('Stripped query is appended to redirect locations', () => {
     ['/target/?step=2', 'coupon_code=BOB20', '/target/?step=2&coupon_code=BOB20'],
     ['/sign-in/?redirect-target=%2Faccount%2F', 'redirect-target=%2Fother%2F&email=bob%40example.test', '/sign-in/?redirect-target=%2Faccount%2F&email=bob%40example.test'],
     ['/target/?step=2#reviews', 'utm_source=fb', '/target/?step=2&utm_source=fb#reviews'],
+    ['/target/?aleid=owned#reviews', 'aleid=other&alart=a%2Bb', '/target/?aleid=owned&alart=a%2Bb#reviews'],
     ['https://example.test/target/', 'gclid=synthetic', 'https://example.test/target/?gclid=synthetic'],
     ['/target/?step=2', '', '/target/?step=2']
   ])('%s + %s', (location, strippedQuery, expected) => {
     const { appendStrippedQuery } = require('../../page-cache-key');
     expect(appendStrippedQuery(location, strippedQuery)).toBe(expected);
   });
+});
+
+it('keeps store, functional and mixed-case query dimensions significant', () => {
+  const base = generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1');
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&aleid=one')).toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=2&aleid=one')).not.toBe(base);
+  expect(generatePageCacheKey('other_store', 'https://example.test/page/?step=1&alart=two')).not.toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&ALEID=one')).not.toBe(base);
 });

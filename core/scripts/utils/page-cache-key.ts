@@ -36,6 +36,8 @@ const ignoredQueryKeys = [
   'rdt_cid',
   'irclickid',
   'awc',
+  'aleid',
+  'alart',
   'pp',
   'audience',
   'ref',
