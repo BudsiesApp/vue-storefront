@@ -73,7 +73,7 @@ A product's displayed price SHALL treat a campaign final price of zero as a vali
 
 ### Requirement: Bundle campaign prices keep zero values and selection quantities
 
-When a campaign price applies to any selected bundle child, the bundle campaign price SHALL treat a child's campaign or special price of zero as zero and SHALL multiply each child's price by its selection quantity. A missing, zero, negative or non-numeric selection quantity SHALL count as 1. This SHALL apply to default bundle prices and to bundle cart items without item-level totals.
+When a campaign price applies to any selected bundle child, the bundle campaign price SHALL treat a child's campaign or special price of zero as zero and SHALL multiply each child's price by its selection quantity. A selection quantity given as a string SHALL count only when the whole string is a number. A missing, zero, negative, non-numeric or partially numeric selection quantity SHALL count as 1. This SHALL apply to default bundle prices and to bundle cart items without item-level totals.
 
 #### Scenario: Free default child in a campaign
 - **WHEN** a bundle's default child has a regular price of 359, a special price of 259 and a campaign final price of 0
@@ -88,5 +88,9 @@ When a campaign price applies to any selected bundle child, the bundle campaign 
 - **THEN** the other children contribute their own prices multiplied by their selection quantities
 
 #### Scenario: Invalid selection quantity
-- **WHEN** a selected child's quantity is missing, zero, negative or non-numeric
+- **WHEN** a selected child's quantity is missing, zero, negative, non-numeric or partially numeric (for example `2items`)
 - **THEN** the child's price is counted once
+
+#### Scenario: Numeric string selection quantity
+- **WHEN** a selected child with a campaign final price of 30 has a selection quantity given as the string `2` or `2.0000`
+- **THEN** the bundle's campaign final price includes 60 for that child

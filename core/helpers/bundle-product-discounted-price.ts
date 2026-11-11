@@ -9,7 +9,7 @@ function getCampaignAmount (value: number | undefined): number | undefined {
 }
 
 function getSelectionQuantity (qty: number | string | undefined): number {
-  const quantity = typeof qty === 'string' ? parseFloat(qty) : qty;
+  const quantity = typeof qty === 'string' ? Number(qty) : qty;
 
   return typeof quantity === 'number' && Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
 }

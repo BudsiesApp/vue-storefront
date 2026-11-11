@@ -74,12 +74,14 @@ Observed locally before the change: a bundle whose default child has a $0 campai
 
 Magento prices a bundle child as its unit price times its selection quantity. The campaign bundle calculation now does the same (`getSelectionQuantity`), counting a missing, zero, negative or non-numeric quantity as 1.
 
-These two helper files and their specs are identical to the 36676 branch, so the later rebase of that branch has no conflicts there.
+A selection quantity given as a string is converted with `Number()`, not `parseFloat()`, so the whole string must be numeric: `'2'` and `'2.0000'` count as 2, while a partially numeric value such as `'2items'` counts as 1 (review finding II-1; `parseFloat('2items')` returns 2).
+
+`bundle-product-discounted-price.ts` and its spec started as copies of the 36676 branch. They now differ from it only in that `Number()` conversion and its tests, so the later rebase of that branch has a small conflict there that should keep the #37012 version.
 
 ## Risks / Trade-offs
 
 - **Stale display on page load:** prices restored from local storage and from `cart/pull` show until the first totals response (about 2–3 seconds locally). → Accepted. Documented in the proposal and allowed by the spec ("MAY show the previously stored item price").
-- **Duplicate implementation in #36676 (PR #504):** it contains the identical cart refresh helper, the identical campaign price changes and the same requirements. → Land #37012 first. #36676 rebases and drops the duplicate code and its duplicate ADDED requirements before archive.
+- **Duplicate implementation in #36676 (PR #504):** it contains the identical cart refresh helper, the same campaign price changes (except the `Number()` quantity conversion) and the same requirements. → Land #37012 first. #36676 rebases and drops the duplicate code and its duplicate ADDED requirements before archive.
 - **Zero option prices in selectors:** an option whose price is now $0 is shown without a price label (observed for the Small size on the Forevers pages; the cause was not investigated). → Left as is; out of scope.
 - **`totalsActions.spec.ts` cannot load** because of an existing circular import (`core/filters/date.js` `once`), so the context-mock change is not exercised. → New behavior is covered by `totals-item-refresh.spec.ts`, which loads. The existing failure is reported in the PR.
 - **Magento contract dependency:** if the DTO is absent, the behavior falls back to today's behavior (correct after `cart/pull`). → No storefront fallback calculation is added.

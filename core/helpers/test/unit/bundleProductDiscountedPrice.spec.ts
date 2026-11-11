@@ -75,7 +75,9 @@ describe('bundle campaign prices', () => {
     ['missing', undefined],
     ['zero', 0],
     ['negative', -1],
-    ['non-numeric', 'two']
+    ['non-numeric', 'two'],
+    ['partially numeric', '2items'],
+    ['empty', '']
   ])('uses a selection quantity of one when it is %s', (_, qty) => {
     const bundle = createBundle([{ id: 11, qty: 1, product: createChild(10, 40) }]);
     const cartItem = {
@@ -84,6 +86,19 @@ describe('bundle campaign prices', () => {
     } as unknown as Product;
 
     expect(getBundleCartItemDiscountedPrice(cartItem, { 10: { regular: 40, final: 30 } })).toEqual({ regular: 40, final: 30 });
+  });
+
+  it.each([
+    ['integer', '2'],
+    ['decimal', '2.0000']
+  ])('applies a selection quantity given as a %s string', (_, qty) => {
+    const bundle = createBundle([{ id: 11, qty: 1, product: createChild(10, 40) }]);
+    const cartItem = {
+      ...bundle,
+      product_option: { extension_attributes: { bundle_options: { 1: { option_id: 1, option_qty: qty, option_selections: [11] } } } }
+    } as unknown as Product;
+
+    expect(getBundleCartItemDiscountedPrice(cartItem, { 10: { regular: 40, final: 30 } })).toEqual({ regular: 80, final: 60 });
   });
 
   it('returns no campaign price when no child has one', () => {
