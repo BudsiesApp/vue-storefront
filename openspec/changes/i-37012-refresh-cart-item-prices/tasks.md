@@ -1,6 +1,6 @@
 # Tasks
 
-Code tasks 1.1–1.3 and 2.1–2.2 were made in the working tree on 2026-11-10/11, before this proposal. They are byte-identical to the corresponding files on `36676-update-ecommerce-data-layer`. They are marked done because their verification has already passed.
+Code tasks 1.1–1.3 and 2.1–2.2 were made in the working tree on 2026-11-10/11, before this proposal. They are byte-identical to the corresponding files on `36676-update-ecommerce-data-layer`. They are marked done because their verification has already passed. Section 4 was added on 2026-11-11, when the scope grew to campaign prices; `bundle-product-discounted-price.ts`, `bundleProductDiscountedPrice.spec.ts` and `getProductDefaultPrice.spec.ts` are identical to that branch, and `price.ts` matches it in `getProductPrice` only.
 
 ## 1. Item pricing refresh from totals responses
 
@@ -12,17 +12,27 @@ Code tasks 1.1–1.3 and 2.1–2.2 were made in the working tree on 2026-11-10/1
 
 - [x] 2.1 Add `core/modules/cart/test/unit/store/totals-item-refresh.spec.ts`, covering coupon apply and removal, preserved customization, plushie and flow data, a response without item totals, and an unmatched response item. Verify with `npx jest -c test/unit/jest.conf.js core/modules/cart/test/unit/store/totals-item-refresh.spec.ts`: 4/4 pass.
 - [x] 2.2 Pass `getters: { getCartItems: [] }` in the `replaces server totals` context mock in `core/modules/cart/test/unit/store/totalsActions.spec.ts`. Verify that the change is limited to that mock. The suite does not load, because of an existing `core/filters/date.js` circular import that also fails on the base branch.
-- [ ] 2.3 Run `yarn test:unit:core` and `yarn lint`. Verify that the new spec passes and that every failing suite also fails on `origin/optimuspro`. Record the summary for the PR description.
+- [x] 2.3 Run `yarn test:unit:core` and `yarn lint`. Verify that the new spec passes and that every failing suite also fails on `origin/optimuspro`. Record the summary for the PR description. Done in the tests container: with the change, 39 failed / 92 passed suites (131) and 25 failed / 574 passed tests (599); on the pre-fix parent `b38f4a5c1`, 39 / 91 suites (130) and 25 / 570 tests (595). The failing suites and failing tests are identical in both runs; they are existing load errors (for example `(0, _helpers.once) is not a function`, unexpected token, missing config) and existing test failures. `totals-item-refresh.spec.ts` passes. `yarn lint`: 0 errors, 119 existing warnings, none in the changed files.
 
 ## 3. Manual verification (local Petsies stack)
 
 - [x] 3.1 Guest cart, cart page: apply and remove a coupon. Verify that cart lines change without a reload and that their discounts add up to the totals discount. Done: $5→$4.50, $315→$283.50, $10→$9, total −33, then back.
 - [x] 3.2 Guest cart: enable, then disable, an auto-applied cart price rule and reload the cart page once each time. Verify that the lines are correct after the first `shipping-information` of that load. Done: about 2–3 seconds of stale display before that, an accepted limitation.
 - [x] 3.3 Enter checkout inside the app after a rule change. Verify that the lines update from `shipping-information` without `cart/pull`.
-- [ ] 3.4 Repeat 3.1 with a logged-in customer cart. Verify the same line and totals behavior.
-- [ ] 3.5 Repeat 3.1 with a bundle or customized plushie at quantity > 1. Verify that the line price matches the server line total and that the customization details shown under the line are unchanged.
+- [x] 3.4 Repeat 3.1 with a logged-in customer cart. Verify the same line and totals behavior. Done: `customcollar_jazzy_blue` × 2, $39.90 → $35.91 (unit 17.955, line discount −1.995 × 2 = totals −3.99), then back to $39.90 with discount 0; no `cart/pull` during the coupon actions; other extension attributes preserved.
+- [x] 3.5 Repeat 3.1 with a bundle or customized plushie at quantity > 1. Verify that the line price matches the server line total and that the customization details shown under the line are unchanged. Done with a logged-in customer cart: Forevers Dog Medium (customize-later flow, added through the UI) × 2, $818 → $600 (unit 300), with `TEST` $540 (unit 270, −30 per unit); line discounts add up to the totals discount (−63.99 together with the collar line); removal restores $600 and discount 0. Plushie ID, customization state, flow and the "Customizations" and ship-date details under the line stayed unchanged.
 
-## 4. Delivery
+## 4. Campaign and special prices on displayed product prices
 
-- [ ] 4.1 Open the PR for `37012-fix-incorrect-special-prices` into `optimuspro`, with core test results (2.3), the manual verification (section 3), and the known stale-on-load limitation. Verify that CI (`test_vsf1.yml`) passes with the default theme and payment branches.
-- [ ] 4.2 Notify #36676 / PR vue-storefront#504 to rebase after this change lands and drop its duplicate cart refresh code and duplicate `cart-item-pricing` requirement. Verify that the note is posted on Redmine #36676.
+- [x] 4.1 In `core/helpers/bundle-product-discounted-price.ts`, keep a finite campaign `final`/`regular` of 0 for each child (`getCampaignAmount` with `??`) and multiply each child's price by its selection quantity (`getSelectionQuantity`, invalid quantities count as 1). Verify with `core/helpers/test/unit/bundleProductDiscountedPrice.spec.ts`: 11/11 pass.
+- [x] 4.2 In `getProductPrice` (`core/helpers/price.ts`), use a finite campaign final price with `??` and `!== undefined` instead of truthiness. Verify with `core/helpers/test/unit/getProductDefaultPrice.spec.ts`: 4/4 pass.
+- [x] 4.3 Add `core/helpers/test/unit/priceCombinations.spec.ts` covering regular only, special (non-zero and zero), campaign (non-zero and zero, with and without a special price, equal to regular, non-numeric) for simple products and bundles, plus cart items with server item totals (no discount, special, zero, campaign, coupon) and without them (zero and non-zero campaign, zero special). Verify: 22/22 pass.
+- [x] 4.4 Re-run `yarn test:unit:core` and `yarn lint`. Verify that the set of failing suites is unchanged. Done: 39 failed / 95 passed suites (134), 25 failed / 611 passed tests (636); the same 39 existing failing suites as in 2.3, and the four new suites pass. `yarn lint`: 0 errors, 119 existing warnings, none in the changed files.
+- [x] 4.5 Compare displayed prices with the prices Magento charges (local Petsies, campaign 180 active). Done; all matched:
+  - Store getter `product/productPriceDictionary` vs. a Magento cart for 14 products: regular only (`recordable_voice` 17, `toe_beans` 10, `sneak_peek` 99, `basic_rush_forevers` 89), special (collar 24.95 → 19.95, `heartbeat_insert` 13 → 10, Forevers Large 509 → 409), campaign 0 without special (`memory_pocket` 15 → 0), campaign on top of special (`voice-recorder` 9 → 5, `weighted_plushies` 25 → 15, Forevers Medium 409 → 300), campaign 0 on top of special (Forevers Small 359 → 0), and bundles (Forevers Dog 359 → 0, Forevers Cat and Other 359 → 259).
+  - Forevers "customize later" page: $359 → $0.00 (was $359 → $259); sizes Medium + $300, Large + $409.
+  - Forevers creation wizard: Sneak Peek + $99, Memory Pocket + $15 → $0.00, Voice Recorder + $17, Heartbeat + $13 → $10, Weighted Plush + $25 → $15.
+  - Cross-sells: Phrase Pillow $49 → $39, Dog Golf Head Covers $249 → $199, collar $24.95 → $19.95 (bundle default children checked in a Magento cart).
+  - Accessories listing: collar $24.95 → $19.95, Voice Recorder Replacement $9 → $5.
+  - Cart lines and their option details: Small + Heartbeat $372 → $10 (Small $0.00, Heartbeat $10); Small + Memory Pocket $374 → $0.00 (both $0.00); Medium + Weighted Plush × 2 $868 → $630 (Medium $600, Weighted Plush $30).
+  - Not available in local data, covered only by 4.3: a catalog special price of 0, and a non-zero campaign price on a product without a special price.

@@ -16,11 +16,12 @@
 
 **Goals:**
 - Make the totals response the authoritative refresh point for item pricing, in addition to `cart/pull`.
-- Keep the change in core cart logic, with no theme or API changes.
+- Keep the change in core cart and price helpers, with no theme or API changes.
+- Make displayed product prices agree with Magento for every combination of regular, special and campaign prices, including zero values.
 
 **Non-Goals:**
 - No loading or placeholder state for prices before the first totals response (user decision, 2026-11-11).
-- No change to how `getCartItemPrice` turns item totals into regular and special prices.
+- No change to how `getCartItemPrice` turns item totals into regular and special prices (paid option surcharges stay with #36676).
 
 ## Decisions
 
@@ -59,10 +60,27 @@ No additional sync loops are introduced.
 
 Add `savings_amount` and `discount_amount` to `ExtensionAttributes.budsies_quote_item_totals`. The DTO is stored as a whole, so the type describes what is actually held.
 
+### Treat any finite campaign amount as present
+
+Campaign prices come from the promotion platform as `productDiscountedPrice[productId] = { regular, final }`. Two places used truthiness to decide whether a campaign price exists, so a final price of 0 fell back to the catalog price:
+- `bundle-product-discounted-price.ts`, per child: `productPrice?.final || product.special_price_incl_tax || …` (the same for `regular`).
+- `price.ts` `getProductPrice`: `productDiscountedFinalPrice || priceInclTax` and `!!productDiscountedFinalPrice`.
+
+Both now use a finite-number check (`getCampaignAmount`, `Number.isFinite`) with `??` and `!== undefined`. A missing or non-numeric campaign value still falls back to the catalog prices. The catalog fallbacks keep `||`, because the index stores a missing special price as `null` or `0` alongside a real `price_incl_tax`, and a real zero special price is already handled through `specialPrice === 0`.
+
+Observed locally before the change: a bundle whose default child has a $0 campaign price was shown as $359 → $259, and the $0 Memory Pocket upgrade as $15, while Magento charged $0 for both.
+
+### Multiply bundle children by their selection quantity
+
+Magento prices a bundle child as its unit price times its selection quantity. The campaign bundle calculation now does the same (`getSelectionQuantity`), counting a missing, zero, negative or non-numeric quantity as 1.
+
+These two helper files and their specs are identical to the 36676 branch, so the later rebase of that branch has no conflicts there.
+
 ## Risks / Trade-offs
 
 - **Stale display on page load:** prices restored from local storage and from `cart/pull` show until the first totals response (about 2–3 seconds locally). → Accepted. Documented in the proposal and allowed by the spec ("MAY show the previously stored item price").
-- **Duplicate implementation in #36676 (PR #504):** it contains the identical helper and requirement. → Land #37012 first. #36676 rebases and drops the duplicate code and its duplicate ADDED requirement before archive.
+- **Duplicate implementation in #36676 (PR #504):** it contains the identical cart refresh helper, the identical campaign price changes and the same requirements. → Land #37012 first. #36676 rebases and drops the duplicate code and its duplicate ADDED requirements before archive.
+- **Zero option prices in selectors:** an option whose price is now $0 is shown without a price label (observed for the Small size on the Forevers pages; the cause was not investigated). → Left as is; out of scope.
 - **`totalsActions.spec.ts` cannot load** because of an existing circular import (`core/filters/date.js` `once`), so the context-mock change is not exercised. → New behavior is covered by `totals-item-refresh.spec.ts`, which loads. The existing failure is reported in the PR.
 - **Magento contract dependency:** if the DTO is absent, the behavior falls back to today's behavior (correct after `cart/pull`). → No storefront fallback calculation is added.
 
