@@ -66,7 +66,7 @@ Campaign prices come from the promotion platform as `productDiscountedPrice[prod
 - `bundle-product-discounted-price.ts`, per child: `productPrice?.final || product.special_price_incl_tax || …` (the same for `regular`).
 - `price.ts` `getProductPrice`: `productDiscountedFinalPrice || priceInclTax` and `!!productDiscountedFinalPrice`.
 
-Both now use a finite-number check (`getCampaignAmount`, `Number.isFinite`) with `??` and `!== undefined`. A missing or non-numeric campaign value still falls back to the catalog prices. The catalog fallbacks keep `||`, because the index stores a missing special price as `null` or `0` alongside a real `price_incl_tax`, and a real zero special price is already handled through `specialPrice === 0`.
+Both now use a finite-number check (`toFiniteNumber()` in `core/helpers/to-finite-number.ts`) with `??` and `!== undefined`. The helper is generic and core code and tests use the core term "discounted price"; campaigns stay a concept of the promotion-platform module that fills `productDiscountedPrice`. A missing or non-numeric campaign value still falls back to the catalog prices. The catalog fallbacks keep `||`, because the index stores a missing special price as `null` or `0` alongside a real `price_incl_tax`, and a real zero special price is already handled through `specialPrice === 0`.
 
 Observed locally before the change: a bundle whose default child has a $0 campaign price was shown as $359 → $259, and the $0 Memory Pocket upgrade as $15, while Magento charged $0 for both.
 
@@ -76,7 +76,7 @@ Magento prices a bundle child as its unit price times its selection quantity. Th
 
 A selection quantity given as a string is converted with `Number()`, not `parseFloat()`, so the whole string must be numeric: `'2'` and `'2.0000'` count as 2, while a partially numeric value such as `'2items'` counts as 1 (review finding II-1; `parseFloat('2items')` returns 2).
 
-`bundle-product-discounted-price.ts` and its spec started as copies of the 36676 branch. They now differ from it only in that `Number()` conversion and its tests, so the later rebase of that branch has a small conflict there that should keep the #37012 version.
+`bundle-product-discounted-price.ts`, `price.ts` and their specs started as copies of the 36676 branch. They now differ from it in the `Number()` conversion, the shared `toFiniteNumber()` helper and the test wording, so the later rebase of that branch has conflicts there that should keep the #37012 version.
 
 ## Risks / Trade-offs
 
