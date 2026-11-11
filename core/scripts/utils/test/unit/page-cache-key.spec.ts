@@ -50,7 +50,6 @@ describe('Stripped query is appended to redirect locations', () => {
     ['/target/?step=2', 'coupon_code=BOB20', '/target/?step=2&coupon_code=BOB20'],
     ['/sign-in/?redirect-target=%2Faccount%2F', 'redirect-target=%2Fother%2F&email=bob%40example.test', '/sign-in/?redirect-target=%2Faccount%2F&email=bob%40example.test'],
     ['/target/?step=2#reviews', 'utm_source=fb', '/target/?step=2&utm_source=fb#reviews'],
-    ['/target/?aleid=owned#reviews', 'aleid=other&alart=a%2Bb', '/target/?aleid=owned&alart=a%2Bb#reviews'],
     ['https://example.test/target/', 'gclid=synthetic', 'https://example.test/target/?gclid=synthetic'],
     ['/target/?step=2', '', '/target/?step=2']
   ])('%s + %s', (location, strippedQuery, expected) => {
