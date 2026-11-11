@@ -8,6 +8,7 @@ import { price } from '@vue-storefront/core/filters';
 import { ProductDiscountedPrice } from '@vue-storefront/core/modules/catalog';
 
 import { getCartItemDiscountedPrice, getProductDiscountedPrice } from './product-discounted-price';
+import { toFiniteNumber } from './to-finite-number';
 
 interface ProductPriceData {
   originalPriceInclTax: number,
@@ -165,8 +166,9 @@ function getProductPrice (
   productPriceData: ProductPriceData
 ) {
   const quantity = (product.qty || 1);
-  const productDiscountedFinalPrice = productDiscountedPriceValue?.final !== undefined
-    ? productDiscountedPriceValue.final * quantity
+  const productDiscountedUnitFinalPrice = toFiniteNumber(productDiscountedPriceValue?.final);
+  const productDiscountedFinalPrice = productDiscountedUnitFinalPrice !== undefined
+    ? productDiscountedUnitFinalPrice * quantity
     : undefined;
 
   const productDiscountedRegularPrice = productDiscountedPriceValue?.regular;
@@ -179,9 +181,9 @@ function getProductPrice (
 
   const original = productDiscountedRegularPrice ? productDiscountedRegularPrice * quantity : originalPriceInclTax
   const regular = product.regular_price || priceInclTax
-  let special = productDiscountedFinalPrice || priceInclTax
+  let special = productDiscountedFinalPrice ?? priceInclTax
 
-  const isSpecialPrice = (!!productDiscountedFinalPrice ||
+  const isSpecialPrice = (productDiscountedFinalPrice !== undefined ||
     (specialPrice && priceInclTax && originalPriceInclTax) ||
     specialPrice === 0) &&
     special < original;
