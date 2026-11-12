@@ -8,7 +8,9 @@
 
 ## 2. Bulk Orders app dependency transport
 
-- [ ] 2.1 Apply the same narrow manifest/lock/check/documentation changes on `37220-replace-gitpkg-with-release-tarballs-bulkorders` from updated `bulkorders-theme`; verify its focused dependency check and diff use the same asset pair without importing unrelated main-app/theme changes or submodule pointers.
+- [x] 2.1 Apply the same narrow manifest/lock/check/documentation changes on `37220-replace-gitpkg-with-release-tarballs-bulkorders` from updated `bulkorders-theme`; verify its focused dependency check and diff use the same asset pair without importing unrelated main-app/theme changes or submodule pointers.
+
+Completion evidence for 2.1: independent app-line PR #568, accepted head `46263b5e7`, passing CI run `43288659820`, deterministic/real-graph checks and original Bulk Orders runtime acceptance. The operator confirmed correction of this stale primary-branch marker at archival; no work was waived.
 
 ## 3. Explicit preview consumption
 
