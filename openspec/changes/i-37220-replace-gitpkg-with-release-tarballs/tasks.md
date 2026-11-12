@@ -10,8 +10,14 @@
 
 - [ ] 2.1 Apply the same narrow manifest/lock/check/documentation changes on `37220-replace-gitpkg-with-release-tarballs-bulkorders` from updated `bulkorders-theme`; verify its focused dependency check and diff use the same asset pair without importing unrelated main-app/theme changes or submodule pointers.
 
+## 3. Explicit preview consumption
+
+- [ ] 3.1 Update dependency-contract checks on both existing app-line features to accept supported immutable preview identities as well as explicit releases; verify focused cases retain exact shared/Vue pair and indirect identity, no-GitPkg/hook checks and rejection of mismatches without changing accepted final manifest/lock pins.
+- [ ] 3.2 Document the publisher command/defaults and exact handoff, feature iteration and merged-source selection, explicit container URL/lock updates and isolated testing/restoration on both app lines; verify examples require no publisher config/test commit or manual tag and keep all five maintained brand combinations and historical assets identified.
+
 ## Workflow follow-up
 
 - Source publication and anonymous-download/checksum evidence are prerequisites for final release URLs/lock regeneration; ask the lead for missing authorization/access instead of substituting local archives or invented integrity values.
 - Tester owns empty-cache `yarn install --immutable` with GitPkg unavailable, maintained configuration/lint/unit checks, full builds and Storefront UI render/hydration evidence across main-app Petsies/Budsies/Education/Waggables themes and the separate Bulk Orders app/theme. See design.md for exact commands and branch inventory.
 - Unchanged theme/Braintree sources remain on maintained branches; preserve local edits and do not commit submodule pointers. Archive only when selected by the operator; merges and deployment remain separate.
+- Preview extension: tester consumes the returned matching pair in an intended feature/testing graph, checks targeted immutable install/source compilation/rendering and restores the accepted final pins and mounted configuration. Preserve completed migration evidence; determine additional regressions from the actual diff. No automatic VSF commits or arbitrary final-pin replacement is authorized.

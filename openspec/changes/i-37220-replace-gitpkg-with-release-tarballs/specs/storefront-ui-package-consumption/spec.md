@@ -38,3 +38,21 @@ Maintenance documentation SHALL explain how to select published package assets, 
 #### Scenario: Maintainer updates a package revision
 - **WHEN** a maintainer follows the documented update procedure
 - **THEN** both maintained app lines can consume the new prepared assets without introducing GitPkg URLs, changing the package manager, or deleting historical releases
+
+### Requirement: Explicit immutable preview consumption
+Both maintained UI app lines SHALL accept the publisher's immutable public preview assets through explicit manifest and Yarn lock updates. Dependency checks MUST accept supported release and preview identities while retaining exact shared/Vue pair alignment and direct/indirect shared identity. Preview testing MUST NOT require moving branch URLs or consumer-wide lifecycle suppression.
+
+#### Scenario: Returned preview pair is tested
+- **WHEN** a maintainer selects the returned shared and Vue URLs in an intended UI feature/testing graph and regenerates its lockfile using the existing container workflow
+- **THEN** immutable installation and targeted source-compilation/rendering checks can use that pair, with Vue's packaged shared URL exactly matching the application's shared URL
+
+#### Scenario: Maintainer iterates and selects merged sources
+- **WHEN** a maintainer requests a later feature or merged source revision through the publisher command
+- **THEN** documentation directs them to verify returned provenance/checksums and explicitly update the matching pair and lockfile on the intended app line, rather than track a moving source branch
+
+### Requirement: Preserve accepted final graph and evidence
+Preview acceptance SHALL remain separate from the already-accepted pinned migration. Arbitrary preview source changes MUST stay in the intended feature/testing graph and MUST NOT silently replace accepted final dependency pins. Completed unchanged migration evidence and historical assets SHALL remain valid; regression checks MUST cover the affected preview-consumption behavior.
+
+#### Scenario: Preview validation finishes
+- **WHEN** preview consumption is demonstrated and the mounted UI configuration is restored
+- **THEN** the accepted final dependency pins remain unchanged unless a separate intentional dependency update was requested, and preview evidence is reported separately from retained pinned-migration evidence
