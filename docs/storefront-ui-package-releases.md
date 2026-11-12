@@ -1,5 +1,14 @@
 # Storefront UI package releases
 
+For an unmerged package feature, run `python3 scripts/preview-packages.py
+--vue-ref <branch-or-full-sha>` in the committed, pushed Storefront UI publisher
+checkout. `--shared-ref` selects shared independently; omitted refs default to
+the documented initial pins. Verify the returned SHAs and checksum/manifest
+URLs. Use its matching shared and Vue URLs in a temporary UI testing graph,
+regenerate the lock in the container, test, then restore accepted pins. Rerun
+for an advanced branch and pass the actual merged SHA after merge. No publisher
+config/test commit or manually prepared tag is needed; retain old assets.
+
 The two `@storefront-ui` dependencies use release assets from
 `BudsiesApp/storefront-ui`. Download `release-manifest.json` and `SHA256SUMS`
 alongside the archives, verify `sha256sum -c SHA256SUMS`, and confirm source
