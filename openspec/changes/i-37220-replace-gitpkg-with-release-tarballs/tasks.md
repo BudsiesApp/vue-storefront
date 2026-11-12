@@ -8,7 +8,7 @@
 
 ## 2. Bulk Orders app dependency transport
 
-- [ ] 2.1 Apply the same narrow manifest/lock/check/documentation changes on `37220-replace-gitpkg-with-release-tarballs-bulkorders` from updated `bulkorders-theme`; verify its focused dependency check and diff use the same asset pair without importing unrelated main-app/theme changes or submodule pointers.
+- [x] 2.1 Apply the same narrow manifest/lock/check/documentation changes on `37220-replace-gitpkg-with-release-tarballs-bulkorders` from updated `bulkorders-theme`; verify its focused dependency check and diff use the same asset pair without importing unrelated main-app/theme changes or submodule pointers.
 
 ## Workflow follow-up
 
