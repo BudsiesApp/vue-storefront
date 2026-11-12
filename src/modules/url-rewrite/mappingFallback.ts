@@ -5,10 +5,6 @@ import queryString from 'query-string';
 import { LocalizedRoute } from '@vue-storefront/core/lib/types';
 import RootState from '@vue-storefront/core/types/RootState';
 import { UrlState } from '@vue-storefront/core/modules/url/types/UrlState';
-import { AsyncDataLoader } from '@vue-storefront/core/lib/async-data-loader';
-import { isServer } from '@vue-storefront/core/helpers';
-import { setServerRedirect } from '@vue-storefront/core/request-services';
-import { Context } from '@vue-storefront/core/scripts/utils/types';
 
 import { getUrlRewriteRouteData } from './helpers/get-url-rewrite-route-data.function';
 import { UrlRewrite } from './store/types/url-rewrite.interface';
@@ -18,18 +14,16 @@ export const mappingFallbackForUrlRewrite = async (
   {
     url,
     params,
-    ssrContext,
     redirect
   }: {
     url: string,
     params: queryString.ParsedQuery<string>,
-    ssrContext?: Context,
     redirect?: (path: string, statusCode?: number) => void
   }
 ): Promise<LocalizedRoute | undefined> => {
   if (Vue.prototype.$cacheTags) {
     Vue.prototype.$cacheTags.add(`url_rewrite`);
-    Vue.prototype.$cacheTags.add(`url_rewrite_${url}`);
+    Vue.prototype.$cacheTags.add(`url_rewrite_${url.split('?')[0].replace(/^\/+|\/+$/g, '').toLowerCase()}`);
   }
 
   const urlRewriteForRequestPath: UrlRewrite = await dispatch('urlRewrite/loadUrlRewrite', { requestPath: url }, { root: true });
@@ -41,7 +35,7 @@ export const mappingFallbackForUrlRewrite = async (
   const targetPath = urlRewriteForRequestPath.targetPath;
   const redirectCode = urlRewriteForRequestPath.redirectCode;
 
-  if (!isServer) {
+  if (!redirect) {
     return getUrlRewriteRouteData(
       url,
       targetPath,
@@ -57,22 +51,5 @@ export const mappingFallbackForUrlRewrite = async (
 
   const ssrRedirectFullPath = `/${targetPath}/${query}`;
 
-  // serverPrefetch case, AsyncDataLoader is not used
-  if (redirect) {
-    redirect(ssrRedirectFullPath, redirectCode);
-    return;
-  }
-
-  if (ssrContext) {
-    setServerRedirect(ssrContext, ssrRedirectFullPath, redirectCode);
-    return;
-  }
-
-  AsyncDataLoader.push({
-    execute: async ({ context }) => {
-      if (context) {
-        setServerRedirect(context, ssrRedirectFullPath, redirectCode);
-      }
-    }
-  })
+  redirect(ssrRedirectFullPath, redirectCode);
 }

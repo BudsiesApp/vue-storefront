@@ -14,6 +14,8 @@ import { RouterManager } from './lib/router-manager';
 import queryString from 'query-string'
 import purgeConfig from './build/purge-config/purgeConfig';
 
+const redirectRoot = () => new Vue({ render: h => h('div') })
+
 function _commonErrorHandler (err, reject) {
   if (err.message.indexOf('query returned empty result') > 0) {
     reject(new HttpError(err.message, 404))
@@ -51,7 +53,7 @@ function _ssrHydrateSubcomponents (components, store, router, resolve, reject, a
           purgeConfig: buildTimeConfig.purgeConfig
         })
       }
-      resolve(app)
+      resolve(context.output.redirect ? redirectRoot() : app)
     }).catch(err => {
       _commonErrorHandler(err, reject)
     })
@@ -84,11 +86,11 @@ export default async context => {
       if (router.currentRoute.redirectedFrom && router.currentRoute.redirectedFrom !== router.currentRoute.fullPath) {
         context.output.redirect = { code: 301, path: router.currentRoute.fullPath };
 
-        return resolve(app);
+        return resolve(redirectRoot());
       }
 
       // A navigation guard or mapping fallback has already recorded a redirect; skip page data loading.
-      if (context.output.redirect) return resolve(app)
+      if (context.output.redirect) return resolve(redirectRoot())
 
       const matchedComponents = router.getMatchedComponents()
 

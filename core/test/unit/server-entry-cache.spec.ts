@@ -1,4 +1,5 @@
-import { entryFixture, serverHarness } from '../../scripts/utils/test/unit/fixtures/output-cache';
+import { entryFixture, readCookie, serverHarness } from '../../scripts/utils/test/unit/fixtures/output-cache';
+import { setServerRedirect } from '../../request-services/set-server-redirect';
 
 describe('Router redirects resolve once from the clean URL', () => {
   it('returns the inherited clean query and lets the server append the visitor values', async () => {
@@ -25,6 +26,68 @@ describe('Router redirects resolve once from the clean URL', () => {
     expect(res.redirect).toHaveBeenCalledTimes(1);
     expect(fixture.replace).not.toHaveBeenCalled();
     expect(fixture.asyncData).not.toHaveBeenCalled();
+  });
+});
+
+describe('Redirects skip the real Vue tree', () => {
+  it.each([
+    ['navigation', { onNavigation: ctx => setServerRedirect(ctx, '/navigation/', 301) }, '/navigation/', 301],
+    ['missing product', { onData: ctx => { ctx.output.cacheTags.add('no-cache'); setServerRedirect(ctx, '/404', 302); } }, '/404', 302],
+    ['checkout', { onData: ctx => setServerRedirect(ctx, '/cart/', 302) }, '/cart/', 302],
+    ['queued configurable child', { onFlush: ctx => setServerRedirect(ctx, '/parent/', 301) }, '/parent/', 301]
+  ])('%s completes without rendering or prefetching', async (_name, options, target, status) => {
+    const fixture = await entryFixture(options as any);
+    const h = serverHarness(ctx => fixture.html(ctx));
+    const res = await h.visit('/page/');
+    expect(res.statusCode).toBe(status);
+    expect(res.get('location')).toBe(target);
+    expect(res.redirect).toHaveBeenCalledTimes(1);
+    for (const hook of [fixture.rootRender, fixture.rootPrefetch, fixture.pageRender, fixture.pagePrefetch]) expect(hook).not.toHaveBeenCalled();
+    expect(res.body).not.toContain('Synthetic page');
+    if (_name === 'navigation') {
+      expect(fixture.preAsyncData).not.toHaveBeenCalled();
+      expect(fixture.asyncData).not.toHaveBeenCalled();
+    }
+    if (_name === 'missing product') expect(h.cache.entries.size).toBe(0);
+    else expect([...h.cache.entries.values()][0].entry.body).toBe('');
+  });
+
+  it('renders and prefetches normally without a redirect', async () => {
+    const fixture = await entryFixture();
+    const h = serverHarness(ctx => fixture.html(ctx));
+    const res = await h.visit('/page/');
+    expect(res.body).toContain('Synthetic page');
+    for (const hook of [fixture.rootRender, fixture.rootPrefetch, fixture.pageRender, fixture.pagePrefetch]) expect(hook).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips the Vue tree for a router redirect', async () => {
+    const fixture = await entryFixture({ routes: [{ path: '/old/', redirect: '/page/' }] });
+    const h = serverHarness(ctx => fixture.html(ctx));
+    const res = await h.visit('/old/');
+    expect(res.get('location')).toBe('/page/');
+    expect(res.redirect).toHaveBeenCalledTimes(1);
+    for (const hook of [fixture.preAsyncData, fixture.asyncData, fixture.rootRender, fixture.rootPrefetch, fixture.pageRender, fixture.pagePrefetch]) expect(hook).not.toHaveBeenCalled();
+  });
+
+  it.each(['navigation', 'queue'])('keeps %s no-cache exclusions', async stage => {
+    const record = ctx => { ctx.output.cacheTags.add('no-cache'); setServerRedirect(ctx, '/private/', 302); };
+    const options = stage === 'navigation' ? { onNavigation: record } : { onFlush: record };
+    const fixture = await entryFixture(options);
+    const h = serverHarness(ctx => fixture.html(ctx));
+    const res = await h.visit('/page/');
+    expect(res.get('location')).toBe('/private/');
+    expect(res.get('x-vs-cache-tags')).toContain('no-cache');
+    expect(h.cache.entries.size).toBe(0);
+  });
+
+  it.each(['navigation', 'data'])('does not share cookie-dependent redirects from %s', async stage => {
+    const record = ctx => { readCookie(ctx, 'private-cookie'); setServerRedirect(ctx, '/private/', 302); };
+    const fixture = await entryFixture(stage === 'navigation' ? { onNavigation: record } : { onData: record });
+    const h = serverHarness(ctx => fixture.html(ctx));
+    const res = await h.visit('/page/', 'private-cookie=private');
+    expect(res.get('location')).toBe('/private/');
+    expect(h.cache.entries.size).toBe(0);
+    expect(fixture.rootRender).not.toHaveBeenCalled();
   });
 });
 

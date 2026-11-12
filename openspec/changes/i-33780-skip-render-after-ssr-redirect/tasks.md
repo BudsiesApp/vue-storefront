@@ -1,0 +1,29 @@
+# Tasks
+
+## 1. Record mapping redirects during navigation
+
+- [x] 1.1 Update `src/modules/url-rewrite/mappingFallback.ts` to branch on callback availability, record and return no route data when supplied, return existing route data without it on server or browser, and remove its deferred loader/raw `ssrContext` branches; verify focused unit tests cover both callback conditions, 301/302, target/query preservation, and unchanged browser route data.
+- [x] 1.2 Add the optional redirect callback to `src/modules/vsf-storyblok-module/mappingFallback.ts` and remove deferred lowercase redirect recording; verify focused unit tests cover immediate 301 recording with a callback, no redirect or route data without one, missing lowercase stories, editor page/block routes, and ordinary lowercase story routes.
+- [x] 1.3 In the `vsf-capybara` submodule's `config/modules.ts`, register `extendUrlModule` per application and build an action closure that supplies `services.request.redirect` to both fallbacks; verify theme tests cover successive applications with distinct callbacks and browser registration without a callback, preserving fallback order and route results. Leave `src/modules/client.ts` unchanged.
+
+## 2. Align URL-rewrite cache tags
+
+- [x] 2.1 Normalize the path-specific tag in `mappingFallbackForUrlRewrite` by dropping the query, trimming leading/trailing slashes, and lowercasing before lookup, while retaining the bare tag; verify unit cases for leading/trailing slashes, mixed case, query-bearing paths, rewrite hits and misses, and Category's shared callback-based lookup without moving its `serverPrefetch` check.
+
+## 3. Skip real-app rendering for recorded redirects
+
+- [x] 3.1 Add the minimal truthy Vue-root factory in `core/server-entry.ts` and use it for router `redirectedFrom` and already-recorded navigation redirects; verify entry tests using the real Vue server renderer complete and call neither real-root/page rendering nor their `serverPrefetch`, and skip page `preAsyncData`/`asyncData`.
+- [x] 3.2 Select the stub after `AsyncDataLoader.flush` when a redirect has been recorded, retaining normal state/config preparation and every existing pre-render `no-cache` tag; verify regression cases for missing-product `/404`, checkout-to-cart, and configurable-child parent redirects retain their target/status, complete once, and do not run real-root/page render or prefetch hooks. Assert the missing-product redirect keeps `no-cache` and is not stored; verify other navigation/data/queued-work exclusions remain effective and a non-redirect control still renders normally.
+- [x] 3.3 In `createRenderResponseHandler`, bypass only `processOutput` whenever `context.output.redirect` is set. Add a regression using the real vue-meta `$meta()` of the unrendered real root and the real compiled theme template or `applyAdvancedOutputProcessing`, showing the template incompatibility and proving the bypass completes the recorded Location rather than `/error`. Verify both output hooks still execute, surrogate headers and cookie classification remain, ordinary template processing is unchanged, and existing sent-response safeguards still pass; choose and document the `headersSent` early-return behavior without expanding its scope.
+
+## 4. Verify navigation, response, and cache integration
+
+- [x] 4.1 Extend focused SSR fixtures and integration tests to connect each real mapping fallback to navigation and the real Vue renderer; verify URL-rewrite and Storyblok lowercase cases skip not-found `asyncData`, do not inherit its 404/`no-cache`, do not run real-root/page prefetch, and produce exactly one redirect with the expected status/Location.
+- [x] 4.2 Add response/cache integration coverage for Miss then Hit, rewrite tags `redirect`/`url_rewrite`/normalized path, in-place edit invalidation and refreshed target, and invalidation of a cacheable lookup miss when a rewrite is created; verify redirects store `body: ''`, neither response includes page markup, and fresh and cached paths retain the existing redirect delivery.
+- [x] 4.3 Retain and extend stripped-query and cache-exclusion regressions for the skipped-render path; verify each visitor receives only their own appended stripped values, shared entries contain none, existing navigation/data/queued-work `no-cache` tags survive, and non-A/B cookie reads during navigation/data loading or before-output processing still prevent caching. Verify Storyblok lowercase contributes only `redirect` itself, preserves any tags from other navigation/lookups, and gains no story-specific invalidation tags.
+
+## 5. Run implementation checks and hand off evidence
+
+- [x] 5.1 Run `yarn test:unit:core` and report its result explicitly in the implementation handoff because these tests do not run in maintained CI; verify all new and existing affected SSR/cache regressions pass, or identify unrelated baseline failures precisely.
+- [x] 5.2 Run `yarn test:unit:maintained`, lint the changed main/theme files using the repository tooling, and run `yarn type-check`; verify the main and companion theme changes are checked together and report results and any baseline failures without changing unrelated code.
+- [x] 5.3 Validate the completed change with `openspec validate i-33780-skip-render-after-ssr-redirect --strict` and summarize implementation coverage plus the required redirect template-processing bypass for the lead; verify the handoff describes Magento delete/rename staleness and its TTL (default 86400 seconds, override `SSR_OUTPUT_CACHE_TTL`), reports any mixed-case/trailing-slash findings, and states the needed Magento-side fix in self-contained wording for release/PR text, without citing local background files or editing protected pre-existing work. Point the tester to the live checks in `design.md`, without making live testing, publishing, or deployment an implementation task.
