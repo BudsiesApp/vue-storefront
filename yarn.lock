@@ -2709,19 +2709,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storefront-ui/shared@https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-shared.tgz":
+"@storefront-ui/shared@https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-shared.tgz":
   version: 0.7.11
-  resolution: "@storefront-ui/shared@https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-shared.tgz"
+  resolution: "@storefront-ui/shared@https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-shared.tgz"
   checksum: 10c0/310151aa17a6289cda6fec3ea7e5ea05fad48e437d7c243fdcf5bd90b815552a84207268fcd077282403fb9bc4a077f65e84c856f10dc0719c696d612c12dcb2
   languageName: node
   linkType: hard
 
-"@storefront-ui/vue@https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-vue.tgz":
+"@storefront-ui/vue@https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-vue.tgz":
   version: 0.7.11
-  resolution: "@storefront-ui/vue@https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-vue.tgz"
+  resolution: "@storefront-ui/vue@https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-vue.tgz"
   dependencies:
     "@glidejs/glide": "npm:^3.3.0"
-    "@storefront-ui/shared": "https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-shared.tgz"
+    "@storefront-ui/shared": "https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-shared.tgz"
     body-scroll-lock: "npm:^3.0.1"
     core-js: "npm:^3.6.5"
     hammerjs: "npm:^2.0.8"
@@ -2733,7 +2733,7 @@ __metadata:
     vue2-leaflet: "npm:^2.5.2"
   peerDependencies:
     vue: ^2.6.x
-  checksum: 10c0/b3057963c74711aadc5b4a6d489b8842e11dee3f03816c3374bf8a049e46ac802d26a1e6b4f1c9e70ec5d90dd9d5fe52aaa831db49f10712d4fcf4be536bd7b4
+  checksum: 10c0/bf2996cb99126299d3a5e9feb4ef0a7c3e3cb75bbfd38865f0e11ac972d4c508bcce2db562be7321003494a4515cfab363457cfb1c7173b234c8d9fe64c6ed3f
   languageName: node
   linkType: hard
 
@@ -13456,8 +13456,8 @@ __metadata:
     "@googlemaps/js-api-loader": "npm:^2.0.2"
     "@gtm-support/vue2-gtm": "npm:2.0.0"
     "@justinribeiro/lite-youtube": "npm:^1.8.2"
-    "@storefront-ui/shared": "https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-shared.tgz"
-    "@storefront-ui/vue": "https://github.com/BudsiesApp/storefront-ui/releases/download/packages-37220-v1/storefront-ui-vue.tgz"
+    "@storefront-ui/shared": "https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-shared.tgz"
+    "@storefront-ui/vue": "https://github.com/BudsiesApp/storefront-ui/releases/download/optimuspro_6f8404b/storefront-ui-vue.tgz"
     "@types/croppie": "npm:^2.5.4"
     "@types/google.maps": "npm:^3.58.1"
     "@types/ioredis": "npm:^4.0.0"
