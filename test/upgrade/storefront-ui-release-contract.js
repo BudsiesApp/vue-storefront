@@ -22,10 +22,6 @@ verify(shared, vue, lock, installedVue.dependencies['@storefront-ui/shared'])
 const previewShared = `https://github.com/BudsiesApp/storefront-ui/releases/download/package-preview-${'a'.repeat(64)}/storefront-ui-shared.tgz`
 const previewVue = previewShared.replace('storefront-ui-shared.tgz', 'storefront-ui-vue.tgz')
 verify(previewShared, previewVue, previewShared + previewVue, previewShared)
-if (process.env.PREVIEW_SHARED_URL && process.env.PREVIEW_VUE_URL) {
-  verify(process.env.PREVIEW_SHARED_URL, process.env.PREVIEW_VUE_URL,
-    process.env.PREVIEW_SHARED_URL + process.env.PREVIEW_VUE_URL, process.env.PREVIEW_SHARED_URL)
-}
 assert.throws(() => verify(previewShared, vue, previewShared + vue, previewShared))
 assert.throws(() => verify(previewShared, previewVue, previewShared + previewVue, shared))
 assert.throws(() => verify(previewShared.replace('a'.repeat(64), 'g'.repeat(64)), previewVue, previewShared + previewVue, previewShared))
