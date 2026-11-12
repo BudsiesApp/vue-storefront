@@ -99,7 +99,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
   const config = {
     server: {
       useOutputCache: true, useOutputCacheTagging: tagging,
-      availableCacheTags: ['page', 'redirect'],
+      availableCacheTags: ['page', 'redirect', 'url_rewrite'],
       invalidateCacheKey: 'synthetic-secret'
     },
     abTesting: { cookieKey: 'test-group' }
@@ -164,10 +164,11 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
 }
 
 export async function entryFixture ({
-  routes = [], beforeEach, dynamic = false, sentOnInitial = false, redirectOnInitial = false
+  routes = [], beforeEach, dynamic = false, sentOnInitial = false, redirectOnInitial = false, onNavigation, onData, onFlush
 }: {
   routes?: any[]; beforeEach?: (to: any, from: any, next: any) => any;
   dynamic?: boolean; sentOnInitial?: boolean; redirectOnInitial?: boolean;
+  onNavigation?: (ctx: any) => any; onData?: (ctx: any) => any; onFlush?: (ctx: any) => any;
 } = {}) {
   jest.resetModules();
   const Vue = require('vue').default || require('vue');
@@ -176,10 +177,16 @@ export async function entryFixture ({
   Vue.use(Vuex);
   Vue.use(Router);
   const preAsyncData = jest.fn();
-  const asyncData = jest.fn(async () => {});
+  let ctx;
+  const asyncData = jest.fn(async () => { if (onData) await onData(ctx); });
+  const pageRender = jest.fn();
+  const pagePrefetch = jest.fn();
+  const rootRender = jest.fn();
+  const rootPrefetch = jest.fn();
   const Page = {
-    preAsyncData, asyncData,
+    preAsyncData, asyncData, serverPrefetch: pagePrefetch,
     render (h) {
+      pageRender();
       return h('div', { attrs: { 'image-url': this.$route.query['image-url'] || this.$route.params['image-url'] || '' } }, 'Synthetic page');
     }
   };
@@ -189,7 +196,6 @@ export async function entryFixture ({
   ] });
   const push = router.push.bind(router);
   router.push = (location, onComplete = () => {}, onAbort = () => {}) => push(location, onComplete, onAbort);
-  let ctx;
   const manager = {
     flushRouteQueue: jest.fn(), getRouteLockPromise: jest.fn(() => Promise.resolve())
   };
@@ -199,7 +205,7 @@ export async function entryFixture ({
   jest.doMock('@vue-storefront/core/lib/multistore', () => ({}));
   jest.doMock('@vue-storefront/core/lib/storeCodeFromRoute', () => ({ __esModule: true, default: () => 'main' }));
   jest.doMock('@vue-storefront/core/lib/logger', () => ({ Logger: { debug: () => jest.fn(), error: () => jest.fn() } }));
-  jest.doMock('@vue-storefront/core/lib/async-data-loader', () => ({ AsyncDataLoader: { flush: async () => {} } }));
+  jest.doMock('@vue-storefront/core/lib/async-data-loader', () => ({ AsyncDataLoader: { flush: async () => { if (onFlush) await onFlush(ctx); } } }));
   jest.doMock('../../../../../build/purge-config/purgeConfig', () => ({ __esModule: true, default: value => value }));
   jest.doMock('config', () => ({
     storeViews: { multistore: false }, server: { dynamicConfigReload: false }
@@ -233,6 +239,7 @@ export async function entryFixture ({
     next({ name: data.name, params: data.params, query: to.query });
   });
   if (beforeEach) router.beforeEach(beforeEach);
+  if (onNavigation) router.beforeEach(async (_to, _from, next) => { await onNavigation(ctx); next(); });
   if (sentOnInitial) router.beforeEach((_to, _from, next) => {
     ctx.server.response.redirect(302, '/direct/');
     next();
@@ -241,7 +248,7 @@ export async function entryFixture ({
     setServerRedirect(ctx, '/recorded/?step=1', 301);
     next();
   });
-  const app = new Vue({ router, store, render: h => h('router-view') });
+  const app = new Vue({ router, store, serverPrefetch: rootPrefetch, render: h => { rootRender(); return h('router-view'); } });
   app.$meta = () => ({});
   const initialState = JSON.parse(JSON.stringify(store.state));
   require('@vue-storefront/core/app').createApp.mockResolvedValue({ app, router, store, initialState, head: null });
@@ -249,7 +256,7 @@ export async function entryFixture ({
   const replace = jest.spyOn(router, 'replace');
   const commit = jest.spyOn(store, 'commit');
   return {
-    app, router, store, initialState, replace, commit, manager, preAsyncData, asyncData,
+    app, router, store, initialState, replace, commit, manager, preAsyncData, asyncData, rootRender, rootPrefetch, pageRender, pagePrefetch,
     async run (value) { ctx = value; return entry(value); },
     async html (value) {
       ctx = value;

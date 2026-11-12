@@ -75,7 +75,7 @@ export function createRenderResponseHandler ({
     const before = beforeOutput(output);
     if (typeof before === 'string') output = before;
     else if (typeof before?.output === 'string') output = before.output;
-    output = processOutput(output);
+    if (!context.output.redirect) output = processOutput(output);
     // Output hooks and template processing can read cookies too; classify the complete read set.
     const cookieReads = Array.from(context.output.cookieReads);
     if (cookieReads.length !== renderCookieReads.length) {

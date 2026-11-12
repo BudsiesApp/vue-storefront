@@ -59,6 +59,23 @@ describe('An unregistered cookie disables all writes', () => {
 });
 
 describe('Cookie reads during output processing are classified before writing', () => {
+  it('does not cache a redirect when beforeOutput reads a private cookie', async () => {
+    let ctx;
+    const h = serverHarness(value => {
+      ctx = value;
+      value.output.redirect = { code: 301, path: '/destination/' };
+      return '<div></div>';
+    });
+    h.hooks.beforeOutputRenderedResponse.mockImplementation(output => {
+      readCookie(ctx, 'private-cookie');
+      return { output };
+    });
+    const res = await h.visit('/late-redirect/', 'private-cookie=private');
+    expect(res.get('location')).toBe('/destination/');
+    expect(h.cache.set).not.toHaveBeenCalled();
+    expect(h.hooks.afterOutputRenderedResponse).toHaveBeenCalledTimes(1);
+  });
+
   it.each([['hook', true], ['hook', false], ['processing', true], ['processing', false]])('late reads in %s with tagging %s', async (stage, tagging) => {
     for (const [cookie, first, second] of [['private-cookie', 'ALICE', 'BOB'], ['detected_country', 'US', 'FR']]) {
       let ctx;
