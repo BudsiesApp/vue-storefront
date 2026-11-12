@@ -12,8 +12,8 @@
 
 ## 3. Explicit preview consumption
 
-- [ ] 3.1 Update dependency-contract checks on both existing app-line features to accept supported immutable preview identities as well as explicit releases; verify focused cases retain exact shared/Vue pair and indirect identity, no-GitPkg/hook checks and rejection of mismatches without changing accepted final manifest/lock pins.
-- [ ] 3.2 Document the publisher command/defaults and exact handoff, feature iteration and merged-source selection, explicit container URL/lock updates and isolated testing/restoration on both app lines; verify examples require no publisher config/test commit or manual tag and keep all five maintained brand combinations and historical assets identified.
+- [x] 3.1 Update dependency-contract checks on both existing app-line features to accept supported immutable preview identities as well as explicit releases; verify focused cases retain exact shared/Vue pair and indirect identity, no-GitPkg/hook checks and rejection of mismatches without changing accepted final manifest/lock pins.
+- [x] 3.2 Document the publisher command/defaults and exact handoff, feature iteration and merged-source selection, explicit container URL/lock updates and isolated testing/restoration on both app lines; verify examples require no publisher config/test commit or manual tag and keep all five maintained brand combinations and historical assets identified.
 
 ## Workflow follow-up
 
