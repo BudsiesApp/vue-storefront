@@ -69,6 +69,21 @@ describe('Redirects skip the real Vue tree', () => {
     for (const hook of [fixture.preAsyncData, fixture.asyncData, fixture.rootRender, fixture.rootPrefetch, fixture.pageRender, fixture.pagePrefetch]) expect(hook).not.toHaveBeenCalled();
   });
 
+  it('skips the Vue tree when the response was already sent', async () => {
+    const fixture = await entryFixture({ sentOnInitial: true });
+    const h = serverHarness(ctx => fixture.html(ctx));
+    const res = await h.visit('/page/');
+    expect(res.headersSent).toBe(true);
+    expect(res.get('location')).toBe('/direct/');
+    expect(res.redirect).toHaveBeenCalledTimes(1);
+    expect(res.end).not.toHaveBeenCalled();
+    expect(h.cache.set).not.toHaveBeenCalled();
+    expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+    expect(h.logger.warn).toHaveBeenCalledWith('/page/', 'response already sent by application code');
+    expect(h.logger.error).not.toHaveBeenCalled();
+    for (const hook of [fixture.preAsyncData, fixture.asyncData, fixture.rootRender, fixture.rootPrefetch, fixture.pageRender, fixture.pagePrefetch]) expect(hook).not.toHaveBeenCalled();
+  });
+
   it.each(['navigation', 'queue'])('keeps %s no-cache exclusions', async stage => {
     const record = ctx => { ctx.output.cacheTags.add('no-cache'); setServerRedirect(ctx, '/private/', 302); };
     const options = stage === 'navigation' ? { onNavigation: record } : { onFlush: record };

@@ -81,7 +81,7 @@ export default async context => {
     context.extendedHead = head
     router.onReady(() => {
       // Defensive: application code must record redirects in the render context instead of sending them.
-      if (context.server.response.headersSent) return resolve(app)
+      if (context.server.response.headersSent) return resolve(redirectRoot())
 
       if (router.currentRoute.redirectedFrom && router.currentRoute.redirectedFrom !== router.currentRoute.fullPath) {
         context.output.redirect = { code: 301, path: router.currentRoute.fullPath };

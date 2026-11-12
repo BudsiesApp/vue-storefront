@@ -75,6 +75,11 @@ Application code SHALL request SSR redirects only through the request-services b
 - **WHEN** navigation, page data loading, or queued data loading adds `no-cache` before a recorded redirect completes
 - **THEN** skipping the storefront render retains that tag and prevents storing the redirect
 
+#### Scenario: An already-sent response skips storefront rendering
+- **WHEN** the server entry detects that application code has already sent the response during navigation
+- **THEN** the real application and page render and server-prefetch hooks do not run
+- **AND** SSR completes without sending another response or writing a cache entry
+
 ## ADDED Requirements
 
 ### Requirement: URL-rewrite lookup tags identify the normalized request path
@@ -116,5 +121,5 @@ Fresh redirect processing SHALL retain the existing before-output and after-outp
 - **THEN** the existing cookie-dependency policy prevents caching that redirect
 
 #### Scenario: Ordinary pages still render and process templates
-- **WHEN** a request reaches the rendering stage without a recorded redirect
+- **WHEN** a request reaches the rendering stage without a recorded redirect or an already-sent response
 - **THEN** the real application and matched page retain their rendering and server-prefetch behavior and normal template and output-hook processing
