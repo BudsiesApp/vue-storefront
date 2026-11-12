@@ -58,3 +58,27 @@ The implementer runs focused checks and records scoped lock diffs. The tester ow
 ## Migration Plan
 
 Publish and verify source assets first with lead authorization; update both UI feature branches using the same asset pair and regenerate their respective locks; run focused checks and hand off the five-combination acceptance matrix. Future source/packaging revisions publish a new tag and repeat both app-line updates. Merging/brand release propagation/deployment are not part of this specification-writing assignment. An authorized consumer rollback can restore the previous dependency commit without modifying any release asset.
+
+## Approved preview-consumption extension
+
+### Retain the accepted migration baseline
+
+The original migration is implemented and accepted for its targeted distribution behavior (D18–D21). Main UI PR #567 head `5bf89f083` and Bulk Orders PR #568 head `a6daf4258` consume `packages-37220-v1`; these final pins, the completed five-brand evidence and published assets remain valid. The following preview checks are additions, not a claim that unchanged original acceptance must be repeated or that baseline caveats disappeared.
+
+### Explicit paired preview handoff
+
+The source publisher's selected surface is the local `python3 scripts/preview-packages.py --vue-ref <branch-or-full-commit> [--shared-ref <branch-or-full-commit>]` command using supported existing Python in a committed, pushed packaging checkout, not a dispatch action dependent on stale defaults. Independent omitted Storefront UI inputs visibly use the documented pinned companion from its release configuration; a shared-only selection is also supported. The command returns exact paired package URLs, resolved source/packaging identities including the exact toolchain, and manifest/checksum URLs after verified publication under `package-preview-<identity digest>`. Maintainers do not prepare tags or edit publisher config/tests for each request.
+
+Document how to verify that handoff, explicitly set both UI dependencies and regenerate the Yarn 4 lock in the existing mounted container. Preserve exact pair equality between the app's shared URL and the Vue archive's shared dependency. A later iteration invokes the command against the advanced source branch; final post-merge selection passes the actual merged SHA. Similar source trees are not an excuse to reuse a different source/packaging identity. Do not introduce a moving branch URL or automatic VSF commits/PRs.
+
+### Dependency-contract compatibility on both app lines
+
+`test/upgrade/storefront-ui-release-contract.js` currently restricts shared URLs to `packages-*`, so it would reject the new namespace even though the package transport is compatible. Update the contract to accept supported `packages-*` release tags and `package-preview-<64 lowercase hex>` identities from the same public repository with the same archive basenames. Keep pair matching, installed indirect shared equality, lock presence, no-GitPkg and no generation-hook assertions; do not generalize to arbitrary hosts/assets or suppress lifecycle scripts.
+
+Focused regression cases cover both namespaces, an actual returned pair, mismatched preview pairs/indirect references and the existing old-GitPkg rejection. Apply the same check and documentation changes to the primary and Bulk Orders features, preserving their existing implementation/task status and branch differences. No new dependency version, package manager or component change is selected.
+
+### Acceptance and state restoration
+
+Tester demonstrates returned-preview consumption in an explicitly identified temporary feature/testing graph using the existing container workflow, including immutable install, matching shared identity and targeted source compilation/rendering. Avoid committing arbitrary preview source pins onto the already-accepted final feature graphs; restore any temporary manifests, lockfiles, mounted app/theme/Petsies configuration and dependencies after the experiment while preserving unrelated user edits. The implementation changes here can consist only of contract tests and documentation; successful preview consumption is separate evidence, not a permanent final-pin replacement.
+
+Retain the completed five-brand builds/rendering and original empty-cache evidence. Spec reviewer/tester select additional regressions from the changed checks/docs and actual preview payload; do not silently invalidate every original result. Source publication/branch-advance evidence belongs to the publisher acceptance, not duplicate UI implementation checkboxes. Input-10 authorizes later command-managed preview tags/releases/assets after source checks, not application merges, deployment or issue transition; no new access is assumed.
