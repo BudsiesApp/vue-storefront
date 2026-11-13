@@ -46,6 +46,10 @@ Both maintained UI app lines SHALL accept the publisher's immutable public previ
 - **WHEN** a maintainer selects the returned shared and Vue URLs in an intended UI feature/testing graph and regenerates its lockfile using the existing container workflow
 - **THEN** immutable installation and targeted source-compilation/rendering checks can use that pair, with Vue's packaged shared URL exactly matching the application's shared URL
 
+#### Scenario: Automatically published branch preview is tested
+- **WHEN** a maintainer selects a matching pair from a `<branch>_<short-sha>` prerelease, including a URL-encoded branch name
+- **THEN** the dependency check accepts the pair while retaining the lockfile and direct/indirect shared identity checks
+
 #### Scenario: Maintainer iterates and selects merged sources
 - **WHEN** a maintainer requests a later feature or merged source revision through the publisher command
 - **THEN** documentation directs them to verify returned provenance/checksums and explicitly update the matching pair and lockfile on the intended app line, rather than track a moving source branch
