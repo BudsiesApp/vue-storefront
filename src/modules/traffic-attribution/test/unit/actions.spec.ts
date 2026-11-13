@@ -149,6 +149,26 @@ describe('traffic attribution actions', () => {
     expect(commits.map(item => item.type)).toContain(MARK_FIRST_TOUCH_SENT);
   });
 
+  it.each(['password', 'direct-crm-ticket'])('reports the bounded mutation copy for %s', async name => {
+    const ambiguous = `https://example.test/page?utm_source=allowed#route=one?${name}=synthetic&keep=x`;
+    const source = createTouch({
+      ...createAttribution({ [name]: 'synthetic', gclid: 'allowed' }),
+      landing_page_url: ambiguous,
+      referrer_url: `https://example.test/#/page=one?${name}=synthetic&keep=a%2Bb`
+    });
+    const state: any = { firstTouch: null };
+    mutations[SET_FIRST_TOUCH](state, source);
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    const { context, commits } = createContext(state.firstTouch, null);
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
+    expect(payload.landing_page_url).toBe(ambiguous);
+    expect(payload.referrer_url).toBe('https://example.test/#/page=one?keep=a%2Bb');
+    expect(payload.query_params).toEqual({ gclid: 'allowed' });
+    expect(source.attribution.query_params[name]).toBe('synthetic');
+    expect(commits.map(item => item.type)).toContain(MARK_FIRST_TOUCH_SENT);
+  });
+
   it('initializes first and last touch from the same raw payload when no first touch exists', async () => {
     window.history.pushState({}, '', '/landing?utm_source=google');
     const { context, commits } = createContext(null, null);

@@ -1,7 +1,7 @@
 import { withoutCredentialQuery } from '@vue-storefront/core/helpers/credential-query';
 import { sanitizeAttribution, sanitizeTouch } from '../../helpers/sanitize-attribution';
 import { mutations } from '../../store/mutations';
-import { SET_FIRST_TOUCH, MARK_FIRST_TOUCH_SENT } from '../../types/mutations';
+import { SET_FIRST_TOUCH, SET_LAST_TOUCH, MARK_FIRST_TOUCH_SENT } from '../../types/mutations';
 import { cacheHandlerFactory } from '../../helpers/cache-handler.factory';
 import { MODULE_NAME } from '../../types/store-name';
 import Vue from 'vue';
@@ -49,6 +49,44 @@ describe('credential protection', () => {
     expect(state.firstTouch.attribution.landing_page_url).toBe('https://example.test/#keep=a%2Bb');
     expect(state.firstTouch.attribution.referrer_url).toBe('https://example.test/#keep=a%2Bb');
     expect(touch.attribution.landing_page_url).toBe(url);
+  });
+
+  it.each(['password', 'direct-crm-ticket'])('filters %s after a fragment route containing equals', name => {
+    const url = `https://example.test/#/page=one?${name}=synthetic&keep=a%2Bb`;
+    const touch = { attribution: { ...attribution, landing_page_url: url, referrer_url: url }, isSent: false, createdAt: 1, expiresAt: 2 };
+    for (const [mutation, key] of [[SET_FIRST_TOUCH, 'firstTouch'], [SET_LAST_TOUCH, 'lastTouch']]) {
+      const state: any = { firstTouch: null, lastTouch: null };
+      mutations[mutation](state, touch);
+      expect(state[key].attribution.landing_page_url).toBe('https://example.test/#/page=one?keep=a%2Bb');
+      expect(state[key].attribution.referrer_url).toBe('https://example.test/#/page=one?keep=a%2Bb');
+      expect(touch.attribution.landing_page_url).toBe(url);
+      expect(touch.attribution.referrer_url).toBe(url);
+    }
+  });
+
+  it.each(['password', 'direct-crm-ticket', 'DIRECT_CRM_TICKET'])('applies bounded fragment precedence for %s at both mutation ingresses', name => {
+    const cases = [
+      [`route=one?${name}=synthetic&keep=x`, `route=one?${name}=synthetic&keep=x`],
+      [`${name}=synthetic?tail&keep=a%2Bb`, 'keep=a%2Bb'],
+      [`/page=one?${name}=synthetic&keep=a%2Bb`, '/page=one?keep=a%2Bb'],
+      [`route?${name}=synthetic&keep=a%2Bb`, 'route?keep=a%2Bb'],
+      [`${name}=&${name}=synthetic&&keep=a%2Bb`, '&keep=a%2Bb'],
+      ['/page=one&password=synthetic', '/page=one&password=synthetic'],
+      ['reviews', 'reviews'],
+      ['route=one%3Fpassword%3Dsynthetic&keep=x', 'route=one%3Fpassword%3Dsynthetic&keep=x']
+    ];
+    for (const [fragment, expected] of cases) {
+      const url = `https://example.test/page?utm_source=allowed#${fragment}`;
+      const touch = { attribution: { ...attribution, landing_page_url: url, referrer_url: url }, isSent: false, createdAt: 1, expiresAt: 2 };
+      for (const [mutation, key] of [[SET_FIRST_TOUCH, 'firstTouch'], [SET_LAST_TOUCH, 'lastTouch']]) {
+        const state: any = { firstTouch: null, lastTouch: null };
+        mutations[mutation](state, touch);
+        expect(state[key].attribution.landing_page_url).toBe(`https://example.test/page?utm_source=allowed#${expected}`);
+        expect(state[key].attribution.referrer_url).toBe(`https://example.test/page?utm_source=allowed#${expected}`);
+        expect(touch.attribution.landing_page_url).toBe(url);
+        expect(touch.attribution.referrer_url).toBe(url);
+      }
+    }
   });
 
   it('persists clean mutation state, including sent-state writes', () => {

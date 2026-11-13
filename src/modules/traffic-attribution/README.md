@@ -16,6 +16,12 @@ sensitive-key configuration. Stored touches encountered during normal synchroniz
 the same filter before later storage or reporting; existing untouched storage is not swept. Current browser
 queries and authentication and cart-recovery consumers are unchanged.
 
+Fragment interpretation uses literal delimiters: a leading `/` is a route (only its `?` suffix is
+filtered); otherwise `?` before the first `=` selects a relative route; otherwise a fragment containing
+`=` is a list of query pairs. Allowed pair values are not recursively scanned. Consequently an ambiguous
+`#route=one?password=synthetic&keep=x` is preserved as plain pairs even if intended as a relative route;
+this approved limitation applies to attribution copies, not the live browser URL.
+
 The SSR output cache ignores the documented lowercase AppLovin keys in its clean render URL and shared cache
 key. Existing redirect handling appends only the current request's original encoded ignored pairs, without
 overriding destination keys. The browser retains its own query for client capture. Existing exact-name cache

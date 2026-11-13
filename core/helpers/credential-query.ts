@@ -26,11 +26,11 @@ export function withoutCredentialQuery (url: string): string {
   if (hash >= 0) {
     const index = fragment.indexOf('?');
     const equals = fragment.indexOf('=');
-    if (index >= 0 && (equals < 0 || index < equals)) {
+    if (index >= 0 && (fragment.startsWith('/') || equals < 0 || index < equals)) {
       const query = fragment.slice(index + 1);
       const filtered = filterPairs(query);
       if (filtered !== query) fragment = fragment.slice(0, index) + (filtered ? '?' + filtered : '');
-    } else if (equals >= 0) {
+    } else if (!fragment.startsWith('/') && equals >= 0) {
       fragment = filterPairs(fragment);
     }
     result += '#' + fragment;
