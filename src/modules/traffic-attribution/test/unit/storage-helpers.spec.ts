@@ -136,9 +136,9 @@ describe('traffic attribution storage helpers', () => {
     const touch = createTouch();
     touch.attribution.query_params.password = 'synthetic';
     touch.attribution.query_params['direct-crm-ticket'] = 'synthetic-two';
-    getItemsFromStorageFactory(store as any)({
+    getItemsFromStorageFactory(store as any)(new StorageEvent('storage', {
       key: `shop/${MODULE_NAME}/${FIRST_TOUCH}`, newValue: JSON.stringify(touch)
-    } as StorageEvent);
+    }));
     expect(store.state[MODULE_NAME].firstTouch.attribution.query_params).toEqual({ gclid: 'click-id' });
   });
 

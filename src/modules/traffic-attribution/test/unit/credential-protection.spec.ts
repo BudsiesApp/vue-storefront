@@ -41,6 +41,16 @@ describe('credential protection', () => {
     attribution.query_params.gclid = 'a+b';
   });
 
+  it.each(['password', 'direct-crm-ticket'])('filters %s in plain fragments containing question marks at mutation ingress', name => {
+    const url = `https://example.test/#${name}=synthetic?tail&keep=a%2Bb`;
+    const touch = { attribution: { ...attribution, landing_page_url: url, referrer_url: url }, isSent: false, createdAt: 1, expiresAt: 2 };
+    const state: any = { firstTouch: null };
+    mutations[SET_FIRST_TOUCH](state, touch);
+    expect(state.firstTouch.attribution.landing_page_url).toBe('https://example.test/#keep=a%2Bb');
+    expect(state.firstTouch.attribution.referrer_url).toBe('https://example.test/#keep=a%2Bb');
+    expect(touch.attribution.landing_page_url).toBe(url);
+  });
+
   it('persists clean mutation state, including sent-state writes', () => {
     const touch = { attribution, isSent: true, createdAt: 1, expiresAt: 2 };
     const storage: any = { setItem: jest.fn().mockResolvedValue(undefined) };
