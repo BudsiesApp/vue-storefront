@@ -7,7 +7,6 @@ export function createSsrDiagnostics (req: { url: string; originalUrl?: string }
   const url = protectedRequest ? withoutCredentialQuery(req.url) : req.url;
   return {
     url,
-    protectedRequest,
     error: (error: any) => protectedRequest
       ? { type: error instanceof Error ? 'Error' : typeof error, status: typeof error?.code === 'number' ? error.code : undefined }
       : error,
