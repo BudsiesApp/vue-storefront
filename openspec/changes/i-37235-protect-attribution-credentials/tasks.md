@@ -2,12 +2,12 @@
 
 ## 1. Mandatory attribution filtering
 
-- [ ] 1.1 Add the small shared two-name predicate/URL-pair utility and attribution-copy sanitizer; verify focused synthetic tests for semantic names, one-layer URL decoding, duplicate/empty pairs, query-shaped fragments, allowed encoded context and caller-object immutability.
-- [ ] 1.2 Apply the mandatory exclusion in capture independently of configured sensitive lists, and update shipped/fallback lists and attribution README together; verify actual shipped-template, absent-config and custom-empty/configured-acquisition tests while preserving other override/gate/raw-value behavior.
+- [x] 1.1 Add the small shared two-name predicate/URL-pair utility and attribution-copy sanitizer; verify focused synthetic tests for semantic names, one-layer URL decoding, duplicate/empty pairs, query-shaped fragments, allowed encoded context and caller-object immutability.
+- [x] 1.2 Apply the mandatory exclusion in capture independently of configured sensitive lists, and update shipped/fallback lists and attribution README together; verify actual shipped-template, absent-config and custom-empty/configured-acquisition tests while preserving other override/gate/raw-value behavior.
 
 ## 2. Future state storage forwarding and diagnostics
 
-- [ ] 2.1 Sanitize copies at existing touch state ingress, cache-handler storage writes and immediately before outbound serialization; verify mutation, synchronization/storage-event, sent-flag-write and direct supplied-state reporting tests retain touch timestamps/flags/ordering and cannot bypass exclusion.
+- [x] 2.1 Sanitize independent copies at touch state ingress; persist post-mutation state and report from state getters. Verify real mutation, synchronization/storage-event, subscriber and reporting paths retain touch timestamps/flags/ordering and exclude credentials.
 - [ ] 2.2 Replace unsafe arbitrary attribution storage/read/report reason serialization with non-disclosing operation diagnostics, and document prospective boundary handling rather than a storage sweep; verify injected-error logger spies, unsent-on-failure and cart/checkout nonblocking tests.
 
 ## 3. SSR representation and diagnostic isolation
@@ -17,6 +17,6 @@
 
 ## 4. Consumer compatibility and integrated validation
 
-- [ ] 4.1 Add maintained synthetic tests using the actual existing auth redirect consumer and recovery component with mocked transport; verify current-browser query, recovery key/promo instructions and existing flows remain available without a new provider-ticket consumer or any real credential/message.
+- [x] 4.1 Add maintained synthetic tests using the actual existing auth redirect consumer and recovery component with mocked transport; verify current-browser query, recovery key/promo instructions and existing flows remain available without a new provider-ticket consumer or any real credential/message.
 - [ ] 4.2 Run focused attribution/storage suites, relevant core cache/response suites separately, required maintained/lint/build checks and strict OpenSpec validation in their documented environments; report actual results/blockers and the dynamically selected theme/payment CI context without changing submodule pointers.
 - [ ] 4.3 Deliver the tester handoff from `design.md` for local browser/fixture-cache/cart-event/consumer compatibility verification and document any residual historical-data limits; verify it distinguishes planned acceptance from passing unit baselines, does not add Maestra acquisition/classification scope and introduces no cleanup/replay/notification/production operation.

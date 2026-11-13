@@ -9,7 +9,7 @@ The #37214 browser investigation retained a synthetic `password` in attribution,
 - Make the two evidenced credential names mandatory exclusions from attribution capture, future state/storage writes and outbound attribution copies, including referrer/landing URL query representations and relevant state/storage ingress paths.
 - Keep configurable filtering/acquisition behavior for other fields; retain allowed UTMs, paid/affiliate/message context and existing First/Last/reporting semantics.
 - Extend existing clean-render/cache/current-request redirect isolation for those names, including equivalent casing/encoding, and protect the identified SSR request-URL/credential-bearing error diagnostics. Do not strip the browser URL or change authentication consumers.
-- Prove fresh/cached HTML isolation with two synthetic visitors, current-request redirect/browser continuity, direct state/storage bypass exclusion and existing authentication/recovery compatibility.
+- Prove fresh/cached HTML isolation with two synthetic visitors, current-request redirect/browser continuity, real state/storage ingress exclusion and existing authentication/recovery compatibility.
 
 ## Capabilities
 

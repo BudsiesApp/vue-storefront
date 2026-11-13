@@ -112,7 +112,7 @@ async function getStoredTouchData (
 
     return touch || null;
   } catch (reason) {
-    Logger.error(reason, MODULE_NAME)();
+    Logger.error('Error reading traffic attribution storage', MODULE_NAME)();
     return null;
   }
 }

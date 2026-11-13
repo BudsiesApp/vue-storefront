@@ -16,7 +16,7 @@ Attribution capture SHALL exclude `password` and `direct-crm-ticket` independent
 - **AND** explicit configuration behavior for other sensitive and acquisition names MUST remain unchanged
 
 ### Requirement: Prospective attribution state storage and forwarding share credential exclusion
-Future attribution state ingress, storage writes and outgoing attribution copies SHALL apply the same protected-field exclusion, including landing/referrer URL query and query-shaped fragment representations. This SHALL cover ordinary storage synchronization and direct state/submission paths without introducing a historical storage sweep or changing touch lifecycle metadata.
+Future attribution state, storage writes and outgoing attribution copies SHALL exclude protected fields, including landing/referrer URL query and query-shaped fragment representations. Clean copied state at real mutation ingress supplies storage and reporting, covering ordinary storage synchronization without introducing a historical storage sweep or changing touch lifecycle metadata.
 
 #### Scenario: Referrer or alternate touch supplies a URL-carried credential
 - **WHEN** a browser capture or alternate touch contains a protected named pair in a landing/referrer URL query or query-shaped fragment
@@ -29,8 +29,8 @@ Future attribution state ingress, storage writes and outgoing attribution copies
 - **AND** existing touch type, creation/expiry time and sent-state meaning MUST remain unchanged
 
 #### Scenario: Outgoing data bypasses ordinary capture
-- **WHEN** an existing cart event reports a supplied touch containing protected fields, including a touch loaded before this protection existed
-- **THEN** the new outbound body MUST use a credential-free copy without relying on a fresh landing or the backend filter
+- **WHEN** an existing cart event reports a touch loaded through normal state ingress, including a touch stored before this protection existed
+- **THEN** the new outbound body MUST use the credential-free state copy without relying on a fresh landing or the backend filter
 - **AND** this MUST NOT add a storage enumeration, cleanup command, new reporting trigger or historical-remediation claim
 
 ### Requirement: Attribution diagnostics do not disclose protected credential values

@@ -22,9 +22,9 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     const state: TrafficAttributionState = (rootState as any)[MODULE_NAME];
 
     if (type.endsWith(SET_FIRST_TOUCH)) {
-      storage.setItem(FIRST_TOUCH, mutation.payload)
+      storage.setItem(FIRST_TOUCH, state.firstTouch)
         .catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
+          Logger.error('Error writing first touch', MODULE_NAME)();
         });
       return;
     }
@@ -32,7 +32,7 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     if (type.endsWith(CLEAR_FIRST_TOUCH)) {
       storage.removeItem(FIRST_TOUCH)
         .catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
+          Logger.error('Error removing first touch', MODULE_NAME)();
         });
       return;
     }
@@ -40,15 +40,15 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     if (type.endsWith(MARK_FIRST_TOUCH_SENT) && state.firstTouch) {
       storage.setItem(FIRST_TOUCH, state.firstTouch)
         .catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
+          Logger.error('Error writing first touch', MODULE_NAME)();
         });
       return;
     }
 
     if (type.endsWith(SET_LAST_TOUCH)) {
-      storage.setItem(LAST_TOUCH, mutation.payload)
+      storage.setItem(LAST_TOUCH, state.lastTouch)
         .catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
+          Logger.error('Error writing last touch', MODULE_NAME)();
         });
       return;
     }
@@ -56,7 +56,7 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     if (type.endsWith(CLEAR_LAST_TOUCH)) {
       storage.removeItem(LAST_TOUCH)
         .catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
+          Logger.error('Error removing last touch', MODULE_NAME)();
         });
       return;
     }
@@ -64,7 +64,7 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     if (type.endsWith(MARK_LAST_TOUCH_SENT) && state.lastTouch) {
       storage.setItem(LAST_TOUCH, state.lastTouch)
         .catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
+          Logger.error('Error writing last touch', MODULE_NAME)();
         });
     }
   };

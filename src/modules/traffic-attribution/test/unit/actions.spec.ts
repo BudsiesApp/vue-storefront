@@ -15,6 +15,7 @@ import {
 } from '../../types/mutations';
 import { TouchData, TrafficAttributionData } from '../../types/traffic-attribution.interface';
 import { FIRST_TOUCH, LAST_TOUCH } from '../../types/local-storage-key';
+import { mutations } from '../../store/mutations';
 
 jest.mock('config', () => ({
   budsies: {
@@ -128,6 +129,23 @@ describe('traffic attribution actions', () => {
 
   afterEach(() => {
     (Date.now as any).mockRestore();
+  });
+
+  it('reports a sanitized copy of an older touch without changing its metadata', async () => {
+    const first = createTouch({
+      ...createAttribution({ password: 'synthetic', 'direct-crm-ticket': 'synthetic-two', gclid: 'allowed' }),
+      referrer_url: 'https://example.test/?password=synthetic&ok=a%2Bb'
+    });
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    const state: any = { firstTouch: null };
+    mutations[SET_FIRST_TOUCH](state, first);
+    const { context, commits } = createContext(state.firstTouch, null);
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
+    expect(payload.query_params).toEqual({ gclid: 'allowed' });
+    expect(payload.referrer_url).toBe('https://example.test/?ok=a%2Bb');
+    expect(first.attribution.query_params.password).toBe('synthetic');
+    expect(commits.map(item => item.type)).toContain(MARK_FIRST_TOUCH_SENT);
   });
 
   it('initializes first and last touch from the same raw payload when no first touch exists', async () => {

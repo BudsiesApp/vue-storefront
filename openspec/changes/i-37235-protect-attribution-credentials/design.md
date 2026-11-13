@@ -45,7 +45,7 @@ Use the safe URL-copy operation for document referrer and any supplied touch URL
 
 ### 2. Protect future state/storage/outbound copies, not a historical sweep
 
-Apply the attribution sanitizer at `SET_FIRST_TOUCH`/`SET_LAST_TOUCH` state ingress, at the existing cache-handler storage writes (including sent-flag writes), and immediately before `sendAttribution` serializes its body. The storage handler sees original mutation payloads, so relying solely on a cleaned state assignment is insufficient. This covers synchronization, cross-tab events, and direct synthetic state/reporting bypasses without a new queue or state machine.
+Apply the attribution sanitizer at `SET_FIRST_TOUCH`/`SET_LAST_TOUCH` state ingress. The subscriber persists post-mutation state rather than the original payload, including sent-flag writes, and reporting reads that same clean state. Synchronization and cross-tab events enter through these mutations; no dirty SSR hydration producer was found. The independent touch and query-map copies prevent caller mutations from contaminating state. No redundant downstream sanitizer or new state machine is needed.
 
 Preserve every touch's created/expiry timestamps, sent flag and identity, and retain existing First/Last ordering, gate, suppression and success/failure semantics. Sanitize copies rather than mutate caller-owned raw route/touch objects. Do not enumerate old storage, change TTLs or add a migration/cleanup command. A previously stored touch encountered in an **ordinary future** ingress/write/send is filtered at that boundary; untouched historical storage is not scanned, and no upgrade-wide cleanup is claimed.
 
@@ -69,7 +69,7 @@ The metadata-only view deliberately sacrifices free-form exception detail **only
 
 ### 5. Compatibility and proof use existing consumers, not real credentials
 
-Implementer automated tests extend existing capture/actions/storage, page-key/output-cache/response harnesses. Cover shipped/fallback/custom-empty sensitive lists; mixed-case/separator/encoded names; repeated URL pairs; metadata URL bypasses; direct mutation/storage/send ingress; safe rejection diagnostics; and allowed source/paid/affiliate/message controls. For shared output, use visitor A/B/query-free in both orders, cold/hits, normal and redirect output, cache disabled and functional store/query dimensions.
+Implementer automated tests extend existing capture/actions/storage, page-key/output-cache/response harnesses. Cover shipped/fallback/custom-empty sensitive lists; mixed-case/separator/encoded names; repeated URL pairs; metadata URL bypasses; real mutation/storage/reporting flow; safe rejection diagnostics; and allowed source/paid/affiliate/message controls. For shared output, use visitor A/B/query-free in both orders, cold/hits, normal and redirect output, cache disabled and functional store/query dimensions.
 
 Use existing real auth helper/recovery component with synthetic routes and mocked transport to verify their required current-user inputs survive. No new provider-ticket consumer is built. No live/retained ticket or actual password is requested, decoded or replayed; form authentication APIs remain outside the filter.
 
