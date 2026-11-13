@@ -142,6 +142,7 @@ describe('traffic attribution actions', () => {
     mutations[SET_FIRST_TOUCH](state, first);
     const { context, commits } = createContext(state.firstTouch, null);
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect((TaskQueue.execute as jest.Mock).mock.calls[0][0]).toMatchObject({ silent: true, logResponse: false });
     const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
     expect(payload.query_params).toEqual({ gclid: 'allowed' });
     expect(payload.referrer_url).toBe('https://example.test/?ok=a%2Bb');
@@ -263,6 +264,7 @@ describe('traffic attribution actions', () => {
     (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500, message: 'synthetic-secret' });
     (Logger.error as jest.Mock).mockClear();
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect((TaskQueue.execute as jest.Mock).mock.calls[0][0]).toMatchObject({ silent: true, logResponse: false });
     expect(Logger.error).toHaveBeenCalledWith('Error reporting traffic attribution', expect.any(String));
     expect(JSON.stringify((Logger.error as jest.Mock).mock.calls)).not.toContain('synthetic-secret');
     expect(context.commit).not.toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);

@@ -45,7 +45,8 @@ async function sendAttribution (attribution: TrafficAttributionData): Promise<bo
       },
       body: JSON.stringify({ request: attribution })
     },
-    silent: true
+    silent: true,
+    logResponse: false
   });
 
   if (resultCode !== 200) {

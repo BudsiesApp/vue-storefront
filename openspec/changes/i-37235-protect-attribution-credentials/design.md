@@ -72,6 +72,8 @@ Preserve every touch's created/expiry timestamps, sent flag and identity, and re
 
 Keep attribution diagnostics operation-specific and payload-free. Replace arbitrary caught reason/error serialization at the affected attribution read/write/report sites with fixed operation-identifying diagnostics (and safe bounded status/type where already available). Do not print original failed touches or free-form storage errors that can embed values. Preserve nonblocking behavior; do not add success logging, retries or new triggers.
 
+The reporting task opts out of shared TaskQueue response-result diagnostics: the queue retains its normal result and rejection behavior but does not serialize the response result or a caught error for this task, or attach its mutable task object to the execution log. Other tasks keep their existing diagnostics. This also covers the observed synthetic HTTP 500 response whose result reached the queue's debug log before the attribution action handled it; `silent` continues to control notifications only.
+
 ### 3. Extend the existing SSR clean-render/current-request pipeline
 
 Teach `splitPageCacheUrl` to treat the two protected semantic names as ignored alongside the unchanged exact-name policy for other keys. Enumerate/remove matching decoded occurrences from the clean URL and collect original encoded pairs into the existing request-local `strippedQuery`. Reuse `createOutputCache`, clean SSR navigation/state and fresh/cached redirect append; never put stripped pairs into a cache entry, HTML/state, diagnostic or shared header.
