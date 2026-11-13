@@ -31,3 +31,12 @@ it('does not log credential-bearing errors at the response boundary', () => {
   expect(res.redirect).toHaveBeenCalledWith('/error');
   expect(req.url).toContain('synthetic');
 });
+
+it('keeps existing diagnostic detail for requests without protected names', () => {
+  const req = { url: '/p/?utm_source=campaign' };
+  const error = new Error('ordinary detail');
+  const diagnostic = createSsrDiagnostics(req);
+  expect(diagnostic.request).toBe(req);
+  expect(diagnostic.error(error)).toBe(error);
+  expect(diagnostic.url).toBe(req.url);
+});
