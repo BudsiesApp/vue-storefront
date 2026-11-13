@@ -1,6 +1,12 @@
 # Storefront UI package releases
 
-For an unmerged package feature, run `python3 scripts/preview-packages.py
+Push a non-maintained package branch containing the branch preview workflow to
+publish a public `<branch>_<short-sha>` prerelease. Its workflow summary provides
+matching shared and Vue asset URLs, manifest and checksums. Both packages use
+the pushed commit. Update both URLs and the UI lockfile for testing; publication
+does not change or deploy the UI.
+
+Alternatively, for an unmerged package feature, run `python3 scripts/preview-packages.py
 --vue-ref <branch-or-full-sha>` in the committed, pushed Storefront UI publisher
 checkout. `--shared-ref` selects shared independently; omitted refs default to
 the documented initial pins. Verify the returned SHAs and checksum/manifest
