@@ -2,6 +2,7 @@ import fetch from '@vue-storefront/core/lib/fetch';
 
 import { execute } from '../../task';
 import TaskResponseError from '../../types/TaskResponseError';
+import { Logger } from '@vue-storefront/core/lib/logger';
 
 jest.mock('config', () => ({
   storeViews: { multistore: false },
@@ -13,7 +14,7 @@ jest.mock('@vue-storefront/core/lib/fetch', () => ({ __esModule: true, default: 
 jest.mock('@vue-storefront/core/store', () => ({ __esModule: true, default: { state: {}, dispatch: jest.fn() } }));
 jest.mock('@vue-storefront/core/lib/multistore', () => ({ adjustMultistoreApiUrl: (url: string) => url, currentStoreView: () => ({}) }));
 jest.mock('@vue-storefront/core/compatibility/plugins/event-bus', () => ({ __esModule: true, default: { $emit: jest.fn() } }));
-jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: () => () => {}, info: () => () => {}, debug: () => () => {}, log: () => () => {} } }));
+jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => () => {}), info: jest.fn(() => () => {}), debug: jest.fn(() => () => {}), log: jest.fn(() => () => {}) } }));
 jest.mock('@vue-storefront/core/lib/sync', () => ({ TaskQueue: {} }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: {} }));
 jest.mock('@vue-storefront/core/helpers', () => ({ processURLAddress: (url: string) => url, serial: jest.fn(), onlineHelper: {} }));
@@ -28,6 +29,8 @@ function createTask () {
 }
 
 describe('TaskQueue response failures', () => {
+  beforeEach(() => jest.clearAllMocks());
+
   it.each([403, 503])('keeps HTTP %i when the response is not JSON', async (status) => {
     (fetch as jest.Mock).mockResolvedValue(createResponse(status, 'text/html', jest.fn()));
 
@@ -91,5 +94,35 @@ describe('TaskQueue response failures', () => {
     (fetch as jest.Mock).mockResolvedValue(createResponse(503, 'application/json', async () => ({ code: 503, result: { errorMessage: 'Down' } })));
 
     await expect(execute(createTask())).resolves.toMatchObject({ resultCode: 503 });
+  });
+
+  it.each([200, 500])('does not log an opted-out HTTP %i response result while preserving the result', async status => {
+    const result = { errorMessage: 'synthetic-protected-result' };
+    (fetch as jest.Mock).mockResolvedValue(createResponse(status, 'application/json', async () => ({ code: status, result })));
+    const task = { ...createTask(), logResponse: false };
+
+    await expect(execute(task)).resolves.toMatchObject({ resultCode: status, result, transmited: true });
+    expect(Logger.debug).not.toHaveBeenCalled();
+    expect(Logger.info).toHaveBeenCalledWith(expect.any(String), 'sync', undefined);
+  });
+
+  it('retains ordinary response diagnostics by default', async () => {
+    (fetch as jest.Mock).mockResolvedValue(createResponse(500, 'application/json', async () => ({ code: 500, result: 'ordinary-detail' })));
+
+    const task = createTask();
+    await expect(execute(task)).resolves.toMatchObject({ resultCode: 500, result: 'ordinary-detail' });
+    expect(Logger.debug).toHaveBeenCalledWith(expect.stringContaining('ordinary-detail'), 'sync');
+    expect(Logger.info).toHaveBeenCalledWith(expect.any(String), 'sync', task);
+  });
+
+  it('logs no opted-out parsing failure detail but preserves the rejection', async () => {
+    (fetch as jest.Mock).mockResolvedValue(createResponse(500, 'application/json', async () => {
+      throw new SyntaxError('synthetic-protected-result');
+    }));
+
+    const error = await execute({ ...createTask(), logResponse: false }).catch(reason => reason);
+    expect(error).toBeInstanceOf(TaskResponseError);
+    expect(error.message).toBe('synthetic-protected-result');
+    expect(Logger.error).toHaveBeenCalledWith('Error executing sync task', 'sync');
   });
 });

@@ -40,6 +40,29 @@ describe('traffic attribution raw capture helpers', () => {
     setReferrer('https://google.com/search?q=plush');
   });
 
+  it('excludes the protected names with shipped, fallback and empty lists', () => {
+    const settings = config.trafficAttribution as any;
+    const sensitive = settings.sensitiveQueryKeys;
+    const acquisition = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shipped = JSON.parse(template.match(/"sensitiveQueryKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const query = { Pass_Word: 'synthetic', DIRECT_CRM_TICKET: 'synthetic2', gclid: 'allowed' };
+    try {
+      for (const keys of [undefined, shipped, []]) {
+        settings.sensitiveQueryKeys = keys;
+        expect(normalizeTrafficAttributionQueryParams(query)).toEqual({ gclid: 'allowed' });
+      }
+      settings.acquisitionClickIdKeys = ['password', 'direct_crm_ticket'];
+      expect(hasTrafficAttributionAcquisitionSignal({
+        landing_page_url: 'http://localhost/', query_params: query, detected_at: '2026-01-01'
+      })).toBe(false);
+      expect(query.Pass_Word).toBe('synthetic');
+    } finally {
+      settings.sensitiveQueryKeys = sensitive;
+      settings.acquisitionClickIdKeys = acquisition;
+    }
+  });
+
   it('builds a raw touch from the browser landing context and filtered route query', () => {
     const touch = getTrafficAttributionDataFromRoute({
       query: {

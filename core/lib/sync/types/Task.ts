@@ -11,5 +11,6 @@ export default interface Task {
   transmited_at: Date,
   url: string,
   is_result_cacheable?: boolean,
+  logResponse?: boolean,
   meta: any
 }

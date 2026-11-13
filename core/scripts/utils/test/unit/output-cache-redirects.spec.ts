@@ -84,6 +84,25 @@ it.each([false, true])('reattaches only current AppLovin pairs in both arrival o
   expect(JSON.stringify([...h.cache.entries.values()])).not.toMatch(/visitor|first|second/);
 });
 
+it.each([false, true])('keeps credential redirect pairs request-local in both orders: %s', async reverse => {
+  const h = serverHarness(ctx => {
+    ctx.output.cacheTags.add('page');
+    ctx.output.redirect = { code: 301, path: '/target/?step=2#fragment' };
+    return '';
+  });
+  const cases = [
+    ['/source/?%70assword=syntheticA', '/target/?step=2&%70assword=syntheticA#fragment'],
+    ['/source/?direct_crm_ticket=syntheticB', '/target/?step=2&direct_crm_ticket=syntheticB#fragment'],
+    ['/source/', '/target/?step=2#fragment']
+  ];
+  if (reverse) cases.reverse();
+  for (const [url, location] of [...cases, ...cases]) {
+    expect((await h.visit(url)).get('location')).toBe(location);
+  }
+  expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify([...h.cache.entries])).not.toMatch(/syntheticA|syntheticB/);
+});
+
 describe('Query-free redirects remain cacheable', () => {
   it('retains headers, Location and status on a hit', async () => {
     const h = serverHarness(redirectRenderer('explicit'));

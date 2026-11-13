@@ -4,6 +4,7 @@ import { serverHooksExecutors } from '@vue-storefront/core/server/hooks'
 import { cacheInstanceFactory } from './utils/cache-instance';
 import { createCacheInvalidationHandler, createOutputCache } from './utils/output-cache';
 import { createRenderResponseHandler, createSsrErrorHandler, renderSsrResponse, lookupSsrResponse } from './utils/ssr-response';
+import { createSsrDiagnostics } from './utils/ssr-diagnostics';
 
 const gracefulShutdown = require('http-graceful-shutdown')
 const qs = require('qs')
@@ -156,13 +157,14 @@ app.get('*', async (req, res, next) => {
   }
 
   const s = Date.now()
+  const diagnostic = createSsrDiagnostics(req)
   const errorHandler = createSsrErrorHandler({
     res, req, logger: console,
     isResourceNotFound: () => NOT_ALLOWED_SSR_EXTENSIONS_REGEX.test(req.path),
     apiStatus,
-    onException: err => serverHooksExecutors.ssrException({ err, req, isProd })
+    onException: err => serverHooksExecutors.ssrException({ err: diagnostic.error(err), req: diagnostic.request, isProd })
   })
-  const logFinalFailure = error => console.error('SSR request failed:', req.url, error)
+  const logFinalFailure = error => console.error('SSR request failed:', diagnostic.url, diagnostic.error(error))
 
   if (!req.path.endsWith('/')) {
     const hasQuery = Object.values(req.query).length;
@@ -197,7 +199,7 @@ app.get('*', async (req, res, next) => {
         afterOutput: output => serverHooksExecutors.afterOutputRenderedResponse({ req, res, context, output, isProd }),
         processOutput: output => ssr.applyAdvancedOutputProcessing(context, output, templatesCache, isProd),
         onComplete: () => {
-          console.log(`${getProcessLogPrefix()} whole request [${req.url}]: ${Date.now() - s}ms`)
+          console.log(`${getProcessLogPrefix()} whole request [${diagnostic.url}]: ${Date.now() - s}ms`)
           next()
         }
       })
@@ -214,8 +216,8 @@ app.get('*', async (req, res, next) => {
       onMiss: dynamicRequestHandler,
       logCache: result => {
         const message = result === 'miss'
-          ? `cache miss [${req.url}], request: ${Date.now() - s}ms`
-          : `${result === 'redirect' ? 'redirect ' : ''}cache hit [${req.url}], cached request: ${Date.now() - s}ms`
+          ? `cache miss [${diagnostic.url}], request: ${Date.now() - s}ms`
+          : `${result === 'redirect' ? 'redirect ' : ''}cache hit [${diagnostic.url}], cached request: ${Date.now() - s}ms`
         console.log(`${getProcessLogPrefix()} ${message}`)
       },
       res, onHit: next, errorHandler, logFinalFailure

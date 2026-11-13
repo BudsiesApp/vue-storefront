@@ -1,6 +1,7 @@
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
+import { Logger } from '@vue-storefront/core/lib/logger';
 
 import { actions } from '../../store/actions';
 import { REPORT_TRAFFIC_ATTRIBUTION, SYNCHRONIZE } from '../../types/actions';
@@ -15,6 +16,7 @@ import {
 } from '../../types/mutations';
 import { TouchData, TrafficAttributionData } from '../../types/traffic-attribution.interface';
 import { FIRST_TOUCH, LAST_TOUCH } from '../../types/local-storage-key';
+import { mutations } from '../../store/mutations';
 
 jest.mock('config', () => ({
   budsies: {
@@ -130,6 +132,44 @@ describe('traffic attribution actions', () => {
     (Date.now as any).mockRestore();
   });
 
+  it('reports a sanitized copy of an older touch without changing its metadata', async () => {
+    const first = createTouch({
+      ...createAttribution({ password: 'synthetic', 'direct-crm-ticket': 'synthetic-two', gclid: 'allowed' }),
+      referrer_url: 'https://example.test/?password=synthetic&ok=a%2Bb'
+    });
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    const state: any = { firstTouch: null };
+    mutations[SET_FIRST_TOUCH](state, first);
+    const { context, commits } = createContext(state.firstTouch, null);
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect((TaskQueue.execute as jest.Mock).mock.calls[0][0]).toMatchObject({ silent: true, logResponse: false });
+    const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
+    expect(payload.query_params).toEqual({ gclid: 'allowed' });
+    expect(payload.referrer_url).toBe('https://example.test/?ok=a%2Bb');
+    expect(first.attribution.query_params.password).toBe('synthetic');
+    expect(commits.map(item => item.type)).toContain(MARK_FIRST_TOUCH_SENT);
+  });
+
+  it.each(['password', 'direct-crm-ticket'])('reports the bounded mutation copy for %s', async name => {
+    const ambiguous = `https://example.test/page?utm_source=allowed#route=one?${name}=synthetic&keep=x`;
+    const source = createTouch({
+      ...createAttribution({ [name]: 'synthetic', gclid: 'allowed' }),
+      landing_page_url: ambiguous,
+      referrer_url: `https://example.test/#/page=one?${name}=synthetic&keep=a%2Bb`
+    });
+    const state: any = { firstTouch: null };
+    mutations[SET_FIRST_TOUCH](state, source);
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    const { context, commits } = createContext(state.firstTouch, null);
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
+    expect(payload.landing_page_url).toBe(ambiguous);
+    expect(payload.referrer_url).toBe('https://example.test/#/page=one?keep=a%2Bb');
+    expect(payload.query_params).toEqual({ gclid: 'allowed' });
+    expect(source.attribution.query_params[name]).toBe('synthetic');
+    expect(commits.map(item => item.type)).toContain(MARK_FIRST_TOUCH_SENT);
+  });
+
   it('initializes first and last touch from the same raw payload when no first touch exists', async () => {
     window.history.pushState({}, '', '/landing?utm_source=google');
     const { context, commits } = createContext(null, null);
@@ -216,6 +256,18 @@ describe('traffic attribution actions', () => {
     expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
     expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
     expect(lastTouch.isSent).toBe(false);
+  });
+
+  it('logs only the report operation when the response contains a synthetic credential', async () => {
+    const first = createTouch(createAttribution({ gclid: 'allowed' }));
+    const { context } = createContext(first, null);
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500, message: 'synthetic-secret' });
+    (Logger.error as jest.Mock).mockClear();
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect((TaskQueue.execute as jest.Mock).mock.calls[0][0]).toMatchObject({ silent: true, logResponse: false });
+    expect(Logger.error).toHaveBeenCalledWith('Error reporting traffic attribution', expect.any(String));
+    expect(JSON.stringify((Logger.error as jest.Mock).mock.calls)).not.toContain('synthetic-secret');
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
   });
 
   it('loads unexpired stored touches during synchronization', async () => {

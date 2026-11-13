@@ -1,6 +1,7 @@
 import { MutationTree } from 'vuex';
 
 import { TouchData } from '../types/traffic-attribution.interface';
+import { sanitizeTouch } from '../helpers/sanitize-attribution';
 import { TrafficAttributionState } from '../types/state.interface';
 import {
   SET_FIRST_TOUCH,
@@ -13,10 +14,10 @@ import {
 
 export const mutations: MutationTree<TrafficAttributionState> = {
   [SET_FIRST_TOUCH] (state, touch: TouchData) {
-    state.firstTouch = touch;
+    state.firstTouch = sanitizeTouch(touch);
   },
   [SET_LAST_TOUCH] (state, touch: TouchData) {
-    state.lastTouch = touch;
+    state.lastTouch = sanitizeTouch(touch);
   },
   [MARK_FIRST_TOUCH_SENT] (state) {
     if (state.firstTouch) {

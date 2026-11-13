@@ -45,7 +45,8 @@ async function sendAttribution (attribution: TrafficAttributionData): Promise<bo
       },
       body: JSON.stringify({ request: attribution })
     },
-    silent: true
+    silent: true,
+    logResponse: false
   });
 
   if (resultCode !== 200) {
@@ -112,7 +113,7 @@ async function getStoredTouchData (
 
     return touch || null;
   } catch (reason) {
-    Logger.error(reason, MODULE_NAME)();
+    Logger.error('Error reading traffic attribution storage', MODULE_NAME)();
     return null;
   }
 }

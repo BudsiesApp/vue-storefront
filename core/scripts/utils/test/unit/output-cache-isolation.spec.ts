@@ -56,3 +56,27 @@ it.each([false, true])('shares clean HTML for AppLovin and query-free requests, 
   expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
   expect(JSON.stringify([...h.cache.entries.values()])).not.toMatch(/one|two|aleid|alart/);
 });
+
+it.each([false, true])('isolates credential-bearing HTML in both orders: %s', async reverse => {
+  const h = serverHarness(ctx => {
+    ctx.output.cacheTags.add('page');
+    return JSON.stringify({ route: ctx.url, state: { path: ctx.url } });
+  });
+  const urls = ['/secure/?step=1&%70assword=secretA', '/secure/?step=1&DIRECT_CRM_TICKET=secretB', '/secure/?step=1'];
+  if (reverse) urls.reverse();
+  for (const url of [...urls, ...urls]) {
+    const response = await h.visit(url);
+    expect(response.body).toContain('/secure/?step=1');
+    expect(response.body).not.toMatch(/secretA|secretB/);
+  }
+  expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify([...h.cache.entries])).not.toMatch(/secretA|secretB/);
+});
+
+it('renders a clean URL even when output caching is disabled', async () => {
+  const h = serverHarness(ctx => JSON.stringify({ route: ctx.url }), true, false);
+  const response = await h.visit('/secure/?step=1&password=synthetic&direct-crm-ticket=synthetic2');
+  expect(response.body).toContain('/secure/?step=1');
+  expect(response.body).not.toContain('synthetic');
+  expect(h.cache.set).not.toHaveBeenCalled();
+});

@@ -34,7 +34,7 @@ export const TrafficAttributionModule: StorefrontModule = function ({ store, rou
   const reportTrafficAttribution = () => {
     store.dispatch(`${MODULE_NAME}/${REPORT_TRAFFIC_ATTRIBUTION}`)
       .catch((reason) => {
-        Logger.error(reason, MODULE_NAME)();
+        Logger.error('Error reporting traffic attribution', MODULE_NAME)();
       });
   };
 
