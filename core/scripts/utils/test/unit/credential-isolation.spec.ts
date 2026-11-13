@@ -1,6 +1,7 @@
 import { splitPageCacheUrl } from '../../page-cache-key';
 import { createSsrDiagnostics } from '../../ssr-diagnostics';
 import { createSsrErrorHandler } from '../../ssr-response';
+import { request, response, serverHarness, settleWrites } from './fixtures/output-cache';
 
 it('isolates decoded semantic credential names while preserving current-request pairs', () => {
   const url = new URL('https://example.test/p/?%70assword=synthetic&x=1&DIRECT_CRM_TICKET=other&password=');
@@ -40,3 +41,28 @@ it('keeps existing diagnostic detail for requests without protected names', () =
   expect(diagnostic.error(error)).toBe(error);
   expect(diagnostic.url).toBe(req.url);
 });
+
+it.each(['render', 'lookup', 'output', 'cleanup', 'hook', 'write'])(
+  'does not expose protected request data in %s failure diagnostics', async failure => {
+    const error = new Error('syntheticA syntheticB');
+    const h = serverHarness(ctx => {
+      ctx.output.cacheTags.add('page');
+      if (failure === 'render' || failure === 'hook') throw error;
+      return 'safe';
+    });
+    if (failure === 'lookup') h.cache.get.mockRejectedValue(error);
+    if (failure === 'output') h.hooks.beforeOutputRenderedResponse.mockImplementation(() => { throw error; });
+    if (failure === 'cleanup') h.cleanup.mockImplementation(() => { throw error; });
+    if (failure === 'hook') h.hooks.ssrException.mockImplementation(() => { throw error; });
+    if (failure === 'write') h.cache.set.mockRejectedValue(error);
+    const req = request('/p/?password=syntheticA&direct-crm-ticket=syntheticB');
+    await h.execute(req, response());
+    await settleWrites();
+    const diagnostics = JSON.stringify(
+      [h.logger.error.mock.calls, h.logger.warn.mock.calls, h.hooks.ssrException.mock.calls],
+      (_key, value) => value instanceof Error ? { message: value.message, stack: value.stack } : value
+    );
+    expect(diagnostics).not.toMatch(/syntheticA|syntheticB/);
+    expect(req.url).toContain('syntheticA');
+  }
+);

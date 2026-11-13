@@ -1,6 +1,7 @@
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
+import { Logger } from '@vue-storefront/core/lib/logger';
 
 import { actions } from '../../store/actions';
 import { REPORT_TRAFFIC_ATTRIBUTION, SYNCHRONIZE } from '../../types/actions';
@@ -234,6 +235,17 @@ describe('traffic attribution actions', () => {
     expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
     expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
     expect(lastTouch.isSent).toBe(false);
+  });
+
+  it('logs only the report operation when the response contains a synthetic credential', async () => {
+    const first = createTouch(createAttribution({ gclid: 'allowed' }));
+    const { context } = createContext(first, null);
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500, message: 'synthetic-secret' });
+    (Logger.error as jest.Mock).mockClear();
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(Logger.error).toHaveBeenCalledWith('Error reporting traffic attribution', expect.any(String));
+    expect(JSON.stringify((Logger.error as jest.Mock).mock.calls)).not.toContain('synthetic-secret');
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
   });
 
   it('loads unexpired stored touches during synchronization', async () => {
