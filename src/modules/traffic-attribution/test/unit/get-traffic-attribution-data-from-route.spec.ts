@@ -5,6 +5,8 @@ import {
   normalizeTrafficAttributionQueryParams
 } from '../../helpers/get-traffic-attribution-data-from-route.function';
 import { TrafficAttributionData } from '../../types/traffic-attribution.interface';
+import config from 'config';
+import fs from 'fs';
 
 jest.mock('config', () => ({
   trafficAttribution: {
@@ -168,5 +170,45 @@ describe('traffic attribution raw capture helpers', () => {
       referrer_url: 'https://google.com',
       landing_page_url: 'http://localhost/'
     })).toBe(true);
+  });
+
+  it('uses both shipped and fallback AppLovin keys while respecting explicit overrides', () => {
+    const settings = config.trafficAttribution as any;
+    const original = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shippedKeys = JSON.parse(template.match(/"acquisitionClickIdKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const base: TrafficAttributionData = {
+      landing_page_url: 'http://localhost/landing', query_params: {}, detected_at: '2026-06-06T00:00:00.000Z'
+    };
+
+    try {
+      for (const keys of [undefined, shippedKeys]) {
+        settings.acquisitionClickIdKeys = keys;
+        for (const query of [{ aleid: 'one' }, { alart: 'two' }, { ALEID: 'one', AlArT: 'two' },
+          { gclid: 'existing' }, { utm_source: 'campaign' }]) {
+          expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: query })).toBe(true);
+        }
+        const empty = normalizeTrafficAttributionQueryParams({ aleid: '', alart: null } as any);
+        expect(empty).toEqual({});
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: empty })).toBe(false);
+      }
+      settings.acquisitionClickIdKeys = ['gclid'];
+      expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { aleid: 'one', alart: 'two' } })).toBe(false);
+      settings.acquisitionClickIdKeys = [];
+      expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { aleid: 'one' } })).toBe(false);
+    } finally {
+      settings.acquisitionClickIdKeys = original;
+    }
+  });
+
+  it('preserves raw AppLovin context while omitting sensitive and empty values', () => {
+    setReferrer('');
+    expect(getTrafficAttributionDataFromRoute({
+      query: { ALEID: 'one+raw', alart: 'two/raw', token: 'private', utm_source: 'AppLovin', empty: '' }
+    } as any)).toEqual({
+      landing_page_url: 'http://localhost/landing',
+      query_params: { ALEID: 'one+raw', alart: 'two/raw', utm_source: 'AppLovin' },
+      detected_at: expect.any(String)
+    });
   });
 });

@@ -40,3 +40,19 @@ describe('A/B values cannot address another cache entry', () => {
     expect([...h.cache.entries.keys()].filter(key => key.endsWith(':detected_country:US'))).toHaveLength(0);
   });
 });
+
+it.each([false, true])('shares clean HTML for AppLovin and query-free requests, reversed: %s', async reverse => {
+  const h = serverHarness(ctx => {
+    ctx.output.cacheTags.add('page');
+    return JSON.stringify({ route: ctx.url, state: { path: ctx.url } });
+  });
+  const urls = ['/app/?step=1&aleid=one%2Bvalue', '/app/?step=1&alart=two%2Fvalue', '/app/?step=1'];
+  if (reverse) urls.reverse();
+  for (const url of [...urls, ...urls]) {
+    const response = await h.visit(url);
+    expect(response.body).toContain('/app/?step=1');
+    expect(response.body).not.toMatch(/one|two|aleid|alart/);
+  }
+  expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify([...h.cache.entries.values()])).not.toMatch(/one|two|aleid|alart/);
+});
