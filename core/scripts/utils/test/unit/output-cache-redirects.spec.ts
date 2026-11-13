@@ -65,6 +65,25 @@ describe('Query-free and parameterized requests share one redirect entry', () =>
   });
 });
 
+it.each([false, true])('reattaches only current AppLovin pairs in both arrival orders: %s', async reverse => {
+  const h = serverHarness(ctx => {
+    ctx.output.cacheTags.add('page');
+    ctx.output.redirect = { code: 301, path: '/target/?aleid=destination#fragment' };
+    return '';
+  });
+  const cases = [
+    ['/source/?aleid=visitor%2Bone&alart=first%2Fvalue', '/target/?aleid=destination&alart=first%2Fvalue#fragment'],
+    ['/source/?alart=second%2Bvalue', '/target/?aleid=destination&alart=second%2Bvalue#fragment'],
+    ['/source/', '/target/?aleid=destination#fragment']
+  ];
+  if (reverse) cases.reverse();
+  for (const [url, location] of [...cases, ...cases]) {
+    expect((await h.visit(url)).get('location')).toBe(location);
+  }
+  expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify([...h.cache.entries.values()])).not.toMatch(/visitor|first|second/);
+});
+
 describe('Query-free redirects remain cacheable', () => {
   it('retains headers, Location and status on a hit', async () => {
     const h = serverHarness(redirectRenderer('explicit'));

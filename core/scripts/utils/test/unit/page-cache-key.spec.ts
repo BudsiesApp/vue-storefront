@@ -34,6 +34,7 @@ describe('Page-key behavior is preserved', () => {
     ['?%65mail=alice%40example.test&image-url=https%3A%2F%2Fexample.test%2Falice.png', '/page/', '%65mail=alice%40example.test&image-url=https%3A%2F%2Fexample.test%2Falice.png'],
     ['?step=a%26email%3Db&step=c+d&coupon_code=', '/page/?step=a%26email%3Db&step=c+d', 'coupon_code='],
     ['?step=2', '/page/?step=2', ''],
+    ['?aleid=a%2Bb&alart=c%2Fd&step=2', '/page/?step=2', 'aleid=a%2Bb&alart=c%2Fd'],
     ['', '/page/', '']
   ])('splits %s once', (query, cleanUrl, strippedQuery) => {
     const { splitPageCacheUrl } = require('../../page-cache-key');
@@ -55,4 +56,12 @@ describe('Stripped query is appended to redirect locations', () => {
     const { appendStrippedQuery } = require('../../page-cache-key');
     expect(appendStrippedQuery(location, strippedQuery)).toBe(expected);
   });
+});
+
+it('keeps store, functional and mixed-case query dimensions significant', () => {
+  const base = generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1');
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&aleid=one')).toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=2&aleid=one')).not.toBe(base);
+  expect(generatePageCacheKey('other_store', 'https://example.test/page/?step=1&alart=two')).not.toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&ALEID=one')).not.toBe(base);
 });
