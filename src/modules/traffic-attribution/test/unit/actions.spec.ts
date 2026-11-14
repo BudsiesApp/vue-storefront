@@ -146,8 +146,20 @@ describe('traffic attribution actions', () => {
     expect(commits[0].payload.createdAt).toBe(1000);
   });
 
+  it('initializes first and last touch from a marker-only first landing', async () => {
+    window.history.pushState({}, '', '/landing?m-message-click-id=raw%2Bmarker');
+    const { context, commits } = createContext(null, null);
+    await (actions as any)[SYNCHRONIZE](context, {
+      currentRoute: { query: { 'm-message-click-id': 'raw+marker' } }
+    });
+    expect(commits.map(commit => commit.type)).toEqual([SET_FIRST_TOUCH, SET_LAST_TOUCH]);
+    expect(commits[0].payload.attribution.landing_page_url).toBe('http://localhost/landing');
+    expect(commits[0].payload.attribution.query_params).toEqual({ 'm-message-click-id': 'raw+marker' });
+    expect(commits[0].payload.isSent).toBe(false);
+  });
+
   it('preserves an existing first touch and skips direct last-touch updates', async () => {
-    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }));
+    const firstTouch = createTouch(createAttribution({ 'm-message-click-id': 'synthetic' }));
     const lastTouch = createTouch(createAttribution({ utm_source: 'last' }));
     const { context, commits } = createContext(firstTouch, lastTouch);
 
@@ -179,9 +191,10 @@ describe('traffic attribution actions', () => {
   it.each([
     [{ aleid: 'one' }, { aleid: 'one' }],
     [{ alart: 'two' }, { alart: 'two' }],
+    [{ 'm-message-click-id': ' raw+click ', token: 'private' }, { 'm-message-click-id': ' raw+click ' }],
     [{ ALEID: 'one', alart: 'two', token: 'private' }, { ALEID: 'one', alart: 'two' }]
   ])('captures and reports identifier-only last touch %o', async (query, expected) => {
-    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }));
+    const firstTouch = createTouch(createAttribution({ utm_source: 'google' }));
     const lastTouch = createTouch(createAttribution({ utm_source: 'old' }), true);
     const { context, commits, getters } = createContext(firstTouch, lastTouch);
     await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query } });
@@ -207,9 +220,9 @@ describe('traffic attribution actions', () => {
     expect(context.commit).toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
   });
 
-  it('leaves a failed AppLovin report unsent', async () => {
+  it('leaves a failed Maestra report unsent', async () => {
     const firstTouch = createTouch(createAttribution({ utm_source: 'first' }), true);
-    const lastTouch = createTouch(createAttribution({ aleid: 'one' }));
+    const lastTouch = createTouch(createAttribution({ 'm-message-click-id': 'one' }));
     const { context } = createContext(firstTouch, lastTouch);
     (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500 });
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
@@ -269,7 +282,7 @@ describe('traffic attribution actions', () => {
   });
 
   it('reuses the in-flight report execution for duplicate report dispatches', async () => {
-    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }));
+    const firstTouch = createTouch(createAttribution({ 'm-message-click-id': 'synthetic' }));
     const { context } = createContext(firstTouch, null);
     const deferredTask = createDeferredTask();
     (TaskQueue.execute as jest.Mock).mockReturnValue(deferredTask.promise);
