@@ -131,7 +131,8 @@
       "sscid",
       "awc",
       "aleid",
-      "alart"
+      "alart",
+      "m-message-click-id"
     ],
     "ignoredReferrerHosts": [
       "${MAGENTO_DOMAIN}",

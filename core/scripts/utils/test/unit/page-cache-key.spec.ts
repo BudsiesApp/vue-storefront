@@ -35,6 +35,7 @@ describe('Page-key behavior is preserved', () => {
     ['?step=a%26email%3Db&step=c+d&coupon_code=', '/page/?step=a%26email%3Db&step=c+d', 'coupon_code='],
     ['?step=2', '/page/?step=2', ''],
     ['?aleid=a%2Bb&alart=c%2Fd&step=2', '/page/?step=2', 'aleid=a%2Bb&alart=c%2Fd'],
+    ['?m-message-click-id=a%2Bb&m-message-click-id=c%2Fd&step=2', '/page/?step=2', 'm-message-click-id=a%2Bb&m-message-click-id=c%2Fd'],
     ['', '/page/', '']
   ])('splits %s once', (query, cleanUrl, strippedQuery) => {
     const { splitPageCacheUrl } = require('../../page-cache-key');
@@ -64,4 +65,7 @@ it('keeps store, functional and mixed-case query dimensions significant', () => 
   expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=2&aleid=one')).not.toBe(base);
   expect(generatePageCacheKey('other_store', 'https://example.test/page/?step=1&alart=two')).not.toBe(base);
   expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&ALEID=one')).not.toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&m-message-click-id=one')).toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&M-Message-Click-Id=one')).not.toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&m-message-key-id=one')).not.toBe(base);
 });

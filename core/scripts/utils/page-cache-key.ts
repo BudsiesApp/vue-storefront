@@ -38,6 +38,7 @@ const ignoredQueryKeys = [
   'awc',
   'aleid',
   'alart',
+  'm-message-click-id',
   'pp',
   'audience',
   'ref',
