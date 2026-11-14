@@ -80,3 +80,27 @@ it('renders a clean URL even when output caching is disabled', async () => {
   expect(response.body).not.toContain('synthetic');
   expect(h.cache.set).not.toHaveBeenCalled();
 });
+
+it.each([false, true])('shares clean Maestra HTML in both arrival orders: %s', async reverse => {
+  const h = serverHarness(ctx => {
+    ctx.output.cacheTags.add('page');
+    return JSON.stringify({ current: ctx.url, previous: ctx.url, state: { path: ctx.url } });
+  });
+  const urls = ['/app/?step=1&m-message-click-id=first%2Bvalue', '/app/?step=1&m-message-click-id=second%2Fvalue', '/app/?step=1'];
+  if (reverse) urls.reverse();
+  for (const url of [...urls, ...urls]) {
+    const response = await h.visit(url);
+    expect(response.body).toContain('/app/?step=1');
+    expect(response.body).not.toMatch(/first|second|m-message-click-id/);
+  }
+  expect(h.renderer.renderToString).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify([...h.cache.entries])).not.toMatch(/first|second|m-message-click-id/);
+});
+
+it('renders a clean Maestra route when output caching is disabled', async () => {
+  const h = serverHarness(ctx => JSON.stringify({ current: ctx.url, previous: ctx.url }), true, false);
+  const result = await h.visit('/app/?step=1&m-message-click-id=marker%2Bvalue');
+  expect(result.body).toContain('/app/?step=1');
+  expect(result.body).not.toMatch(/marker|m-message-click-id/);
+  expect(h.cache.entries.size).toBe(0);
+});

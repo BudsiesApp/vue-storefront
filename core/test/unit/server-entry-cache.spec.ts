@@ -30,8 +30,8 @@ describe('Router redirects resolve once from the clean URL', () => {
 
 describe('Two visitors share clean HTML', () => {
   const visitors = [
-    { email: 'alice@example.test', 'image-url': 'https://example.test/alice.png', coupon_code: 'ALICE10', applyPromoCode: 'alice-promo', utm_source: 'alice-campaign' },
-    { email: 'bob@example.test', 'image-url': 'https://example.test/bob.png', coupon_code: 'BOB10', applyPromoCode: 'bob-promo', utm_source: 'bob-campaign' }
+    { email: 'alice@example.test', 'image-url': 'https://example.test/alice.png', coupon_code: 'ALICE10', applyPromoCode: 'alice-promo', utm_source: 'alice-campaign', 'm-message-click-id': 'marker-one+synthetic' },
+    { email: 'bob@example.test', 'image-url': 'https://example.test/bob.png', coupon_code: 'BOB10', applyPromoCode: 'bob-promo', utm_source: 'bob-campaign', 'm-message-click-id': 'marker-two/synthetic' }
   ];
   it.each([false, true])('dynamic mapping: %s, both orders and repeat hits', async dynamic => {
     for (const order of [visitors, visitors.slice().reverse()]) {
