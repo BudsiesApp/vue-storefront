@@ -2,85 +2,62 @@
 
 ## ADDED Requirements
 
-### Requirement: Evidenced credentials are mandatory attribution exclusions
-Attribution capture SHALL exclude named `password` and `direct-crm-ticket` entries independently of configured sensitive-key overrides. URL carriers SHALL use the bounded fragment interpretation below, not exclusion under every intended relative-route meaning. Matching SHALL ignore ASCII case and hyphen/underscore separators. Protected fields MUST NOT become acquisition signals. Existing filtering and acquisition-list overrides for other fields SHALL remain authoritative.
+### Requirement: Selected names are mandatory fresh attribution exclusions
+Fresh route-query and referrer-query capture SHALL exclude named `password` and `direct-crm-ticket` entries independently of configured sensitive-key overrides, before acquisition eligibility. Matching SHALL ignore ASCII case and hyphen/underscore separators. Other filtering/acquisition overrides and allowed context SHALL remain intact; stored touches are exempt from recleaning. No new full-URL or fragment intake SHALL be introduced.
 
-#### Scenario: Fresh landing carries credentials and allowed context
-- **WHEN** a new browser landing carries either or both protected fields alongside allowed UTMs, paid/affiliate/message identifiers or ordinary query data
-- **THEN** the captured attribution MUST exclude protected fields and retain allowed context under existing normalization
-- **AND** the current browser URL and route object MUST NOT be mutated by attribution filtering
+#### Scenario: Fresh landing carries selected fields and allowed context
+- **WHEN** a new browser landing carries either or both selected names alongside allowed UTMs, paid/affiliate/message identifiers or ordinary query data
+- **THEN** actual capture MUST exclude the selected entries while preserving allowed context under existing normalization and origin/path-only landing URL policy
+- **AND** the current browser URL and caller-owned route MUST remain unchanged
 
-#### Scenario: Configuration omits or attempts to acquire a credential
-- **WHEN** configured sensitive keys omit the two fields, including an empty override, or an acquisition list includes a protected name
-- **THEN** the protected field MUST still be removed before acquisition eligibility is evaluated
-- **AND** explicit configuration behavior for other sensitive and acquisition names MUST remain unchanged
+#### Scenario: Configuration omits or attempts to acquire a selected name
+- **WHEN** configured sensitive keys omit either selected name, including an empty override, or acquisition keys include it
+- **THEN** the mandatory capture predicate MUST remove it before acquisition eligibility without depending on duplicate configurable defaults
+- **AND** existing custom filtering/acquisition behavior for other names and released Maestra support MUST remain unchanged
 
-### Requirement: Prospective attribution state storage and forwarding share credential exclusion
-Future attribution state, storage writes and outgoing copies SHALL exclude protected fields within the approved query/bounded-fragment interpretation and preserve allowed ambiguous values. Independent copies admitted through actual capture, synchronization and storage-event ingress SHALL supply state, storage and reporting without a historical sweep or touch-lifecycle change. Protection SHALL NOT depend on fresh capture or a broader backend interpretation.
+#### Scenario: Fresh referrer supplies a URL-carried selected field
+- **WHEN** fresh capture obtains a referrer URL containing a selected named pair in its supported query representation
+- **THEN** its attribution URL copy MUST exclude that pair, including repeated pairs and once-encoded names, while preserving allowed pair bytes/encoding and caller/browser context
+- **AND** no second state, storage or reporting sanitizer SHALL be required for the fresh result
 
-#### Scenario: Referrer or alternate touch supplies a URL-carried credential
-- **WHEN** a browser capture or alternate touch contains a protected named pair in a landing/referrer URL query or fragment pair list selected by the approved interpretation
-- **THEN** its prospective attribution copy MUST exclude that pair, including repeated pairs and names encoded once in the URL
-- **AND** allowed URL context and unrelated encoded pairs MUST remain usable
+### Requirement: Ordinary stored-touch reuse is outside recleaning scope
+State, storage and reporting SHALL consume their supplied values without repeated filtering. Previously stored touches MAY retain selected entries and URL carriers when loaded, synchronized across tabs, persisted or reported. Existing touch identity, expiry, sent flags, First/Last ordering and reporting semantics SHALL remain intact. No legacy admission, purge, version marker or custom storage protocol SHALL be introduced.
 
-#### Scenario: A touch enters through state or storage synchronization
-- **WHEN** an attribution touch is accepted through normal synchronization or a cross-tab storage event rather than the route capture helper
-- **THEN** future attribution state/storage writes MUST exclude protected entries and recognized URL pairs under the approved bounded interpretation
-- **AND** existing touch type, creation/expiry time and sent-state meaning MUST remain unchanged
+#### Scenario: Stored touches are restored or synchronized across tabs
+- **WHEN** ordinary synchronization or a cross-tab event loads an old saved touch containing either selected name
+- **THEN** its attribution values MUST pass through unchanged under existing storage/lifecycle rules, without a sanitized working clone or rewrite
 
-#### Scenario: Outgoing data bypasses ordinary capture
-- **WHEN** an existing cart event reports a touch loaded through normal state ingress, including a touch stored before this protection existed
-- **THEN** the new outbound body MUST use the independent state copy filtered under the approved interpretation, including preserved ambiguous allowed values, without relying on a fresh landing or the backend filter
-- **AND** this MUST NOT add a storage enumeration, cleanup command, new reporting trigger or historical-remediation claim
+#### Scenario: A cart event reports an old saved touch
+- **WHEN** an existing cart event reports an eligible unsent old touch
+- **THEN** its browser-side body MAY contain the unchanged saved values and MUST retain existing ordering, duplicate/in-flight and success-only sent-state behavior
+- **AND** normal Magento HTTP intake MUST independently filter the received fresh request, without requiring client-side saved-touch cleanup
+- **AND** the existing TaskQueue execution task-object/body diagnostic is covered by the same old-value exemption, not a reason to sanitize or suppress it or add new logging
 
-### Requirement: Fragment interpretation preserves ambiguous plain-query values
-Select fragment form from literal delimiters before decoding names. A leading `/` SHALL mark a route; filter only its suffix after the first `?`, if present. Otherwise, a `?` before the first `=` (or with no `=`) SHALL mark a relative route. Remaining fragments containing `=` SHALL be plain query pairs; other fragments SHALL remain unchanged. Only the selected pair list SHALL be filtered; route prefixes and allowed values SHALL NOT be rescanned or omitted.
+### Requirement: Fresh capture does not invent fragment processing
+VSF SHALL keep origin/path-only landing capture and structured route-query normalization. Browser referrer generation already strips fragments and HTTP SSR requests do not carry them. This change SHALL NOT introduce a fragment parser or alternate URL/touch input to recreate withdrawn saved-data coverage. P9's full-URL interpretation SHALL remain at Magento's fresh HTTP intake; live browser URLs and allowed values SHALL remain unchanged.
 
-#### Scenario: A protected plain-fragment value contains a question mark
-- **WHEN** a touch URL contains `#password=synthetic?tail&keep=a%2Bb` or the corresponding `direct-crm-ticket` pair
-- **THEN** its attribution copy MUST retain `#keep=a%2Bb` and exclude the whole protected pair, including the value's literal `?tail`
-- **AND** caller-owned touch/URL values and allowed pair bytes MUST remain unchanged
+#### Scenario: A live landing contains the operator-selected fragment
+- **WHEN** the browser opens `https://example.test/page?utm_source=allowed#route=one?password=synthetic&keep=x` or the corresponding ticket/equivalent-name variant
+- **THEN** its live browser/authentication context MUST remain unchanged and attribution MUST retain its existing origin/path-only landing and normalized allowed query, without a new fragment acquisition path
+- **AND** Magento's separate fresh full-URL input MUST retain P9's exact ambiguous-value preservation, established exclusions and accepted relative-route limitation
 
-#### Scenario: An explicit route path contains equals
-- **WHEN** a touch URL contains `#/page=one?password=synthetic&keep=a%2Bb` or the corresponding ticket pair
-- **THEN** its attribution copy MUST contain `#/page=one?keep=a%2Bb`, preserving the route path while excluding the protected suffix pair
+#### Scenario: Exempt stored URLs contain fragment pairs
+- **WHEN** saved state or a cross-tab event supplies any old URL fragment, including P9's exact selected string
+- **THEN** existing VSF state/storage/reporting MUST retain it unchanged without a fragment filter, omission or recursive value scan
 
-#### Scenario: An unambiguous relative route has a protected suffix
-- **WHEN** a touch URL contains `#route?password=synthetic&keep=a%2Bb` or the corresponding ticket pair
-- **THEN** its attribution copy MUST contain `#route?keep=a%2Bb`
-- **AND** explicit routes without a query suffix and ordinary fragments such as `#reviews` MUST remain unchanged
+### Requirement: Fresh attribution protection preserves existing consumers and reporting
+Fresh protection SHALL preserve native browser/authentication/recovery inputs, allowed raw/UTM data, First/Last semantics and existing queued cart-event reporting. It SHALL NOT introduce ticket login, new acquisition/classification, route-wide capture or unsupported error-suppression policy. Downstream code SHALL rely on the fresh producer without duplicating its filter; old values retain their explicit exemption.
 
-#### Scenario: The operator-selected ambiguous URL is preserved exactly through future copies
-- **WHEN** ordinary synchronization or cross-tab ingress supplies `https://example.test/page?utm_source=allowed#route=one?password=synthetic&keep=x` in either touch URL field
-- **THEN** its state, future storage and reported attribution copies MUST retain exactly `https://example.test/page?utm_source=allowed#route=one?password=synthetic&keep=x`
-- **AND** corresponding `direct-crm-ticket` and equivalent-name text inside the allowed `route` value MUST receive the same preservation
-- **AND** no guarantee SHALL be claimed for a sender intending the excluded relative route `route=one` with a credential suffix; no fragment omission or touch rejection is permitted to hide that limitation
-- **AND** touch metadata, caller inputs and live browser/authentication/recovery context MUST remain unchanged
+#### Scenario: Existing authentication and restoration consumers keep their inputs
+- **WHEN** the actual auth redirect helper or recovery component consumes its current route after clean hydration or a current-request redirect
+- **THEN** its query/recovery-key/promo inputs and authorization behavior MUST remain unchanged
+- **AND** synthetic/mocked compatibility MUST NOT be claimed as proof of real ticket login, provider-ticket validity or local exposure
 
-#### Scenario: Encoded delimiter text remains allowed data
-- **WHEN** an allowed fragment value contains encoded delimiter text such as `#route=one%3Fpassword%3Dsynthetic&keep=x`
-- **THEN** that value MUST remain unchanged without repeated decoding, recursive value scanning or reinterpretation as another query
+#### Scenario: Fresh captured data reaches Magento on the existing cart event
+- **WHEN** an eligible fresh landing with allowed context and selected fields is captured and an existing cart event reports it
+- **THEN** the normal state/storage/queued body MUST retain the captured allowed data without another filter, preserve First-before-Last/success-only reporting and leave backend classification to Magento
 
-### Requirement: Attribution diagnostics do not disclose protected credential values
-Attribution capture, storage and reporting diagnostics SHALL NOT serialize protected fields, their named URL representations, or arbitrary rejected touch/error objects that can carry those values. Failures SHALL retain nonblocking behavior and an operation-identifying diagnostic without exposing credential material.
-
-#### Scenario: Storage or reporting rejects a credential-bearing object
-- **WHEN** a synthetic attribution storage/read/report failure contains a protected value in its rejected object or free-form message
-- **THEN** the attribution diagnostic MUST identify the failed operation without disclosing that value or the rejected payload
-- **AND** existing unsent-on-failure, duplicate/in-flight suppression and cart/checkout continuity MUST remain effective
-
-### Requirement: Attribution protection leaves authentication recovery and reporting contracts intact
-Attribution protection SHALL preserve current-user browser/authentication and abandoned-cart restoration inputs, allowed raw/UTM context, retained First Touch, initial-landing Last Touch eligibility and queued cart-event reporting. It MUST NOT introduce new authentication, credential interpretation, marker classification or route-wide acquisition behavior.
-
-#### Scenario: Existing authentication consumer uses the current route
-- **WHEN** the existing client-side authentication/redirect consumer runs after neutral SSR hydration or a current-request redirect
-- **THEN** it MUST receive its own required route context unchanged by attribution filtering
-- **AND** synthetic compatibility proof MUST NOT be presented as validation of a real provider authentication ticket
-
-#### Scenario: Existing restoration consumer uses the recovery route
-- **WHEN** a synthetic cart-restoration journey supplies its existing recovery route and optional promo instruction alongside protected query fields
-- **THEN** the existing recovery API input and authorization flow MUST remain unchanged while attribution excludes the protected fields
-
-#### Scenario: Allowed attribution reaches Magento through a real cart event
-- **WHEN** a synthetic browser with retained First Touch receives a new eligible landing containing allowed attribution and protected fields, then triggers an existing cart event
-- **THEN** Magento MUST receive the allowed credential-free raw body under the existing First-before-Last ordering, success-only sent flags and backend classification ownership
+#### Scenario: Unsupported diagnostic guards are not retained as legacy protection
+- **WHEN** diagnostics process ordinary storage failures or HTTP result/error data without an established fresh selected-value producer/path
+- **THEN** this change MUST preserve existing diagnostic detail rather than add a TaskQueue logging option, generic redaction or blanket suppression based only on arbitrary injected error strings
+- **AND** a concrete fresh request URL reaching SSR diagnostics MUST still receive the separately specified URL-field protection

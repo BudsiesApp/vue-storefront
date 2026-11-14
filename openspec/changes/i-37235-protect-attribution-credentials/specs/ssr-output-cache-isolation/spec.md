@@ -30,20 +30,20 @@ Isolated credential pairs SHALL remain request-local and available to the curren
 #### Scenario: Browser hydration retains client inputs
 - **WHEN** the browser initializes from clean HTML or follows a redirect with its own isolated query pairs
 - **THEN** client-side route consumers MUST still receive that browser's current query context
-- **AND** attribution state and forwarding MUST exclude the protected fields independently
+- **AND** fresh attribution capture MUST exclude the selected fields independently, while old saved touches retain their explicit recleaning exemption
 
 #### Scenario: Pre-render and error redirects retain their established routing
 - **WHEN** a credential-bearing request takes the existing trailing-slash redirect or a render/error failure path
 - **THEN** protection MUST retain existing routing/status behavior and MUST NOT share a visitor-specific credential-bearing redirect entry
 
-### Requirement: SSR diagnostics exclude protected request values without mutating the live request
-First-party SSR timing/cache/error diagnostics and the SSR exception-reporting view SHALL exclude protected query values. A credential-bearing request's free-form error or request object MUST NOT be serialized into diagnostics. Normal request handling, current-user inputs and noncredential-request diagnostic behavior SHALL remain intact.
+### Requirement: Explicit SSR diagnostic URL fields exclude selected fresh query values
+The explicit request-URL arguments in first-party SSR timing/cache/completion/error diagnostics SHALL omit the two selected query names without mutating the live request. Existing exception details, hook inputs and failure handling SHALL remain unchanged absent an actual protected-value producer/path; opaque errors or arbitrary injected strings SHALL NOT justify blanket suppression or a replacement diagnostic request contract.
 
 #### Scenario: Cache timing and completion log a protected URL
 - **WHEN** a request containing a protected query field reaches cache miss, cache hit, redirect or render completion logging
 - **THEN** the logged URL MUST exclude protected query pairs and MUST NOT log request-local stripped-query content
 
-#### Scenario: A raw error repeats a protected request value
-- **WHEN** a credential-bearing request fails during render, cache lookup/write, output processing, exception reporting or final cleanup and its error includes the synthetic protected value
-- **THEN** the first-party diagnostic and exception-reporting view MUST contain only safe operation/type/status and credential-free URL context, not the raw error/request object
-- **AND** the original live request MUST remain unchanged and existing response/cleanup containment MUST remain effective
+#### Scenario: A response or terminal diagnostic includes the request URL
+- **WHEN** a fresh selected-name request reaches response-already-sent, render/resource-error, asynchronous write-failure or terminal-failure URL logging
+- **THEN** that explicit URL field MUST omit the selected pairs while preserving unrelated URL data, existing operation identifiers, ordinary exception detail and response/cleanup containment
+- **AND** the live request and original exception-hook arguments MUST remain unchanged; no generic error/request wrapper or global logger is required

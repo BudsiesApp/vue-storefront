@@ -2,15 +2,16 @@
 
 ## Why
 
-The #37214 browser investigation retained a synthetic `password` in attribution, and the Maestra follow-up established that `direct-crm-ticket` is authentication material omitted by current filters. Both also remain significant to SSR rendering/cache keys and original-request URL diagnostics. Epic [#37233](https://redmine.gorbunov.studio/issues/37233) approves focused prospective protection without breaking current-user authentication or cart restoration.
+Epic [#37233](https://redmine.gorbunov.studio/issues/37233) approves a two-name data-minimization policy for fresh attribution capture and actual shared-output/diagnostic paths. Inputs 26/27/P15 expressly exempt saved touches, including their ordinary reporting and existing TaskQueue task-body diagnostic. The operator requires reconsidering the whole VSF PR, not retaining earlier safeguards because they once passed review. `direct-crm-ticket` is not a Budsies login credential and no local ticket-login exposure is established.
 
 ## What Changes
 
-- Make the two evidenced credential names mandatory exclusions from attribution capture, future state/storage writes and outbound copies within the operator-approved plain-query/bounded-route interpretation, including referrer/landing URL carriers and real state/storage ingress paths.
-- Apply operator input-12/P9: preserve ambiguous allowed plain-query values and acknowledge narrower R1/R2 protection for an excluded relative-route interpretation. Do not omit fragments or add an R5 exception. R3 shared-output/diagnostic and R4/R6 outcomes remain unchanged.
-- Keep configurable filtering/acquisition behavior for other fields; retain allowed UTMs, paid/affiliate/message context and existing First/Last/reporting semantics.
-- Extend existing clean-render/cache/current-request redirect isolation for those names, including equivalent casing/encoding, and protect the identified SSR request-URL/credential-bearing error diagnostics. Do not strip the browser URL or change authentication consumers.
-- Prove fresh/cached HTML isolation with two synthetic visitors, current-request redirect/browser continuity, real state/storage ingress exclusion and existing authentication/recovery compatibility.
+- Keep mandatory `password`/`direct-crm-ticket` exclusion once in fresh route-query/referrer capture, independently of sensitive-key overrides. Preserve allowed values and the live browser URL. Remove the UI fragment parser: no remaining fresh URL carrier supplies a fragment; P9 remains unchanged at Magento's full-URL HTTP intake.
+- Remove saved-touch loading/cross-tab sanitization, the touch-copy sanitizer and privacy-only downstream cloning/subscriber changes. Existing state, storage and queued reporting consume values unchanged; old selected fields may persist/report unchanged.
+- Remove redundant protected-name additions to configurable shipped/fallback sensitive lists: one mandatory predicate already establishes the floor under every configuration. Preserve existing other-key overrides and all released Maestra acquisition support.
+- Retain the existing SSR clean-render/cache/request-local redirect extension for the two names and filter the explicit request-URL fields at actual SSR diagnostic producers. Remove blanket error suppression and exception-hook request replacement; no real producer/consumer evidence justifies them.
+- Remove TaskQueue `logResponse`/type/test changes and unsupported storage/report-error suppression. Do not reintroduce legacy protection through diagnostics or invent a response-error confidentiality contract.
+- Align tests/docs with fresh-input-only protection, unchanged saved-data reuse, allowed context, current-user/auth/recovery compatibility and the remaining real shared-output paths.
 
 ## Capabilities
 
@@ -20,14 +21,12 @@ None.
 
 ### Modified Capabilities
 
-- `traffic-attribution-capture`: Mandatory named-field exclusion within the approved URL interpretation, exact ambiguous-value preservation and safe diagnostics at existing prospective boundaries, retaining lifecycle and allowed context.
-- `ssr-output-cache-isolation`: Named credential isolation from clean SSR HTML/cache representations and diagnostic views while retaining only the current request's necessary browser/redirect context.
+- `traffic-attribution-capture`: Fresh two-name capture/referrer exclusion, allowed-value preservation and explicit saved-touch exemption, with existing lifecycle/reporting unchanged and no invented fragment intake.
+- `ssr-output-cache-isolation`: Two-name shared-render/cache isolation, current-request redirects and removal from explicit SSR diagnostic URL fields, without a new cache/diagnostic subsystem.
 
 ## Impact
 
-- Child [#37235](https://redmine.gorbunov.studio/issues/37235); branch `37235-protect-attribution-credentials`, from updated `origin/petsies-theme` `dd5d6b3ee116e2c675d28b52e5eb370f8941c82b`.
-- Owners: shared app attribution helpers/state/storage/submission boundaries; `core/scripts/utils/page-cache-key.ts`, SSR request/response diagnostic call sites and focused tests. Reuse existing output-cache and redirect pipeline, not a new cache/auth/redaction subsystem.
-- Magento child #37234 independently protects direct backend submissions. No VSF API, theme/payment code or pointer change, schema, provider authentication integration, acquisition policy or new reporting trigger is needed.
-- Both children apply P9's same fragment boundary and accepted limitation. This contract revision does not accept the tentative implementation or close bug-review F1.1. P7's independent state producer remains; no new parser, metadata protocol or redundant downstream sanitizer is selected.
-- UI CI builds the app with dynamically selected theme/payment branches; record actual combinations in implementation/review. Separate Bulk Orders app propagation and all brand releases remain later work. Preserve the existing local payment-submodule difference.
-- No dependency on Maestra attribution Epic #37230. No historical storage/database cleanup, real credential replay, notification, production access, merge/deployment or delivered #37214 archive changes.
+- Child [#37235](https://redmine.gorbunov.studio/issues/37235), branch `37235-protect-attribution-credentials`, PR #576. Whole PR reviewed against Git-verified current `petsies-theme` target `23b8139ac86ae216df4629594609257fea763951`, an ancestor of published head `9a4364a33393e5f3f7f0c61c76264c299c6d4494`.
+- Final owners: the fresh capture helper, small shared name/URL-pair utility, existing page-cache splitter, explicit server/response URL-log arguments, focused tests and README. Restore ordinary storage/TaskQueue code; no schema, protocol, dependency, framework or theme/payment/API feature change.
+- Magento #37234 filters all fresh HTTP submissions, including a body reported unchanged from old browser storage. No client-side historical cleanup is required to achieve that independent boundary.
+- Preserve canonical/released Maestra specs, all nonprivacy target changes, local payment-submodule difference and configuration. No archive, push, merge, release, historical operation, real credential replay or production action is part of this revision.
