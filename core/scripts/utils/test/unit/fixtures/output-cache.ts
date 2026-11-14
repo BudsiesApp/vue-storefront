@@ -3,7 +3,6 @@ import { createRequestServices } from '../../../../../request-services/create-re
 import { setServerRedirect } from '../../../../../request-services/set-server-redirect';
 import { Context } from '../../../types';
 import { splitPageCacheUrl } from '../../../page-cache-key';
-import { withoutCredentialQuery } from '../../../../../helpers/credential-query';
 import { createOutputCache, createCacheInvalidationHandler } from '../../../output-cache';
 import { createRenderResponseHandler, createSsrErrorHandler, renderSsrResponse, lookupSsrResponse } from '../../../ssr-response';
 
@@ -121,7 +120,6 @@ export function serverHarness (render: (ctx: any) => any, tagging = true, enable
     forwardInvalidation: jest.fn()
   });
   async function execute (req, res) {
-    const logFinalFailure = error => logger.error('SSR request failed:', withoutCredentialQuery(req.url), error);
     const cacheRequest = outputCache.createRequest(req.get('x-vs-store-code') || 'main',
       'https://example.test' + req.originalUrl, req.headers.cookie);
     const errorHandler = createSsrErrorHandler({
@@ -131,7 +129,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true, enable
     });
     return lookupSsrResponse({
       read: () => outputCache.read(cacheRequest), cacheRequest, res, onHit: jest.fn(),
-      errorHandler, logFinalFailure,
+      errorHandler, logFinalFailure: logger.error,
       onMiss: () => {
         const ctx = context(req, res);
         return renderSsrResponse({
@@ -142,7 +140,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true, enable
             afterOutput: hooks.afterOutputRenderedResponse,
             processOutput, onComplete: jest.fn()
           }),
-          errorHandler, cleanup: () => cleanup(ctx), logFinalFailure
+          errorHandler, cleanup: () => cleanup(ctx), logFinalFailure: logger.error
         });
       }
     });
