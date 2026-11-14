@@ -211,4 +211,45 @@ describe('traffic attribution raw capture helpers', () => {
       detected_at: expect.any(String)
     });
   });
+
+  it('uses Maestra click defaults, keeps raw values, and respects overrides', () => {
+    const settings = config.trafficAttribution as any;
+    const original = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shipped = JSON.parse(template.match(/"acquisitionClickIdKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const base: TrafficAttributionData = {
+      landing_page_url: 'http://localhost/', query_params: {}, detected_at: '2026-06-06T00:00:00.000Z'
+    };
+    try {
+      for (const keys of [undefined, shipped]) {
+        settings.acquisitionClickIdKeys = keys;
+        const query = normalizeTrafficAttributionQueryParams({ 'M-Message-Click-Id': ' raw+value ' } as any);
+        expect(query).toEqual({ 'M-Message-Click-Id': ' raw+value ' });
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: query })).toBe(true);
+        for (const value of ['', null, '  ']) {
+          const blank = normalizeTrafficAttributionQueryParams({ 'm-message-click-id': value } as any);
+          expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: blank })).toBe(false);
+        }
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { 'm-message-key-id': 'x' } })).toBe(false);
+      }
+      for (const keys of [[], ['gclid']]) {
+        settings.acquisitionClickIdKeys = keys;
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { 'm-message-click-id': 'x' } })).toBe(false);
+      }
+    } finally {
+      settings.acquisitionClickIdKeys = original;
+    }
+  });
+
+  it('captures the current browser marker after a redirect without changing its URL', () => {
+    setReferrer('');
+    for (const marker of ['first+visitor', 'second/visitor']) {
+      const url = '/landing?m-message-click-id=' + encodeURIComponent(marker) + '#section';
+      window.history.pushState({}, '', url);
+      const touch = getTrafficAttributionDataFromRoute({ query: { 'm-message-click-id': marker } } as any);
+      expect(touch?.query_params).toEqual({ 'm-message-click-id': marker });
+      expect(touch?.landing_page_url).toBe('http://localhost/landing');
+      expect(window.location.search + window.location.hash).toBe(url.slice('/landing'.length));
+    }
+  });
 });

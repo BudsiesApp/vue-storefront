@@ -35,6 +35,7 @@ describe('Page-key behavior is preserved', () => {
     ['?step=a%26email%3Db&step=c+d&coupon_code=', '/page/?step=a%26email%3Db&step=c+d', 'coupon_code='],
     ['?step=2', '/page/?step=2', ''],
     ['?aleid=a%2Bb&alart=c%2Fd&step=2', '/page/?step=2', 'aleid=a%2Bb&alart=c%2Fd'],
+    ['?m-message-click-id=a%2Bb&m-message-click-id=c%2Fd&step=2', '/page/?step=2', 'm-message-click-id=a%2Bb&m-message-click-id=c%2Fd'],
     ['', '/page/', '']
   ])('splits %s once', (query, cleanUrl, strippedQuery) => {
     const { splitPageCacheUrl } = require('../../page-cache-key');
@@ -50,6 +51,8 @@ describe('Stripped query is appended to redirect locations', () => {
     ['/target/?step=2', 'coupon_code=BOB20', '/target/?step=2&coupon_code=BOB20'],
     ['/sign-in/?redirect-target=%2Faccount%2F', 'redirect-target=%2Fother%2F&email=bob%40example.test', '/sign-in/?redirect-target=%2Faccount%2F&email=bob%40example.test'],
     ['/target/?step=2#reviews', 'utm_source=fb', '/target/?step=2&utm_source=fb#reviews'],
+    ['/target/?step=2#reviews', 'm-message-click-id=a%2Bb&m-message-click-id=c%2Fd', '/target/?step=2&m-message-click-id=a%2Bb&m-message-click-id=c%2Fd#reviews'],
+    ['/target/?m-message-click-id=existing#part', 'm-message-click-id=other', '/target/?m-message-click-id=existing#part'],
     ['https://example.test/target/', 'gclid=synthetic', 'https://example.test/target/?gclid=synthetic'],
     ['/target/?step=2', '', '/target/?step=2']
   ])('%s + %s', (location, strippedQuery, expected) => {
@@ -64,4 +67,7 @@ it('keeps store, functional and mixed-case query dimensions significant', () => 
   expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=2&aleid=one')).not.toBe(base);
   expect(generatePageCacheKey('other_store', 'https://example.test/page/?step=1&alart=two')).not.toBe(base);
   expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&ALEID=one')).not.toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&m-message-click-id=one')).toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&M-Message-Click-Id=one')).not.toBe(base);
+  expect(generatePageCacheKey('petsies_store', 'https://example.test/page/?step=1&m-message-key-id=one')).not.toBe(base);
 });

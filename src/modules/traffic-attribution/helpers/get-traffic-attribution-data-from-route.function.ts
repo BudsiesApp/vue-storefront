@@ -23,7 +23,8 @@ const DEFAULT_ACQUISITION_CLICK_ID_KEYS = [
   'sscid',
   'awc',
   'aleid',
-  'alart'
+  'alart',
+  'm-message-click-id'
 ];
 
 const DEFAULT_SENSITIVE_QUERY_KEYS = [
@@ -199,7 +200,6 @@ function hasUsableExternalReferrer (referrerUrl: string | undefined): boolean {
 
 export function hasTrafficAttributionAcquisitionSignal (attribution: TrafficAttributionData): boolean {
   const query = attribution.query_params;
-  const queryKeys = normalizeKeyList(Object.keys(query));
   const clickIdKeys = normalizeKeyList(getConfiguredList(
     'acquisitionClickIdKeys',
     DEFAULT_ACQUISITION_CLICK_ID_KEYS
@@ -209,7 +209,11 @@ export function hasTrafficAttributionAcquisitionSignal (attribution: TrafficAttr
     return true;
   }
 
-  if (clickIdKeys.some((key) => queryKeys.indexOf(key) !== -1)) {
+  if (Object.keys(query).some((key) => {
+    const normalizedKey = key.toLowerCase();
+    return clickIdKeys.includes(normalizedKey) &&
+      (normalizedKey !== 'm-message-click-id' || query[key].trim() !== '');
+  })) {
     return true;
   }
 

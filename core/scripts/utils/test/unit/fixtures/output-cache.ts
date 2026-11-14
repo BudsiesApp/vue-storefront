@@ -86,7 +86,7 @@ export async function settleWrites () {
 }
 
 // Exercise the same extracted lookup/render/error callbacks that server.ts wires.
-export function serverHarness (render: (ctx: any) => any, tagging = true) {
+export function serverHarness (render: (ctx: any) => any, tagging = true, enabled = true) {
   const cache = new MemoryCache();
   const logger = { warn: jest.fn(), error: jest.fn() };
   const renderer = { renderToString: jest.fn(render) };
@@ -98,7 +98,7 @@ export function serverHarness (render: (ctx: any) => any, tagging = true) {
   };
   const config = {
     server: {
-      useOutputCache: true, useOutputCacheTagging: tagging,
+      useOutputCache: enabled, useOutputCacheTagging: tagging,
       availableCacheTags: ['page', 'redirect'],
       invalidateCacheKey: 'synthetic-secret'
     },
