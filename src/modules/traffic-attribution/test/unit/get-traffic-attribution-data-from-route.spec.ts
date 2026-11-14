@@ -63,6 +63,15 @@ describe('traffic attribution raw capture helpers', () => {
     }
   });
 
+  it('filters fresh referrer query pairs without changing the browser URL', () => {
+    setReferrer('https://example.test/search?password=synthetic&keep=a%2Bb&direct-crm-ticket=example');
+    window.history.pushState({}, '', '/landing?password=synthetic&utm_source=google');
+    const touch = getTrafficAttributionDataFromRoute({ query: { password: 'synthetic', utm_source: 'google' } } as any);
+    expect(touch.referrer_url).toBe('https://example.test/search?keep=a%2Bb');
+    expect(touch.query_params).toEqual({ utm_source: 'google' });
+    expect(window.location.search).toContain('password=synthetic');
+  });
+
   it('builds a raw touch from the browser landing context and filtered route query', () => {
     const touch = getTrafficAttributionDataFromRoute({
       query: {

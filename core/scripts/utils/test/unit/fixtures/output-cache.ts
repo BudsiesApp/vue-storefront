@@ -3,7 +3,7 @@ import { createRequestServices } from '../../../../../request-services/create-re
 import { setServerRedirect } from '../../../../../request-services/set-server-redirect';
 import { Context } from '../../../types';
 import { splitPageCacheUrl } from '../../../page-cache-key';
-import { createSsrDiagnostics } from '../../../ssr-diagnostics';
+import { withoutCredentialQuery } from '../../../../../helpers/credential-query';
 import { createOutputCache, createCacheInvalidationHandler } from '../../../output-cache';
 import { createRenderResponseHandler, createSsrErrorHandler, renderSsrResponse, lookupSsrResponse } from '../../../ssr-response';
 
@@ -121,14 +121,13 @@ export function serverHarness (render: (ctx: any) => any, tagging = true, enable
     forwardInvalidation: jest.fn()
   });
   async function execute (req, res) {
-    const diagnostic = createSsrDiagnostics(req);
-    const logFinalFailure = error => logger.error('SSR request failed:', diagnostic.url, diagnostic.error(error));
+    const logFinalFailure = error => logger.error('SSR request failed:', withoutCredentialQuery(req.url), error);
     const cacheRequest = outputCache.createRequest(req.get('x-vs-store-code') || 'main',
       'https://example.test' + req.originalUrl, req.headers.cookie);
     const errorHandler = createSsrErrorHandler({
       req, res, logger, isResourceNotFound: () => false,
       apiStatus: (res, body, code) => res.status(code).end(body),
-      onException: err => hooks.ssrException({ err: diagnostic.error(err), req: diagnostic.request })
+      onException: hooks.ssrException
     });
     return lookupSsrResponse({
       read: () => outputCache.read(cacheRequest), cacheRequest, res, onHit: jest.fn(),

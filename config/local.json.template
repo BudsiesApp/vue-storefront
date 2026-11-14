@@ -155,8 +155,6 @@
       "stripe.com"
     ],
     "sensitiveQueryKeys": [
-      "password",
-      "direct-crm-ticket",
       "token",
       "auth_token",
       "access_token",

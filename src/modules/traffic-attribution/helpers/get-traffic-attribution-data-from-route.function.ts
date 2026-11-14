@@ -29,8 +29,6 @@ const DEFAULT_ACQUISITION_CLICK_ID_KEYS = [
 ];
 
 const DEFAULT_SENSITIVE_QUERY_KEYS = [
-  'password',
-  'direct-crm-ticket',
   'token',
   'auth_token',
   'access_token',

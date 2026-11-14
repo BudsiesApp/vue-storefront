@@ -15,7 +15,6 @@ import {
   isSameTouchAttribution
 } from '../helpers/get-traffic-attribution-data-from-route.function';
 import { TouchData, TrafficAttributionData } from '../types/traffic-attribution.interface';
-import { sanitizeTouch } from '../helpers/sanitize-attribution';
 import { TrafficAttributionState } from '../types/state.interface';
 import { MODULE_NAME } from '../types/store-name';
 import { REPORT_TRAFFIC_ATTRIBUTION, SYNCHRONIZE } from '../types/actions';
@@ -46,8 +45,7 @@ async function sendAttribution (attribution: TrafficAttributionData): Promise<bo
       },
       body: JSON.stringify({ request: attribution })
     },
-    silent: true,
-    logResponse: false
+    silent: true
   });
 
   if (resultCode !== 200) {
@@ -76,7 +74,7 @@ function createTouchData (attribution: TrafficAttributionData, expirationDays: n
   const createdAt = Date.now();
 
   return {
-    attribution: { ...attribution, query_params: { ...attribution.query_params } },
+    attribution: { ...attribution },
     isSent: false,
     createdAt,
     expiresAt: createdAt + expirationDays * DAY_IN_MILLISECONDS
@@ -114,7 +112,7 @@ async function getStoredTouchData (
 
     return touch || null;
   } catch (reason) {
-    Logger.error('Error reading traffic attribution storage', MODULE_NAME)();
+    Logger.error(reason, MODULE_NAME)();
     return null;
   }
 }
@@ -160,7 +158,7 @@ export const actions: ActionTree<TrafficAttributionState, RootState> = {
       if (isTouchExpired(storedFirstTouch)) {
         commit(CLEAR_FIRST_TOUCH);
       } else {
-        commit(SET_FIRST_TOUCH, sanitizeTouch(storedFirstTouch));
+        commit(SET_FIRST_TOUCH, storedFirstTouch);
       }
     }
 
@@ -168,7 +166,7 @@ export const actions: ActionTree<TrafficAttributionState, RootState> = {
       if (isTouchExpired(storedLastTouch)) {
         commit(CLEAR_LAST_TOUCH);
       } else {
-        commit(SET_LAST_TOUCH, sanitizeTouch(storedLastTouch));
+        commit(SET_LAST_TOUCH, storedLastTouch);
       }
     }
 

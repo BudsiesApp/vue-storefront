@@ -102,7 +102,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
   let url = getUrl(task, currentToken, currentCartId)
   const payload = getPayload(task, currentToken)
   let silentMode = false
-  Logger.info('Executing sync task ' + url, 'sync', task.logResponse === false ? undefined : task)()
+  Logger.info('Executing sync task ' + url, 'sync', task)()
 
   const eventPayload = {
     url
@@ -189,9 +189,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
       }
     }
 
-    if (task.logResponse !== false) {
-      Logger.debug('Response for: ' + task.task_id + ' = ' + JSON.stringify(jsonResponse.result), 'sync')()
-    }
+    Logger.debug('Response for: ' + task.task_id + ' = ' + JSON.stringify(jsonResponse.result), 'sync')()
     task.transmited = true
     task.transmited_at = new Date()
     task.result = jsonResponse.result
@@ -211,7 +209,7 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
       resolve(task)
     }
   }).catch((err) => {
-    Logger.error(task.logResponse === false ? 'Error executing sync task' : err, 'sync')()
+    Logger.error(err, 'sync')()
     reject(err)
   })
 }

@@ -15,7 +15,7 @@ function filterPairs (query: string): string {
 export function withoutCredentialQuery (url: string): string {
   const hash = url.indexOf('#');
   const beforeHash = hash < 0 ? url : url.slice(0, hash);
-  let fragment = hash < 0 ? '' : url.slice(hash + 1);
+  const fragment = hash < 0 ? '' : url.slice(hash);
   const queryIndex = beforeHash.indexOf('?');
   let result = beforeHash;
   if (queryIndex >= 0) {
@@ -23,17 +23,5 @@ export function withoutCredentialQuery (url: string): string {
     const filtered = filterPairs(query);
     if (filtered !== query) result = beforeHash.slice(0, queryIndex) + (filtered ? '?' + filtered : '');
   }
-  if (hash >= 0) {
-    const index = fragment.indexOf('?');
-    const equals = fragment.indexOf('=');
-    if (index >= 0 && (fragment.startsWith('/') || equals < 0 || index < equals)) {
-      const query = fragment.slice(index + 1);
-      const filtered = filterPairs(query);
-      if (filtered !== query) fragment = fragment.slice(0, index) + (filtered ? '?' + filtered : '');
-    } else if (!fragment.startsWith('/') && equals >= 0) {
-      fragment = filterPairs(fragment);
-    }
-    result += '#' + fragment;
-  }
-  return result;
+  return result + fragment;
 }
