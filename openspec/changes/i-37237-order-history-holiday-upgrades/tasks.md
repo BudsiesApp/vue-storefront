@@ -1,0 +1,17 @@
+# Tasks
+
+## 1. App destination-aware preparation
+
+- [ ] 1.1 Preserve optional `is_domestic` metadata through the Rush API interface, model and factory as described in design Decision 1. Add factory unit tests for omitted, false/zero and true/one values without changing other fields; verify the focused suite passes inside the UI app container.
+- [ ] 1.2 Add the optional order-destination preparation option, filter tagged records before Standard/SKU lookup, and make no-add-ons product removal immutable. Add public-helper tests for both mixed-cutoff directions, false international context, ordinary untagged data, no-context product-page behavior, shared-SKU identities/prices, zero-slot cards-list behavior and raw product/add-on immutability; verify focused Jest suites pass with the documented Yarn command. Keep the design/delta aligned with the delivered helper behavior; report behavior changes to the spec writer.
+
+## 2. Theme loaders and final form visibility
+
+- [ ] 2.1 Pass each parent order's shipping-country context from both alteration loaders, preserving associated-product prefetch and existing Vuex request behavior. Add loader tests for domestic/international orders sharing one raw bundle, both entry points, order data arriving after cached product data, and reactive order changes; verify the focused theme Jest tests pass against the companion app branch.
+- [ ] 2.2 Exclude empty Production Time customizations through the existing alteration-specific customization filter before its early no-purchased-value return. Add predicate and rendered-form tests proving no heading with only synthetic Standard or already-purchased upgrades, a visible section when an eligible upgrade remains, unchanged unrelated customization visibility, and another upgrade reaching the existing cart handler; verify focused tests pass. Do not modify global required-field filtering, switch widgets, or introduce counter enforcement.
+
+## 3. Brand variants and cross-repository integration
+
+- [ ] 3.1 Apply the focused app changes/tests to the prepared Bulk Orders app feature branch and the focused theme changes/tests to the Budsies, Education, Waggables and Bulk Orders theme feature branches listed in design Decision 5. Preserve each base's intentional brand differences, leave payment/cache modules unchanged, and verify focused app/theme suites on each corresponding mounted combination. Carry the app-owned planning artifacts with the app variants or reference their authoritative primary-branch paths; do not commit app submodule pointers.
+- [ ] 3.2 Run maintained unit tests, type-checking, relevant lint and existing build checks for the affected combinations using the UI container and existing CI matrix; report commands/results and verify each build uses the intended companion feature theme rather than a default theme. Deliver the branch/PR-target and companion-CI mapping to the publisher so all same-ticket theme PRs are present for the final app CI run. Leave E2E/live acceptance and release operations to the tester/release owner.
+- [ ] 3.3 Verify the delivered source stays within R7–R9 and O7–O12 and that design.md contains the G4 Admin retirement procedure and rollback caveat for the release handoff. Run `openspec validate i-37237-order-history-holiday-upgrades --strict` and verify it passes; do not alter historical Magento specs or automatically edit production memberships.
