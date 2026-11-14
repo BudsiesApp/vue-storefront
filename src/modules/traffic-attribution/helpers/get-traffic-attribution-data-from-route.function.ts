@@ -214,7 +214,7 @@ export function hasTrafficAttributionAcquisitionSignal (attribution: TrafficAttr
 
   if (Object.keys(query).some((key) => {
     const normalizedKey = key.toLowerCase();
-    return !isCredentialQueryName(key) && clickIdKeys.includes(normalizedKey) &&
+    return clickIdKeys.includes(normalizedKey) &&
       (normalizedKey !== 'm-message-click-id' || query[key].trim() !== '');
   })) {
     return true;

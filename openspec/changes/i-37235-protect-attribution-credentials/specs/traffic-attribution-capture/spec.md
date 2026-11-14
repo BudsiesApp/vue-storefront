@@ -16,7 +16,7 @@ Attribution capture SHALL exclude named `password` and `direct-crm-ticket` entri
 - **AND** explicit configuration behavior for other sensitive and acquisition names MUST remain unchanged
 
 ### Requirement: Prospective attribution state storage and forwarding share credential exclusion
-Future attribution state, storage writes and outgoing copies SHALL exclude protected fields within the approved query/bounded-fragment interpretation and preserve allowed ambiguous values. Independent state copies at real mutation ingress SHALL supply storage and reporting, including ordinary synchronization, without a historical sweep or touch-lifecycle change. Protection SHALL NOT depend on fresh capture or a broader backend interpretation.
+Future attribution state, storage writes and outgoing copies SHALL exclude protected fields within the approved query/bounded-fragment interpretation and preserve allowed ambiguous values. Independent copies admitted through actual capture, synchronization and storage-event ingress SHALL supply state, storage and reporting without a historical sweep or touch-lifecycle change. Protection SHALL NOT depend on fresh capture or a broader backend interpretation.
 
 #### Scenario: Referrer or alternate touch supplies a URL-carried credential
 - **WHEN** a browser capture or alternate touch contains a protected named pair in a landing/referrer URL query or fragment pair list selected by the approved interpretation
@@ -24,7 +24,7 @@ Future attribution state, storage writes and outgoing copies SHALL exclude prote
 - **AND** allowed URL context and unrelated encoded pairs MUST remain usable
 
 #### Scenario: A touch enters through state or storage synchronization
-- **WHEN** an attribution touch is accepted through normal synchronization or a state mutation rather than the route capture helper
+- **WHEN** an attribution touch is accepted through normal synchronization or a cross-tab storage event rather than the route capture helper
 - **THEN** future attribution state/storage writes MUST exclude protected entries and recognized URL pairs under the approved bounded interpretation
 - **AND** existing touch type, creation/expiry time and sent-state meaning MUST remain unchanged
 

@@ -54,7 +54,7 @@ describe('traffic attribution raw capture helpers', () => {
       }
       settings.acquisitionClickIdKeys = ['password', 'direct_crm_ticket'];
       expect(hasTrafficAttributionAcquisitionSignal({
-        landing_page_url: 'http://localhost/', query_params: query, detected_at: '2026-01-01'
+        landing_page_url: 'http://localhost/', query_params: normalizeTrafficAttributionQueryParams(query), detected_at: '2026-01-01'
       })).toBe(false);
       expect(query.Pass_Word).toBe('synthetic');
     } finally {

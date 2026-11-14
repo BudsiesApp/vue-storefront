@@ -15,6 +15,7 @@ import {
   isSameTouchAttribution
 } from '../helpers/get-traffic-attribution-data-from-route.function';
 import { TouchData, TrafficAttributionData } from '../types/traffic-attribution.interface';
+import { sanitizeTouch } from '../helpers/sanitize-attribution';
 import { TrafficAttributionState } from '../types/state.interface';
 import { MODULE_NAME } from '../types/store-name';
 import { REPORT_TRAFFIC_ATTRIBUTION, SYNCHRONIZE } from '../types/actions';
@@ -75,7 +76,7 @@ function createTouchData (attribution: TrafficAttributionData, expirationDays: n
   const createdAt = Date.now();
 
   return {
-    attribution: { ...attribution },
+    attribution: { ...attribution, query_params: { ...attribution.query_params } },
     isSent: false,
     createdAt,
     expiresAt: createdAt + expirationDays * DAY_IN_MILLISECONDS
@@ -159,7 +160,7 @@ export const actions: ActionTree<TrafficAttributionState, RootState> = {
       if (isTouchExpired(storedFirstTouch)) {
         commit(CLEAR_FIRST_TOUCH);
       } else {
-        commit(SET_FIRST_TOUCH, storedFirstTouch);
+        commit(SET_FIRST_TOUCH, sanitizeTouch(storedFirstTouch));
       }
     }
 
@@ -167,7 +168,7 @@ export const actions: ActionTree<TrafficAttributionState, RootState> = {
       if (isTouchExpired(storedLastTouch)) {
         commit(CLEAR_LAST_TOUCH);
       } else {
-        commit(SET_LAST_TOUCH, storedLastTouch);
+        commit(SET_LAST_TOUCH, sanitizeTouch(storedLastTouch));
       }
     }
 

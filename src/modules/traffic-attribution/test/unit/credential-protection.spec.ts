@@ -7,8 +7,21 @@ import { MODULE_NAME } from '../../types/store-name';
 import Vue from 'vue';
 import Vuex from 'vuex';
 import { Logger } from '@vue-storefront/core/lib/logger';
+import { getItemsFromStorageFactory } from '../../helpers/get-local-storage-items.function';
 
 jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => jest.fn()) } }));
+jest.mock('src/modules/shared', () => ({ parseLocalStorageValue: (value?: string) => value ? JSON.parse(value) : undefined }));
+jest.mock('src/modules/shared/helpers/check-multi-store-local-storage-key.function', () => ({
+  checkMultiStoreLocalStorageKey: (key: string, path: string) => key === `shop/${path}`
+}));
+
+function admit (state: any, mutation: string, touch: any) {
+  const key = mutation === SET_FIRST_TOUCH ? 'firstTouch' : 'lastTouch';
+  const store = { commit: (_type: string, value: any) => mutations[mutation](state, value) };
+  getItemsFromStorageFactory(store as any)(new StorageEvent('storage', {
+    key: `shop/${MODULE_NAME}/${key}`, newValue: JSON.stringify(touch)
+  }));
+}
 
 describe('credential protection', () => {
   const attribution = {
@@ -29,19 +42,19 @@ describe('credential protection', () => {
       .toBe('https://example.test/?x=a%2Bb');
   });
 
-  it('preserves touch lifecycle while sanitizing mutation ingress', () => {
+  it('preserves touch lifecycle while admitting a storage event', () => {
     const touch = { attribution, isSent: true, createdAt: 1, expiresAt: 2 };
     const sanitized = sanitizeTouch(touch);
     expect(sanitized).toMatchObject({ isSent: true, createdAt: 1, expiresAt: 2 });
     const state: any = { firstTouch: null };
-    mutations[SET_FIRST_TOUCH](state, touch);
+    admit(state, SET_FIRST_TOUCH, touch);
     expect(state.firstTouch).toEqual(sanitized);
     attribution.query_params.gclid = 'changed';
     expect(state.firstTouch.attribution.query_params.gclid).toBe('a+b');
     attribution.query_params.gclid = 'a+b';
   });
 
-  it.each(['password', 'direct-crm-ticket', 'DIRECT_CRM_TICKET'])('applies bounded fragment precedence for %s at both mutation ingresses', name => {
+  it.each(['password', 'direct-crm-ticket', 'DIRECT_CRM_TICKET'])('applies bounded fragment precedence for %s at both storage-event admissions', name => {
     const cases = [
       [`route=one?${name}=synthetic&keep=x`, `route=one?${name}=synthetic&keep=x`],
       [`${name}=synthetic?tail&keep=a%2Bb`, 'keep=a%2Bb'],
@@ -54,7 +67,7 @@ describe('credential protection', () => {
       const touch = { attribution: { ...attribution, landing_page_url: url, referrer_url: url }, isSent: false, createdAt: 1, expiresAt: 2 };
       for (const [mutation, key] of [[SET_FIRST_TOUCH, 'firstTouch'], [SET_LAST_TOUCH, 'lastTouch']]) {
         const state: any = { firstTouch: null, lastTouch: null };
-        mutations[mutation](state, touch);
+        admit(state, mutation, touch);
         expect(state[key].attribution.landing_page_url).toBe(`https://example.test/page?utm_source=allowed#${expected}`);
         expect(state[key].attribution.referrer_url).toBe(`https://example.test/page?utm_source=allowed#${expected}`);
         expect(touch.attribution.landing_page_url).toBe(url);
@@ -67,12 +80,12 @@ describe('credential protection', () => {
     '/page=one&password=synthetic',
     'reviews',
     'route=one%3Fpassword%3Dsynthetic&keep=x'
-  ])('preserves name-independent fragment %s at both mutation ingresses', fragment => {
+  ])('preserves name-independent fragment %s at both storage-event admissions', fragment => {
     const url = `https://example.test/page?utm_source=allowed#${fragment}`;
     const touch = { attribution: { ...attribution, landing_page_url: url, referrer_url: url }, isSent: false, createdAt: 1, expiresAt: 2 };
     for (const [mutation, key] of [[SET_FIRST_TOUCH, 'firstTouch'], [SET_LAST_TOUCH, 'lastTouch']]) {
       const state: any = { firstTouch: null, lastTouch: null };
-      mutations[mutation](state, touch);
+      admit(state, mutation, touch);
       expect(state[key].attribution.landing_page_url).toBe(url);
       expect(state[key].attribution.referrer_url).toBe(url);
       expect(touch.attribution.landing_page_url).toBe(url);
@@ -88,7 +101,9 @@ describe('credential protection', () => {
     });
     store.subscribe(cacheHandlerFactory(storage));
     const touch = { attribution, isSent: false, createdAt: 1, expiresAt: 2 };
-    store.commit(MODULE_NAME + '/' + SET_FIRST_TOUCH, touch);
+    getItemsFromStorageFactory(store as any)(new StorageEvent('storage', {
+      key: `shop/${MODULE_NAME}/firstTouch`, newValue: JSON.stringify(touch)
+    }));
     store.commit(MODULE_NAME + '/' + MARK_FIRST_TOUCH_SENT);
     expect(storage.setItem).toHaveBeenCalledTimes(2);
     expect(JSON.stringify(storage.setItem.mock.calls)).not.toMatch(/synthetic|other/);

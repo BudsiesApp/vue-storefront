@@ -138,9 +138,9 @@ describe('traffic attribution actions', () => {
       referrer_url: 'https://example.test/?password=synthetic&ok=a%2Bb'
     });
     (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
-    const state: any = { firstTouch: null };
-    mutations[SET_FIRST_TOUCH](state, first);
-    const { context, commits } = createContext(state.firstTouch, null);
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(key === FIRST_TOUCH ? first : null)) });
+    const { context, commits } = createContext(null, null);
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     expect((TaskQueue.execute as jest.Mock).mock.calls[0][0]).toMatchObject({ silent: true, logResponse: false });
     const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
@@ -150,17 +150,17 @@ describe('traffic attribution actions', () => {
     expect(commits.map(item => item.type)).toContain(MARK_FIRST_TOUCH_SENT);
   });
 
-  it.each(['password', 'direct-crm-ticket'])('reports the bounded mutation copy for %s', async name => {
+  it.each(['password', 'direct-crm-ticket'])('reports the bounded storage-admitted copy for %s', async name => {
     const ambiguous = `https://example.test/page?utm_source=allowed#route=one?${name}=synthetic&keep=x`;
     const source = createTouch({
       ...createAttribution({ [name]: 'synthetic', gclid: 'allowed' }),
       landing_page_url: ambiguous,
       referrer_url: `https://example.test/#/page=one?${name}=synthetic&keep=a%2Bb`
     });
-    const state: any = { firstTouch: null };
-    mutations[SET_FIRST_TOUCH](state, source);
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(key === FIRST_TOUCH ? source : null)) });
     (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
-    const { context, commits } = createContext(state.firstTouch, null);
+    const { context, commits } = createContext(null, null);
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     const payload = JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request;
     expect(payload.landing_page_url).toBe(ambiguous);
