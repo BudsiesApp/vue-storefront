@@ -24,6 +24,6 @@ None.
 ## Impact
 
 - Two implementation repositories: `BudsiesApp/vue-storefront` (shared Rush response/preparation code) and `BudsiesApp/vsf-capybara` (both alteration loaders and the alteration form's final customization filter).
-- Primary feature branch in both: `37237-order-history-holiday-upgrades`, based on updated `petsies-theme`. Also prepare the Bulk Orders app variant and all five theme variants listed in `design.md`; their relevant source files currently match, but brand differences must be preserved.
+- Primary feature branch in both: `37237-order-history-holiday-upgrades`, based on updated `petsies-theme`, plus the Budsies and Education theme variants listed in `design.md`. Required storefront scope is Petsies, Budsies and Education, which sell the post-purchase alteration bundles. Waggables and Bulk Orders need no feature branches, implementation, PRs or releases for this follow-up.
 - The app's CI builds companion theme branches selected by issue-number-prefixed open PRs and the unchanged payment branch. No payment, VSF API, Magento, dependency, schema, API endpoint, checkout or server-side cutoff-enforcement change is planned.
 - New OpenSpec change, not a reopening of the archived Magento change or its merged branch/PR #514. R1–R6/G1–G3 remain delivered history; this plan implements R7–R9 and documents G4.

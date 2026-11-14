@@ -60,7 +60,7 @@ When Holiday and destination filtering plus existing alteration-option rules lea
 
 ### Requirement: Order-specific filtering preserves unaffected Production Time flows
 
-The follow-up SHALL preserve regular-purchase location toggles and Holiday timeline behavior, non-Holiday alteration choices, and existing price/submission handling on every affected storefront. Alteration Holiday labels and displayed-but-not-enforced slot counts SHALL remain as before. Destination-specific availability SHALL NOT require enabling timeline presentation or adding server-side cutoff validation.
+The follow-up SHALL preserve regular-purchase location toggles and Holiday timeline behavior, non-Holiday alteration choices, and existing price/submission handling on Petsies, Budsies and Education. Alteration Holiday labels and displayed-but-not-enforced slot counts SHALL remain as before. Destination-specific availability SHALL NOT require enabling timeline presentation or adding server-side cutoff validation.
 
 #### Scenario: Regular purchase uses its Holiday location toggle
 
