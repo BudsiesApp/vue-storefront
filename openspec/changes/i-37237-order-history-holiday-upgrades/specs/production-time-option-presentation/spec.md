@@ -30,6 +30,12 @@ On order-history alteration forms, the storefront SHALL offer only Holiday Produ
 - **THEN** the alteration form uses the order's shipping destination without a destination toggle
 - **AND** it does not overwrite saved checkout country or product-page location selection
 
+#### Scenario: Order has no shipping address or country
+
+- **WHEN** an available order has a null or absent shipping address or no shipping country
+- **THEN** both alteration entry points classify it as international, matching Magento, without throwing an error
+- **AND** that order does not prevent other orders' alteration forms from rendering their own choices
+
 #### Scenario: Location presentations share an underlying Rush option
 
 - **WHEN** domestic and international Holiday records share a Rush SKU
