@@ -44,7 +44,7 @@ Alternative: filter only the rendered widget after SKU collapse. That is too lat
 
 ### 3. Pass the owning order through both theme loaders
 
-In `use-alteration-products-loader.ts`, keep the existing flattened SKU/load collection if useful, but construct `alterationProductByOrderItemId` by iterating each parent order and its items. For each prepared product pass `makeProductionTimeRequired: false` plus `isDomestic: order.shipping_address?.country_id === 'US'`. Prepare a projection per order item through the existing update path, even when SKUs match. Keep associated-product prefetch and Rush requests unchanged.
+In `use-alteration-products-loader.ts`, derive one flattened collection of `{ order, item }` pairs and use it for both SKU collection and `alterationProductByOrderItemId`. For each prepared product pass `makeProductionTimeRequired: false` plus `isDomestic: order.shipping_address?.country_id === 'US'`. Prepare a projection per order item through the existing update path, even when SKUs match. Keep associated-product prefetch and Rush requests unchanged.
 
 In `use-order-item-alteration-product-loader.ts`, use the existing `order` ref to pass the same optional-chain expression. Do not expose the prepared alteration product until its owning order is available; its existing undefined/loading form path already accommodates this. An available order with no shipping address is different from a not-yet-loaded order: classify the former as international immediately, without crashing or waiting for an address. Recompute from the product dictionary when the order or its shipping data changes and do not borrow context from the previous order. No persisted-country, cookie or browser-location fallback belongs here.
 
