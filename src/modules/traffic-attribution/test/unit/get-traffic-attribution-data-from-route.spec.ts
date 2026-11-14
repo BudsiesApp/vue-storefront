@@ -40,6 +40,38 @@ describe('traffic attribution raw capture helpers', () => {
     setReferrer('https://google.com/search?q=plush');
   });
 
+  it('excludes the protected names with shipped, fallback and empty lists', () => {
+    const settings = config.trafficAttribution as any;
+    const sensitive = settings.sensitiveQueryKeys;
+    const acquisition = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shipped = JSON.parse(template.match(/"sensitiveQueryKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const query = { Pass_Word: 'synthetic', DIRECT_CRM_TICKET: 'synthetic2', gclid: 'allowed' };
+    try {
+      for (const keys of [undefined, shipped, []]) {
+        settings.sensitiveQueryKeys = keys;
+        expect(normalizeTrafficAttributionQueryParams(query)).toEqual({ gclid: 'allowed' });
+      }
+      settings.acquisitionClickIdKeys = ['password', 'direct_crm_ticket'];
+      expect(hasTrafficAttributionAcquisitionSignal({
+        landing_page_url: 'http://localhost/', query_params: normalizeTrafficAttributionQueryParams(query), detected_at: '2026-01-01'
+      })).toBe(false);
+      expect(query.Pass_Word).toBe('synthetic');
+    } finally {
+      settings.sensitiveQueryKeys = sensitive;
+      settings.acquisitionClickIdKeys = acquisition;
+    }
+  });
+
+  it('filters fresh referrer query pairs without changing the browser URL', () => {
+    setReferrer('https://example.test/search?password=synthetic&keep=a%2Bb&direct-crm-ticket=example');
+    window.history.pushState({}, '', '/landing?password=synthetic&utm_source=google');
+    const touch = getTrafficAttributionDataFromRoute({ query: { password: 'synthetic', utm_source: 'google' } } as any);
+    expect(touch.referrer_url).toBe('https://example.test/search?keep=a%2Bb');
+    expect(touch.query_params).toEqual({ utm_source: 'google' });
+    expect(window.location.search).toContain('password=synthetic');
+  });
+
   it('builds a raw touch from the browser landing context and filtered route query', () => {
     const touch = getTrafficAttributionDataFromRoute({
       query: {
