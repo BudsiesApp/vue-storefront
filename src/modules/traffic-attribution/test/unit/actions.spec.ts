@@ -130,6 +130,17 @@ describe('traffic attribution actions', () => {
     (Date.now as any).mockRestore();
   });
 
+  it('restores and reports an existing stored touch unchanged', async () => {
+    const stored = createTouch(createAttribution({ password: 'synthetic', 'direct-crm-ticket': 'example', gclid: 'allowed' }));
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(key === FIRST_TOUCH ? stored : null)) });
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    const { context, getters } = createContext(null, null);
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
+    expect(getters[GET_FIRST_TOUCH]).toBe(stored);
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request).toEqual(stored.attribution);
+  });
+
   it('initializes first and last touch from the same raw payload when no first touch exists', async () => {
     window.history.pushState({}, '', '/landing?utm_source=google');
     const { context, commits } = createContext(null, null);

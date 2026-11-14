@@ -1,5 +1,6 @@
 import config from 'config';
 import { Route } from 'vue-router';
+import { isCredentialQueryName, withoutCredentialQuery } from '@vue-storefront/core/helpers/credential-query';
 
 import { TrafficAttributionData } from '../types/traffic-attribution.interface';
 
@@ -114,7 +115,7 @@ export function normalizeTrafficAttributionQueryParams (query: Route['query']): 
   Object.keys(query)
     .sort()
     .forEach((key) => {
-      if (sensitiveKeys.indexOf(normalizeSensitiveQueryKey(key)) !== -1) {
+      if (isCredentialQueryName(key) || sensitiveKeys.indexOf(normalizeSensitiveQueryKey(key)) !== -1) {
         return;
       }
 
@@ -133,7 +134,7 @@ function getReferrerUrl (): string {
     return '';
   }
 
-  return document.referrer || '';
+  return withoutCredentialQuery(document.referrer || '');
 }
 
 function getLandingPageUrl (): string {

@@ -101,7 +101,7 @@ describe('traffic attribution storage helpers', () => {
       ...createTouch(),
       attribution: {
         ...createTouch().attribution,
-        query_params: { gclid: 'last-click-id' }
+        query_params: { gclid: 'last-click-id', password: 'synthetic', 'direct-crm-ticket': 'example' }
       }
     };
     const store = {
