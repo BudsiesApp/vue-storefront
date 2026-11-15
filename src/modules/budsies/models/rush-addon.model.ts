@@ -6,7 +6,7 @@ export default class RushAddon {
     public readonly turnaroundTime = 42,
     public readonly isNew = true,
     public readonly slotsLeft?: number,
-    public readonly isDomestic = false,
+    public readonly isDomestic?: boolean,
     public readonly isInTimeForChristmas = false
   ) {
     [id, text, price, isNew].forEach((arg, index) => {
