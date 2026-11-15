@@ -8,5 +8,5 @@ export interface Order {
   updated_at: string,
   store_id: number,
   items: OrderItem[],
-  shipping_address: OrderAddress
+  shipping_address?: OrderAddress | null
 }

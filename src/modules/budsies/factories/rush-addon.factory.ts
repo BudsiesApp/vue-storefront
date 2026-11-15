@@ -10,7 +10,7 @@ const factory: ObjectBuilderInterface<RushAddon, RushAddonApiResponse> = (data) 
     +data.turnaround_time,
     false,
     data.slots_left,
-    Boolean(data.is_domestic),
+    data.is_domestic === undefined ? undefined : Boolean(data.is_domestic),
     Boolean(data.is_in_time_for_christmas)
   );
 
