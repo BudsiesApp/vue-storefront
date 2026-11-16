@@ -148,3 +148,101 @@ Shared Holiday pages SHALL render a neutral loading state during SSR and initial
 #### Scenario: Country-independent pages continue sharing
 - **WHEN** US and FR visitors request a page without Holiday content in either order
 - **THEN** they reuse one safe response within their existing store and A/B group
+
+### Requirement: AppLovin tracking keys participate in existing output-cache isolation
+The storefront SHALL treat the documented lowercase `aleid` and `alart` query names as attribution-only ignored keys under the existing SSR cache/clean-render rules, retaining their request-specific browser and redirect behavior without changing other query-key normalization or functional cache dimensions.
+
+#### Scenario: Different AppLovin clicks share visitor-independent HTML
+- **WHEN** two requests differ only in lowercase `aleid`/`alart` values for the same otherwise cacheable page, including a query-free request, cold access and repeated cache hits
+- **THEN** they MUST share the same clean page key/render URL, and shared HTML and serialized initial route/state MUST contain neither request's stripped click values
+- **AND** significant query parameters, store code, and existing configured cache dimensions MUST continue distinguishing output as before
+
+#### Scenario: Redirects carry only the current request's click values
+- **WHEN** an SSR redirect covered by the existing output-cache pipeline is rendered or served from cache for a request containing lowercase AppLovin query pairs
+- **THEN** the Location MUST append only that request's stripped AppLovin pairs in their existing original encoding, after the redirect's own query and before any fragment, without replacing keys already supplied by the destination
+- **AND** the cached redirect MUST remain clean and contain neither visitor's click values, including when query-free and parameterized requests arrive in either order
+
+#### Scenario: Browser acquisition still sees the visitor's current identifiers
+- **WHEN** the browser initializes after a clean cached response or follows a redirect carrying that request's AppLovin values
+- **THEN** its initial raw-query capture MUST receive that visitor's supported values from the current browser URL rather than another visitor's values or a server-synthesized attribution object
+
+#### Scenario: Other query policies remain unchanged
+- **WHEN** a URL also contains existing ignored keys or functional query parameters
+- **THEN** existing ignored-key handling, exact-name cache normalization, redirect destination precedence, and functional parameter significance MUST remain unchanged except for adding the two documented lowercase AppLovin names; error and pre-render trailing-slash redirects MUST keep their existing behavior
+
+### Requirement: Documented Maestra click tracking uses existing shared-output isolation
+The storefront SHALL treat exact lowercase `m-message-click-id` as an ignored SSR query key under the existing clean-render/cache pipeline. Shared keys, HTML/state and cache entries SHALL exclude its visitor value while retaining significant queries, store/A-B dimensions and the current browser's own acquisition context. Other query-key normalization SHALL remain unchanged.
+
+#### Scenario: Two visitors and query-free requests share clean output
+- **WHEN** two synthetic visitors with different documented click values and a query-free request access an otherwise cacheable page in both arrival orders, cold and repeatedly to a hit
+- **THEN** clean keys/render URLs and shared markup/full serialized state/cache entries MUST contain neither visitor's click value in encoded or decoded form
+- **AND** requests differing only in this tracking value MUST reuse the clean entry, while existing functional/store/A-B dimensions continue separating output
+
+#### Scenario: Disabled output caching still renders clean context
+- **WHEN** a request containing the documented click key renders with output caching disabled
+- **THEN** rendered shared HTML/current/previous route state MUST still use the existing clean URL rather than serialize that tracking value
+
+#### Scenario: Only the documented key extends exact-name SSR policy
+- **WHEN** other case variants, standalone `m-message-key-id`, inferred aliases, existing ignored keys or functional keys occur
+- **THEN** their existing exact-name significance/normalization MUST remain unchanged; this addition MUST NOT introduce generic `m-*` stripping or standalone key-marker support
+
+### Requirement: Maestra redirects retain only the current request's encoded tracking pairs
+Fresh and cached SSR redirects SHALL append only the current request's stripped Maestra click pairs in original encoding, after destination query and before fragments, without overriding destination keys. Cached redirects SHALL remain clean. Browser hydration/capture SHALL retain the current browser URL, with existing error and pre-render trailing-slash behavior unchanged.
+
+#### Scenario: Redirects preserve per-request ownership in both orders
+- **WHEN** two visitors and a query-free request follow the same redirect query-free-first or parameterized-first, cold and on cache hits
+- **THEN** each Location MUST contain only its own encoded click pairs, and the shared cached redirect/headers/body MUST contain neither visitor's stripped values
+
+#### Scenario: Repeated values and destination precedence remain compatible
+- **WHEN** the request has repeated or encoded click pairs and the destination has its own query key or fragment
+- **THEN** existing destination-key precedence, original pair encoding/order, fragment placement and redirect status MUST remain unchanged
+
+#### Scenario: Client acquisition receives its own marker after shared output
+- **WHEN** a browser initializes after clean fresh/cached HTML or follows a redirect carrying that request's click marker
+- **THEN** initial client capture MUST receive its own supported value from its current route, not a cached visitor value or server-generated attribution
+
+### Requirement: Evidenced credential names are isolated from shared SSR representations
+The storefront SHALL exclude `password` and `direct-crm-ticket` query pairs from clean SSR render URLs, page-cache keys and shared HTML/state/cache values, with output caching enabled or disabled. Matching SHALL decode URL names once and ignore ASCII case and hyphen/underscore separators for these protected names only. Other ignored-key policies and functional dimensions SHALL remain unchanged.
+
+#### Scenario: Two credential-bearing visitors share clean output
+- **WHEN** two synthetic visitors and a credential-free request access the same otherwise cacheable page in both arrival orders, cold and repeatedly to a hit
+- **THEN** clean rendering and shared cache keys/values MUST contain neither visitor's protected values in raw or encoded form
+- **AND** allowed significant query, store and configured A/B dimensions MUST continue separating output as before
+
+#### Scenario: Equivalent names and repetitions do not fragment or leak
+- **WHEN** requests contain mixed-case, hyphen/underscore-equivalent, percent-encoded, repeated or empty protected query pairs
+- **THEN** every protected pair MUST be isolated from clean rendering and shared storage
+- **AND** existing exact-name normalization for unrelated tracking keys MUST remain unchanged
+
+#### Scenario: Output caching is disabled
+- **WHEN** a request carrying protected fields renders without output caching
+- **THEN** SSR markup and serialized current/previous route state MUST still exclude protected values
+
+### Requirement: Credential isolation preserves only current-request redirect and browser context
+Isolated credential pairs SHALL remain request-local and available to the current browser, never cached. Existing fresh and cached SSR redirect handling SHALL reattach only the current request's pairs in their original encoding, with destination precedence and fragments preserved. Attribution exclusion MUST NOT require stripping the browser URL or building a new authentication consumer.
+
+#### Scenario: Fresh and cached redirects carry the current request only
+- **WHEN** synthetic visitors with different protected pairs and a query-free request follow the same redirect in both arrival orders, cold and on hits
+- **THEN** each Location MUST contain only its own current-request protected pairs, while the cached redirect and shared headers/body contain neither visitor's values
+- **AND** allowed destination-query precedence, pair encoding, fragment placement and redirect status MUST remain compatible
+
+#### Scenario: Browser hydration retains client inputs
+- **WHEN** the browser initializes from clean HTML or follows a redirect with its own isolated query pairs
+- **THEN** client-side route consumers MUST still receive that browser's current query context
+- **AND** fresh attribution capture MUST exclude the selected fields independently, while old saved touches retain their explicit recleaning exemption
+
+#### Scenario: Pre-render and error redirects retain their established routing
+- **WHEN** a credential-bearing request takes the existing trailing-slash redirect or a render/error failure path
+- **THEN** protection MUST retain existing routing/status behavior and MUST NOT share a visitor-specific credential-bearing redirect entry
+
+### Requirement: Explicit SSR diagnostic URL fields exclude selected fresh query values
+The explicit request-URL arguments in first-party SSR timing/cache/completion/error diagnostics SHALL omit the two selected query names without mutating the live request. Existing exception details, hook inputs and failure handling SHALL remain unchanged absent an actual protected-value producer/path; opaque errors or arbitrary injected strings SHALL NOT justify blanket suppression or a replacement diagnostic request contract.
+
+#### Scenario: Cache timing and completion log a protected URL
+- **WHEN** a request containing a protected query field reaches cache miss, cache hit, redirect or render completion logging
+- **THEN** the logged URL MUST exclude protected query pairs and MUST NOT log request-local stripped-query content
+
+#### Scenario: A response or terminal diagnostic includes the request URL
+- **WHEN** a fresh selected-name request reaches response-already-sent, render/resource-error, asynchronous write-failure or terminal-failure URL logging
+- **THEN** that explicit URL field MUST omit the selected pairs while preserving unrelated URL data, existing operation identifiers, ordinary exception detail and response/cleanup containment
+- **AND** the live request and original exception-hook arguments MUST remain unchanged; no generic error/request wrapper or global logger is required

@@ -5,6 +5,8 @@ import {
   normalizeTrafficAttributionQueryParams
 } from '../../helpers/get-traffic-attribution-data-from-route.function';
 import { TrafficAttributionData } from '../../types/traffic-attribution.interface';
+import config from 'config';
+import fs from 'fs';
 
 jest.mock('config', () => ({
   trafficAttribution: {
@@ -36,6 +38,38 @@ describe('traffic attribution raw capture helpers', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/landing?utm_source=google&token=secret&gclid=abc');
     setReferrer('https://google.com/search?q=plush');
+  });
+
+  it('excludes the protected names with shipped, fallback and empty lists', () => {
+    const settings = config.trafficAttribution as any;
+    const sensitive = settings.sensitiveQueryKeys;
+    const acquisition = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shipped = JSON.parse(template.match(/"sensitiveQueryKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const query = { Pass_Word: 'synthetic', DIRECT_CRM_TICKET: 'synthetic2', gclid: 'allowed' };
+    try {
+      for (const keys of [undefined, shipped, []]) {
+        settings.sensitiveQueryKeys = keys;
+        expect(normalizeTrafficAttributionQueryParams(query)).toEqual({ gclid: 'allowed' });
+      }
+      settings.acquisitionClickIdKeys = ['password', 'direct_crm_ticket'];
+      expect(hasTrafficAttributionAcquisitionSignal({
+        landing_page_url: 'http://localhost/', query_params: normalizeTrafficAttributionQueryParams(query), detected_at: '2026-01-01'
+      })).toBe(false);
+      expect(query.Pass_Word).toBe('synthetic');
+    } finally {
+      settings.sensitiveQueryKeys = sensitive;
+      settings.acquisitionClickIdKeys = acquisition;
+    }
+  });
+
+  it('filters fresh referrer query pairs without changing the browser URL', () => {
+    setReferrer('https://example.test/search?password=synthetic&keep=a%2Bb&direct-crm-ticket=example');
+    window.history.pushState({}, '', '/landing?password=synthetic&utm_source=google');
+    const touch = getTrafficAttributionDataFromRoute({ query: { password: 'synthetic', utm_source: 'google' } } as any);
+    expect(touch.referrer_url).toBe('https://example.test/search?keep=a%2Bb');
+    expect(touch.query_params).toEqual({ utm_source: 'google' });
+    expect(window.location.search).toContain('password=synthetic');
   });
 
   it('builds a raw touch from the browser landing context and filtered route query', () => {
@@ -168,5 +202,86 @@ describe('traffic attribution raw capture helpers', () => {
       referrer_url: 'https://google.com',
       landing_page_url: 'http://localhost/'
     })).toBe(true);
+  });
+
+  it('uses both shipped and fallback AppLovin keys while respecting explicit overrides', () => {
+    const settings = config.trafficAttribution as any;
+    const original = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shippedKeys = JSON.parse(template.match(/"acquisitionClickIdKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const base: TrafficAttributionData = {
+      landing_page_url: 'http://localhost/landing', query_params: {}, detected_at: '2026-06-06T00:00:00.000Z'
+    };
+
+    try {
+      for (const keys of [undefined, shippedKeys]) {
+        settings.acquisitionClickIdKeys = keys;
+        for (const query of [{ aleid: 'one' }, { alart: 'two' }, { ALEID: 'one', AlArT: 'two' },
+          { gclid: 'existing' }, { utm_source: 'campaign' }]) {
+          expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: query })).toBe(true);
+        }
+        const empty = normalizeTrafficAttributionQueryParams({ aleid: '', alart: null } as any);
+        expect(empty).toEqual({});
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: empty })).toBe(false);
+      }
+      settings.acquisitionClickIdKeys = ['gclid'];
+      expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { aleid: 'one', alart: 'two' } })).toBe(false);
+      settings.acquisitionClickIdKeys = [];
+      expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { aleid: 'one' } })).toBe(false);
+    } finally {
+      settings.acquisitionClickIdKeys = original;
+    }
+  });
+
+  it('preserves raw AppLovin context while omitting sensitive and empty values', () => {
+    setReferrer('');
+    expect(getTrafficAttributionDataFromRoute({
+      query: { ALEID: 'one+raw', alart: 'two/raw', token: 'private', utm_source: 'AppLovin', empty: '' }
+    } as any)).toEqual({
+      landing_page_url: 'http://localhost/landing',
+      query_params: { ALEID: 'one+raw', alart: 'two/raw', utm_source: 'AppLovin' },
+      detected_at: expect.any(String)
+    });
+  });
+
+  it('uses Maestra click defaults, keeps raw values, and respects overrides', () => {
+    const settings = config.trafficAttribution as any;
+    const original = settings.acquisitionClickIdKeys;
+    const template = fs.readFileSync('config/local.json.template', 'utf8');
+    const shipped = JSON.parse(template.match(/"acquisitionClickIdKeys":\s*(\[[\s\S]*?\])/)[1]);
+    const base: TrafficAttributionData = {
+      landing_page_url: 'http://localhost/', query_params: {}, detected_at: '2026-06-06T00:00:00.000Z'
+    };
+    try {
+      for (const keys of [undefined, shipped]) {
+        settings.acquisitionClickIdKeys = keys;
+        const query = normalizeTrafficAttributionQueryParams({ 'M-Message-Click-Id': ' raw+value ' } as any);
+        expect(query).toEqual({ 'M-Message-Click-Id': ' raw+value ' });
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: query })).toBe(true);
+        for (const value of ['', null, '  ']) {
+          const blank = normalizeTrafficAttributionQueryParams({ 'm-message-click-id': value } as any);
+          expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: blank })).toBe(false);
+        }
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { 'm-message-key-id': 'x' } })).toBe(false);
+      }
+      for (const keys of [[], ['gclid']]) {
+        settings.acquisitionClickIdKeys = keys;
+        expect(hasTrafficAttributionAcquisitionSignal({ ...base, query_params: { 'm-message-click-id': 'x' } })).toBe(false);
+      }
+    } finally {
+      settings.acquisitionClickIdKeys = original;
+    }
+  });
+
+  it('captures the current browser marker after a redirect without changing its URL', () => {
+    setReferrer('');
+    for (const marker of ['first+visitor', 'second/visitor']) {
+      const url = '/landing?m-message-click-id=' + encodeURIComponent(marker) + '#section';
+      window.history.pushState({}, '', url);
+      const touch = getTrafficAttributionDataFromRoute({ query: { 'm-message-click-id': marker } } as any);
+      expect(touch?.query_params).toEqual({ 'm-message-click-id': marker });
+      expect(touch?.landing_page_url).toBe('http://localhost/landing');
+      expect(window.location.search + window.location.hash).toBe(url.slice('/landing'.length));
+    }
   });
 });

@@ -10,6 +10,7 @@ import {
 } from '@vue-storefront/core/modules/cart/helpers'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { isCartNotFoundError } from '../../helpers/is-cart-not-found-error'
+import { createTotalsItemUpdate } from '../../helpers/create-totals-item-update.function'
 
 const totalsActions = {
   async getTotals ({ commit }, { addressInformation, hasShippingInformation }) {
@@ -41,8 +42,7 @@ const totalsActions = {
       const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 
       for (let key of Object.keys(itemsAfterPlatformTotals)) {
-        const item = itemsAfterPlatformTotals[key]
-        const product = { server_item_id: item.item_id, totals: item, qty: item.qty }
+        const product = createTotalsItemUpdate(itemsAfterPlatformTotals[key], getters.getCartItems)
         await dispatch('updateItem', { product })
       }
 
