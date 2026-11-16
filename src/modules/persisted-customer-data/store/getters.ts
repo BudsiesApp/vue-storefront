@@ -11,6 +11,7 @@ import {
   PERSISTED_CUSTOMER_LAST_NAME,
   PERSISTED_CUSTOMER_PHONE_NUMBER,
   PERSISTED_CUSTOMER_SHIPPING_COUNTRY,
+  PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED,
   PERSISTED_CUSTOMER_VAT_ID,
   PERSISTED_CUSTOMER_BILLING_ADDRESS,
   CUSTOMER_DATA_HASH,
@@ -50,6 +51,9 @@ export const getters: GetterTree<StoreState, RootState> = {
   },
   [PERSISTED_CUSTOMER_SHIPPING_COUNTRY] (state): string {
     return state.shippingCountry || '';
+  },
+  [PERSISTED_CUSTOMER_SHIPPING_COUNTRY_SETTLED] (state): boolean {
+    return state.shippingCountrySettled;
   },
   [PERSISTED_CUSTOMER_VAT_ID] (state): string {
     return state.vatId || '';

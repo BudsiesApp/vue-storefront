@@ -9,6 +9,7 @@ import { currentStoreView } from '@vue-storefront/core/lib/multistore';
 import { formatProductLink } from '@vue-storefront/core/modules/url/helpers';
 import { Logger } from '@vue-storefront/core/lib/logger';
 import { isServer } from '@vue-storefront/core/helpers';
+import { setServerRedirect } from '@vue-storefront/core/request-services';
 import { router } from '@vue-storefront/core/app'
 
 // Listeners moved from Product.js
@@ -159,7 +160,7 @@ export const checkParentRedirection = (currentProduct, parentProduct) => {
       AsyncDataLoader.push({
         execute: async ({ context }) => {
           if (context && !context.url.includes(parentUrl)) {
-            context.server.response.redirect(301, parentUrl)
+            setServerRedirect(context, parentUrl as string, 301)
           }
         }
       })

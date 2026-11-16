@@ -25,6 +25,8 @@ export const cartStore: Module<CartState, any> = {
     isLocalDataLoaded: false,
     productDiscountedPrice: {},
     isShippingMethodsSyncing: false,
+    isShippingMethodsSyncingError: false,
+    shippingMethodsLookupId: 0,
     isCartSyncing: false,
     syncPromise: null,
     isTotalsSyncing: false,

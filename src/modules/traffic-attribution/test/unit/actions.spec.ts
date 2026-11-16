@@ -23,7 +23,6 @@ jest.mock('config', () => ({
   trafficAttribution: {
     firstTouchExpirationDays: 90,
     lastTouchExpirationDays: 30,
-    acquisitionClickIdKeys: ['gclid'],
     ignoredReferrerHosts: []
   }
 }));
@@ -131,6 +130,17 @@ describe('traffic attribution actions', () => {
     (Date.now as any).mockRestore();
   });
 
+  it('restores and reports an existing stored touch unchanged', async () => {
+    const stored = createTouch(createAttribution({ password: 'synthetic', 'direct-crm-ticket': 'example', gclid: 'allowed' }));
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(key === FIRST_TOUCH ? stored : null)) });
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    const { context, getters } = createContext(null, null);
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
+    expect(getters[GET_FIRST_TOUCH]).toBe(stored);
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request).toEqual(stored.attribution);
+  });
+
   it('initializes first and last touch from the same raw payload when no first touch exists', async () => {
     window.history.pushState({}, '', '/landing?utm_source=google');
     const { context, commits } = createContext(null, null);
@@ -147,8 +157,20 @@ describe('traffic attribution actions', () => {
     expect(commits[0].payload.createdAt).toBe(1000);
   });
 
+  it('initializes first and last touch from a marker-only first landing', async () => {
+    window.history.pushState({}, '', '/landing?m-message-click-id=raw%2Bmarker');
+    const { context, commits } = createContext(null, null);
+    await (actions as any)[SYNCHRONIZE](context, {
+      currentRoute: { query: { 'm-message-click-id': 'raw+marker' } }
+    });
+    expect(commits.map(commit => commit.type)).toEqual([SET_FIRST_TOUCH, SET_LAST_TOUCH]);
+    expect(commits[0].payload.attribution.landing_page_url).toBe('http://localhost/landing');
+    expect(commits[0].payload.attribution.query_params).toEqual({ 'm-message-click-id': 'raw+marker' });
+    expect(commits[0].payload.isSent).toBe(false);
+  });
+
   it('preserves an existing first touch and skips direct last-touch updates', async () => {
-    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }));
+    const firstTouch = createTouch(createAttribution({ 'm-message-click-id': 'synthetic' }));
     const lastTouch = createTouch(createAttribution({ utm_source: 'last' }));
     const { context, commits } = createContext(firstTouch, lastTouch);
 
@@ -175,6 +197,49 @@ describe('traffic attribution actions', () => {
     expect(commits).toHaveLength(1);
     expect(commits[0].type).toBe(SET_LAST_TOUCH);
     expect(commits[0].payload.attribution.query_params).toEqual({ gclid: 'new-click' });
+  });
+
+  it.each([
+    [{ aleid: 'one' }, { aleid: 'one' }],
+    [{ alart: 'two' }, { alart: 'two' }],
+    [{ 'm-message-click-id': ' raw+click ', token: 'private' }, { 'm-message-click-id': ' raw+click ' }],
+    [{ ALEID: 'one', alart: 'two', token: 'private' }, { ALEID: 'one', alart: 'two' }]
+  ])('captures and reports identifier-only last touch %o', async (query, expected) => {
+    const firstTouch = createTouch(createAttribution({ utm_source: 'google' }));
+    const lastTouch = createTouch(createAttribution({ utm_source: 'old' }), true);
+    const { context, commits, getters } = createContext(firstTouch, lastTouch);
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query } });
+
+    expect(getters[GET_FIRST_TOUCH]).toBe(firstTouch);
+    expect(commits).toHaveLength(1);
+    expect(commits[0].type).toBe(SET_LAST_TOUCH);
+    expect(getters[GET_LAST_TOUCH].isSent).toBe(false);
+    expect(getters[GET_LAST_TOUCH].attribution.query_params).toEqual(expected);
+    const firstResponse = createDeferredTask();
+    (TaskQueue.execute as jest.Mock).mockReturnValueOnce(firstResponse.promise).mockResolvedValueOnce({ resultCode: 200 });
+    const reporting = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
+    firstResponse.resolve({ resultCode: 200 });
+    await reporting;
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body)).toEqual({ request: firstTouch.attribution });
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[1][0].payload.body)).toEqual({
+      request: getters[GET_LAST_TOUCH].attribution
+    });
+    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
+    expect(context.commit).toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
+  });
+
+  it('leaves a failed Maestra report unsent', async () => {
+    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }), true);
+    const lastTouch = createTouch(createAttribution({ 'm-message-click-id': 'one' }));
+    const { context } = createContext(firstTouch, lastTouch);
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
+    expect(lastTouch.isSent).toBe(false);
   });
 
   it('loads unexpired stored touches during synchronization', async () => {
@@ -228,7 +293,7 @@ describe('traffic attribution actions', () => {
   });
 
   it('reuses the in-flight report execution for duplicate report dispatches', async () => {
-    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }));
+    const firstTouch = createTouch(createAttribution({ 'm-message-click-id': 'synthetic' }));
     const { context } = createContext(firstTouch, null);
     const deferredTask = createDeferredTask();
     (TaskQueue.execute as jest.Mock).mockReturnValue(deferredTask.promise);

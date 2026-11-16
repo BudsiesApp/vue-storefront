@@ -6,6 +6,7 @@ import { CustomizationOptionValue } from '../types/customization-option-value';
 import { Customization } from '../types/customization.interface';
 import { isFileUploadValue } from '../types/is-file-upload-value.typeguard';
 import { OptionValue } from '../types/option-value.interface';
+import { OptionType } from '../types/option-type';
 
 export function useCustomizationsOptionsDefaultValue (
   availableCustomizations: Ref<Customization[]>,
@@ -18,6 +19,10 @@ export function useCustomizationsOptionsDefaultValue (
 ) {
   function setDefaultValues (): void {
     for (const customization of availableCustomizations.value) {
+      // Holiday defaults depend on the browser's location and are reconciled by the timeline.
+      if (customization.optionData?.type === OptionType.PRODUCTION_TIME && customization.optionData.displayWidgetOptions?.isHolidayPeriod) {
+        continue;
+      }
       const selectedOptionValue = customizationOptionValue.value[customization.id];
       const optionValues = customizationAvailableOptionValues.value[customization.id];
 

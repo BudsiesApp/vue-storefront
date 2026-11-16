@@ -1,5 +1,8 @@
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+import { reportAddressApiFailure } from 'src/modules/shared';
 
 import { actions } from '../../../store/actions';
 
@@ -7,6 +10,16 @@ jest.mock('config', () => ({
   budsies: {
     endpoint: 'https://api.example.com/api/ext/budsies'
   }
+}));
+
+jest.mock('@vue-storefront/i18n', () => ({
+  __esModule: true,
+  default: { t: (key: string) => key }
+}));
+
+jest.mock('src/modules/shared', () => ({
+  ...jest.requireActual('src/modules/shared/helpers/get-api-error-message'),
+  reportAddressApiFailure: jest.fn()
 }));
 
 jest.mock('@vue-storefront/core/helpers', () => ({
@@ -62,3 +75,45 @@ describe('Budsies cart recovery actions', () => {
     );
   });
 });
+
+describe('customer address failures', () => {
+  const context = { rootGetters: { 'user/current': { id: 4 } } };
+
+  beforeEach(() => {
+    (TaskQueue.execute as jest.Mock).mockReset();
+    (reportAddressApiFailure as jest.Mock).mockClear();
+    (EventBus.$emit as jest.Mock).mockClear();
+  });
+
+  it('preserves the server message and reports a failed update without emitting success', async () => {
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 503, result: { errorMessage: 'Service unavailable' } });
+
+    await expect((actions as any).updateAddress(context, { address: { id: 9 } })).rejects.toThrow('Service unavailable');
+    expect(reportAddressApiFailure).toHaveBeenCalledWith({ operation: 'customer-address-update', message: 'Service unavailable', status: 503, userId: 4, addressId: 9 });
+    expect((TaskQueue.execute as jest.Mock).mock.calls[0][0].silent).toBe(true);
+    expect(EventBus.$emit).not.toHaveBeenCalled();
+  });
+
+  it('uses the translated fallback for a no-response create failure', async () => {
+    (TaskQueue.execute as jest.Mock).mockRejectedValue(new Error('network details'));
+
+    await expect((actions as any).createNewAddress(context, { address: {} })).rejects.toThrow('Unable to add new address');
+    expect(reportAddressApiFailure).toHaveBeenCalledWith({ operation: 'customer-address-create', message: 'Unable to add new address', status: undefined, userId: 4 });
+    expect(EventBus.$emit).not.toHaveBeenCalled();
+  });
+
+  it('uses the fallback instead of a whitespace-only server message', async () => {
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500, result: { errorMessage: '  ' } });
+
+    await expect((actions as any).updateAddress(context, { address: { id: 9 } })).rejects.toThrow(new Error('Unable to update address'));
+    expect(reportAddressApiFailure).toHaveBeenCalledWith(expect.objectContaining({ message: 'Unable to update address', status: 500 }));
+  });
+
+  it('keeps the HTTP status of a non-JSON update response', async () => {
+    (TaskQueue.execute as jest.Mock).mockRejectedValue(new TaskResponseError('Error with response - bad content-type!', 403));
+
+    await expect((actions as any).updateAddress(context, { address: { id: 9 } })).rejects.toThrow(new Error('Unable to update address'));
+    expect(reportAddressApiFailure).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+  });
+});
+

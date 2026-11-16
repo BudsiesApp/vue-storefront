@@ -1,4 +1,5 @@
 export enum OrderItemAvailableActionCode {
+  AWAITING_ARTWORK = 'awaiting_artwork',
   RE_ORDER = 're-order',
   AWAITING_CUSTOMIZATION = 'awaiting_customization',
   DOWNLOAD_RESULT = 'download_result',

@@ -1,11 +1,14 @@
 import { createBundleProduct, createGroupProduct, createSimpleProduct } from '../../../helpers/createProduct';
 import setGroupedProduct from '@vue-storefront/core/modules/catalog/helpers/associatedProducts/setGroupedProduct';
-import setProductLink from '@vue-storefront/core/modules/catalog/helpers/associatedProducts/setProductLink';
 import { ProductService } from '@vue-storefront/core/data-resolver/ProductService'
 
 jest.mock('@vue-storefront/core/helpers', () => ({
   once: (str) => jest.fn()
 }))
+jest.mock('@vue-storefront/core/lib/multistore', () => ({
+  currentStoreView: jest.fn(() => ({}))
+}))
+jest.mock('@vue-storefront/core/data-resolver', () => ({}))
 jest.mock('@vue-storefront/i18n', () => ({ t: jest.fn(str => str) }));
 jest.mock('@vue-storefront/core/lib/logger', () => ({
   Logger: {
@@ -20,7 +23,6 @@ jest.mock('@vue-storefront/core/data-resolver/ProductService', () => ({
     getProductByKey: jest.fn()
   }
 }));
-jest.mock('@vue-storefront/core/modules/catalog/helpers/associatedProducts/setProductLink', () => jest.fn());
 
 describe('setGroupedProduct helper', () => {
   beforeEach(() => {
@@ -41,6 +43,7 @@ describe('setGroupedProduct helper', () => {
 
     expect(ProductService.getProducts).toHaveBeenNthCalledWith(1, {
       query: expect.anything(),
+      size: 3,
       excludeFields: null,
       includeFields: null,
       options: {
@@ -52,5 +55,18 @@ describe('setGroupedProduct helper', () => {
         separateSelectedVariant: false
       }
     })
+  })
+  it('attaches every product when there are more than 50 links', async () => {
+    const groupedProduct = createGroupProduct()
+    const template = groupedProduct.product_links[0]
+    const links = Array.from({ length: 51 }, (_, i) => ({ ...template, linked_product_sku: `sku-${i}` }))
+    groupedProduct.product_links = links
+    const items = links.map(link => ({ ...createSimpleProduct(), sku: link.linked_product_sku }))
+    ;(ProductService.getProducts as jest.Mock).mockResolvedValue({ items })
+
+    await setGroupedProduct(groupedProduct)
+
+    expect(ProductService.getProducts).toHaveBeenCalledWith(expect.objectContaining({ size: 51 }))
+    links.forEach((link, i) => expect(link.product.sku).toBe(items[i].sku))
   })
 })

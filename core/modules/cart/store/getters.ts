@@ -9,7 +9,7 @@ import config from 'config'
 
 import CartItem from '../types/CartItem'
 import getCartItemKey from '../helpers/get-cart-item-key.function'
-import { IS_SHIPPING_METHODS_SYNCING, IS_CART_SYNCING, IS_TOTALS_SYNCING, IS_PAYMENT_METHODS_SYNCING, IS_COUPON_PROCESSING, IS_COUPON_INTERACTION_BLOCKED } from './getter-types'
+import { IS_SHIPPING_METHODS_SYNCING, IS_SHIPPING_METHODS_SYNCING_ERROR, IS_CART_SYNCING, IS_TOTALS_SYNCING, IS_PAYMENT_METHODS_SYNCING, IS_COUPON_PROCESSING, IS_COUPON_INTERACTION_BLOCKED } from './getter-types'
 
 const getters: GetterTree<CartState, RootState> = {
   getCartToken: state => state.cartServerToken,
@@ -103,6 +103,7 @@ const getters: GetterTree<CartState, RootState> = {
     }
   },
   [IS_SHIPPING_METHODS_SYNCING]: (state) => state.isShippingMethodsSyncing,
+  [IS_SHIPPING_METHODS_SYNCING_ERROR]: (state) => state.isShippingMethodsSyncingError,
   [IS_CART_SYNCING]: (state) => state.isCartSyncing,
   [IS_TOTALS_SYNCING]: (state) => state.isTotalsSyncing,
   [IS_PAYMENT_METHODS_SYNCING]: (state) => state.isPaymentMethodsSyncing,

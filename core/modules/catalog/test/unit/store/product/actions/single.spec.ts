@@ -2,6 +2,7 @@ import productActions from '@vue-storefront/core/modules/catalog/store/product/a
 import config from 'config';
 import { ProductService } from '@vue-storefront/core/data-resolver/ProductService'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
+import * as types from '@vue-storefront/core/modules/catalog/store/product/mutation-types'
 
 jest.mock('@vue-storefront/core/helpers', () => ({
   once: (str) => jest.fn()
@@ -9,6 +10,9 @@ jest.mock('@vue-storefront/core/helpers', () => ({
 jest.mock('@vue-storefront/core/modules/catalog/helpers', () => ({
   registerProductsMapping: jest.fn(),
   setRequestCacheTags: jest.fn()
+}))
+jest.mock('@vue-storefront/core/lib/multistore', () => ({
+  currentStoreView: jest.fn(() => ({}))
 }))
 
 jest.mock('@vue-storefront/core/store', () => ({
@@ -48,10 +52,11 @@ describe('product/single action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     contextMock = {
-      dispatch: jest.fn(() => ({}))
+      dispatch: jest.fn(() => ({})),
+      commit: jest.fn()
     }
     options = { sku: 'sku' }
-    product = [{ url_path: 'dsada', sku: 'dsad' }]
+    product = { url_path: 'dsada', sku: 'dsad' }
     config.cart = {
       setConfigurableProductOptions: true
     }
@@ -87,6 +92,11 @@ describe('product/single action', () => {
     await wrapper(productActions)
 
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'setCurrent', product)
+  })
+  it('merges the loaded product into the dictionary and returns it', async () => {
+    const result = await productActions.single(contextMock, { options })
+    expect(contextMock.commit).toHaveBeenCalledWith(types.PRODUCT_MERGE_PRODUCT_BY_SKU, product)
+    expect(result).toBe(product)
   })
   it('should emit "product-after-single" event', async () => {
     const wrapper = (actions: any) => actions.single(contextMock, { options })

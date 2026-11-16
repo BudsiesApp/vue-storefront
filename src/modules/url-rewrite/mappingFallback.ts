@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import Vue from 'vue';
 import { ActionContext } from 'vuex';
 import queryString from 'query-string';
@@ -8,6 +7,7 @@ import RootState from '@vue-storefront/core/types/RootState';
 import { UrlState } from '@vue-storefront/core/modules/url/types/UrlState';
 import { AsyncDataLoader } from '@vue-storefront/core/lib/async-data-loader';
 import { isServer } from '@vue-storefront/core/helpers';
+import { setServerRedirect } from '@vue-storefront/core/request-services';
 import { Context } from '@vue-storefront/core/scripts/utils/types';
 
 import { getUrlRewriteRouteData } from './helpers/get-url-rewrite-route-data.function';
@@ -64,20 +64,14 @@ export const mappingFallbackForUrlRewrite = async (
   }
 
   if (ssrContext) {
-    (ssrContext.server.response as Response).redirect(
-      redirectCode,
-      ssrRedirectFullPath
-    );
+    setServerRedirect(ssrContext, ssrRedirectFullPath, redirectCode);
     return;
   }
 
   AsyncDataLoader.push({
     execute: async ({ context }) => {
       if (context) {
-        context.server.response.redirect(
-          redirectCode,
-          ssrRedirectFullPath
-        );
+        setServerRedirect(context, ssrRedirectFullPath, redirectCode);
       }
     }
   })

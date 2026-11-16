@@ -6,6 +6,7 @@ export const state: StoreState = {
   lastName: undefined,
   phoneNumber: undefined,
   shippingCountry: undefined,
+  shippingCountrySettled: false,
   vatId: undefined,
   lastUsedCustomerBillingAddress: {
     firstName: '',

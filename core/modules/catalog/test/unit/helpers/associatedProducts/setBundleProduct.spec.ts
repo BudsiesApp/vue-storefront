@@ -5,6 +5,10 @@ import { ProductService } from '@vue-storefront/core/data-resolver/ProductServic
 jest.mock('@vue-storefront/core/helpers', () => ({
   once: (str) => jest.fn()
 }))
+jest.mock('@vue-storefront/core/lib/multistore', () => ({
+  currentStoreView: jest.fn(() => ({}))
+}))
+jest.mock('@vue-storefront/core/data-resolver', () => ({}))
 jest.mock('@vue-storefront/i18n', () => ({ t: jest.fn(str => str) }));
 jest.mock('@vue-storefront/core/lib/logger', () => ({
   Logger: {
@@ -39,6 +43,7 @@ describe('setBundleProducts helper', () => {
 
     expect(ProductService.getProducts).toHaveBeenNthCalledWith(1, {
       query: expect.anything(),
+      size: 8,
       excludeFields: null,
       includeFields: null,
       options: {
@@ -50,5 +55,18 @@ describe('setBundleProducts helper', () => {
         separateSelectedVariant: false
       }
     })
+  })
+  it('attaches every product when there are more than 50 links', async () => {
+    const bundleProduct = createBundleProduct()
+    const template = bundleProduct.bundle_options[0].product_links[0]
+    const links = Array.from({ length: 51 }, (_, i) => ({ ...template, sku: `sku-${i}` }))
+    bundleProduct.bundle_options = [{ ...bundleProduct.bundle_options[0], product_links: links }]
+    const items = links.map(link => ({ ...createSimpleProduct(), sku: link.sku }))
+    ;(ProductService.getProducts as jest.Mock).mockResolvedValue({ items })
+
+    await setBundleProducts(bundleProduct)
+
+    expect(ProductService.getProducts).toHaveBeenCalledWith(expect.objectContaining({ size: 51 }))
+    links.forEach((link, i) => expect(link.product.sku).toBe(items[i].sku))
   })
 })

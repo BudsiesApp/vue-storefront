@@ -6,6 +6,7 @@ import rootStore from '@vue-storefront/core/store'
 import { adjustMultistoreApiUrl, currentStoreView } from '@vue-storefront/core/lib/multistore'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import Task from '@vue-storefront/core/lib/sync/types/Task'
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { TaskQueue } from '@vue-storefront/core/lib/sync'
 import * as entities from '@vue-storefront/core/lib/store/entities'
@@ -49,6 +50,19 @@ function getUrl (task, currentToken, currentCartId) {
   }
 
   return url
+}
+
+function getSafeUrl (url: string): string {
+  try {
+    const base = 'http://localhost'
+    const parsed = new URL(url, base)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '[invalid request URL]'
+    return /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(url)
+      ? `${parsed.origin}${parsed.pathname}`
+      : parsed.pathname
+  } catch {
+    return '[invalid request URL]'
+  }
 }
 
 function getPayload (task, currentToken) {
@@ -98,99 +112,101 @@ function _internalExecute (resolve, reject, task: Task, currentToken, currentCar
 
   url = eventPayload.url;
 
+  let responseStatus: number
+
   return fetch(url, payload).then((response) => {
+    responseStatus = response.status
     const contentType = response.headers.get('content-type')
-    if (contentType && contentType.includes('application/json')) {
-      return response.json()
-    } else {
-      const msg = i18n.t('Error with response - bad content-type! ' + url)
-      Logger.error(msg.toString(), 'sync')()
-      reject(msg)
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new TaskResponseError(i18n.t('Error with response - bad content-type! ' + getSafeUrl(url)).toString(), responseStatus)
     }
+
+    return response.json().catch((error) => {
+      throw new TaskResponseError(error?.message || String(error), responseStatus)
+    })
   }).then((jsonResponse) => {
-    if (jsonResponse) {
-      const responseCode = parseInt(jsonResponse.code)
-      if (responseCode !== 200) {
-        if (responseCode === 401 /** unauthorized */ && currentToken) { // the token is no longer valid, try to invalidate it
-          Logger.error('Invalid token - need to be revalidated' + currentToken + task.url + rootStore.state.userTokenInvalidateLock, 'sync')()
-          silentMode = true
-          if (config.users.autoRefreshTokens) {
-            if (!rootStore.state.userTokenInvalidateLock) {
-              rootStore.state.userTokenInvalidateLock++
-              if (rootStore.state.userTokenInvalidateAttemptsCount >= config.queues.maxNetworkTaskAttempts) {
-                Logger.error('Internal Application error while refreshing the tokens. Please clear the storage and refresh page.', 'sync')()
-                rootStore.state.userTokenInvalidateLock = -1
-                rootStore.state.userTokenInvalidated = null
-                rootStore.dispatch('user/logout', { silent: true })
-                TaskQueue.clearNotTransmited()
-                EventBus.$emit('modal-show', 'modal-signup')
-                rootStore.state.userTokenInvalidateAttemptsCount = 0
-              } else {
-                Logger.info('Invalidation process in progress (autoRefreshTokens is set to true)' + rootStore.state.userTokenInvalidateAttemptsCount + rootStore.state.userTokenInvalidateLock, 'sync')()
-                rootStore.state.userTokenInvalidateAttemptsCount++
-                rootStore.dispatch('user/refresh').then((token) => {
-                  if (token) {
-                    rootStore.state.userTokenInvalidateLock = 0
-                    rootStore.state.userTokenInvalidated = token
-                    Logger.info('User token refreshed successfully' + token, 'sync')()
-                  } else {
-                    rootStore.state.userTokenInvalidateLock = -1
-                    rootStore.dispatch('user/logout', { silent: true })
-                    EventBus.$emit('modal-show', 'modal-signup')
-                    TaskQueue.clearNotTransmited()
-                    Logger.error('Error refreshing user token' + token, 'sync')()
-                  }
-                }).catch((excp) => {
+    const responseCode = parseInt(jsonResponse?.code)
+
+    if (typeof jsonResponse !== 'object' || jsonResponse === null || Number.isNaN(responseCode)) {
+      throw new TaskResponseError(i18n.t('Unhandled error, wrong response format! ' + getSafeUrl(url)).toString(), responseStatus)
+    }
+
+    if (responseCode !== 200) {
+      if (responseCode === 401 /** unauthorized */ && currentToken) { // the token is no longer valid, try to invalidate it
+        Logger.error('Invalid token - need to be revalidated' + currentToken + task.url + rootStore.state.userTokenInvalidateLock, 'sync')()
+        silentMode = true
+        if (config.users.autoRefreshTokens) {
+          if (!rootStore.state.userTokenInvalidateLock) {
+            rootStore.state.userTokenInvalidateLock++
+            if (rootStore.state.userTokenInvalidateAttemptsCount >= config.queues.maxNetworkTaskAttempts) {
+              Logger.error('Internal Application error while refreshing the tokens. Please clear the storage and refresh page.', 'sync')()
+              rootStore.state.userTokenInvalidateLock = -1
+              rootStore.state.userTokenInvalidated = null
+              rootStore.dispatch('user/logout', { silent: true })
+              TaskQueue.clearNotTransmited()
+              EventBus.$emit('modal-show', 'modal-signup')
+              rootStore.state.userTokenInvalidateAttemptsCount = 0
+            } else {
+              Logger.info('Invalidation process in progress (autoRefreshTokens is set to true)' + rootStore.state.userTokenInvalidateAttemptsCount + rootStore.state.userTokenInvalidateLock, 'sync')()
+              rootStore.state.userTokenInvalidateAttemptsCount++
+              rootStore.dispatch('user/refresh').then((token) => {
+                if (token) {
+                  rootStore.state.userTokenInvalidateLock = 0
+                  rootStore.state.userTokenInvalidated = token
+                  Logger.info('User token refreshed successfully' + token, 'sync')()
+                } else {
                   rootStore.state.userTokenInvalidateLock = -1
                   rootStore.dispatch('user/logout', { silent: true })
                   EventBus.$emit('modal-show', 'modal-signup')
                   TaskQueue.clearNotTransmited()
-                  Logger.error('Error refreshing user token' + excp, 'sync')()
-                })
-              }
+                  Logger.error('Error refreshing user token' + token, 'sync')()
+                }
+              }).catch((excp) => {
+                rootStore.state.userTokenInvalidateLock = -1
+                rootStore.dispatch('user/logout', { silent: true })
+                EventBus.$emit('modal-show', 'modal-signup')
+                TaskQueue.clearNotTransmited()
+                Logger.error('Error refreshing user token' + excp, 'sync')()
+              })
             }
-            if (rootStore.state.userTokenInvalidateAttemptsCount <= config.queues.maxNetworkTaskAttempts) _internalExecute(resolve, reject, task, currentToken, currentCartId) // retry
-          } else {
-            Logger.info('Invalidation process is disabled (autoRefreshTokens is set to false)', 'sync')()
-            rootStore.dispatch('user/logout', { silent: true })
-            EventBus.$emit('modal-show', 'modal-signup')
-            resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
-            return;
           }
-        }
-
-        if (!task.silent && jsonResponse.result && hasResponseError(jsonResponse) && !silentMode) {
-          rootStore.dispatch('notification/spawnNotification', {
-            type: 'error',
-            message: i18n.t(getResponseMessage(jsonResponse)),
-            action1: { label: i18n.t('OK') }
-          })
-        }
-      }
-
-      Logger.debug('Response for: ' + task.task_id + ' = ' + JSON.stringify(jsonResponse.result), 'sync')()
-      task.transmited = true
-      task.transmited_at = new Date()
-      task.result = jsonResponse.result
-      task.resultCode = jsonResponse.code
-      task.code = jsonResponse.code // backward compatibility to fetch()
-      task.acknowledged = false
-      task.meta = jsonResponse.meta
-
-      if (task.callback_event) {
-        if (task.callback_event.startsWith('store:')) {
-          rootStore.dispatch(task.callback_event.split(':')[1], task)
+          if (rootStore.state.userTokenInvalidateAttemptsCount <= config.queues.maxNetworkTaskAttempts) _internalExecute(resolve, reject, task, currentToken, currentCartId) // retry
         } else {
-          EventBus.$emit(task.callback_event, task)
+          Logger.info('Invalidation process is disabled (autoRefreshTokens is set to false)', 'sync')()
+          rootStore.dispatch('user/logout', { silent: true })
+          EventBus.$emit('modal-show', 'modal-signup')
+          resolve({ code: 401, result: i18n.t('Error refreshing user token. User is not authorized to access the resource') })
+          return;
         }
       }
-      if (!rootStore.state.userTokenInvalidateLock || !currentToken) { // in case we're revalidaing the token - user must wait for it
-        resolve(task)
+
+      if (!task.silent && jsonResponse.result && hasResponseError(jsonResponse) && !silentMode) {
+        rootStore.dispatch('notification/spawnNotification', {
+          type: 'error',
+          message: i18n.t(getResponseMessage(jsonResponse)),
+          action1: { label: i18n.t('OK') }
+        })
       }
-    } else {
-      const msg = i18n.t('Unhandled error, wrong response format! ' + url)
-      Logger.error(msg.toString(), 'sync')()
-      reject(msg)
+    }
+
+    Logger.debug('Response for: ' + task.task_id + ' = ' + JSON.stringify(jsonResponse.result), 'sync')()
+    task.transmited = true
+    task.transmited_at = new Date()
+    task.result = jsonResponse.result
+    task.resultCode = jsonResponse.code
+    task.code = jsonResponse.code // backward compatibility to fetch()
+    task.acknowledged = false
+    task.meta = jsonResponse.meta
+
+    if (task.callback_event) {
+      if (task.callback_event.startsWith('store:')) {
+        rootStore.dispatch(task.callback_event.split(':')[1], task)
+      } else {
+        EventBus.$emit(task.callback_event, task)
+      }
+    }
+    if (!rootStore.state.userTokenInvalidateLock || !currentToken) { // in case we're revalidaing the token - user must wait for it
+      resolve(task)
     }
   }).catch((err) => {
     Logger.error(err, 'sync')()

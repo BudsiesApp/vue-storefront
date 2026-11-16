@@ -14,8 +14,10 @@ import ServerError from './types/server-error';
 import * as ProductEvent from './types/product-events';
 import { UserEvents } from './types/user-events';
 import { CustomerDataChangedEventPayload } from './types/user-events-payload';
+import { PAGE_RENDERED } from './types/page-rendered.event';
 import { PersistedCustomerData } from './types/persisted-customer-data.interface';
 import { PersistedBillingAddress } from './types/persisted-billing-address.interface';
+import { emitPageRenderedEvent } from './helpers/emit-page-rendered-event.function';
 import { getProductOptions } from './helpers/get-product-options.function';
 import { localStorageSynchronizationFactory } from './helpers/local-storage-synchronization.factory';
 import { parseLocalStorageValue } from './helpers/parse-local-storage-value.function';
@@ -37,6 +39,8 @@ import { FOREVERS_BUNDLE_SKUS, FOREVERS_CAT_BUNDLE_SKU, FOREVERS_DOG_BUNDLE_SKU,
 import { GOLF_HEAD_COVERS_BUNDLE_SKUS } from './types/golf-head-covers-product-skus';
 import * as ExpressCheckoutData from './types/express-checkout-data.interface';
 import { useExpressCheckoutTotals } from './composables/use-express-checkout-totals';
+import { AddressFailure, ReportedError, REPORT_ERROR, reportAddressApiFailure } from './services/address-api-failure-reporter';
+import { getApiErrorMessage } from './helpers/get-api-error-message';
 
 import EmailSubmitForm from './components/email-submit-form.vue';
 import PrivacyPolicyLink from './components/privacy-policy-link.vue';
@@ -55,6 +59,7 @@ export {
   BEFORE_STORE_BACKEND_API_REQUEST,
   BreakpointValue,
   PAYMENT_ERROR_EVENT,
+  emitPageRenderedEvent,
   parseLocalStorageValue,
   localStorageSynchronizationFactory,
   getProductOptions,
@@ -63,6 +68,7 @@ export {
   stateCodeAutocompleteOptionSearch,
   getCanonicalUrl,
   UserEvents,
+  PAGE_RENDERED,
   getCookieByName,
   MimeTypeValue,
   useMobileObserver,
@@ -85,6 +91,9 @@ export {
   getFirstAndLastFromFullName,
   normalizeProductPurchaseFlow,
   useExpressCheckoutTotals,
+  reportAddressApiFailure,
+  REPORT_ERROR,
+  getApiErrorMessage
 }
 
 export type {
@@ -92,5 +101,7 @@ export type {
   CustomerImage,
   CustomerDataChangedEventPayload,
   PersistedCustomerData,
-  PersistedBillingAddress
+  PersistedBillingAddress,
+  AddressFailure,
+  ReportedError
 }

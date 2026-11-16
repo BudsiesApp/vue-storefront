@@ -1,5 +1,8 @@
 <template>
-  <div class="order-item-actions">
+  <div
+    class="order-item-actions"
+    :class="{ '-photo-panel': hasPhotoPanel }"
+  >
     <p
       class="sr-only"
       role="status"
@@ -17,9 +20,17 @@
         v-for="actionItem in actionsListGroups.blockingActionsList"
         :key="actionItem.action.code + ';' + actionItem.action.name"
         class="_action-with-message-container"
-        :class="{'-blocking': actionItem.action.blocking_progress}"
+        :class="{
+          '-blocking': actionItem.action.blocking_progress,
+          '-photo-panel': isPhotoPanelAction(actionItem)
+        }"
       >
-        <span class="_action-with-message">{{ actionItem.action.message }}</span>
+        <span
+          v-if="!isPhotoPanelAction(actionItem)"
+          class="_action-with-message"
+        >
+          {{ actionItem.action.message }}
+        </span>
 
         <component
           :is="actionItem.component"
@@ -28,11 +39,39 @@
           :class="actionItem.cssClasses"
           v-bind="actionItem.props"
           v-on="actionItem.handlers"
-          v-if="actionItem.component"
+          v-if="actionItem.component && !isPhotoPanelAction(actionItem)"
         >
           <span class="_action-name">
             {{ actionItem.action.name }}
           </span>
+        </component>
+
+        <component
+          v-if="photoUploadFormComponent && actionItem.action.code === OrderItemAvailableActionCode.AWAITING_ARTWORK"
+          :is="photoUploadFormComponent"
+          :key="orderItem.item_id"
+          :order-item-id="orderItem.item_id"
+          :product-sku="orderItem.product.sku"
+          @ready-changed="isPhotoUploadReady = $event"
+          @submitted="onPhotosSubmitted"
+        >
+          <template
+            v-if="actionItem.component"
+            #alternative-action
+          >
+            <component
+              :is="actionItem.component"
+              :disabled="disabledItems[actionItem.action.code]"
+              class="_alternative-action sf-button--text"
+              :class="actionItem.cssClasses"
+              v-bind="actionItem.props"
+              v-on="actionItem.handlers"
+            >
+              <span class="_action-name">
+                {{ actionItem.action.name }}
+              </span>
+            </component>
+          </template>
         </component>
       </div>
     </div>
@@ -59,7 +98,7 @@
 
 <script lang="ts">
 import { useI18n, useRouter, useStore } from '@vue-storefront/core/application-services';
-import { computed, defineComponent, PropType, ref } from 'vue';
+import { computed, defineComponent, inject, PropType, ref } from 'vue';
 import { SfButton } from '@storefront-ui/vue';
 
 import { Logger } from '@vue-storefront/core/lib/logger'
@@ -71,7 +110,7 @@ import MSpinnerButton from 'theme/components/molecules/m-spinner-button.vue';
 import { OrderItem } from '../types/order-item';
 import { OrderItemAvailableAction } from '../types/order-item-available-action';
 import { OrderItemAvailableActionCode } from '../types/order-item-available-action.code';
-import { REORDER_ITEM_ACTION, IS_REORDERING_ITEM } from '..';
+import { FETCH_ORDERS_HISTORY_ACTION, REORDER_ITEM_ACTION, IS_REORDERING_ITEM } from '..';
 
 interface ActionItem {
   action: OrderItemAvailableAction,
@@ -156,6 +195,9 @@ export default defineComponent({
     const applicationI18n = useI18n();
     const productSkuRouteNameMapping = getProductSkuRouteNameMapping();
     const isReorderPending = ref(false);
+    const photoUploadFormComponent = inject('OrderItemPhotoUploadForm', undefined);
+    const isPhotoUploadReady = ref(false);
+    const isPhotoUploadSubmitted = ref(false);
     const reorderStatusMessage = computed(() => {
       return isReorderPending.value
         ? applicationI18n.t('Item is being re-ordered')
@@ -259,6 +301,29 @@ export default defineComponent({
       return `${actionLabel} ${applicationI18n.t('opens in new tab')}`;
     }
 
+    async function onPhotosSubmitted (): Promise<void> {
+      isPhotoUploadSubmitted.value = true;
+
+      try {
+        await applicationStore.dispatch(FETCH_ORDERS_HISTORY_ACTION, { filters: { excludeAlterationProducts: true } });
+      } catch (error) {
+        Logger.error(error, 'order-history')();
+        applicationStore.dispatch('notification/spawnNotification', {
+          type: 'warning',
+          message: applicationI18n.t("Your photos were submitted, but we couldn't refresh the order status. Please refresh the page to see the latest status."),
+          action1: { label: applicationI18n.t('OK') }
+        });
+      }
+    }
+
+    function isPhotoPanelAction (actionItem: ActionItem): boolean {
+      if (actionItem.action.code !== OrderItemAvailableActionCode.AWAITING_ARTWORK) {
+        return false;
+      }
+
+      return isPhotoUploadSubmitted.value || (!!photoUploadFormComponent && isPhotoUploadReady.value);
+    }
+
     const actionsListGroups = computed<ActionsListGroups>(() => {
       const blockingActionsList: ActionItem[] = [];
       const nonBlockingActionsList: ActionItem[] = [];
@@ -355,9 +420,19 @@ export default defineComponent({
       }
     });
 
+    const hasPhotoPanel = computed<boolean>(() => {
+      return actionsListGroups.value.blockingActionsList.some(isPhotoPanelAction);
+    });
+
     return {
       actionsListGroups,
       disabledItems,
+      hasPhotoPanel,
+      isPhotoPanelAction,
+      isPhotoUploadReady,
+      onPhotosSubmitted,
+      OrderItemAvailableActionCode,
+      photoUploadFormComponent,
       reorderStatusMessage
     }
   }
@@ -397,6 +472,16 @@ export default defineComponent({
     flex-wrap: wrap;
     row-gap: var(--spacer-xs);
     column-gap: var(--spacer-xs);
+  }
+
+  ._action-with-message-container.-photo-panel {
+    align-self: stretch;
+    align-items: stretch;
+  }
+
+  &.-photo-panel ._available-actions {
+    padding-top: var(--spacer-sm);
+    border-top: 1px solid var(--c-divider);
   }
 
   ._available-action {

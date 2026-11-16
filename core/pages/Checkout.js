@@ -8,6 +8,7 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import Composite from '@vue-storefront/core/mixins/composite'
 import { currentStoreView, localizedRoute } from '@vue-storefront/core/lib/multistore'
 import { isServer } from '@vue-storefront/core/helpers'
+import { setServerRedirect } from '@vue-storefront/core/request-services'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION } from '@vue-storefront/core/modules/checkout';
 
@@ -52,6 +53,7 @@ export default {
       return;
     }
 
+    this.activateSection('personalDetails', { replaceHistoryEntry: true })
     EventBus.$emit('checkout-after-load')
     this.$store.dispatch('checkout/setModifiedAt', Date.now())
     // TODO: Use one event with name as apram
@@ -245,7 +247,7 @@ export default {
     },
     activateHashSection () {
       if (!isServer) {
-        var urlStep = window.location.hash.replace('#', '')
+        const urlStep = this.$route.hash.replace('#', '')
         if (this.activeSection.hasOwnProperty(urlStep) && this.activeSection[urlStep] === false) {
           this.activateSection(urlStep)
         } else if (urlStep === '') {
@@ -258,12 +260,22 @@ export default {
         this.notifyNoConnection()
       }
     },
-    activateSection (sectionToActivate) {
+    activateSection (sectionToActivate, { replaceHistoryEntry = false } = {}) {
       for (let section in this.activeSection) {
         this.activeSection[section] = false
       }
       this.activeSection[sectionToActivate] = true
-      if (!isServer) window.location.href = window.location.origin + window.location.pathname + '#' + sectionToActivate
+
+      const hash = '#' + sectionToActivate
+      if (isServer || this.$route.hash === hash) return
+
+      const location = { path: this.$route.path, query: this.$route.query, hash }
+      const onAbort = error => Logger.debug('Checkout section navigation skipped', 'checkout', error)()
+      if (replaceHistoryEntry) {
+        this.$router.replace(location, undefined, onAbort)
+      } else {
+        this.$router.push(location, undefined, onAbort)
+      }
     },
     // This method checks if there exists a mapping of chosen payment method to one of Magento's payment methods.
     getPaymentMethod () {
@@ -371,13 +383,13 @@ export default {
   asyncData ({ store, route, context }) { // this is for SSR purposes to prefetch data
     return new Promise((resolve, reject) => {
       if (!context) {
-        resolve();
+        return resolve();
       }
 
       const resolvedRoute = router.resolve({ name: 'detailed-cart' });
 
       context.output.cacheTags.add(`checkout`)
-      context.server.response.redirect(localizedRoute(resolvedRoute.href));
+      setServerRedirect(context, localizedRoute(resolvedRoute.href));
       resolve()
     })
   }

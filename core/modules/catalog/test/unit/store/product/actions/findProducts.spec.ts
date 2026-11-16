@@ -3,6 +3,7 @@ import productActions from '@vue-storefront/core/modules/catalog/store/product/a
 import config from 'config';
 import { ProductService } from '@vue-storefront/core/data-resolver/ProductService'
 import { registerProductsMapping, setRequestCacheTags } from '@vue-storefront/core/modules/catalog/helpers'
+import * as types from '@vue-storefront/core/modules/catalog/store/product/mutation-types'
 
 jest.mock('@vue-storefront/core/helpers', () => ({
   once: (str) => jest.fn()
@@ -12,6 +13,9 @@ jest.mock('@vue-storefront/core/modules/catalog/helpers', () => ({
   setRequestCacheTags: jest.fn()
 }))
 
+jest.mock('@vue-storefront/core/lib/multistore', () => ({
+  currentStoreView: jest.fn(() => ({}))
+}))
 jest.mock('@vue-storefront/core/store', () => ({
   dispatch: jest.fn(),
   state: {}
@@ -47,7 +51,8 @@ describe('product/findProducts action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     contextMock = {
-      dispatch: jest.fn(() => ({}))
+      dispatch: jest.fn(() => ({})),
+      commit: jest.fn()
     }
     items = [{ url_path: 'dsada', sku: 'dsad' }]
     config.cart = {
@@ -183,5 +188,10 @@ describe('product/findProducts action', () => {
       aggregations: [],
       attributeMetadata: []
     })
+  })
+  it('should merge loaded products into the product dictionary', async () => {
+    await productActions.findProducts(contextMock, { excludeFields: ['customizations'] })
+
+    expect(contextMock.commit).toHaveBeenCalledWith(types.PRODUCT_MERGE_PRODUCT_BY_SKU, items[0])
   })
 })

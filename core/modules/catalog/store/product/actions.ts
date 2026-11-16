@@ -124,7 +124,7 @@ const actions: ActionTree<ProductState, RootState> = {
     await context.dispatch('tax/calculateTaxes', { products: items }, { root: true })
 
     items.forEach((product) => {
-      context.commit(types.PRODUCT_SET_PRODUCT_BY_SKU, product);
+      context.commit(types.PRODUCT_MERGE_PRODUCT_BY_SKU, product);
     })
 
     return { ...restResponseData, items }
@@ -163,7 +163,7 @@ const actions: ActionTree<ProductState, RootState> = {
     EventBus.$emitFilter('product-after-single', { key, options, product })
 
     if (product) {
-      context.commit(types.PRODUCT_SET_PRODUCT_BY_SKU, product);
+      context.commit(types.PRODUCT_MERGE_PRODUCT_BY_SKU, product);
     }
 
     return product

@@ -10,6 +10,8 @@ export interface ExtensionAttributes {
   is_virtual_item?: boolean,
   budsies_quote_item_totals?: {
     regular_price?: number,
+    savings_amount?: number,
+    discount_amount?: number,
     final_price?: number
   }
 }

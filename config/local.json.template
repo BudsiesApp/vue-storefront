@@ -10,6 +10,7 @@
     "useOutputCache": ${SSR_OUTPUT_CACHE_ENABLE},
     "outputCacheDefaultTtl": ${SSR_OUTPUT_CACHE_TTL},
     "availableCacheTags": [
+      "redirect",
       "attribute",
       "category_",
       "category",
@@ -128,7 +129,10 @@
       "srsltid",
       "irclickid",
       "sscid",
-      "awc"
+      "awc",
+      "aleid",
+      "alart",
+      "m-message-click-id"
     ],
     "ignoredReferrerHosts": [
       "${MAGENTO_DOMAIN}",
@@ -209,7 +213,24 @@
       "ES": {
         "stateComponentType": "administrative_area_level_2"
       },
-      "MX": {}
+      "MX": {},
+      "AR": {},
+      "CL": {},
+      "BG": { "isStateNonPostal": true },
+      "HR": { "isStateNonPostal": true },
+      "CZ": { "isStateNonPostal": true },
+      "EE": { "isStateNonPostal": true },
+      "FI": { "isStateNonPostal": true },
+      "HU": { "isStateNonPostal": true },
+      "LT": { "isStateNonPostal": true },
+      "LU": { "isStateNonPostal": true },
+      "PL": { "isStateNonPostal": true },
+      "PT": { "isStateNonPostal": true },
+      "PR": { "isStateNonPostal": true },
+      "SK": { "isStateNonPostal": true },
+      "SI": { "isStateNonPostal": true },
+      "CO": {},
+      "MY": {}
     }
   },
   "privacyPolicy": {

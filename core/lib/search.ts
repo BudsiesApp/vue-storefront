@@ -2,6 +2,7 @@ import Vue from 'vue'
 
 import { currentStoreView } from '@vue-storefront/core/lib/multistore'
 import { sha3_224 } from 'js-sha3'
+import cloneDeep from 'lodash-es/cloneDeep'
 import rootStore from '@vue-storefront/core/store'
 import { getSearchAdapter } from './search/adapter/searchAdapterFactory'
 import { SearchRequest } from '@vue-storefront/core/types/search/SearchRequest'
@@ -10,6 +11,23 @@ import { Logger } from '@vue-storefront/core/lib/logger'
 import config from 'config'
 import { isServer } from '@vue-storefront/core/helpers'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
+
+const inFlightSearches = new Map<string, Promise<SearchResponse>>()
+
+/**
+ * Shares one pending backend search between concurrent identical requests;
+ * every caller gets its own copy because results are modified downstream
+ */
+function searchOnce (cacheKey: string, search: () => Promise<SearchResponse>): Promise<SearchResponse> {
+  let pendingSearch = inFlightSearches.get(cacheKey)
+
+  if (!pendingSearch) {
+    pendingSearch = search().finally(() => inFlightSearches.delete(cacheKey))
+    inFlightSearches.set(cacheKey, pendingSearch)
+  }
+
+  return pendingSearch.then((res) => cloneDeep(res))
+}
 
 // TODO - use one from helpers instead
 export function isOnline (): boolean {
@@ -88,18 +106,21 @@ export const quickSearchByQuery = async ({ query = {}, start = 0, size = 50, ent
         throw new Error('No entity type registered for ' + Request.type)
       }
 
-      searchAdapter.search(Request).then((resp) => { // we're always trying to populate cache - when online
+      searchOnce(cacheKey, () => searchAdapter.search(Request).then((resp) => { // we're always trying to populate cache - when online
         const res = searchAdapter.entities[Request.type].resultProcessor(resp, start, size)
 
         if (res) { // otherwise it can be just a offline mode
           cache.setItem(cacheKey, res, null, config.elasticsearch.disablePersistentQueriesCache).catch((err) => { Logger.error('Cannot store cache for ' + cacheKey + ', ' + err)() })
-          if (!servedFromCache) { // if navigator onLine == false means ES is unreachable and probably this will return false; sometimes returned false faster than indexedDb cache returns result ...
-            Logger.debug('Result from ES for ' + cacheKey + ' (' + entityType + '),  ms=' + (new Date().getTime() - benchmarkTime.getTime()))()
-            res.cache = false
-            res.noresults = false
-            res.offline = false
-            resolve(res)
-          }
+        }
+
+        return res
+      })).then((res) => {
+        if (res && !servedFromCache) { // if navigator onLine == false means ES is unreachable and probably this will return false; sometimes returned false faster than indexedDb cache returns result ...
+          Logger.debug('Result from ES for ' + cacheKey + ' (' + entityType + '),  ms=' + (new Date().getTime() - benchmarkTime.getTime()))()
+          res.cache = false
+          res.noresults = false
+          res.offline = false
+          resolve(res)
         }
       }).catch(err => {
         if (!servedFromCache) {

@@ -1,0 +1,20 @@
+# Tasks
+
+## 1. Add the inline form and integration
+
+- [x] 1.1 Create `src/themes/petsies-capybara/helpers/use-order-item-photo-upload.ts` with client-mounted product/draft loading, eligibility, and selected-entry seeding from design decisions 3 and 4. Verify eligibility and retained-photo initialization with task 2.1, and the server-rendering boundary with task 3.3.
+- [x] 1.2 Add submission orchestration and translated notifications to the composable following design decisions 5 and 6, reusing `useCustomizeAction` unchanged. Verify task 2.1 covers the image-only payload, request ordering, save/submit errors, and submission guards; verify ordinary success/refresh behavior with task 3.3.
+- [x] 1.3 Create `src/themes/petsies-capybara/components/customization-system/forms/order-item-photo-upload-form.vue` using one existing `customization-option`, a setup-owned typed validation observer ref, and the existing spinner button. Bind the product ID, selected customization, current image value, input/busy events, and pending state; render the field only once its draft state is seeded. Verify the existing field's image limits and photo controls with task 3.3.
+- [x] 1.4 Provide `OrderItemPhotoUploadForm` in `o-my-account-orders-history.vue`; add the awaiting-artwork enum member and integrate the keyed injected form and readiness event in `orders-history/components/order-item.vue` according to design decision 2. Verify the message replacement and fallback with task 2.2.
+
+## 2. Cover the retained specification scenarios
+
+- [x] 2.1 Add `src/themes/petsies-capybara/helpers/use-order-item-photo-upload.spec.ts` using application-service injection and the real unchanged `useCustomizeAction`, with existing service requests controlled by mocks. Cover eligibility including tracker-status independence, locked/non-image customizations, missing or empty flow availability, and first eligible selection; the photo-only payload containing retained and newly processed images; save-before-submit; save-failure and submit-failure paths; and empty, invalid, pending-upload, and double-activation guards. Verify with `yarn test:unit --runInBand --runTestsByPath src/themes/petsies-capybara/helpers/use-order-item-photo-upload.spec.ts`.
+- [x] 2.2 Add `src/modules/orders-history/test/unit/components/order-item-photo-upload.spec.ts` for replacement of only the awaiting-artwork message when the injected form reports readiness, including the loading/ineligible fallback and retention of the other actions. Verify with `yarn test:unit --runInBand --runTestsByPath src/modules/orders-history/test/unit/components/order-item-photo-upload.spec.ts`.
+
+## 3. Localize and validate the implementation
+
+- [x] 3.1 Run `yarn update-i18n-files` after adding the strings from design decision 5. Verify the submit label and new notifications are extracted into the theme's translation resources, including the command's `resource/i18n/en-US.csv` target, and rendered through `t()`.
+- [x] 3.2 Run `yarn lint` and `yarn type-check`; fix issues introduced by this change and record both results. Verify application-service imports and typed refs, with no new module-to-theme imports.
+- [ ] 3.3 Against the separately updated API, manually verify the remaining integration scenarios: an eligible item leaves AWAITING_ARTWORK after one action, the submitted confirmation replaces the form controls and stays final while the refresh is pending, slow, or fails, a refresh failure shows the non-blocking submitted-but-not-refreshed notice, and an ineligible item retains the email message. Verify the reused field honors one-image and multiple-image settings, preserves retained photos when adding/removing photos, and keeps separate items' selections independent; confirm no private draft lookup runs during SSR.
+- [x] 3.4 Run `openspec validate i-35012-add-order-item-photo-upload --strict` and verify the implementation still matches the delta spec. Review the diff to confirm shared services, `use-customize-action.ts`, stores, other item actions, and the customization page were not changed.

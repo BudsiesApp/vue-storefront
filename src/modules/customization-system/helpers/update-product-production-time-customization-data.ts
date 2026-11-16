@@ -178,7 +178,8 @@ export function updateProductProductionTimeCustomizationData (
   product: Product,
   store: Store<any>,
   options: {
-    makeProductionTimeRequired: boolean
+    makeProductionTimeRequired: boolean,
+    isDomestic?: boolean
   } = {
     makeProductionTimeRequired: true
   }
@@ -204,6 +205,12 @@ export function updateProductProductionTimeCustomizationData (
     return removeProductionTimeCustomizationFromProduct(
       product,
       productionTimeCustomization
+    );
+  }
+
+  if (options.isDomestic !== undefined) {
+    availableAddons = availableAddons.filter((addon) =>
+      addon.isDomestic === undefined || addon.isDomestic === options.isDomestic
     );
   }
 

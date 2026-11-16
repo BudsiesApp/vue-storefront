@@ -3,7 +3,10 @@ import { ActionTree } from 'vuex';
 import config from 'config';
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
+import TaskResponseError from '@vue-storefront/core/lib/sync/types/TaskResponseError';
 import RootState from '@vue-storefront/core/types/RootState';
+import i18n from '@vue-storefront/i18n';
+import { AddressFailure, getApiErrorMessage, reportAddressApiFailure } from 'src/modules/shared';
 
 import { FETCH_ORDERS_HISTORY, FETCH_SUGGESTED_PRODUCTS, REORDER_ITEM, FETCH_ORDER_DETAILS, SUBMIT_TAX_ID_UPDATE_REQUEST, REQUEST_ORDER_SHIPPING_ADDRESS_UPDATE, REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION } from '../types/store/actions';
 import { OrdersHistoryState } from '../types/store/state';
@@ -110,23 +113,34 @@ export const actions: ActionTree<OrdersHistoryState, RootState> = {
   async [SUBMIT_TAX_ID_UPDATE_REQUEST] ({ commit }, { orderId, taxId }: { orderId: string, taxId: string }): Promise<void> {
     const url = processURLAddress(`${config.budsies.endpoint}/order/taxid-update-requests?token={{token}}`);
 
-    const { resultCode, result } = await TaskQueue.execute({
-      url,
-      payload: {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taxId, orderId, type: 'shipping' })
-      },
-      silent: true
-    });
+    let response;
+    try {
+      response = await TaskQueue.execute({
+        url,
+        payload: {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taxId, orderId, type: 'shipping' })
+        },
+        silent: true
+      });
+    } catch (error) {
+      if (error instanceof TaskResponseError) {
+        throw new Error(i18n.t('Failed to submit Tax ID').toString());
+      }
+
+      throw error;
+    }
+
+    const { resultCode, result } = response;
 
     if (resultCode !== 200) {
       const errorMessage = result?.errorMessage || 'Failed to submit Tax ID';
       throw new Error(errorMessage);
     }
   },
-  async [REQUEST_ORDER_SHIPPING_ADDRESS_UPDATE] (_context, { address }: { address: OrderAddress }): Promise<void> {
+  async [REQUEST_ORDER_SHIPPING_ADDRESS_UPDATE] ({ rootGetters }, { address }: { address: OrderAddress }): Promise<void> {
     const url = processURLAddress(`${config.budsies.endpoint}/order/address/update-requests?token={{token}}`);
 
     const request: Pick<
@@ -155,39 +169,63 @@ export const actions: ActionTree<OrdersHistoryState, RootState> = {
       extension_attributes: address.extension_attributes
     };
 
-    const { resultCode, result } = await TaskQueue.execute({
-      url,
-      payload: {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request })
-      },
-      silent: true
-    });
+    const fallbackMessage = i18n.t('Unable to update order shipping address').toString();
+    const failure: AddressFailure = { operation: 'order-address-update', message: fallbackMessage, userId: rootGetters['user/current']?.id, orderId: address.parent_id, addressId: address.entity_id };
+    let response;
+    try {
+      response = await TaskQueue.execute({
+        url,
+        payload: {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ request })
+        },
+        silent: true
+      });
+    } catch (error) {
+      failure.status = error instanceof TaskResponseError ? error.status : undefined;
+      reportAddressApiFailure(failure);
+      throw new Error(fallbackMessage);
+    }
 
-    if (resultCode !== 200) {
-      const errorMessage = result?.errorMessage || 'Failed to update shipping address';
-      throw new Error(errorMessage);
+    if (response.resultCode !== 200) {
+      const message = getApiErrorMessage(response.result, fallbackMessage);
+      failure.status = response.resultCode;
+      failure.message = message;
+      reportAddressApiFailure(failure);
+      throw new Error(message);
     }
   },
-  async [REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION] (_context, { addressId }: { addressId: number }): Promise<void> {
+  async [REQUEST_ORDER_SHIPPING_ADDRESS_CONFIRMATION] ({ rootGetters }, { addressId, orderId }: { addressId: number, orderId?: number }): Promise<void> {
     const url = processURLAddress(`${config.budsies.endpoint}/order/address/confirmation-requests?token={{token}}`);
 
-    const { resultCode, result } = await TaskQueue.execute({
-      url,
-      payload: {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ addressId })
-      },
-      silent: true
-    });
+    const fallbackMessage = i18n.t('Unable to confirm address').toString();
+    const failure: AddressFailure = { operation: 'order-address-confirmation', message: fallbackMessage, userId: rootGetters['user/current']?.id, orderId, addressId };
+    let response;
+    try {
+      response = await TaskQueue.execute({
+        url,
+        payload: {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addressId })
+        },
+        silent: true
+      });
+    } catch (error) {
+      failure.status = error instanceof TaskResponseError ? error.status : undefined;
+      reportAddressApiFailure(failure);
+      throw new Error(fallbackMessage);
+    }
 
-    if (resultCode !== 200) {
-      const errorMessage = result?.errorMessage || 'Failed to confirm shipping address';
-      throw new Error(errorMessage);
+    if (response.resultCode !== 200) {
+      const message = getApiErrorMessage(response.result, fallbackMessage);
+      failure.status = response.resultCode;
+      failure.message = message;
+      reportAddressApiFailure(failure);
+      throw new Error(message);
     }
   }
 }

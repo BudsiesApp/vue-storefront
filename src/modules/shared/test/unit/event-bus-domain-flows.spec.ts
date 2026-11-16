@@ -43,6 +43,9 @@ jest.mock('@vue-storefront/core/lib/storage-manager', () => ({
     init: jest.fn()
   }
 }))
+jest.mock('@vue-storefront/core/lib/logger', () => ({
+  Logger: { error: jest.fn(() => jest.fn()) }
+}))
 
 jest.mock('src/modules/persisted-customer-data/helpers/cache-handler.factory', () => ({
   cacheHandlerFactory: jest.fn(() => ({}))

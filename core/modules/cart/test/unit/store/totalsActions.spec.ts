@@ -87,7 +87,7 @@ describe('Cart totalsActions', () => {
       key3: { qty: 5, param1: 1, param2: 6, item_id: 3 }
     }
     const totals = { total_segments: {} }
-    const contextMock = createContextMock();
+    const contextMock = createContextMock({ getters: { getCartItems: [] } });
 
     (contextMock.dispatch as jest.Mock).mockImplementationOnce(async () => ({
       resultCode: 200,
