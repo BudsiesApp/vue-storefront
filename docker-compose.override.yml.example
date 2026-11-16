@@ -1,8 +1,11 @@
 version: '2.0'
 services:
   app:
+    # Local backend only; drop these entries when the UI uses the staging backend.
     extra_hosts:
-      - "[api-host]:host-gateway"
+      - "${DOMAIN}:host-gateway"
+      - "${VSF_API_DOMAIN}:host-gateway"
+      - "${MAGENTO_DOMAIN}:host-gateway"
     #environment:
     #  - CERT_NAME=localdev
     #  - NODE_TLS_REJECT_UNAUTHORIZED=0
@@ -10,5 +13,5 @@ services:
       - 9229:9229
   tests:
       extra_hosts:
-        - "[vsf-host]:host-gateway"
-        - "[api-host]:host-gateway"
+        - "${DOMAIN}:host-gateway"
+        - "${VSF_API_DOMAIN}:host-gateway"
