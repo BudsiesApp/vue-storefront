@@ -45,6 +45,11 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 - **THEN** its unit price and unit discount derive from those totals
 - **AND** standard row totals do not override its custom final price, and no further coupon subtraction or tax conversion is applied
 
+#### Scenario: Cart item without complete item totals
+- **WHEN** a cart or order item has no server-calculated item totals, or totals without a regular or a final price, for example in an offline or unsynchronized cart
+- **THEN** its unit price and unit discount derive from its product data with tax removed once: a taxed item with net price 80, gross price 96, and gross original price 120 reports `price: 80` and `discount: 20` at any quantity
+- **AND** a bundle is priced with the options the customer selected
+
 #### Scenario: Prices after a coupon change
 - **WHEN** two cart units priced 100 each receive a coupon worth 20 in total, without a page reload
 - **THEN** later cart, checkout, and purchase items report `price: 90`, `discount: 10`, and `quantity: 2`
@@ -104,6 +109,11 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 #### Scenario: Add rejected by the server
 - **WHEN** the server rejects the added item, for example with "Provided email is not valid"
 - **THEN** no `add_to_cart` event is reported
+
+#### Scenario: Cart read fails during the synchronization
+- **WHEN** the cart cannot be read from the server during the synchronization of the add, including a cart that is no longer found, so the item never reaches the server
+- **THEN** the synchronization reports the failure, no `add_to_cart` event is reported, also for a quantity increase of a line that is already in the cart, and the add reports an error
+- **AND** a later successful add of the product is reported
 
 #### Scenario: Add rejected locally
 - **WHEN** the cart does not add the item, for example because it is out of stock or fails validation, including a quantity increase of a line that is already in the cart
@@ -180,6 +190,12 @@ An online, nonempty cart SHALL report `view_cart` only after the page mounts, lo
 - **THEN** no event is emitted until the response is applied: its items, totals, and sync timestamp
 - **AND** the single event then contains the refreshed prices and totals, also when the refresh includes a payment-methods pull before the totals request
 - **AND** the syncing state is released when the request fails
+
+#### Scenario: Totals refresh fails
+- **WHEN** a totals refresh fails (a rejected request, an error response, or a response that cannot be applied), for example after a coupon the server already accepted
+- **THEN** the earlier totals are not treated as synchronized and no cart view or checkout start is emitted with them
+- **AND** once a later refresh succeeds, one event is emitted with the refreshed prices and totals
+- **AND** a cart that is no longer found is cleared as before and keeps its synchronization state
 
 #### Scenario: Leaving before totals are ready
 - **WHEN** the cart page is destroyed before synchronization completes

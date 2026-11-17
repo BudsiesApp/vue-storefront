@@ -1,4 +1,5 @@
 import type { Commit } from 'vuex'
+import type Task from 'core/lib/sync/types/Task'
 import * as types from '@vue-storefront/core/modules/cart/store/mutation-types'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { CartService } from '@vue-storefront/core/data-resolver'
@@ -25,6 +26,19 @@ async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Pr
   }
 }
 
+// A refresh that fails leaves the stored totals unverified: they may predate a change the server already
+// accepted, for example a coupon. Resetting the sync date keeps them from being treated as synchronized, and
+// makes the next sync check retry the refresh.
+async function resetTotalsSyncOnError<T> (commit: Commit, task: () => Promise<T>): Promise<T> {
+  try {
+    return await task();
+  } catch (error) {
+    commit(types.CART_RESET_TOTALS_SYNC);
+
+    throw error;
+  }
+}
+
 const totalsActions = {
   async getTotals ({ commit }, { addressInformation, hasShippingInformation }) {
     return holdTotalsSyncing(commit, async () => {
@@ -37,7 +51,7 @@ const totalsActions = {
   },
   async overrideServerTotals ({ commit, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation }) {
     return holdTotalsSyncing(commit, async () => {
-      const task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
+      const task = await resetTotalsSyncOnError<Task>(commit, () => dispatch('getTotals', { addressInformation, hasShippingInformation }))
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
@@ -47,15 +61,18 @@ const totalsActions = {
       if (resultCode === 200) {
         const platformTotals = result.totals || result
         Logger.info('Overriding server totals. ', 'cart', platformTotals)()
-        const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 
-        for (let key of Object.keys(itemsAfterPlatformTotals)) {
-          const product = createTotalsItemUpdate(itemsAfterPlatformTotals[key], getters.getCartItems)
-          await dispatch('updateItem', { product })
-        }
+        await resetTotalsSyncOnError(commit, async () => {
+          const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 
-        commit(types.CART_UPD_TOTALS, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments: platformTotals.total_segments })
-        commit(types.CART_SET_TOTALS_SYNC)
+          for (let key of Object.keys(itemsAfterPlatformTotals)) {
+            const product = createTotalsItemUpdate(itemsAfterPlatformTotals[key], getters.getCartItems)
+            await dispatch('updateItem', { product })
+          }
+
+          commit(types.CART_UPD_TOTALS, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments: platformTotals.total_segments })
+          commit(types.CART_SET_TOTALS_SYNC)
+        })
 
         // we received payment methods as a result of this call, updating state
         if (result.payment_methods && getters.canUpdateMethods) {
@@ -70,6 +87,7 @@ const totalsActions = {
         return
       }
 
+      commit(types.CART_RESET_TOTALS_SYNC)
       Logger.error(result, 'cart')()
     });
   },

@@ -3,9 +3,9 @@ import { Store } from 'vuex';
 import CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import { productsEquals } from '@vue-storefront/core/modules/cart/helpers';
 import RootState from '@vue-storefront/core/types/RootState';
+import { PriceHelper } from 'src/modules/shared';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
-import { prepareCartLinePrice } from './prepare-item-price.function';
 
 export function getAddedQuantity (addedProduct: CartItem): number {
   return parseInt(String(addedProduct.qty || 1), 10);
@@ -31,14 +31,10 @@ export function prepareAddedCartItemData (
   addedCartLine: CartItem | undefined,
   store: Store<RootState>
 ) {
-  if (addedCartLine?.extension_attributes?.budsies_quote_item_totals) {
+  if (addedCartLine && PriceHelper.hasCartItemTotals(addedCartLine)) {
     return prepareCartItemData(addedCartLine, store);
   }
 
-  const item = prepareCartItemData({ ...addedProduct, qty: getAddedQuantity(addedProduct) }, store);
-
-  return {
-    ...item,
-    ...prepareCartLinePrice(addedProduct, store.state.cart.productDiscountedPrice)
-  };
+  // No synchronized line with item totals: price the added product itself, with the options the customer selected.
+  return prepareCartItemData({ ...addedProduct, qty: getAddedQuantity(addedProduct) }, store);
 }

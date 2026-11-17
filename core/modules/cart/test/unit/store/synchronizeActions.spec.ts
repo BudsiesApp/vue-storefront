@@ -223,9 +223,46 @@ describe('Cart synchronizeActions', () => {
       }
     });
 
-    await (cartActions as any).performSync(contextMock, {});
+    const diffLog = await (cartActions as any).performSync(contextMock, {});
     expect(contextMock.dispatch).not.toHaveBeenCalled()
     expect(contextMock.commit).not.toHaveBeenCalled()
+    // The failed read is reported, so that callers do not mistake the empty result for a successful sync.
+    expect(diffLog.pushServerResponse).toHaveBeenCalledWith({
+      status: 500,
+      sku: '',
+      result: { resultCode: 500, result: null }
+    })
+  })
+
+  it('clears the cart and reports it when the cart is not found', async () => {
+    const task = { resultCode: 404, result: 'No such entity with cartId = 1' };
+
+    (CartService.getItems as jest.Mock).mockImplementation(async () => task)
+
+    const contextMock = createContextMock({
+      getters: { getCartItems: [], canUpdateMethods: true, isSyncRequired: true }
+    });
+
+    const diffLog = await (cartActions as any).performSync(contextMock, {});
+
+    expect(contextMock.dispatch).toHaveBeenCalledWith('clear', { disconnect: true, sync: false })
+    expect(diffLog.pushServerResponse).toHaveBeenCalledWith({ status: 404, sku: '', result: task })
+  })
+
+  it('reports a failed pull without a result code as a server error', async () => {
+    (CartService.getItems as jest.Mock).mockImplementation(async () => ({ result: 'Network error' }))
+
+    const contextMock = createContextMock({
+      getters: { getCartItems: [], canUpdateMethods: true, isSyncRequired: true }
+    });
+
+    const diffLog = await (cartActions as any).performSync(contextMock, {});
+
+    expect(diffLog.pushServerResponse).toHaveBeenCalledWith({
+      status: 500,
+      sku: '',
+      result: { result: 'Network error' }
+    })
   })
 
   it('removes product when there is out of stock', async () => {

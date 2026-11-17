@@ -129,7 +129,8 @@ const synchronizeActions = {
     const { getCartItems, canUpdateMethods, isSyncRequired } = getters
     if ((!canUpdateMethods || !isSyncRequired) && !forceSync) return createDiffLog()
 
-    const { result, resultCode } = await CartService.getItems()
+    const task = await CartService.getItems()
+    const { result, resultCode } = task
 
     if (resultCode === 200) {
       if (Array.isArray(result)) {
@@ -158,6 +159,10 @@ const synchronizeActions = {
       return diffLog
     }
 
+    // Nothing is synchronized when the cart cannot be read, so report it like a failure of an item: callers
+    // must not mistake the empty result for a successful synchronization.
+    const diffLog = createDiffLog()
+
     if (resultCode === 404) {
       dispatch(
         'clear',
@@ -166,12 +171,16 @@ const synchronizeActions = {
           sync: false
         }
       );
-      return createDiffLog();
+      diffLog.pushServerResponse({ status: resultCode, sku: '', result: task })
+
+      return diffLog
     }
 
-    Logger.error(result, 'cart')
+    Logger.error(result, 'cart')()
     cartHooksExecutors.afterSync(result)
-    return createDiffLog()
+    diffLog.pushServerResponse({ status: resultCode ?? 500, sku: '', result: task })
+
+    return diffLog
   },
   async stockSync ({ dispatch, commit, getters }, stockTask) {
     const product = { sku: stockTask.product_sku }

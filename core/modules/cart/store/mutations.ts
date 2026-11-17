@@ -38,6 +38,10 @@ const mutations: MutationTree<CartState> = {
   [types.CART_SET_TOTALS_SYNC] (state) {
     state.cartServerLastTotalsSyncDate = new Date().getTime()
   },
+  // The stored totals can no longer be trusted, for example after a refresh that failed
+  [types.CART_RESET_TOTALS_SYNC] (state) {
+    state.cartServerLastTotalsSyncDate = 0
+  },
   [types.CART_DEL_ITEM] (state, { product, removeByParentSku = true }) {
     EventBus.$emit('cart-before-delete', { items: state.cartItems })
     state.cartItems = state.cartItems.filter(p => !productsEquals(p, product) && (p.parentSku !== product.sku || removeByParentSku === false))

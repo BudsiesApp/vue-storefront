@@ -79,6 +79,75 @@ describe('GA4 cart item mapping with the existing price helper', () => {
     expect(prepareCartItemData(item, store)).toMatchObject({ price: 100, discount: 20 });
   });
 
+  describe('without complete item totals', () => {
+    // Net 80, gross 96 (20% tax), original net 100, original gross 120.
+    function createTaxedItem (qty: number): CartItem {
+      const { extension_attributes: _removed, ...item } = createItem();
+
+      return {
+        ...item,
+        qty,
+        price: 80,
+        price_incl_tax: 96,
+        original_price: 100,
+        original_price_incl_tax: 120,
+        special_price: 80,
+        regular_price: 120
+      } as unknown as CartItem;
+    }
+
+    it.each([1, 2])('reports the tax-exclusive unit amounts of a taxed item at quantity %s', (qty) => {
+      expect(prepareCartItemData(createTaxedItem(qty), store)).toMatchObject({ price: 80, discount: 20, quantity: qty });
+    });
+
+    it.each([
+      ['final price only', { final_price: 90 }],
+      ['regular price only', { regular_price: 120 }],
+      ['empty totals', {}]
+    ])('treats item totals with %s as missing', (_, itemTotals) => {
+      const item = {
+        ...createTaxedItem(1),
+        extension_attributes: { budsies_quote_item_totals: itemTotals }
+      } as unknown as CartItem;
+
+      expect(prepareCartItemData(item, store)).toMatchObject({ price: 80, discount: 20 });
+    });
+
+    it('prices the selected options of a bundle, not the default ones', () => {
+      const createChild = (id: number, paid: number, regular: number) => ({
+        id, price: paid, price_incl_tax: paid, original_price: regular, original_price_incl_tax: regular
+      });
+      const bundle = {
+        ...createTaxedItem(1),
+        type_id: 'bundle',
+        price: 80,
+        price_incl_tax: 80,
+        original_price: 100,
+        original_price_incl_tax: 100,
+        bundle_options: [{
+          option_id: 1,
+          required: true,
+          product_links: [
+            { id: '10', is_default: true, qty: 1, product: createChild(10, 80, 100) },
+            { id: '11', is_default: false, qty: 1, product: createChild(11, 120, 140) }
+          ]
+        }],
+        product_option: { extension_attributes: { bundle_options: { 1: { option_id: 1, option_qty: 1, option_selections: [11] } } } }
+      } as unknown as CartItem;
+
+      expect(prepareCartItemData(bundle, store)).toMatchObject({ price: 120, discount: 20 });
+    });
+
+    it('keeps the server item totals as they are when they are complete', () => {
+      const item = {
+        ...createTaxedItem(2),
+        extension_attributes: { budsies_quote_item_totals: { regular_price: 100, savings_amount: -10, discount_amount: 0, final_price: 90 } }
+      } as unknown as CartItem;
+
+      expect(prepareCartItemData(item, store)).toMatchObject({ price: 90, discount: 10, quantity: 2 });
+    });
+  });
+
   it.each([
     ['zero', 0],
     ['negative', -1],

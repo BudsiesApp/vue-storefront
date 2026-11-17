@@ -198,13 +198,20 @@ function getProductPrice (
   }
 }
 
+// The server-calculated item totals are usable only when they carry both the regular and the final price.
+export function hasCartItemTotals (cartItem: CartItem): boolean {
+  const itemTotals = cartItem.extension_attributes?.budsies_quote_item_totals;
+
+  return itemTotals?.final_price !== undefined && itemTotals?.regular_price !== undefined;
+}
+
 export function getCartItemPrice (
   cartItem: CartItem,
   productDiscountedPriceDictionary: Record<string, ProductDiscountedPrice>
 ) {
   const itemTotals = cartItem.extension_attributes?.budsies_quote_item_totals;
 
-  if (itemTotals?.final_price !== undefined && itemTotals?.regular_price !== undefined) {
+  if (itemTotals && hasCartItemTotals(cartItem)) {
     const quantity = cartItem.qty || 1;
     const unitRegularPrice = itemTotals.savings_amount === undefined
       ? Math.max(itemTotals.regular_price, itemTotals.final_price)

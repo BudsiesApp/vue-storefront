@@ -2,8 +2,10 @@ import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
 import VueGtm from '@gtm-support/vue2-gtm';
 import config from 'config';
+import { CartService } from '@vue-storefront/core/data-resolver';
 import { DiffLog } from '@vue-storefront/core/modules/cart/helpers/createDiffLog';
 import itemActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
+import synchronizeActions from '@vue-storefront/core/modules/cart/store/actions/synchronizeActions';
 import * as cartMutationTypes from '@vue-storefront/core/modules/cart/store/mutation-types';
 import type CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 
@@ -23,6 +25,8 @@ jest.mock('@vue-storefront/core/lib/multistore', () => ({
   localizedRoute: jest.fn()
 }));
 jest.mock('@vue-storefront/core/app', () => ({ router: { push: jest.fn() } }));
+jest.mock('@vue-storefront/core/data-resolver', () => ({ CartService: { getItems: jest.fn() } }));
+jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { get: jest.fn() } }));
 jest.mock('@vue-storefront/i18n', () => ({ __esModule: true, default: { t: (text: string) => text } }));
 // The diff log, notifications and validation are the real ones, so `addItems` decides what was accepted.
 jest.mock('@vue-storefront/core/modules/cart/helpers', () => ({
@@ -101,41 +105,60 @@ describe('add_to_cart through the cart addItem action', () => {
     } as unknown as CartItem;
   }
 
-  // Runs the real `addItem` and `addItems` actions; only the stock check, the cart mutation and the
-  // server synchronization are replaced.
-  async function addToCart (
-    product: CartItem,
-    itemTotals?: ItemTotals,
-    serverResponses: Record<string, any>[] = [],
-    stockStatus = 'ok'
-  ) {
+  interface AddToCartOptions {
+    // Responses of the server to the items of the add, as reported by the cart merge.
+    serverResponses?: Record<string, any>[],
+    stockStatus?: string,
+    // Result code of the cart read at the start of the synchronization.
+    cartReadCode?: number
+  }
+
+  // Runs the real `addItem`, `addItems`, `sync` and `performSync` actions; only the stock check, the cart
+  // mutation, the cart read and the merge of the server items are replaced.
+  async function addToCart (product: CartItem, itemTotals?: ItemTotals, options: AddToCartOptions = {}) {
+    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200 } = options;
+    const getters = {
+      isCartConnected: true,
+      isCartSyncEnabled: true,
+      canUpdateMethods: true,
+      isSyncRequired: true,
+      getCartItems: store.state.cart.cartItems,
+      getPendingCouponCode: null
+    };
+    const syncState = { syncPromise: null };
+    const commit = (type: string, { product: addedProduct }: { product?: CartItem } = {}) => {
+      if (type !== cartMutationTypes.CART_ADD_ITEM || !addedProduct) {
+        return;
+      }
+
+      const line = store.state.cart.cartItems.find((item: CartItem) => item.sku === addedProduct.sku);
+
+      if (line) {
+        line.qty += addedProduct.qty;
+        return;
+      }
+
+      store.state.cart.cartItems.push({
+        ...addedProduct,
+        server_item_id: 7,
+        extension_attributes: itemTotals ? { budsies_quote_item_totals: itemTotals } : {}
+      });
+    };
     const context: any = {
-      getters: { isCartConnected: true, isCartSyncEnabled: true, getPendingCouponCode: null },
-      commit: (type: string, { product: addedProduct }: { product?: CartItem } = {}) => {
-        if (type !== cartMutationTypes.CART_ADD_ITEM || !addedProduct) {
-          return;
-        }
-
-        const line = store.state.cart.cartItems.find((item: CartItem) => item.sku === addedProduct.sku);
-
-        if (line) {
-          line.qty += addedProduct.qty;
-          return;
-        }
-
-        store.state.cart.cartItems.push({
-          ...addedProduct,
-          server_item_id: 7,
-          extension_attributes: itemTotals ? { budsies_quote_item_totals: itemTotals } : {}
-        });
-      },
+      getters,
+      commit,
+      state: syncState,
       dispatch: jest.fn(async (name: string, payload: Record<string, any>) => {
         switch (name) {
           case 'addItems':
             return (itemActions as any).addItems(context, payload);
           case 'checkProductStatus':
             return { status: stockStatus, onlineCheckTaskId: 1 };
-          case 'sync': {
+          case 'sync':
+            return (synchronizeActions as any).sync(context, payload);
+          case 'performSync':
+            return (synchronizeActions as any).performSync(context, payload);
+          case 'merge': {
             const diffLog = new DiffLog();
 
             serverResponses.forEach((response) => diffLog.pushServerResponse(response as any));
@@ -147,6 +170,8 @@ describe('add_to_cart through the cart addItem action', () => {
         }
       })
     };
+
+    jest.mocked(CartService.getItems).mockResolvedValue({ resultCode: cartReadCode, result: [] } as any);
 
     pushes.length = 0;
     await (itemActions as any).addItem(context, { productToAdd: product });
@@ -205,27 +230,27 @@ describe('add_to_cart through the cart addItem action', () => {
     const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
     const rejected = [{ status: 500, sku: 'PLUSH-1', result: 'Provided email is not valid' }];
 
-    expect(await addToCart(createProduct(1), itemTotals, rejected)).toBeUndefined();
+    expect(await addToCart(createProduct(1), itemTotals, { serverResponses: rejected })).toBeUndefined();
   });
 
   it('reports an item when every server response succeeded', async () => {
     const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
     const accepted = [{ status: 200, sku: 'PLUSH-1', result: {} }];
 
-    expect(await addToCart(createProduct(1), itemTotals, accepted)).toMatchObject({ event: 'add_to_cart' });
+    expect(await addToCart(createProduct(1), itemTotals, { serverResponses: accepted })).toMatchObject({ event: 'add_to_cart' });
   });
 
   describe('when the cart rejects the add locally', () => {
     const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
 
     it('does not report an item that is out of stock', async () => {
-      expect(await addToCart(createProduct(1), itemTotals, [], 'out_of_stock')).toBeUndefined();
+      expect(await addToCart(createProduct(1), itemTotals, { stockStatus: 'out_of_stock' })).toBeUndefined();
       expect(store.state.cart.cartItems).toHaveLength(0);
     });
 
     it('does not report a quantity increase of an existing line that is out of stock', async () => {
       expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ event: 'add_to_cart' });
-      expect(await addToCart(createProduct(1), itemTotals, [], 'out_of_stock')).toBeUndefined();
+      expect(await addToCart(createProduct(1), itemTotals, { stockStatus: 'out_of_stock' })).toBeUndefined();
       expect(store.state.cart.cartItems[0].qty).toBe(1);
     });
 
@@ -242,11 +267,29 @@ describe('add_to_cart through the cart addItem action', () => {
       stockConfig.allowOutOfStockInCart = false;
 
       try {
-        expect(await addToCart(createProduct(1), itemTotals, [], 'volatile')).toMatchObject({ event: 'add_to_cart' });
+        expect(await addToCart(createProduct(1), itemTotals, { stockStatus: 'volatile' })).toMatchObject({ event: 'add_to_cart' });
         expect(store.state.cart.cartItems).toHaveLength(1);
       } finally {
         stockConfig.allowOutOfStockInCart = true;
       }
+    });
+  });
+
+  describe('when the cart synchronization fails', () => {
+    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
+
+    it.each([500, 503, 404])('does not report an item when the cart read fails with %s', async (cartReadCode) => {
+      expect(await addToCart(createProduct(1), itemTotals, { cartReadCode })).toBeUndefined();
+    });
+
+    it('does not report a quantity increase of an existing line when the cart read fails', async () => {
+      expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ event: 'add_to_cart' });
+      expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 500 })).toBeUndefined();
+    });
+
+    it('reports the item again once the cart read succeeds', async () => {
+      expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 500 })).toBeUndefined();
+      expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 200 })).toMatchObject({ event: 'add_to_cart' });
     });
   });
 
