@@ -203,6 +203,11 @@ An online, nonempty cart SHALL report `view_cart` only after the page mounts, lo
 - **AND** a failure of the older refresh does not invalidate the totals of the newer one, while a failure of the newer refresh does
 - **AND** an event is emitted only once every refresh has finished, with the totals of the newer refresh
 
+#### Scenario: Cart not found for a cart that was replaced
+- **WHEN** a totals refresh of a cart answers that the cart was not found after another cart replaced it, for example after the customer's cart was connected again
+- **THEN** the current cart is not cleared and its totals stay synchronized
+- **AND** a not-found answer for the cart that is still the current one clears it as before
+
 #### Scenario: Leaving before totals are ready
 - **WHEN** the cart page is destroyed before synchronization completes
 - **THEN** later totals completion does not emit a view for the previous visit

@@ -59,6 +59,7 @@ const totalsActions = {
     // the totals: the response or the failure of an older one must neither overwrite them nor invalidate them.
     const refreshId = state.totalsRefreshId
     const isSuperseded = () => state.totalsRefreshId !== refreshId
+    const requestedCartToken = getters.getCartToken
 
     return holdTotalsSyncing(commit, async () => {
       const task = await resetTotalsSyncOnError<Task>(
@@ -69,6 +70,14 @@ const totalsActions = {
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
+        // The answer is about the cart that was requested. When another cart replaced it in the meantime,
+        // for example after a reconnect, clearing would discard the current cart for the sake of an old one.
+        if (getters.getCartToken !== requestedCartToken) {
+          Logger.info('Ignoring the cart-not-found response of a replaced cart.', 'cart')()
+
+          return
+        }
+
         return dispatch('clear', { disconnect: true, sync: false });
       }
 
