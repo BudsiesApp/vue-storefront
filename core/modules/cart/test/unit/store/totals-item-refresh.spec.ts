@@ -32,7 +32,7 @@ describe('Cart totals item refresh', () => {
   };
 
   async function overrideWith (totalsItem: Record<string, any>) {
-    const contextMock = createContextMock({ getters: { getCartItems: [cartItem] } });
+    const contextMock = createContextMock({ getters: { getCartItems: [cartItem] }, state: { totalsRefreshId: 0 } });
 
     (contextMock.dispatch as jest.Mock).mockImplementationOnce(async () => ({
       resultCode: 200,

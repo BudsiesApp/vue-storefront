@@ -192,10 +192,16 @@ An online, nonempty cart SHALL report `view_cart` only after the page mounts, lo
 - **AND** the syncing state is released when the request fails
 
 #### Scenario: Totals refresh fails
-- **WHEN** a totals refresh fails (a rejected request, an error response, or a response that cannot be applied), for example after a coupon the server already accepted
+- **WHEN** a totals refresh fails (a rejected request, an error response, a response that cannot be applied, or a failure before the totals request such as in the payment-methods pull), for example after a coupon the server already accepted
 - **THEN** the earlier totals are not treated as synchronized and no cart view or checkout start is emitted with them
 - **AND** once a later refresh succeeds, one event is emitted with the refreshed prices and totals
 - **AND** a cart that is no longer found is cleared as before and keeps its synchronization state
+
+#### Scenario: Overlapping totals refreshes
+- **WHEN** a totals refresh is still in flight when a newer refresh starts, for example after a coupon change, and the older response arrives after the newer one, or before it
+- **THEN** the totals of the newer refresh are kept and the older response is not applied
+- **AND** a failure of the older refresh does not invalidate the totals of the newer one, while a failure of the newer refresh does
+- **AND** an event is emitted only once every refresh has finished, with the totals of the newer refresh
 
 #### Scenario: Leaving before totals are ready
 - **WHEN** the cart page is destroyed before synchronization completes

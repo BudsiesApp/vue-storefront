@@ -28,12 +28,15 @@ async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Pr
 
 // A refresh that fails leaves the stored totals unverified: they may predate a change the server already
 // accepted, for example a coupon. Resetting the sync date keeps them from being treated as synchronized, and
-// makes the next sync check retry the refresh.
-async function resetTotalsSyncOnError<T> (commit: Commit, task: () => Promise<T>): Promise<T> {
+// makes the next sync check retry the refresh. It is skipped when `shouldReset` says that a newer refresh
+// has started, because that one decides the totals.
+async function resetTotalsSyncOnError<T> (commit: Commit, shouldReset: () => boolean, task: () => Promise<T>): Promise<T> {
   try {
     return await task();
   } catch (error) {
-    commit(types.CART_RESET_TOTALS_SYNC);
+    if (shouldReset()) {
+      commit(types.CART_RESET_TOTALS_SYNC);
+    }
 
     throw error;
   }
@@ -49,20 +52,36 @@ const totalsActions = {
       return CartService.getTotals();
     });
   },
-  async overrideServerTotals ({ commit, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation }) {
+  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation }) {
+    commit(types.START_TOTALS_REFRESH)
+
+    // Refreshes can overlap and their responses can arrive in any order. The refresh that started last decides
+    // the totals: the response or the failure of an older one must neither overwrite them nor invalidate them.
+    const refreshId = state.totalsRefreshId
+    const isSuperseded = () => state.totalsRefreshId !== refreshId
+
     return holdTotalsSyncing(commit, async () => {
-      const task = await resetTotalsSyncOnError<Task>(commit, () => dispatch('getTotals', { addressInformation, hasShippingInformation }))
+      const task = await resetTotalsSyncOnError<Task>(
+        commit,
+        () => !isSuperseded(),
+        () => dispatch('getTotals', { addressInformation, hasShippingInformation })
+      )
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
         return dispatch('clear', { disconnect: true, sync: false });
       }
 
-      if (resultCode === 200) {
-        const platformTotals = result.totals || result
-        Logger.info('Overriding server totals. ', 'cart', platformTotals)()
+      if (isSuperseded()) {
+        Logger.info('Ignoring the totals response of a superseded refresh.', 'cart')()
 
-        await resetTotalsSyncOnError(commit, async () => {
+        return
+      }
+
+      if (resultCode === 200) {
+        await resetTotalsSyncOnError(commit, () => !isSuperseded(), async () => {
+          const platformTotals = result.totals || result
+          Logger.info('Overriding server totals. ', 'cart', platformTotals)()
           const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 
           for (let key of Object.keys(itemsAfterPlatformTotals)) {
@@ -119,9 +138,10 @@ const totalsActions = {
       await dispatch('overrideServerTotals', { hasShippingInformation, addressInformation });
     }
   },
-  async syncTotals ({ commit, dispatch, getters, rootGetters }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
+  async syncTotals ({ commit, state, dispatch, getters, rootGetters }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
     const methodsData = payload ? payload.methodsData : null
     const isTotalsSyncNeeded = () => getters.canSyncTotals && (getters.isTotalsSyncRequired || payload.forceServerSync)
+    const refreshIdAtStart = state.totalsRefreshId
 
     const pullMethodsAndSyncTotals = async () => {
       await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
@@ -159,9 +179,14 @@ const totalsActions = {
       }
     }
 
-    // Held from the start, so the methods pull before the totals request is not seen as a finished sync.
+    // Held from the start, so the methods pull before the totals request is not seen as a finished sync. A failure
+    // before the totals request leaves the stored totals unverified too, unless a newer refresh has started since.
     if (isTotalsSyncNeeded()) {
-      return holdTotalsSyncing(commit, pullMethodsAndSyncTotals)
+      return holdTotalsSyncing(commit, () => resetTotalsSyncOnError(
+        commit,
+        () => state.totalsRefreshId === refreshIdAtStart,
+        pullMethodsAndSyncTotals
+      ))
     }
 
     return pullMethodsAndSyncTotals()

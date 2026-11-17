@@ -145,6 +145,10 @@ const mutations: MutationTree<CartState> = {
     state.totalsSyncDepth++;
     state.isTotalsSyncing = true;
   },
+  // Numbers the totals refreshes in the order they start, so a response can tell that a newer refresh superseded it
+  [types.START_TOTALS_REFRESH] (state) {
+    state.totalsRefreshId = (state.totalsRefreshId || 0) + 1;
+  },
   [types.FINISH_TOTALS_SYNC] (state) {
     state.totalsSyncDepth = Math.max(0, state.totalsSyncDepth - 1);
     state.isTotalsSyncing = state.totalsSyncDepth > 0;
