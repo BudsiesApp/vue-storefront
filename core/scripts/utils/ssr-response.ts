@@ -3,6 +3,7 @@ import { Context } from './types';
 import { CacheLogger, CacheRequest, CacheWriteInput, CachedResponse } from './output-cache-types';
 import { OutputCache } from './output-cache';
 import { appendStrippedQuery } from './page-cache-key';
+import { withoutCredentialQuery } from '@vue-storefront/core/helpers/credential-query';
 
 export function createSsrErrorHandler ({
   res, req, logger, isResourceNotFound, apiStatus, onException
@@ -14,20 +15,21 @@ export function createSsrErrorHandler ({
   apiStatus: (res: Response, message: string, code: number) => any;
   onException: (err: any) => void;
 }) {
+  const diagnosticUrl = withoutCredentialQuery(req.url);
   return (err: any) => {
     if (res.headersSent) {
-      logger.error('SSR error after response sent:', req.url, err);
+      logger.error('SSR error after response sent:', diagnosticUrl, err);
       return;
     }
     if (err?.code === 404) {
       if (isResourceNotFound()) {
-        logger.error('Resource is not found:', req.url);
+        logger.error('Resource is not found:', diagnosticUrl);
         return apiStatus(res, 'Vue Storefront: Resource is not found', 404);
       }
-      logger.error('Redirect for resource not found:', req.url);
+      logger.error('Redirect for resource not found:', diagnosticUrl);
       return res.redirect('/page-not-found');
     }
-    logger.error('Error during render:', req.url, err);
+    logger.error('Error during render:', diagnosticUrl, err);
     onException(err);
     return res.redirect('/error');
   };
@@ -49,9 +51,10 @@ export function createRenderResponseHandler ({
   processOutput: (output: string) => string;
   onComplete: () => void;
 }) {
+  const diagnosticUrl = withoutCredentialQuery(req.url);
   return (output: string) => {
     if (res.headersSent) {
-      logger.warn(req.url, 'response already sent by application code');
+      logger.warn(diagnosticUrl, 'response already sent by application code');
       return;
     }
     if (!res.get('content-type')) res.setHeader('Content-Type', 'text/html');
@@ -90,7 +93,7 @@ export function createRenderResponseHandler ({
       body: output,
       httpCode: res.statusCode,
       redirect: context.output.redirect
-    }).catch(error => logger.error('Output cache write failed:', req.url, error));
+    }).catch(error => logger.error('Output cache write failed:', diagnosticUrl, error));
 
     const after = afterOutput(output);
     if (context.output.redirect) {

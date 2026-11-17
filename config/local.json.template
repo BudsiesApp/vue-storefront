@@ -129,7 +129,10 @@
       "srsltid",
       "irclickid",
       "sscid",
-      "awc"
+      "awc",
+      "aleid",
+      "alart",
+      "m-message-click-id"
     ],
     "ignoredReferrerHosts": [
       "${MAGENTO_DOMAIN}",

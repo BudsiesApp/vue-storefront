@@ -1,5 +1,6 @@
 import config from 'config';
 import { Route } from 'vue-router';
+import { isCredentialQueryName, withoutCredentialQuery } from '@vue-storefront/core/helpers/credential-query';
 
 import { TrafficAttributionData } from '../types/traffic-attribution.interface';
 
@@ -21,7 +22,10 @@ const DEFAULT_ACQUISITION_CLICK_ID_KEYS = [
   'srsltid',
   'irclickid',
   'sscid',
-  'awc'
+  'awc',
+  'aleid',
+  'alart',
+  'm-message-click-id'
 ];
 
 const DEFAULT_SENSITIVE_QUERY_KEYS = [
@@ -111,7 +115,7 @@ export function normalizeTrafficAttributionQueryParams (query: Route['query']): 
   Object.keys(query)
     .sort()
     .forEach((key) => {
-      if (sensitiveKeys.indexOf(normalizeSensitiveQueryKey(key)) !== -1) {
+      if (isCredentialQueryName(key) || sensitiveKeys.indexOf(normalizeSensitiveQueryKey(key)) !== -1) {
         return;
       }
 
@@ -130,7 +134,7 @@ function getReferrerUrl (): string {
     return '';
   }
 
-  return document.referrer || '';
+  return withoutCredentialQuery(document.referrer || '');
 }
 
 function getLandingPageUrl (): string {
@@ -197,7 +201,6 @@ function hasUsableExternalReferrer (referrerUrl: string | undefined): boolean {
 
 export function hasTrafficAttributionAcquisitionSignal (attribution: TrafficAttributionData): boolean {
   const query = attribution.query_params;
-  const queryKeys = normalizeKeyList(Object.keys(query));
   const clickIdKeys = normalizeKeyList(getConfiguredList(
     'acquisitionClickIdKeys',
     DEFAULT_ACQUISITION_CLICK_ID_KEYS
@@ -207,7 +210,11 @@ export function hasTrafficAttributionAcquisitionSignal (attribution: TrafficAttr
     return true;
   }
 
-  if (clickIdKeys.some((key) => queryKeys.indexOf(key) !== -1)) {
+  if (Object.keys(query).some((key) => {
+    const normalizedKey = key.toLowerCase();
+    return clickIdKeys.includes(normalizedKey) &&
+      (normalizedKey !== 'm-message-click-id' || query[key].trim() !== '');
+  })) {
     return true;
   }
 

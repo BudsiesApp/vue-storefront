@@ -1,3 +1,5 @@
+import { isCredentialQueryName } from '../../helpers/credential-query';
+
 const ignoredQueryKeys = [
   'srsltid',
   'utm_source',
@@ -36,6 +38,9 @@ const ignoredQueryKeys = [
   'rdt_cid',
   'irclickid',
   'awc',
+  'aleid',
+  'alart',
+  'm-message-click-id',
   'pp',
   'audience',
   'ref',
@@ -67,7 +72,7 @@ export interface PageCacheUrl {
 function isIgnoredQueryPair (pair: string): boolean {
   const name = new URLSearchParams(pair).keys().next().value;
 
-  return name !== undefined && ignoredQueryKeySet.has(name);
+  return name !== undefined && (ignoredQueryKeySet.has(name) || isCredentialQueryName(name));
 }
 
 function getQueryPairs (search: string): string[] {
@@ -78,6 +83,9 @@ export function splitPageCacheUrl (url: URL): PageCacheUrl {
   const cleanUrl = new URL(url.href);
 
   ignoredQueryKeys.forEach((key) => cleanUrl.searchParams.delete(key));
+  Array.from(cleanUrl.searchParams.keys()).forEach((key) => {
+    if (isCredentialQueryName(key)) cleanUrl.searchParams.delete(key);
+  });
 
   return {
     cleanUrl: `${cleanUrl.pathname}${cleanUrl.search}`,

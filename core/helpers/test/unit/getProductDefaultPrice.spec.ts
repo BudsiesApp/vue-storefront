@@ -17,20 +17,20 @@ function createUpgrade (): Product {
   } as unknown as Product;
 }
 
-describe('getProductDefaultPrice with campaign prices', () => {
-  it('shows a free upgrade when its campaign price is zero', () => {
+describe('getProductDefaultPrice with discounted prices', () => {
+  it('shows a free upgrade when its discounted price is zero', () => {
     expect(getProductDefaultPrice(createUpgrade(), { 156: { regular: 15, final: 0 } })).toEqual({ regular: 15, special: 0 });
   });
 
-  it('shows a non-zero campaign price as the special price', () => {
+  it('shows a non-zero discounted price as the special price', () => {
     expect(getProductDefaultPrice(createUpgrade(), { 156: { regular: 15, final: 10 } })).toEqual({ regular: 15, special: 10 });
   });
 
-  it('keeps the regular price without a campaign price', () => {
+  it('keeps the regular price without a discounted price', () => {
     expect(getProductDefaultPrice(createUpgrade(), {})).toEqual({ regular: 15, special: null });
   });
 
-  it('shows a bundle with a free default child in a campaign as free', () => {
+  it('shows a bundle with a free discounted default child as free', () => {
     const bundle = {
       id: 73,
       sku: 'ForeversDog_bundle',

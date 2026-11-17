@@ -27,8 +27,8 @@ function createBundle (links: { id: number, qty: number, product: Product }[]): 
   } as unknown as Product;
 }
 
-describe('bundle campaign prices', () => {
-  it('keeps a zero campaign final price of a default child', () => {
+describe('bundle discounted prices', () => {
+  it('keeps a zero discounted final price of a default child', () => {
     const bundle = createBundle([{ id: 11, qty: 1, product: createChild(10, 96, 120) }]);
 
     expect(getBundleProductDefaultDiscountedPrice(bundle, { 10: { regular: 120, final: 0 } })).toEqual({ regular: 120, final: 0 });
@@ -40,7 +40,7 @@ describe('bundle campaign prices', () => {
     expect(getBundleProductDefaultDiscountedPrice(bundle, { 10: { regular: 40, final: 30 } })).toEqual({ regular: 80, final: 60 });
   });
 
-  it('uses own prices of children without a campaign price in a mixed bundle', () => {
+  it('uses own prices of children without a discounted price in a mixed bundle', () => {
     const bundle = createBundle([
       { id: 11, qty: 1, product: createChild(10, 50) },
       { id: 21, qty: 3, product: createChild(20, 9, 12) }
@@ -75,7 +75,9 @@ describe('bundle campaign prices', () => {
     ['missing', undefined],
     ['zero', 0],
     ['negative', -1],
-    ['non-numeric', 'two']
+    ['non-numeric', 'two'],
+    ['partially numeric', '2items'],
+    ['empty', '']
   ])('uses a selection quantity of one when it is %s', (_, qty) => {
     const bundle = createBundle([{ id: 11, qty: 1, product: createChild(10, 40) }]);
     const cartItem = {
@@ -86,7 +88,20 @@ describe('bundle campaign prices', () => {
     expect(getBundleCartItemDiscountedPrice(cartItem, { 10: { regular: 40, final: 30 } })).toEqual({ regular: 40, final: 30 });
   });
 
-  it('returns no campaign price when no child has one', () => {
+  it.each([
+    ['integer', '2'],
+    ['decimal', '2.0000']
+  ])('applies a selection quantity given as a %s string', (_, qty) => {
+    const bundle = createBundle([{ id: 11, qty: 1, product: createChild(10, 40) }]);
+    const cartItem = {
+      ...bundle,
+      product_option: { extension_attributes: { bundle_options: { 1: { option_id: 1, option_qty: qty, option_selections: [11] } } } }
+    } as unknown as Product;
+
+    expect(getBundleCartItemDiscountedPrice(cartItem, { 10: { regular: 40, final: 30 } })).toEqual({ regular: 80, final: 60 });
+  });
+
+  it('returns no discounted price when no child has one', () => {
     const bundle = createBundle([{ id: 11, qty: 1, product: createChild(10, 50) }]);
 
     expect(getBundleProductDefaultDiscountedPrice(bundle, {})).toBeUndefined();
