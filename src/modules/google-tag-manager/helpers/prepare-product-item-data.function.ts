@@ -15,7 +15,7 @@ export function prepareProductItemData (
 
   return {
     ...baseData,
-    quantity: normalizeItemQuantity(product.qty, 1),
+    quantity: normalizeItemQuantity(product.qty),
     ...prepareProductPrice(product, store.state.product.productDiscountedPrice)
   }
 }

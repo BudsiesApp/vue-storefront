@@ -25,6 +25,25 @@ describe('calcItemsHmac', () => {
     expect(calcItemsHmac([refreshed], 'quote')).toBe(hash);
   });
 
+  it('ignores item totals written by a totals refresh', () => {
+    const refreshed = {
+      ...item,
+      extension_attributes: {
+        ...item.extension_attributes,
+        budsies_quote_item_totals: { regular_price: 100, savings_amount: 0, discount_amount: -10, final_price: 90 }
+      }
+    };
+
+    expect(calcItemsHmac([refreshed], 'quote')).toBe(hash);
+  });
+
+  it('ignores extension attributes that hold nothing but item totals', () => {
+    const bare = { sku: 'PLUSH-1', qty: 1 };
+    const withTotals = { ...bare, extension_attributes: { budsies_quote_item_totals: { final_price: 90 } } };
+
+    expect(calcItemsHmac([withTotals], 'quote')).toBe(calcItemsHmac([bare], 'quote'));
+  });
+
   it.each([
     ['quantity', { qty: 2 }],
     ['sku', { sku: 'PLUSH-2' }],

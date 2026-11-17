@@ -35,7 +35,7 @@ export interface FormattedProductDiscount {
   discountPercent: string
 }
 
-function calculateCartItemBundleOptionsPrice (
+export function calculateCartItemBundleOptionsPrice (
   product: Product
 ): ProductPriceData {
   const allBundleOptions = product.bundle_options || []

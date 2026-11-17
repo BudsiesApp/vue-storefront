@@ -1,13 +1,16 @@
 import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
 import VueGtm from '@gtm-support/vue2-gtm';
+import config from 'config';
+import { DiffLog } from '@vue-storefront/core/modules/cart/helpers/createDiffLog';
 import itemActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
+import * as cartMutationTypes from '@vue-storefront/core/modules/cart/store/mutation-types';
 import type CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 
 import EventBusListener from '../../helpers/EventBusListener';
 
 jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
-jest.mock('config', () => ({}));
+jest.mock('config', () => ({ stock: { allowOutOfStockInCart: true } }));
 jest.mock('@vue-storefront/core/compatibility/plugins/event-bus', () => ({
   __esModule: true,
   default: { $on: jest.fn(), $emit: jest.fn() }
@@ -16,14 +19,18 @@ jest.mock('@vue-storefront/core/lib/logger', () => ({
   Logger: { error: jest.fn(() => jest.fn()), info: jest.fn(() => jest.fn()) }
 }));
 jest.mock('@vue-storefront/core/lib/multistore', () => ({
-  currentStoreView: () => ({ name: 'Petsies' })
+  currentStoreView: () => ({ name: 'Petsies' }),
+  localizedRoute: jest.fn()
 }));
+jest.mock('@vue-storefront/core/app', () => ({ router: { push: jest.fn() } }));
+jest.mock('@vue-storefront/i18n', () => ({ __esModule: true, default: { t: (text: string) => text } }));
+// The diff log, notifications and validation are the real ones, so `addItems` decides what was accepted.
 jest.mock('@vue-storefront/core/modules/cart/helpers', () => ({
   prepareProductsToAdd: (product: Record<string, any>) => [{ ...product, category: undefined, category_ids: undefined }],
   productsEquals: (left: { sku: string }, right: { sku: string }) => left.sku === right.sku,
-  validateProduct: jest.fn(() => []),
-  createDiffLog: jest.fn(),
-  notifications: {}
+  validateProduct: jest.requireActual('@vue-storefront/core/modules/cart/helpers/validateProduct').default,
+  createDiffLog: () => new (jest.requireActual('@vue-storefront/core/modules/cart/helpers/createDiffLog').DiffLog)(),
+  notifications: jest.requireActual('@vue-storefront/core/modules/cart/helpers/notifications')
 }));
 jest.mock('@vue-storefront/core/modules/cart/helpers/throwServerErrorFromDiffLog', () => ({
   __esModule: true,
@@ -94,30 +101,50 @@ describe('add_to_cart through the cart addItem action', () => {
     } as unknown as CartItem;
   }
 
-  async function addToCart (product: CartItem, itemTotals?: ItemTotals, serverResponses: Record<string, any>[] = []) {
-    const context = {
-      commit: jest.fn(),
-      dispatch: jest.fn(async (name: string, { productsToAdd }: { productsToAdd: CartItem[] }) => {
-        if (name !== 'addItems') {
+  // Runs the real `addItem` and `addItems` actions; only the stock check, the cart mutation and the
+  // server synchronization are replaced.
+  async function addToCart (
+    product: CartItem,
+    itemTotals?: ItemTotals,
+    serverResponses: Record<string, any>[] = [],
+    stockStatus = 'ok'
+  ) {
+    const context: any = {
+      getters: { isCartConnected: true, isCartSyncEnabled: true, getPendingCouponCode: null },
+      commit: (type: string, { product: addedProduct }: { product?: CartItem } = {}) => {
+        if (type !== cartMutationTypes.CART_ADD_ITEM || !addedProduct) {
           return;
         }
 
-        for (const productToAdd of productsToAdd) {
-          const line = store.state.cart.cartItems.find((item: CartItem) => item.sku === productToAdd.sku);
+        const line = store.state.cart.cartItems.find((item: CartItem) => item.sku === addedProduct.sku);
 
-          if (line) {
-            line.qty += productToAdd.qty;
-            continue;
-          }
-
-          store.state.cart.cartItems.push({
-            ...productToAdd,
-            server_item_id: 7,
-            extension_attributes: itemTotals ? { budsies_quote_item_totals: itemTotals } : {}
-          });
+        if (line) {
+          line.qty += addedProduct.qty;
+          return;
         }
 
-        return { serverResponses };
+        store.state.cart.cartItems.push({
+          ...addedProduct,
+          server_item_id: 7,
+          extension_attributes: itemTotals ? { budsies_quote_item_totals: itemTotals } : {}
+        });
+      },
+      dispatch: jest.fn(async (name: string, payload: Record<string, any>) => {
+        switch (name) {
+          case 'addItems':
+            return (itemActions as any).addItems(context, payload);
+          case 'checkProductStatus':
+            return { status: stockStatus, onlineCheckTaskId: 1 };
+          case 'sync': {
+            const diffLog = new DiffLog();
+
+            serverResponses.forEach((response) => diffLog.pushServerResponse(response as any));
+
+            return diffLog;
+          }
+          default:
+            return undefined;
+        }
       })
     };
 
@@ -186,6 +213,88 @@ describe('add_to_cart through the cart addItem action', () => {
     const accepted = [{ status: 200, sku: 'PLUSH-1', result: {} }];
 
     expect(await addToCart(createProduct(1), itemTotals, accepted)).toMatchObject({ event: 'add_to_cart' });
+  });
+
+  describe('when the cart rejects the add locally', () => {
+    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
+
+    it('does not report an item that is out of stock', async () => {
+      expect(await addToCart(createProduct(1), itemTotals, [], 'out_of_stock')).toBeUndefined();
+      expect(store.state.cart.cartItems).toHaveLength(0);
+    });
+
+    it('does not report a quantity increase of an existing line that is out of stock', async () => {
+      expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ event: 'add_to_cart' });
+      expect(await addToCart(createProduct(1), itemTotals, [], 'out_of_stock')).toBeUndefined();
+      expect(store.state.cart.cartItems[0].qty).toBe(1);
+    });
+
+    it('does not report a product that fails the cart validation', async () => {
+      const productWithoutPrice: CartItem = { ...createProduct(1), price_incl_tax: 0 };
+
+      expect(await addToCart(productWithoutPrice, itemTotals)).toBeUndefined();
+      expect(store.state.cart.cartItems).toHaveLength(0);
+    });
+
+    it('reports an item that was added with only a stock warning', async () => {
+      const stockConfig = (config as any).stock;
+
+      stockConfig.allowOutOfStockInCart = false;
+
+      try {
+        expect(await addToCart(createProduct(1), itemTotals, [], 'volatile')).toMatchObject({ event: 'add_to_cart' });
+        expect(store.state.cart.cartItems).toHaveLength(1);
+      } finally {
+        stockConfig.allowOutOfStockInCart = true;
+      }
+    });
+  });
+
+  describe('when the line has no item totals', () => {
+    // The default child costs 80 (regular 100); the selected child costs 120 (regular 140).
+    function createBundle (selectedChildId: number): CartItem {
+      const createChild = (id: number, paid: number, regular: number) => ({
+        id, price: paid, price_incl_tax: paid, original_price: regular, original_price_incl_tax: regular
+      });
+
+      return {
+        sku: 'BUNDLE-1',
+        id: 77,
+        name: 'Bundle',
+        type_id: 'bundle',
+        qty: 1,
+        price: 80,
+        price_incl_tax: 80,
+        original_price: 100,
+        original_price_incl_tax: 100,
+        category,
+        bundle_options: [{
+          option_id: 1,
+          required: true,
+          product_links: [
+            { id: '10', is_default: true, qty: 1, product: createChild(10, 80, 100) },
+            { id: '11', is_default: false, qty: 1, product: createChild(11, 120, 140) }
+          ]
+        }],
+        product_option: {
+          extension_attributes: {
+            bundle_options: { 1: { option_id: 1, option_qty: 1, option_selections: [selectedChildId] } }
+          }
+        }
+      } as unknown as CartItem;
+    }
+
+    it('prices the selected bundle options instead of the default ones', async () => {
+      expect(await addToCart(createBundle(11))).toMatchObject({
+        ecommerce: { items: [{ item_id: 'BUNDLE-1', price: 120, discount: 20, quantity: 1 }] }
+      });
+    });
+
+    it('prices the default selection with the default option amounts', async () => {
+      expect(await addToCart(createBundle(10))).toMatchObject({
+        ecommerce: { items: [{ price: 80, discount: 20 }] }
+      });
+    });
   });
 
   it('reports the categories of the added product', async () => {

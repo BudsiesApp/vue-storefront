@@ -5,7 +5,7 @@ import { productsEquals } from '@vue-storefront/core/modules/cart/helpers';
 import RootState from '@vue-storefront/core/types/RootState';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
-import { prepareProductPrice } from './prepare-item-price.function';
+import { prepareCartLinePrice } from './prepare-item-price.function';
 
 export function getAddedQuantity (addedProduct: CartItem): number {
   return parseInt(String(addedProduct.qty || 1), 10);
@@ -37,12 +37,8 @@ export function prepareAddedCartItemData (
 
   const item = prepareCartItemData({ ...addedProduct, qty: getAddedQuantity(addedProduct) }, store);
 
-  if (!item.quantity) {
-    return item;
-  }
-
   return {
     ...item,
-    ...prepareProductPrice(addedProduct, store.state.product.productDiscountedPrice)
+    ...prepareCartLinePrice(addedProduct, store.state.cart.productDiscountedPrice)
   };
 }

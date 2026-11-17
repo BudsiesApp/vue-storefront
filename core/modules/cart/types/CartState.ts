@@ -24,6 +24,7 @@ export default interface CartState {
   isCartSyncing: boolean,
   syncPromise: Promise<unknown> | null,
   isTotalsSyncing: boolean,
+  totalsSyncDepth: number,
   isPaymentMethodsSyncing: boolean,
   isCouponProcessing: boolean,
   exchangeRate: number

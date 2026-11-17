@@ -12,21 +12,9 @@ export function prepareCartItemData (
   cartItem: CartItem,
   store: Store<RootState>
 ) {
-  const quantity = normalizeItemQuantity(cartItem.qty, 0);
+  const quantity = normalizeItemQuantity(cartItem.qty);
   const purchaseFlow = cartItem.extension_attributes?.flow;
   const baseData = prepareBaseItemData(cartItem);
-
-  if (!quantity) {
-    return {
-      ...baseData,
-      quantity,
-      purchase_flow: normalizeProductPurchaseFlow(purchaseFlow),
-      item_variant: getComposedSku(cartItem),
-      price: 0,
-      discount: 0
-    };
-  }
-
   const price = PriceHelper.getCartItemPrice({ ...cartItem, qty: quantity }, store.state.cart.productDiscountedPrice);
 
   return {

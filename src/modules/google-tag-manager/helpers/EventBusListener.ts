@@ -24,6 +24,7 @@ import ShippingDetails from 'core/modules/checkout/types/ShippingDetails';
 import { ORDER_ERROR_EVENT } from '@vue-storefront/core/modules/checkout';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
+import { isAddToCartRejected } from './is-add-to-cart-rejected.function';
 import { findAddedCartLine, prepareAddedCartItemData } from './prepare-added-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
@@ -34,10 +35,6 @@ import { FETCH_ORDERS_HISTORY_ACTION } from 'src/modules/orders-history';
 import { PERSISTED_CUSTOMER_DATA } from 'src/modules/persisted-customer-data';
 
 const shareasaleSSCIDCookieName = 'shareasaleMagentoSSCID';
-
-function hasFailedServerResponse (diffLog: DiffLog | undefined): boolean {
-  return !!diffLog?.serverResponses?.some((response) => String(response.status) !== '200');
-}
 
 function roundMoneyAmount (amount: number): number {
   return Math.round(amount * 100) / 100;
@@ -241,7 +238,7 @@ export default class EventBusListener {
     cartItem: CartItem,
     diffLog?: DiffLog
   }) {
-    if (hasFailedServerResponse(diffLog)) {
+    if (isAddToCartRejected(diffLog)) {
       return;
     }
 

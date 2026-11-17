@@ -137,8 +137,13 @@ const mutations: MutationTree<CartState> = {
   [types.SET_SYNC_PROMISE] (state, syncPromise: Promise<unknown> | null) {
     state.syncPromise = syncPromise;
   },
-  [types.SET_IS_TOTALS_SYNCING] (state, isSyncing: boolean) {
-    state.isTotalsSyncing = isSyncing;
+  [types.START_TOTALS_SYNC] (state) {
+    state.totalsSyncDepth++;
+    state.isTotalsSyncing = true;
+  },
+  [types.FINISH_TOTALS_SYNC] (state) {
+    state.totalsSyncDepth = Math.max(0, state.totalsSyncDepth - 1);
+    state.isTotalsSyncing = state.totalsSyncDepth > 0;
   },
   [types.SET_IS_PAYMENT_METHODS_SYNCING] (state, isSyncing: boolean) {
     state.isPaymentMethodsSyncing = isSyncing;

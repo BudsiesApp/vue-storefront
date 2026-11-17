@@ -87,11 +87,11 @@ describe('GA4 cart item mapping with the existing price helper', () => {
     ['empty string', ''],
     ['NaN', NaN],
     ['infinite', Infinity]
-  ])('reports a %s quantity as zero with zero amounts', (_, qty) => {
+  ])('reports a %s quantity as one with the unit amounts', (_, qty) => {
     expect(prepareCartItemData({ ...createItem(), qty } as unknown as CartItem, store)).toMatchObject({
-      quantity: 0,
-      price: 0,
-      discount: 0
+      quantity: 1,
+      price: 90,
+      discount: 30
     });
   });
 

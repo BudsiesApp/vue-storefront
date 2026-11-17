@@ -33,7 +33,7 @@ Existing ecommerce events SHALL keep their current `value` and `currency` source
 
 ### Requirement: Item prices and discounts are unit monetary values
 
-Existing product and cart item payloads SHALL emit a numeric, discounted, tax-exclusive unit `price` and a numeric unit `discount`, with zero discount when none applies. Cart, checkout, and purchase items SHALL include backend-applied merchandise discounts exactly once, including transaction-level discounts allocated to items, and SHALL reflect the latest server-calculated item totals. Item amounts SHALL use unlocalized prices independently of the selected display currency. Emitted amounts SHALL be finite and non-negative, and the reported `quantity` SHALL be the same quantity used to derive unit amounts. Product events SHALL report a finite positive quantity, defaulting to 1.
+Existing product and cart item payloads SHALL emit a numeric, discounted, tax-exclusive unit `price` and a numeric unit `discount`, with zero discount when none applies. Cart, checkout, and purchase items SHALL include backend-applied merchandise discounts exactly once, including transaction-level discounts allocated to items, and SHALL reflect the latest server-calculated item totals. Item amounts SHALL use unlocalized prices independently of the selected display currency. Emitted amounts SHALL be finite and non-negative, and the reported `quantity` SHALL be the same quantity used to derive unit amounts. Product and cart item events SHALL report a finite positive quantity, defaulting to 1.
 
 #### Scenario: Backend price already includes a coupon
 - **WHEN** a backend item price already includes a transaction coupon discount
@@ -61,7 +61,7 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 
 #### Scenario: Invalid cart item quantity
 - **WHEN** a cart item quantity is zero, negative, missing, non-numeric, NaN, or infinite
-- **THEN** the item reports `quantity: 0`, `price: 0`, and `discount: 0`
+- **THEN** the item reports `quantity: 1` and the unit `price` and `discount` of one unit
 - **AND** a numeric string quantity is reported as its number and used for unit amounts
 
 #### Scenario: Non-numeric amounts or product quantity
@@ -87,7 +87,7 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 
 ### Requirement: Added cart items use synchronized pricing
 
-`add_to_cart` SHALL be reported only after the add and its server synchronization succeed. It SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from product data.
+`add_to_cart` SHALL be reported only after the add and its server synchronization succeed. It SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
 
 #### Scenario: Undiscounted product with quantity two
 - **WHEN** a product with a unit price of 100 is added with quantity 2
@@ -104,6 +104,16 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 #### Scenario: Add rejected by the server
 - **WHEN** the server rejects the added item, for example with "Provided email is not valid"
 - **THEN** no `add_to_cart` event is reported
+
+#### Scenario: Add rejected locally
+- **WHEN** the cart does not add the item, for example because it is out of stock or fails validation, including a quantity increase of a line that is already in the cart
+- **THEN** no `add_to_cart` event is reported
+- **AND** an item added with only a stock warning is still reported
+
+#### Scenario: Bundle without item totals
+- **WHEN** a bundle whose default child costs 80 (regular 100) is added with a selected child that costs 120 (regular 140), and the cart line has no item totals
+- **THEN** the item reports `price: 120` and `discount: 20`
+- **AND** product and listing events of the same bundle keep the default option prices
 
 #### Scenario: Categories of the added product
 - **WHEN** the synchronized cart line does not yet carry categories
@@ -159,6 +169,17 @@ An online, nonempty cart SHALL report `view_cart` only after the page mounts, lo
 - **WHEN** a cart synchronization finishes its totals before the product catalog data refresh, or after it
 - **THEN** the cart view and the checkout start are reported once synchronization is idle in both orders
 - **AND** catalog fields added to cart items (categories, descriptions, media, catalog prices) do not mark totals as requiring synchronization
+
+#### Scenario: Totals refreshed without a cart merge
+- **WHEN** a totals refresh outside a coupon action or a cart merge, for example after a shipping address change, changes an item price
+- **THEN** totals do not remain marked as requiring synchronization
+- **AND** the next cart view and checkout start are reported with the refreshed prices
+
+#### Scenario: Refresh in progress when the page mounts
+- **WHEN** a cart page or checkout page mounts while a forced totals refresh is in progress, after an earlier successful synchronization
+- **THEN** no event is emitted until the response is applied: its items, totals, and sync timestamp
+- **AND** the single event then contains the refreshed prices and totals, also when the refresh includes a payment-methods pull before the totals request
+- **AND** the syncing state is released when the request fails
 
 #### Scenario: Leaving before totals are ready
 - **WHEN** the cart page is destroyed before synchronization completes
