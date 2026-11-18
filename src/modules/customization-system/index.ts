@@ -1,3 +1,4 @@
+import { useAwaitingArtworkCustomizationsFilter } from './composables/use-awaiting-artwork-customizations-filter';
 import { useAvailableCustomizations } from './composables/use-available-customizations';
 import { usePurchaseFlowCustomizations } from './composables/use-purchase-flow-customizations';
 import { useAvailableOptionsValuesFilter } from './composables/use-available-options-values-filter';
@@ -101,6 +102,7 @@ export {
   updateCartItemProductionTimeCustomizationState,
   updateProductProductionTimeCustomizationData,
   useAvailableCustomizations,
+  useAwaitingArtworkCustomizationsFilter,
   usePurchaseFlowCustomizations,
   useAvailableOptionsValuesFilter,
   useCustomizationsBundleOptions,
@@ -144,3 +146,5 @@ export type {
   CartItemConfigurationGroup,
   CartItemConfigurationProperty
 }
+
+export { isImageUploadCustomization } from './helpers/is-image-upload-customization';
