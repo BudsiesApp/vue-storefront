@@ -8,17 +8,19 @@ Define the existing storefront ecommerce Data Layer's GA4-compatible item fields
 
 ### Requirement: Event values keep their current sources
 
-Existing ecommerce events SHALL keep their current `value` and `currency` sources. `view_cart`, `begin_checkout`, `add_shipping_info`, and `add_payment_info` SHALL report the cart grand total; `purchase` SHALL report the order grand total with the order currency; `view_item`, `add_to_cart`, and `remove_from_cart` SHALL report the product or line price. Purchase SHALL retain its transaction ID, coupon (empty when absent), items, and separate numeric shipping and tax fields. Its `custom_fields.subtotal_value` and `custom_fields.affiliate_total` SHALL be rounded to cents.
+Existing ecommerce events SHALL keep their current `value` and `currency` sources when those values are available. Cart and checkout events SHALL use the cart grand total, purchase the order grand total, and item events the product or line price. The empty-cart and unavailable-totals reporting rules below SHALL NOT invent a replacement event value.
 
 #### Scenario: Purchase value
 - **WHEN** a confirmed purchase is reported
 - **THEN** `value` is the order grand total and `currency` is the order currency
 - **AND** shipping, tax, transaction ID, coupon, and items are reported separately
+- **AND** shipping and tax are numeric, and an absent purchase coupon is reported as empty
 - **AND** a grand total of 25.21 with shipping 6.95 and tax 2.06 reports `subtotal_value: 16.2`, not `16.200000000000003`
+- **AND** purchase `custom_fields.subtotal_value` and `custom_fields.affiliate_total` remain rounded to cents
 
 #### Scenario: Cart and checkout values
 - **WHEN** `view_cart`, `begin_checkout`, `add_shipping_info`, or `add_payment_info` is emitted
-- **THEN** `value` is the cart grand total and `currency` keeps its current source
+- **THEN** when usable totals exist, `value` is the cart grand total and `currency` keeps its current source
 - **AND** the sum of item revenue is not required to equal `value`
 
 #### Scenario: Item event values
@@ -33,17 +35,19 @@ Existing ecommerce events SHALL keep their current `value` and `currency` source
 
 ### Requirement: Item prices and discounts are unit monetary values
 
-Existing product and cart item payloads SHALL emit a numeric, discounted, tax-exclusive unit `price` and a numeric unit `discount`, with zero discount when none applies. Cart, checkout, and purchase items SHALL include backend-applied merchandise discounts exactly once, including transaction-level discounts allocated to items, and SHALL reflect the latest server-calculated item totals. Item amounts SHALL use unlocalized prices independently of the selected display currency. Emitted amounts SHALL be finite and non-negative, and the reported `quantity` SHALL be the same quantity used to derive unit amounts. Product and cart item events SHALL report a finite positive quantity, defaulting to 1.
+Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax-exclusive unit `price` and numeric unit `discount`, zero when none applies, including merchandise discounts exactly once. The finite positive reported `quantity`, defaulting to 1, SHALL also derive the unit amounts. Latest applied server item totals SHALL take precedence, subject to the same-quote failure fallback below.
 
 #### Scenario: Backend price already includes a coupon
 - **WHEN** a backend item price already includes a transaction coupon discount
 - **THEN** the payload uses that net price without subtracting the coupon a second time
 - **AND** the monetary unit discount includes the applicable reduction
+- **AND** this applies to cart, checkout, and purchase items, including transaction-level discounts allocated to items
 
 #### Scenario: Custom totals across product types
 - **WHEN** a simple or bundle cart or order item has server-calculated item totals
 - **THEN** its unit price and unit discount derive from those totals
 - **AND** standard row totals do not override its custom final price, and no further coupon subtraction or tax conversion is applied
+- **AND** item amounts use unlocalized prices independently of the selected display currency
 
 #### Scenario: Cart item without complete item totals
 - **WHEN** a cart or order item has no server-calculated item totals, or totals without a regular or a final price, for example in an offline or unsynchronized cart
@@ -117,8 +121,18 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 
 #### Scenario: Cart not found during the synchronization
 - **WHEN** the cart is no longer found on the server during the synchronization of the add
-- **THEN** the cart is cleared with the local change, the add reports an error, and no `add_to_cart` event is reported
+- **THEN** the cart is cleared with the local change, the add reports a friendly translated cart-lost error rather than the backend's raw message, and no `add_to_cart` event is reported
 - **AND** when the shopper adds the product again, the line has the added quantity once and the add is reported
+
+#### Scenario: Cart lost in the add's totals refresh
+- **WHEN** the totals refresh within an add returns a cart-lost 404 and clears the added local change
+- **THEN** the add has the same friendly translated error and no `add_to_cart` event as a cart-read 404
+- **AND** the cart reconnects after the running synchronization settles
+
+#### Scenario: Add operation rejects before cart synchronization
+- **WHEN** an add's stock check or quote creation rejects while a cart view or checkout start is waiting
+- **THEN** Add processing is released when the operation settles, and the Add button is not left disabled by that rejection
+- **AND** the waiting page can finish its bounded event flow with the resulting cart
 
 #### Scenario: Add rejected locally
 - **WHEN** the cart does not add the item, for example because it is out of stock or fails validation, including a quantity increase of a line that is already in the cart
@@ -162,101 +176,143 @@ Payload updates SHALL preserve existing event names and firing points, except fo
 
 #### Scenario: Consumer migration and Analytics receipt
 - **WHEN** the payload correction is prepared for rollout
-- **THEN** Redmine notes document before/after discount, category, and email-hash shapes and state that value and currency are unchanged
+- **THEN** Redmine notes document before/after discount, category, and email-hash shapes and retained value/currency sources, including empty/no-totals omissions and same-quote failure fallback
 - **AND** GA4 DebugView verifies purchase value, shipping, tax, coupon, currency, and items
 
-### Requirement: Cart views wait for synchronized totals
+### Requirement: Cart views wait for actual cart operations
 
-An online, nonempty cart SHALL report `view_cart` only after the page mounts, local cart data loads, successful server totals have been applied during the application session, totals no longer require synchronization, and cart, totals, and coupon processing are idle. Each mounted cart-page visit SHALL emit at most one view using its current items and totals. Visual loading behavior SHALL remain independent of analytics readiness.
+Each client-side mounted cart-page visit SHALL emit at most one `view_cart` after initial restoration and connection, and active add, connection/pull, cart, totals, and coupon operations have settled, including failures. The event SHALL use current items and the bounded totals policy below, not a cart hash match. Visual loading SHALL remain independent of analytics readiness.
 
 #### Scenario: Full reload with an applied coupon
-- **WHEN** cached cart items load while server totals are still pending
-- **THEN** no cart view is emitted yet
-- **AND** after successful totals application and synchronization completion, one cart view contains the applied coupon and synchronized item prices
+- **WHEN** cached cart items load while the quote token, hash, or initial cart connection is still being restored
+- **THEN** no cart view is emitted in the gaps before synchronization starts
+- **AND** once the operations settle successfully, one view contains the applied coupon and synchronized item prices
+
+#### Scenario: Empty local cache with a customer's full server cart
+- **WHEN** a logged-in customer's restored local cart is empty and the initial connection is still fetching their server cart
+- **THEN** no empty cart view is emitted while the connection or pull is pending
+- **AND** after the pull brings items in without totals, the bounded totals attempt runs before reporting those items
+
+#### Scenario: Startup or connection fails
+- **WHEN** initial restore or an active connection rejects
+- **THEN** its operation boundary still settles and does not leave the visit waiting forever
+- **AND** the view follows the bounded totals policy with the resulting local cart
 
 #### Scenario: Navigation and subsequent synchronization
-- **WHEN** a cart page mounts with already synchronized totals
-- **THEN** it emits one cart view
-- **AND** further synchronization or coupon changes during that visit do not emit another view
+- **WHEN** a cart page mounts with current-quote totals and no pending operations
+- **THEN** it emits one cart view without an additional analytics refresh
+- **AND** further synchronization, coupon changes, or login after a genuinely empty emitted view do not emit another view
 - **AND** a new cart-page visit can emit its own view
 
-#### Scenario: Catalog data refreshed after totals
-- **WHEN** a cart synchronization finishes its totals before the product catalog data refresh, or after it
-- **THEN** the cart view and the checkout start are reported once synchronization is idle in both orders
-- **AND** catalog fields added to cart items (categories, descriptions, media, catalog prices) do not mark totals as requiring synchronization
+#### Scenario: Add or coupon processing when navigating
+- **WHEN** a cart or checkout page mounts while an add is still checking stock or creating a quote, or a coupon operation is active
+- **THEN** the event waits for that entire operation, even before cart synchronization becomes busy
+- **AND** on success it reports the resulting items and applied totals
 
-#### Scenario: Totals refreshed without a cart merge
-- **WHEN** a totals refresh outside a coupon action or a cart merge, for example after a shipping address change, changes an item price
-- **THEN** totals do not remain marked as requiring synchronization
-- **AND** the next cart view and checkout start are reported with the refreshed prices
+#### Scenario: Metadata after shipping or catalog hydration
+- **WHEN** shipping estimates change after shipping totals complete, or catalog hydration finishes before or after totals
+- **THEN** metadata or a cart hash mismatch does not suppress the next cart view or checkout start
+- **AND** any active shipping totals operation still completes before the event
+- **AND** existing catalog/item-totals hash exclusions continue preventing unnecessary ordinary synchronization
+
+#### Scenario: Empty cart after a prior coupon
+- **WHEN** restored cart state is empty but the application previously held a cart value and coupon
+- **THEN** its cart view contains `items: []` without `value` or `coupon`
+
+#### Scenario: Server rendering or leaving before settlement
+- **WHEN** a page is server rendered, or its client visit ends before event readiness
+- **THEN** no cart/checkout visit event is emitted for that rendering or ended visit
+- **AND** completion of a shared request later does not emit the ended visit's event or start its missing-totals request
+
+### Requirement: Visit totals use a bounded same-quote policy
+
+After required operations settle, cart views and standard checkout starts SHALL reuse successfully applied current-quote totals. An eligible nonempty cart without them SHALL make at most one analytics totals attempt per visit, unless checkout entry already attempted its refresh. Failed operations SHALL allow same-quote last-known totals, or local-item reporting without an invented event value or coupon. Another quote's totals SHALL NOT be reused.
+
+#### Scenario: One attempt when no totals were loaded
+- **WHEN** a nonempty connected online cart can synchronize totals but has none for its current quote
+- **THEN** the visit makes one forced totals attempt and waits for completion
+- **AND** a successful result is applied before the event uses its item prices, coupon, and value
+
+#### Scenario: Failed attempt without last-known totals
+- **WHEN** that attempt rejects, returns an error or unusable response, or fails during methods preparation before a totals request
+- **THEN** the event is still emitted once after active work settles, using local items and no unavailable event value or coupon
+- **AND** the visit does not loop, retry, or remain blocked waiting for a success
+
+#### Scenario: Refresh fails after earlier successful totals
+- **WHEN** an active refresh fails after a coupon change or another cart operation, and successful totals of the same quote exist
+- **THEN** those last-known totals remain available and the visit reports them once after processing settles
+- **AND** no failure-driven reset discards them or claims a new successful refresh
+
+#### Scenario: Offline, disabled, or disconnected cart
+- **WHEN** totals synchronization is offline or disabled, or the settled cart has no server connection
+- **THEN** the visit makes no analytics totals request and reports local items
+- **AND** it uses only available same-quote totals, without inventing missing event value or coupon
+
+#### Scenario: Quote replaced or explicitly cleared
+- **WHEN** quote B replaces quote A, or the cart is cleared
+- **THEN** A's totals, coupon, and successful-totals evidence are invalidated for further reporting
+- **AND** if B's attempt fails before B has totals, the event uses local items without A's value or coupon
+- **AND** committing the unchanged quote identity does not discard that quote's totals
+
+### Requirement: Totals refreshes retain cart correctness guards
+
+Totals processing SHALL remain busy through method preparation, request completion, and synchronous application of item prices, totals, and successful-sync evidence. Only the latest-started refresh of the current quote SHALL apply a successful result. Missing-cart handling SHALL preserve replacement carts and defer reconnect behind an active synchronization rather than wait on itself.
 
 #### Scenario: Refresh in progress when the page mounts
-- **WHEN** a cart page or checkout page mounts while a forced totals refresh is in progress, after an earlier successful synchronization
-- **THEN** no event is emitted until the response is applied: its items, totals, and sync timestamp
-- **AND** the single event then contains the refreshed prices and totals, also when the refresh includes a payment-methods pull before the totals request
-- **AND** the syncing state is released when the request fails
+- **WHEN** a page mounts during a forced refresh after an earlier success
+- **THEN** no event is emitted in a methods/request/application gap
+- **AND** after success the event contains the newly applied prices and totals
+- **AND** request failure releases all busy holds
 
-#### Scenario: Totals refresh fails
-- **WHEN** a totals refresh fails (a rejected request, an error response, a response that cannot be applied, or a failure before the totals request such as in the payment-methods pull), for example after a coupon the server already accepted
-- **THEN** the earlier totals are not treated as synchronized and no cart view or checkout start is emitted with them
-- **AND** once a later refresh succeeds, one event is emitted with the refreshed prices and totals
-- **AND** a cart that is no longer found is cleared as before and keeps its synchronization state
+#### Scenario: Overlapping refreshes
+- **WHEN** a newer totals refresh starts before an older refresh finishes
+- **THEN** the older response cannot overwrite the newer refresh's totals, regardless of response arrival order
+- **AND** events wait until both operations settle
+- **AND** if the newer refresh fails, only a previously applied same-quote result is available for fallback; the superseded response is not promoted
 
-#### Scenario: Overlapping totals refreshes
-- **WHEN** a totals refresh is still in flight when a newer refresh starts, for example after a coupon change, and the older response arrives after the newer one, or before it
-- **THEN** the totals of the newer refresh are kept and the older response is not applied
-- **AND** a failure of the older refresh does not invalidate the totals of the newer one, while a failure of the newer refresh does
-- **AND** an event is emitted only once every refresh has finished, with the totals of the newer refresh
+#### Scenario: Late response for a replaced quote
+- **WHEN** a totals request for quote A returns success, failure, or a cart-lost 404 after quote B replaced it
+- **THEN** B is not cleared, and its own item prices, totals, and successful-sync evidence are unchanged by A's response
 
-#### Scenario: Cart not found for a cart that was replaced
-- **WHEN** a totals refresh of a cart answers that the cart was not found after another cart replaced it, for example after the customer's cart was connected again
-- **THEN** the current cart is not cleared and its totals stay synchronized
-- **AND** a not-found answer for the cart that is still the current one clears it as before
+#### Scenario: Missing current cart during synchronization
+- **WHEN** a totals refresh reports the current quote missing while its cart synchronization waits for totals
+- **THEN** the quote is cleared even if a newer refresh of that same quote started
+- **AND** the synchronization finishes, releases busy state, and reconnects afterwards without a circular wait
+- **AND** a waiting event includes the deferred reconnect in the work it waits to settle
 
-#### Scenario: Totals response for a cart that was replaced
-- **WHEN** a totals refresh of a cart succeeds or fails after another cart replaced it, for example after a reconnect to another quote, and no newer refresh has started
-- **THEN** the response is not applied: the current cart keeps its own item prices and totals and is not marked as synchronized by it
-- **AND** the failure of the request does not invalidate the totals of the current cart
-- **AND** line prices, totals and the sync date of an applied response are written together, without waiting in between
+### Requirement: Checkout start waits for its entry sequence
 
-#### Scenario: Cart not found during a synchronization that waits for the totals
-- **WHEN** a cart synchronization waits for a totals refresh and the refresh answers that the cart was not found
-- **THEN** the synchronization finishes, the totals are no longer marked as syncing, and the cart is cleared and disconnected
-- **AND** the cart is reconnected after that synchronization finished, not from within it
+Standard `begin_checkout` SHALL use the shared visit flow and wait for checkout entry, including delivery of pending cart edits before the entry totals refresh. It SHALL emit once only for a mounted, nonempty, nonsuccess checkout visit. Express-checkout triggering SHALL remain unchanged, and missing totals SHALL NOT make checkout event handlers fail.
 
-#### Scenario: Leaving before totals are ready
-- **WHEN** the cart page is destroyed before synchronization completes
-- **THEN** later totals completion does not emit a view for the previous visit
+#### Scenario: Checkout's asynchronous idle gap
+- **WHEN** checkout mounts while payment details are still being prepared and its entry refresh has not started
+- **THEN** no `begin_checkout` is emitted in that idle interval, even if earlier totals exist
+- **AND** after the entry operation and active work settle, it reports once using the resulting totals policy
 
-#### Scenario: Empty, offline, or failed synchronization
-- **WHEN** the cart is empty or server totals synchronization is disabled or offline
-- **THEN** a mounted, locally loaded cart reports its view when processing is idle without requiring a successful totals timestamp
-- **AND** an online, nonempty cart without a successful totals response waits for a later successful synchronization
+#### Scenario: Quantity immediately followed by checkout
+- **WHEN** the shopper changes quantity and enters checkout before the cart's one-second debounce runs
+- **THEN** the edited quantity is sent to the server before checkout's forced totals request
+- **AND** cart unmount does not cancel its only delivery or let that totals response restore the previous quantity
+- **AND** `begin_checkout` reports the edited quantity and successful corresponding totals
 
-### Requirement: Checkout start waits for synchronized totals
+#### Scenario: Checkout reuses its entry refresh
+- **WHEN** checkout entry already attempted its refresh
+- **THEN** analytics does not add another refresh, whether that attempt succeeded or failed
+- **AND** failure follows the same-quote fallback policy
+- **AND** when entry settles before attempting a refresh and current-quote totals are absent, the visit still has its one eligible attempt
 
-The checkout page SHALL report `begin_checkout` at most once per mounted visit, for a nonempty cart, using the same readiness conditions as cart views. Express-checkout `begin_checkout` SHALL keep its trigger. Checkout events SHALL be reported without failing when cart totals are unavailable.
+#### Scenario: Empty, success, or direct server-rendered checkout
+- **WHEN** checkout is empty or displays the success page
+- **THEN** no standard `begin_checkout` is emitted
+- **AND** a direct server request to checkout retains its redirect to the cart rather than emitting checkout start
 
-#### Scenario: Checkout page loaded before totals
-- **WHEN** an in-app navigation mounts the checkout page before the first server totals response of the page session, for example right after a full load of another page
-- **THEN** no `begin_checkout` is emitted yet
-- **AND** after totals are applied and synchronization is idle, one `begin_checkout` contains the cart items, coupon, and value
-
-#### Scenario: Checkout page with synchronized totals
-- **WHEN** the checkout page mounts with already synchronized totals
-- **THEN** it emits one `begin_checkout`, and later synchronization during that visit emits no other
-
-#### Scenario: Empty cart
-- **WHEN** the checkout page mounts for an empty cart
-- **THEN** no `begin_checkout` is emitted
-
-#### Scenario: Missing totals
-- **WHEN** a checkout event is emitted while cart totals are unavailable
-- **THEN** the event is still pushed, without a coupon
+#### Scenario: Missing totals in a checkout event
+- **WHEN** a checkout event is emitted without usable totals
+- **THEN** the event is pushed without throwing and does not invent a coupon or monetary total
 
 ### Requirement: Customer email hashes
 
-Customer-identifying events SHALL report `customerEmailHashed` as the hexadecimal SHA-256 digest of the email after trimming surrounding whitespace and lowercasing it, and `customerEmailHashedSha3` as the hexadecimal SHA3-256 digest of the email exactly as provided. When the email is blank after trimming, the push SHALL set both fields to undefined so that values from earlier pushes are cleared from the Data Layer, for example after logout. Purchase SHALL hash the order email, the plushie wizard SHALL hash the email it supplies, and login and customer-data events SHALL hash the customer's email. The order of Data Layer pushes SHALL NOT change.
+Customer-identifying events SHALL report hexadecimal SHA-256 of the trimmed, lowercased email as `customerEmailHashed` and hexadecimal SHA3-256 of the raw email as `customerEmailHashedSha3`. A blank email SHALL clear both fields with undefined. Hash input SHALL come from the relevant event's customer, order, or wizard email, and push order SHALL remain unchanged.
 
 #### Scenario: Known digests
 - **WHEN** the email is `buyer@example.com`
@@ -272,6 +328,11 @@ Customer-identifying events SHALL report `customerEmailHashed` as the hexadecima
 - **WHEN** the email is empty or contains only whitespace
 - **THEN** the push sets `customerEmailHashed` and `customerEmailHashedSha3` to undefined
 - **AND** the Data Layer no longer returns hashes from earlier pushes
+- **AND** this includes cleared customer data after logout
+
+#### Scenario: Customer-identifying push order
+- **WHEN** login, customer-data, purchase, or wizard events identify a customer
+- **THEN** login and customer-data pushes hash the customer's email, and the order of Data Layer pushes remains unchanged
 
 #### Scenario: Purchase email differs from the account email
 - **WHEN** an authenticated customer places an order with a different email
