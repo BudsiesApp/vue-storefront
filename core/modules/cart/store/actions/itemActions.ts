@@ -40,18 +40,21 @@ const itemActions = {
     return getters.getCartItems.find(p => productsEquals(p, product))
   },
   async addItem ({ dispatch, commit }, { productToAdd, forceServerSilence = false }) {
-    const { cartItem } = cartHooksExecutors.beforeAddToCart({ cartItem: productToAdd })
     commit(types.CART_ADDING_ITEM, { isAdding: true })
-    const result = await dispatch('addItems', { productsToAdd: prepareProductsToAdd(cartItem), forceServerSilence })
-    commit(types.CART_ADDING_ITEM, { isAdding: false })
-    cartHooksExecutors.afterAddToCart({
-      diffLog: result,
-      cartItem: cartItem
-    });
+    try {
+      const { cartItem } = cartHooksExecutors.beforeAddToCart({ cartItem: productToAdd })
+      const result = await dispatch('addItems', { productsToAdd: prepareProductsToAdd(cartItem), forceServerSilence })
+      cartHooksExecutors.afterAddToCart({
+        diffLog: result,
+        cartItem: cartItem
+      });
 
-    throwServerErrorFromDiffLog(result);
+      throwServerErrorFromDiffLog(result);
 
-    return result
+      return result
+    } finally {
+      commit(types.CART_ADDING_ITEM, { isAdding: false })
+    }
   },
   async checkProductStatus ({ dispatch, getters }, { product }) {
     const record = getters.getCartItems.find(p => productsEquals(p, product))

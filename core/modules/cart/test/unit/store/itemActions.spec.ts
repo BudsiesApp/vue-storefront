@@ -1,7 +1,7 @@
 import * as types from '@vue-storefront/core/modules/cart/store/mutation-types'
 import { configureProductAsync } from '@vue-storefront/core/modules/catalog/helpers'
 import { prepareProductsToAdd, productsEquals, validateProduct } from '@vue-storefront/core/modules/cart/helpers'
-import cartActions from '@vue-storefront/core/modules/cart/store/actions';
+import cartActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
 import { createContextMock } from '@vue-storefront/unit-tests/utils';
 import config from 'config';
 
@@ -116,13 +116,22 @@ describe('Cart itemActions', () => {
     const product1 = { sku: 1, name: 'product1', server_item_id: 1 }
     const prepareProductsToAddMock = prepareProductsToAdd as jest.Mock
     prepareProductsToAddMock.mockImplementation(() => [product1])
-    const contextMock = createContextMock()
+    const contextMock = createContextMock({ dispatch: jest.fn().mockResolvedValue({ serverResponses: [] }) })
 
     await (cartActions as any).addItem(contextMock, { productToAdd: product1 })
 
     expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_ADDING_ITEM, { isAdding: true })
     expect(contextMock.dispatch).toBeCalledWith('addItems', { productsToAdd: [product1], forceServerSilence: false })
     expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_ADDING_ITEM, { isAdding: false })
+  })
+
+  it('releases add processing when adding rejects', async () => {
+    const product = { sku: 1 }
+    const error = new Error('stock check failed')
+    const contextMock = createContextMock({ dispatch: jest.fn().mockRejectedValue(error) })
+
+    await expect((cartActions as any).addItem(contextMock, { productToAdd: product })).rejects.toBe(error)
+    expect(contextMock.commit).toHaveBeenLastCalledWith(types.CART_ADDING_ITEM, { isAdding: false })
   })
 
   it('checks product status', async () => {
@@ -161,7 +170,7 @@ describe('Cart itemActions', () => {
     expect(contextMock.commit).toBeCalledWith(types.CART_ADD_ITEM, { product: { ...product, onlineStockCheckid: 1 } })
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'checkProductStatus', { product })
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'create')
-    expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'sync', { forceClientState: true })
+    expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'sync', { forceClientState: true, waitForTotalsUpdate: false })
   })
 
   it('removes item from the cart', async () => {
