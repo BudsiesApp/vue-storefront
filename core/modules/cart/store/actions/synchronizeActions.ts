@@ -159,8 +159,6 @@ const synchronizeActions = {
       return diffLog
     }
 
-    // Nothing is synchronized when the cart cannot be read, so report it like a failure of an item: callers
-    // must not mistake the empty result for a successful synchronization.
     const diffLog = createDiffLog()
 
     if (resultCode === 404) {
@@ -171,14 +169,18 @@ const synchronizeActions = {
           sync: false
         }
       );
+      // The cart no longer exists and was cleared together with the local changes, so the change is lost and
+      // callers must know. Nothing stays behind that a repeated action could apply twice.
       diffLog.pushServerResponse({ status: resultCode, sku: '', result: task })
 
       return diffLog
     }
 
+    // The items are not rejected, the synchronization failed. The local changes stay in the cart and the cart
+    // hash still differs, so a later synchronization sends them. Reporting the failure as the response of an
+    // item would make the caller show an error for a change that stays, and a retry would apply it twice.
     Logger.error(result, 'cart')()
     cartHooksExecutors.afterSync(result)
-    diffLog.pushServerResponse({ status: resultCode ?? 500, sku: '', result: task })
 
     return diffLog
   },

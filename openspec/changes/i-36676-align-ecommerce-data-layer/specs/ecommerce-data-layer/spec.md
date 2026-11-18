@@ -92,7 +92,7 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 
 ### Requirement: Added cart items use synchronized pricing
 
-`add_to_cart` SHALL be reported only after the add and its server synchronization succeed. It SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
+`add_to_cart` SHALL be reported only after the cart accepted the item: the add is not rejected locally and the server did not reject it. It SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
 
 #### Scenario: Undiscounted product with quantity two
 - **WHEN** a product with a unit price of 100 is added with quantity 2
@@ -111,9 +111,14 @@ Existing product and cart item payloads SHALL emit a numeric, discounted, tax-ex
 - **THEN** no `add_to_cart` event is reported
 
 #### Scenario: Cart read fails during the synchronization
-- **WHEN** the cart cannot be read from the server during the synchronization of the add, including a cart that is no longer found, so the item never reaches the server
-- **THEN** the synchronization reports the failure, no `add_to_cart` event is reported, also for a quantity increase of a line that is already in the cart, and the add reports an error
-- **AND** a later successful add of the product is reported
+- **WHEN** the cart cannot be read from the server during the synchronization of the add, for example with a 500, so the item has not reached the server yet
+- **THEN** the item is not rejected: it stays in the cart for a later synchronization, the add shows no error, and `add_to_cart` is reported
+- **AND** the quantity of the line is the added quantity once, also for an increase of a line that is already in the cart
+
+#### Scenario: Cart not found during the synchronization
+- **WHEN** the cart is no longer found on the server during the synchronization of the add
+- **THEN** the cart is cleared with the local change, the add reports an error, and no `add_to_cart` event is reported
+- **AND** when the shopper adds the product again, the line has the added quantity once and the add is reported
 
 #### Scenario: Add rejected locally
 - **WHEN** the cart does not add the item, for example because it is out of stock or fails validation, including a quantity increase of a line that is already in the cart
@@ -207,6 +212,17 @@ An online, nonempty cart SHALL report `view_cart` only after the page mounts, lo
 - **WHEN** a totals refresh of a cart answers that the cart was not found after another cart replaced it, for example after the customer's cart was connected again
 - **THEN** the current cart is not cleared and its totals stay synchronized
 - **AND** a not-found answer for the cart that is still the current one clears it as before
+
+#### Scenario: Totals response for a cart that was replaced
+- **WHEN** a totals refresh of a cart succeeds or fails after another cart replaced it, for example after a reconnect to another quote, and no newer refresh has started
+- **THEN** the response is not applied: the current cart keeps its own item prices and totals and is not marked as synchronized by it
+- **AND** the failure of the request does not invalidate the totals of the current cart
+- **AND** line prices, totals and the sync date of an applied response are written together, without waiting in between
+
+#### Scenario: Cart not found during a synchronization that waits for the totals
+- **WHEN** a cart synchronization waits for a totals refresh and the refresh answers that the cart was not found
+- **THEN** the synchronization finishes, the totals are no longer marked as syncing, and the cart is cleared and disconnected
+- **AND** the cart is reconnected after that synchronization finished, not from within it
 
 #### Scenario: Leaving before totals are ready
 - **WHEN** the cart page is destroyed before synchronization completes

@@ -59,20 +59,23 @@ const totalsActions = {
     // the totals: the response or the failure of an older one must neither overwrite them nor invalidate them.
     const refreshId = state.totalsRefreshId
     const isSuperseded = () => state.totalsRefreshId !== refreshId
+    // The answer is about the cart that was requested. When another cart replaced it in the meantime, for example
+    // after a reconnect, applying it would give the current cart the totals of an old one, and clearing would
+    // discard the current cart for the sake of an old one.
     const requestedCartToken = getters.getCartToken
+    const isCartReplaced = () => getters.getCartToken !== requestedCartToken
+    const isOutdated = () => isSuperseded() || isCartReplaced()
 
     return holdTotalsSyncing(commit, async () => {
       const task = await resetTotalsSyncOnError<Task>(
         commit,
-        () => !isSuperseded(),
+        () => !isOutdated(),
         () => dispatch('getTotals', { addressInformation, hasShippingInformation })
       )
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
-        // The answer is about the cart that was requested. When another cart replaced it in the meantime,
-        // for example after a reconnect, clearing would discard the current cart for the sake of an old one.
-        if (getters.getCartToken !== requestedCartToken) {
+        if (isCartReplaced()) {
           Logger.info('Ignoring the cart-not-found response of a replaced cart.', 'cart')()
 
           return
@@ -81,21 +84,23 @@ const totalsActions = {
         return dispatch('clear', { disconnect: true, sync: false });
       }
 
-      if (isSuperseded()) {
-        Logger.info('Ignoring the totals response of a superseded refresh.', 'cart')()
+      if (isOutdated()) {
+        Logger.info('Ignoring the totals response of a superseded refresh or a replaced cart.', 'cart')()
 
         return
       }
 
       if (resultCode === 200) {
-        await resetTotalsSyncOnError(commit, () => !isSuperseded(), async () => {
+        // Line prices, totals and the sync date are applied in one go: nothing can wait between them, so no
+        // newer refresh and no reconnect can start while only a part of the response is applied.
+        await resetTotalsSyncOnError(commit, () => !isOutdated(), async () => {
           const platformTotals = result.totals || result
           Logger.info('Overriding server totals. ', 'cart', platformTotals)()
           const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 
           for (let key of Object.keys(itemsAfterPlatformTotals)) {
             const product = createTotalsItemUpdate(itemsAfterPlatformTotals[key], getters.getCartItems)
-            await dispatch('updateItem', { product })
+            commit(types.CART_UPD_ITEM_PROPS, { product })
           }
 
           commit(types.CART_UPD_TOTALS, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments: platformTotals.total_segments })

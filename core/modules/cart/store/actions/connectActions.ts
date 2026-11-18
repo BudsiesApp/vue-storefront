@@ -22,7 +22,7 @@ const connectActions = {
    * sync - if you want to sync it with backend.
    * disconnect - if you want to clear cart token.
    */
-  async clear ({ commit, dispatch }, { disconnect = true, sync = true } = {}) {
+  async clear ({ commit, dispatch, state }, { disconnect = true, sync = true } = {}) {
     await commit(types.CART_LOAD_CART, [])
 
     if (sync) {
@@ -33,6 +33,18 @@ const connectActions = {
       commit(types.CART_SET_PENDING_COUPON, null)
       await commit(types.CART_SET_ITEMS_HASH, null)
       await dispatch('disconnect')
+
+      if (state.syncPromise) {
+        // The reconnect synchronizes the cart, which queues behind the running synchronization. When this action
+        // is called from within that synchronization (for example by a totals refresh that finds the cart
+        // missing), awaiting it would wait for itself forever, so it starts after the synchronization finished.
+        dispatch('waitForCartSync')
+          .then(() => dispatch('synchronizeCart'))
+          .catch((error) => Logger.error(error, 'cart')())
+
+        return
+      }
+
       await dispatch('synchronizeCart');
     }
   },
