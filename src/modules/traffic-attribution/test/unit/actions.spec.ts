@@ -400,8 +400,6 @@ describe('traffic attribution actions', () => {
     await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     expect(getters[GET_FIRST_TOUCH]).not.toHaveProperty('isSent');
-    saved[FIRST_TOUCH] = JSON.parse(JSON.stringify(getters[GET_FIRST_TOUCH]));
-    saved[LAST_TOUCH] = JSON.parse(JSON.stringify(getters[GET_LAST_TOUCH]));
     const reloaded = createContext(null, null).context;
     await (actions as any)[SYNCHRONIZE](reloaded, { currentRoute: { query: {} } });
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
@@ -453,5 +451,57 @@ describe('traffic attribution actions', () => {
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
     expect(getters[GET_LAST_TOUCH].deliveredCartId).toBe('A');
+  });
+
+  it.each(['A', 'B', null])('clears only matching current last delivery after first mark: %s', async (lastCartId) => {
+    const first = createTouch(createAttribution({ gclid: 'first' }));
+    const last = lastCartId ? createTouch(createAttribution({ gclid: 'last' }), lastCartId) : null;
+    const { context, commits, getters } = createContext(first, last);
+    const pending = createDeferredTask();
+    (TaskQueue.execute as jest.Mock).mockReturnValueOnce(pending.promise).mockImplementationOnce(() => {
+      expect(commits.map(commit => commit.type)).toEqual(lastCartId === 'A'
+        ? [MARK_FIRST_TOUCH_SENT, SET_LAST_TOUCH] : [MARK_FIRST_TOUCH_SENT]);
+      if (lastCartId === 'A') {
+        expect(commits[1].payload).toEqual({ attribution: last.attribution, createdAt: last.createdAt, expiresAt: last.expiresAt });
+        expect(getters[GET_LAST_TOUCH]).not.toBe(last);
+        expect(getters[GET_LAST_TOUCH]).not.toHaveProperty('deliveredCartId');
+      }
+      return Promise.resolve({ resultCode: 200 });
+    });
+    const report = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    pending.resolve({ resultCode: 200 });
+    await report;
+    expect(commits.filter(commit => commit.type === SET_LAST_TOUCH)).toHaveLength(lastCartId === 'A' ? 1 : 0);
+  });
+
+  it('persists failed restoration as pending and reload retries only last touch', async () => {
+    const saved: Record<string, any> = {
+      [FIRST_TOUCH]: createTouch(createAttribution({ gclid: 'first' }), 'B'),
+      [LAST_TOUCH]: createTouch(createAttribution({ gclid: 'last' }), 'A')
+    };
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(saved[key])) });
+    const { context, getters } = createContext(null, null);
+    const cache = cacheHandlerFactory({
+      setItem: jest.fn((key, value) => {
+        saved[key] = JSON.parse(JSON.stringify(value));
+        return Promise.resolve();
+      })
+    } as any);
+    const commit = context.commit;
+    context.commit = (type, payload) => {
+      commit(type, payload);
+      cache({ type, payload }, { [MODULE_NAME]: { firstTouch: getters[GET_FIRST_TOUCH], lastTouch: getters[GET_LAST_TOUCH] } } as any);
+    };
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
+    (TaskQueue.execute as jest.Mock).mockResolvedValueOnce({ resultCode: 200 }).mockResolvedValueOnce({ resultCode: 500 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(saved[FIRST_TOUCH].deliveredCartId).toBe('A');
+    expect(saved[LAST_TOUCH]).not.toHaveProperty('deliveredCartId');
+    const reloaded = createContext(null, null).context;
+    await (actions as any)[SYNCHRONIZE](reloaded, { currentRoute: { query: {} } });
+    (TaskQueue.execute as jest.Mock).mockClear().mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body)).toEqual({ request: saved[LAST_TOUCH].attribution });
   });
 });

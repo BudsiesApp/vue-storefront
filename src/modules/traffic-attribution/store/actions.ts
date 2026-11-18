@@ -142,6 +142,11 @@ async function reportTrafficAttribution (
     if (!currentFirstTouch || currentFirstTouch.createdAt !== firstTouch.createdAt) {
       return;
     }
+    const currentLastTouch: TouchData | null = getters[GET_LAST_TOUCH];
+    if (currentLastTouch && currentLastTouch.deliveredCartId === cartId) {
+      const { deliveredCartId, ...pendingLastTouch } = currentLastTouch;
+      commit(SET_LAST_TOUCH, pendingLastTouch);
+    }
     firstSent = true;
   }
   if (!lastTouch || isSameTouchAttribution(firstTouch.attribution, lastTouch.attribution)) {

@@ -1,4 +1,4 @@
-import { createAttribution, createTouch, createDeferredTask, createContext, setReferrer } from './helpers/traffic-attribution-fixtures';
+import { createAttribution, createTouch, createContext, setReferrer } from './helpers/traffic-attribution-fixtures';
 import config from 'config';
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
@@ -7,15 +7,7 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 import { actions } from '../../store/actions';
 import { REPORT_TRAFFIC_ATTRIBUTION, SYNCHRONIZE } from '../../types/actions';
 import { GET_FIRST_TOUCH, GET_LAST_TOUCH } from '../../types/getters';
-import {
-  MARK_FIRST_TOUCH_SENT,
-  MARK_LAST_TOUCH_SENT,
-  SET_FIRST_TOUCH,
-  SET_LAST_TOUCH,
-  CLEAR_FIRST_TOUCH,
-  CLEAR_LAST_TOUCH
-} from '../../types/mutations';
-import { FIRST_TOUCH, LAST_TOUCH } from '../../types/local-storage-key';
+import { SET_LAST_TOUCH } from '../../types/mutations';
 
 jest.mock('config', () => ({
   budsies: {

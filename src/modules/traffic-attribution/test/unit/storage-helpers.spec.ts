@@ -162,41 +162,46 @@ describe('traffic attribution storage helpers', () => {
     }
   });
 
-  it('ignores obsolete marks and persists both touches after valid first restoration', () => {
+  it('marks and persists only the matching first touch', () => {
     const state = { firstTouch: createTouch(), lastTouch: { ...createTouch(), deliveredCartId: 'A' } };
     mutations[MARK_FIRST_TOUCH_SENT](state, { createdAt: 999, cartId: 'A' });
     expect(state.firstTouch.deliveredCartId).toBeUndefined();
     expect(state.lastTouch.deliveredCartId).toBe('A');
     mutations[MARK_FIRST_TOUCH_SENT](state, { createdAt: 1000, cartId: 'A' });
     expect(state.firstTouch.deliveredCartId).toBe('A');
-    expect(state.lastTouch.deliveredCartId).toBeUndefined();
+    expect(state.lastTouch.deliveredCartId).toBe('A');
     const storage = { setItem: jest.fn().mockResolvedValue(undefined) };
     cacheHandlerFactory(storage as any)({ type: MARK_FIRST_TOUCH_SENT }, { [MODULE_NAME]: state } as any);
     expect(storage.setItem).toHaveBeenCalledWith(FIRST_TOUCH, state.firstTouch);
-    expect(storage.setItem).toHaveBeenCalledWith(LAST_TOUCH, state.lastTouch);
+    expect(storage.setItem).not.toHaveBeenCalledWith(LAST_TOUCH, expect.anything());
+    expect(storage.setItem).toHaveBeenCalledTimes(1);
     const restored = { firstTouch: null, lastTouch: null };
     mutations[SET_FIRST_TOUCH](restored, JSON.parse(JSON.stringify(state.firstTouch)));
     expect((restored.firstTouch as TouchData).deliveredCartId).toBe('A');
     mutations[MARK_LAST_TOUCH_SENT](state, { createdAt: 999, cartId: 'B' });
-    expect(state.lastTouch.deliveredCartId).toBeUndefined();
-    mutations[MARK_FIRST_TOUCH_SENT]({ firstTouch: null, lastTouch: null }, { createdAt: 1000, cartId: 'A' });
+    expect(state.lastTouch.deliveredCartId).toBe('A');
+    const missing = { firstTouch: null, lastTouch: state.lastTouch };
+    mutations[MARK_FIRST_TOUCH_SENT](missing, { createdAt: 1000, cartId: 'A' });
+    expect(missing).toEqual({ firstTouch: null, lastTouch: state.lastTouch });
   });
 
-  it.each([FIRST_TOUCH, LAST_TOUCH])('orders paid and organic storage imports for %s', (key) => {
-    for (const query of [{ gclid: 'paid' }, { srsltid: 'organic' }]) {
-      const field = key === FIRST_TOUCH ? 'firstTouch' : 'lastTouch';
-      const current = { ...createTouch(), deliveredCartId: 'A' };
-      const store = { state: { [MODULE_NAME]: { [field]: current } }, commit: jest.fn() };
-      const handler = getItemsFromStorageFactory(store as any);
-      for (const createdAt of [999, 1000, 1001]) {
-        store.commit.mockClear();
-        const incoming = { ...createTouch(), createdAt, deliveredCartId: 'B', attribution: { ...createTouch().attribution, query_params: query } };
-        const event: Partial<StorageEvent> = { key: `shop/${MODULE_NAME}/${key}`, newValue: JSON.stringify(incoming) };
-        handler(event as StorageEvent);
-        expect(store.commit).toHaveBeenCalledTimes(createdAt < 1000 ? 0 : 1);
-        expect(store.state[MODULE_NAME][field]).toEqual(current);
-      }
+  it.each([FIRST_TOUCH, LAST_TOUCH])('orders storage imports for %s', (key) => {
+    const field = key === FIRST_TOUCH ? 'firstTouch' : 'lastTouch';
+    const current = { ...createTouch(), deliveredCartId: 'A' };
+    const state = { firstTouch: null, lastTouch: null, [field]: current } as any;
+    const store = {
+      state: { [MODULE_NAME]: state },
+      commit: jest.fn((type, payload) => mutations[type.split('/').pop()](state, payload))
+    };
+    const handler = getItemsFromStorageFactory(store as any);
+    for (const createdAt of [999, 1000, 1001]) {
+      store.commit.mockClear();
+      const incoming = { ...createTouch(), createdAt, isSent: true, deliveredCartId: 'B' };
+      const event: Partial<StorageEvent> = { key: `shop/${MODULE_NAME}/${key}`, newValue: JSON.stringify(incoming) };
+      handler(event as StorageEvent);
+      expect(store.commit).toHaveBeenCalledTimes(createdAt < 1000 ? 0 : 1);
+      expect(state[field]).toEqual(createdAt < 1000 ? current : { ...createTouch(), createdAt, deliveredCartId: 'B' });
+      expect(state[field]).not.toHaveProperty('isSent');
     }
   });
-
 });

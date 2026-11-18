@@ -153,7 +153,7 @@ Fresh protection SHALL preserve native browser/authentication/recovery inputs, a
 - **AND** a concrete fresh request URL reaching SSR diagnostics MUST still receive the separately specified URL-field protection
 
 ### Requirement: Touch delivery is ordered and specific to each cart
-Each cart SHALL receive available First Touch followed by a distinct available Last Touch. A successful delivery SHALL suppress unchanged repeat delivery while the touch's delivered cart id matches that cart. Last Touch SHALL be sent only after First Touch has been delivered to that cart. A successful First Touch mark SHALL clear the current Last Touch's delivered cart id when it equals the marked cart, making its distinct Last Touch eligible for ordered restoration. Failures SHALL remain retryable on later cart reporting without blocking checkout or repeating successful work unnecessarily.
+Each cart SHALL receive available First Touch followed by a distinct available Last Touch. A successful delivery SHALL suppress unchanged repeat delivery while the touch's delivered cart id matches that cart. Last Touch SHALL be sent only after First Touch has been delivered to that cart. After a successful First Touch mark, the reporting action SHALL clear the current Last Touch's matching delivered cart id through the existing Last Touch set path, making its distinct Last Touch eligible for ordered restoration. The mark itself SHALL change only First Touch. Failures SHALL remain retryable on later cart reporting without blocking checkout or repeating successful work unnecessarily.
 
 #### Scenario: A replacement cart receives retained attribution
 - **WHEN** cart A received a touch and cart B is created or connected with unchanged stored touches
@@ -185,7 +185,7 @@ Each cart SHALL receive available First Touch followed by a distinct available L
 
 #### Scenario: Resent first touch restores an already delivered last touch
 - **WHEN** First Touch needs delivery to a cart but its distinct Last Touch already records that cart
-- **THEN** the successful First Touch mark MUST clear Last Touch's matching delivered cart id and persist both touches, allowing Last Touch to be sent in the same pass
+- **THEN** after the successful First Touch mark, the reporting action MUST clear the current Last Touch's matching delivered cart id through the existing Last Touch set path, which persists the pending Last Touch and allows it to be sent in the same pass; the mark itself MUST change and persist only First Touch
 - **AND** if restoration fails, Last Touch MUST remain pending for a later report without repeating the successful First Touch
 
 ### Requirement: Delivery metadata survives storage without entering attribution

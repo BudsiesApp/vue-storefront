@@ -34,9 +34,6 @@ export const mutations: MutationTree<TrafficAttributionState> = {
       return;
     }
     Vue.set(state.firstTouch, 'deliveredCartId', cartId);
-    if (state.lastTouch && state.lastTouch.deliveredCartId === cartId) {
-      Vue.delete(state.lastTouch, 'deliveredCartId');
-    }
   },
   [MARK_LAST_TOUCH_SENT] (state, { createdAt, cartId }: TouchDelivery) {
     if (!state.lastTouch || state.lastTouch.createdAt !== createdAt) {

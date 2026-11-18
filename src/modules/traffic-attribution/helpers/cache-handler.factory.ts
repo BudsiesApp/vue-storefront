@@ -38,11 +38,6 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     }
 
     if (type.endsWith(MARK_FIRST_TOUCH_SENT) && state.firstTouch) {
-      if (state.lastTouch) {
-        storage.setItem(LAST_TOUCH, state.lastTouch).catch((reason: any) => {
-          Logger.error(reason, MODULE_NAME)();
-        });
-      }
       storage.setItem(FIRST_TOUCH, state.firstTouch)
         .catch((reason: any) => {
           Logger.error(reason, MODULE_NAME)();

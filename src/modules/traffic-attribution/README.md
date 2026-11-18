@@ -43,8 +43,10 @@ SET intake drops legacy `isSent` and invalid cart ids without rewriting attribut
 Legacy booleans cannot identify a cart, so those touches are delivered again on the next cart event.
 Each pass uses the active cart getter and checks it immediately before each queued request.
 Successful responses record that request cart even if the active cart changes while pending.
-First Touch must succeed before a distinct Last Touch. Its success clears matching Last Touch delivery
-metadata to restore Magento's last row; failed restoration retries only Last Touch on the next event.
+First Touch must succeed before a distinct Last Touch. After its successful mark, the reporting action
+clears the current Last Touch's matching delivery id through the existing Last Touch set path; the mark
+itself changes and persists only First Touch. This restores Magento's last row; failed restoration
+retries only Last Touch on the next event.
 Replaced or cleared First Touch stops the stale pass. Concurrent reports coalesce per cart.
 Returning from cart A to B to A resends in order; no exactly-once cross-tab guarantee is made.
 
