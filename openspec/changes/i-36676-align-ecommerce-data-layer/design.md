@@ -91,7 +91,7 @@ Replace `use-cart-view-event`, `use-begin-checkout-event`, and `use-cart-totals-
 The sequence is:
 
 1. On the client after mount, await cart startup settlement and, for checkout, the actual entry operation.
-2. Await any active connection/pull and the existing cart/totals/coupon work, including the entire add operation (`getIsAdding`). Settlement includes rejection; it is not proof of success. Recheck after an await so newly active work is not mistaken for idle.
+2. Await any active connection/pull and the existing cart/totals/coupon work, including the add operation (`getIsAdding`). Settlement includes rejection; it is not proof of success. Recheck after an await so newly active work is not mistaken for idle. The existing Add flag is a boolean: if Adds overlap, the first to finish can clear it before the second settles.
 3. If the cart is nonempty, `canSyncTotals` is true, and there are no successfully applied totals for the current quote, dispatch one forced `cart/syncTotals`, unless checkout's entry sequence already attempted its refresh. Mark that bounded attempt before dispatch. Await it and any remaining active work.
 4. Emit once while the visit is still mounted and eligible. On failure use same-quote last-known totals if present; otherwise map local items and omit unavailable event-level monetary data. An empty cart emits `items: []` without `value` or `coupon`, even if the store retained previous totals. Keep existing currency sources/defaults; do not synthesize a grand total from items or set a missing value to zero.
 

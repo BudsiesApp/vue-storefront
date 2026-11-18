@@ -119,15 +119,16 @@ export default class EventBusListener {
     EventBus.$on(
       CartEvents.CART_VIEWED,
       ({ products, platformTotals }: { products: CartItem[], platformTotals: any }) => {
-        const items = products.map((cartItem) => prepareCartItemData(cartItem, this.store));
-
         this.trackEcommerceEvent({
           event: GoogleTagManagerEvents.VIEW_CART,
           ecommerce: {
             currency: platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
             ...(products.length && platformTotals?.base_grand_total != null ? { value: platformTotals.base_grand_total } : {}),
             ...(products.length && platformTotals?.coupon_code ? { coupon: platformTotals.coupon_code } : {}),
-            items
+            items: products.map((cartItem) => prepareCartItemData(
+              cartItem,
+              this.store
+            ))
           }
         })
       }
@@ -219,14 +220,19 @@ export default class EventBusListener {
   }
 
   private onProductPageShowEventHandler (product: Product): void {
-    const price: PriceHelper.ProductPrice = this.store.getters[GET_PRODUCT_PRICE](product);
+    const price = this.store.getters[GET_PRODUCT_PRICE](product);
 
     this.trackEcommerceEvent({
       event: GoogleTagManagerEvents.VIEW_ITEM,
       ecommerce: {
         currency: DEFAULT_CURRENCY_CODE,
         value: PriceHelper.getFinalPrice(price),
-        items: [prepareProductItemData(product, this.store)]
+        items: [
+          prepareProductItemData(
+            product,
+            this.store
+          )
+        ]
       }
     });
   }
@@ -289,13 +295,14 @@ export default class EventBusListener {
     const platformTotals = isExpressCheckout || this.store.getters['cart/getLastTotalsSyncDate']
       ? this.store.state.cart.platformTotals : null;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
-    const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
-
     const data = {
       currency: platformTotals?.quote_currency_code,
       ...(platformTotals?.base_grand_total != null ? { value: platformTotals.base_grand_total } : {}),
       ...(platformTotals?.coupon_code ? { coupon: platformTotals.coupon_code } : {}),
-      items,
+      items: cartItems.map((cartItem) => prepareCartItemData(
+        cartItem,
+        this.store
+      )),
       custom_fields: {
         express_checkout: isExpressCheckout
       }
@@ -310,14 +317,17 @@ export default class EventBusListener {
   private onCheckoutAfterPaymentDetailsEventHandler (paymentDetails: PaymentDetails) {
     const platformTotals = this.store.state.cart.platformTotals;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
-    const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
-
     const data = {
       currency: platformTotals?.quote_currency_code,
       value: platformTotals?.base_grand_total,
       coupon: platformTotals?.coupon_code,
       payment_type: paymentDetails.paymentMethod,
-      items
+      items: cartItems.map(
+        (cartItem) => prepareCartItemData(
+          cartItem,
+          this.store
+        )
+      )
     };
 
     this.trackEcommerceEvent({
@@ -329,14 +339,17 @@ export default class EventBusListener {
   private onCheckoutAfterShippingDetailsEventHandler (shippingDetails: ShippingDetails) {
     const platformTotals = this.store.state.cart.platformTotals;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
-    const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
-
     const data = {
       currency: platformTotals?.quote_currency_code,
       value: platformTotals?.base_grand_total,
       coupon: platformTotals?.coupon_code,
       shipping_tier: shippingDetails.shippingMethod,
-      items
+      items: cartItems.map(
+        (cartItem) => prepareCartItemData(
+          cartItem,
+          this.store
+        )
+      )
     };
 
     this.trackEcommerceEvent({
@@ -356,14 +369,8 @@ export default class EventBusListener {
   ) {
     if (customerEmail) {
       const customerData = this.store.getters[PERSISTED_CUSTOMER_DATA];
-      const {
-        customerEmailHashed,
-        customerEmailHashedSha3,
-        ...eventData
-      } = this.getCustomerEventData(customerData);
-
       this.trackEvent({
-        ...eventData,
+        ...this.getCustomerEventData(customerData),
         customerEmail,
         ...getCustomerEmailHashes(customerEmail),
         event: GoogleTagManagerEvents.USER_DATA_CHANGED

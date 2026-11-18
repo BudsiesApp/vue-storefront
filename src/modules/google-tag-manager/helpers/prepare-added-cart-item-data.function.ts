@@ -6,10 +6,7 @@ import RootState from '@vue-storefront/core/types/RootState';
 import { PriceHelper } from 'src/modules/shared';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
-
-export function getAddedQuantity (addedProduct: CartItem): number {
-  return parseInt(String(addedProduct.qty || 1), 10);
-}
+import { normalizeItemQuantity } from './normalize-item-amounts.function';
 
 export function findAddedCartLine (addedProduct: CartItem, cartItems: CartItem[]): CartItem | undefined {
   const cartLine = cartItems.find((cartItem) => productsEquals(cartItem, addedProduct));
@@ -20,7 +17,7 @@ export function findAddedCartLine (addedProduct: CartItem, cartItems: CartItem[]
 
   return {
     ...cartLine,
-    qty: getAddedQuantity(addedProduct),
+    qty: normalizeItemQuantity(addedProduct.qty),
     category: addedProduct.category ?? cartLine.category,
     category_ids: addedProduct.category_ids ?? cartLine.category_ids
   };
@@ -36,5 +33,5 @@ export function prepareAddedCartItemData (
   }
 
   // No synchronized line with item totals: price the added product itself, with the options the customer selected.
-  return prepareCartItemData({ ...addedProduct, qty: getAddedQuantity(addedProduct) }, store);
+  return prepareCartItemData({ ...addedProduct, qty: normalizeItemQuantity(addedProduct.qty) }, store);
 }

@@ -125,15 +125,6 @@ describe('Cart itemActions', () => {
     expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_ADDING_ITEM, { isAdding: false })
   })
 
-  it('releases add processing when adding rejects', async () => {
-    const product = { sku: 1 }
-    const error = new Error('stock check failed')
-    const contextMock = createContextMock({ dispatch: jest.fn().mockRejectedValue(error) })
-
-    await expect((cartActions as any).addItem(contextMock, { productToAdd: product })).rejects.toBe(error)
-    expect(contextMock.commit).toHaveBeenLastCalledWith(types.CART_ADDING_ITEM, { isAdding: false })
-  })
-
   it('checks product status', async () => {
     (productsEquals as jest.Mock).mockImplementation(() => true)
 
@@ -169,7 +160,7 @@ describe('Cart itemActions', () => {
     await (cartActions as any).addItems(contextMock, { productsToAdd: [product] })
     expect(contextMock.commit).toBeCalledWith(types.CART_ADD_ITEM, { product: { ...product, onlineStockCheckid: 1 } })
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'checkProductStatus', { product })
-    expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'create', { allowTotalsFailure: true })
+    expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'create')
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'sync', { forceClientState: true, waitForTotalsUpdate: true, allowTotalsFailure: true })
   })
 

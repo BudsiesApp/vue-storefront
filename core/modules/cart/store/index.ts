@@ -22,7 +22,6 @@ export const cartStore: Module<CartState, any> = {
     cartItems: [], // TODO: check if it's properly namespaced
     connectBypassCount: 0,
     isAddingToCart: false,
-    addingDepth: 0,
     isLocalDataLoaded: false,
     productDiscountedPrice: {},
     isShippingMethodsSyncing: false,

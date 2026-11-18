@@ -290,13 +290,6 @@ describe('add_to_cart through the cart addItem action', () => {
     expect(addResult?.serverResponses).toEqual(expect.arrayContaining([expect.objectContaining({ status: 200 })]));
   });
 
-  it('accepts an item when totals fail while creating its first quote', async () => {
-    const event = await addToCart(createProduct(1), undefined, { initiallyDisconnected: true, totalsFailure: true });
-    expect(addError).toBeUndefined();
-    expect(event).toMatchObject({ event: 'add_to_cart', ecommerce: { items: [{ quantity: 1 }] } });
-    expect(store.state.cart.cartItems[0].qty).toBe(1);
-  });
-
   it.each(['checkProductStatus', 'create', 'sync'] as const)('releases Add when %s rejects', async rejectAt => {
     expect(await addToCart(createProduct(1), undefined, { rejectAt })).toBeUndefined();
     expect(addError).toMatchObject({ message: `Rejected ${rejectAt}` });

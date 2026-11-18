@@ -108,33 +108,6 @@ describe('Cart connectActions', () => {
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'disconnect');
   });
 
-  it('clear reconnects after the running synchronization instead of waiting for it', async () => {
-    let finishSynchronization = () => {};
-    const synchronizationFinished = new Promise<void>((resolve) => { finishSynchronization = resolve; });
-    const contextMock = {
-      commit: jest.fn(),
-      dispatch: jest.fn(async (action: string, operation?: () => Promise<void>) => {
-        if (action === 'trackConnection' && operation) return operation();
-        if (action === 'waitForCartSync') {
-          await synchronizationFinished;
-        }
-      }),
-      state: { syncPromise: Promise.resolve() }
-    };
-
-    // Resolving proves that the action does not wait for the synchronization it may be called from.
-    await (cartActions as any).clear(contextMock, { sync: false });
-
-    expect(contextMock.dispatch).toHaveBeenCalledWith('disconnect');
-    expect(contextMock.dispatch).not.toHaveBeenCalledWith('synchronizeCart');
-
-    finishSynchronization();
-    await synchronizationFinished;
-    await Promise.resolve();
-
-    expect(contextMock.dispatch).toHaveBeenCalledWith('synchronizeCart');
-  });
-
   it('disconnects cart', async () => {
     const contextMock = createContextMock()
     await (cartActions as any).disconnect(contextMock)

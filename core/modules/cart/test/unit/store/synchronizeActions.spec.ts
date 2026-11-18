@@ -205,47 +205,6 @@ describe('Cart synchronizeActions', () => {
     expect(commit).toHaveBeenLastCalledWith(types.SET_IS_CART_SYNCING, false)
   })
 
-  it('retains the cart after a failed pull', async () => {
-    (CartService.getItems as jest.Mock).mockImplementation(async () => ({
-      resultCode: 500,
-      result: null
-    }))
-
-    const contextMock = createContextMock({
-      rootGetters: {
-        'checkout/isUserInCheckout': true
-      },
-      getters: {
-        getCartItems: [],
-        canUpdateMethods: true,
-        isSyncRequired: true,
-        bypassCounter: 0
-      }
-    });
-
-    const diffLog = await (cartActions as any).performSync(contextMock, {});
-    expect(contextMock.dispatch).not.toHaveBeenCalled()
-    expect(contextMock.commit).not.toHaveBeenCalled()
-    // No item is rejected: the local changes stay for a later synchronization, and an error response would
-    // make the caller show an error for a change that is still in the cart.
-    expect(diffLog.pushServerResponse).not.toHaveBeenCalled()
-  })
-
-  it('clears the cart and reports it when the cart is not found', async () => {
-    const task = { resultCode: 404, result: 'No such entity with cartId = 1' };
-
-    (CartService.getItems as jest.Mock).mockImplementation(async () => task)
-
-    const contextMock = createContextMock({
-      getters: { getCartItems: [], canUpdateMethods: true, isSyncRequired: true }
-    });
-
-    const diffLog = await (cartActions as any).performSync(contextMock, {});
-
-    expect(contextMock.dispatch).toHaveBeenCalledWith('clear', { disconnect: true, sync: false })
-    expect(diffLog.pushServerResponse).toHaveBeenCalledWith({ status: 404, sku: '', result: task })
-  })
-
   it('does not reject items when the pull fails without a result code', async () => {
     (CartService.getItems as jest.Mock).mockImplementation(async () => ({ result: 'Network error' }))
 

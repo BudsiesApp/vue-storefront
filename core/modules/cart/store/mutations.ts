@@ -109,8 +109,7 @@ const mutations: MutationTree<CartState> = {
     state.connectBypassCount = state.connectBypassCount + counter
   },
   [types.CART_ADDING_ITEM] (state, { isAdding }) {
-    state.addingDepth = Math.max(0, (state.addingDepth || 0) + (isAdding ? 1 : -1))
-    state.isAddingToCart = state.addingDepth > 0
+    state.isAddingToCart = isAdding
   },
   [types.CART_SET_LOCAL_DATA_LOADED] (state, isLoaded: boolean) {
     state.isLocalDataLoaded = isLoaded;

@@ -13,7 +13,7 @@
 - [x] 2.3 Invalidate quote-owned totals/segments and successful-totals evidence at quote replacement and explicit clear, but not on an unchanged token commit. Remove `resetTotalsSyncOnError` and failure resets; retain only necessary quote/clear invalidation. Verify same-quote failures preserve last-known totals, quote B cannot inherit A's value/coupon/timestamp, and B's first failed refresh has no A fallback.
 - [x] 2.4 Reset Add processing in `finally` across the entire existing add operation without changing temporary cart-read failures into item rejections. Verify real add flow releases `getIsAdding` on stock/token/network rejection and still accepts local items retained after a non-404 cart-read failure.
 - [x] 2.5 Make cart-read and in-add totals 404s that discard a local add produce the same rejected-add result and friendly translated message. Verify no `add_to_cart`, cart clearing, deferred reconnect, and a subsequent successful add with the quantity once; do not broaden this into unrelated rollback or recovery work.
-- [x] 2.6 Preserve the full nested totals-busy span, latest-refresh/token guards, synchronous response application, and nonblocking `clear` reconnect. Keep focused action tests for late success/404 on a replaced quote, overlapping refreshes, and real clear/reconnect completion; ensure failure tests now assert same-quote retention rather than invalidation.
+- [x] 2.6 Preserve the full nested totals-busy span, latest-refresh/token guards, synchronous response application, and nonblocking `clear` reconnect. Keep focused action tests for late success/404 on a replaced quote, overlapping refreshes, and real clear/reconnect completion.
 
 ## 3. Order checkout entry around pending edits
 

@@ -94,7 +94,7 @@ const itemActions = {
       }
     }
 
-    let newDiffLog = await dispatch('create', { allowTotalsFailure: true })
+    let newDiffLog = await dispatch('create')
     if (newDiffLog !== undefined) {
       diffLog.merge(newDiffLog)
     }
