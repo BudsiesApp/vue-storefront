@@ -19,6 +19,7 @@ import ServerItem from '../../types/Servertem'
 import { DiffLog } from '../../helpers/createDiffLog'
 import { isClientItemHasRequiredServerItemFields } from '../../helpers/is-client-item-has-required-server-item-fields.function'
 import { updateClientItemProductData } from '../../helpers/update-client-item-product-data.function';
+import { isCartNotFoundError } from '../../helpers/is-cart-not-found-error';
 
 async function loadClientItemsProducts (clientItems: CartItem[], dispatch) {
   const itemsSkuSet = new Set<string>();
@@ -317,12 +318,19 @@ const mergeActions = {
 
     return diffLog
   },
-  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { clientItems, dryRun }) {
+  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { clientItems, dryRun, allowTotalsFailure = false }) {
     if (dryRun) return
 
     if (getters.isTotalsSyncRequired && clientItems.length > 0) {
-      const result = await dispatch('syncTotals')
-      if (result?.resultCode === 404) return result
+      let result
+      try {
+        result = await dispatch('syncTotals')
+      } catch (error) {
+        if (!allowTotalsFailure) throw error
+        Logger.error(error, 'cart')()
+        return
+      }
+      if (result && isCartNotFoundError(result)) return result
     }
 
     commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
@@ -337,7 +345,7 @@ const mergeActions = {
       await dispatch('updateClientItemProductData', clientItem);
     }
   },
-  async merge ({ commit, getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false, waitForTotalsUpdate = true }) {
+  async merge ({ commit, getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false, waitForTotalsUpdate = true, allowTotalsFailure = false }) {
     const hookResult = cartHooksExecutors.beforeSync({ clientItems, serverItems })
 
     const diffLog = createDiffLog()
@@ -366,13 +374,13 @@ const mergeActions = {
     const mergeServerItemsDiffLog = await dispatch('mergeServerItems', mergeParameters)
 
     const updatePromises = Promise.all([
-      dispatch('updateTotalsAfterMerge', { clientItems, dryRun }),
+      dispatch('updateTotalsAfterMerge', { clientItems, dryRun, ...(allowTotalsFailure ? { allowTotalsFailure } : {}) }),
       dispatch('updateItemsProductData')
     ]);
 
     if (waitForTotalsUpdate) {
       const [totalsResult] = await updatePromises;
-      if (totalsResult?.resultCode === 404) {
+      if (totalsResult && isCartNotFoundError(totalsResult)) {
         diffLog.pushServerResponse({ status: 404, sku: '', result: totalsResult })
       }
     }

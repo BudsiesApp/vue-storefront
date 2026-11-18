@@ -9,7 +9,8 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 interface ConnectOptions {
   guestCart?: boolean,
   forceClientState?: boolean,
-  isCartSyncRecovery?: boolean
+  isCartSyncRecovery?: boolean,
+  allowTotalsFailure?: boolean
 }
 
 const connectActions = {
@@ -81,7 +82,7 @@ const connectActions = {
   },
   async performConnect (
     { getters, rootGetters, dispatch, commit },
-    { guestCart = false, forceClientState = false, isCartSyncRecovery = false }: ConnectOptions = {}
+    { guestCart = false, forceClientState = false, isCartSyncRecovery = false, allowTotalsFailure = false }: ConnectOptions = {}
   ) {
     if (!getters.isCartSyncEnabled) return
     const userToken = rootGetters['user/getToken'];
@@ -94,16 +95,18 @@ const connectActions = {
 
       EventBus.$emit('cart-connected', { cartId: result, userToken });
       const syncAction = isCartSyncRecovery ? 'performSync' : 'sync'
-      return dispatch(syncAction, { forceClientState, dryRun: !config.cart.serverMergeByDefault });
+      return dispatch(syncAction, { forceClientState, dryRun: !config.cart.serverMergeByDefault, ...(allowTotalsFailure ? { allowTotalsFailure } : {}) });
     }
 
     if (resultCode === 401 && getters.bypassCounter < config.queues.maxCartBypassAttempts) {
       Logger.log('Bypassing with guest cart' + getters.bypassCounter, 'cart')()
       commit(types.CART_UPDATE_BYPASS_COUNTER, { counter: 1 })
       Logger.error(result, 'cart')()
-      return dispatch('connect', isCartSyncRecovery
-        ? { guestCart: true, isCartSyncRecovery: true }
-        : { guestCart: true })
+      return dispatch('connect', {
+        guestCart: true,
+        ...(isCartSyncRecovery ? { isCartSyncRecovery: true } : {}),
+        ...(allowTotalsFailure ? { allowTotalsFailure } : {})
+      })
     }
 
     Logger.warn('Cart sync is disabled by the config', 'cart')()
@@ -114,14 +117,14 @@ const connectActions = {
    */
   async create (
     { dispatch, getters },
-    { ignoreClientItemsCount } = { ignoreClientItemsCount: false }
+    { ignoreClientItemsCount = false, allowTotalsFailure = false } = {}
   ) {
     const storedItems = getters['getCartItems'] || []
     const cartToken = getters['getCartToken']
 
     if ((storedItems.length || ignoreClientItemsCount) && !cartToken) {
       Logger.info('Creating server cart token', 'cart')()
-      return dispatch('connect', { guestCart: false })
+      return dispatch('connect', { guestCart: false, ...(allowTotalsFailure ? { allowTotalsFailure } : {}) })
     }
 
     EventBus.$emit('cart-created', cartToken)

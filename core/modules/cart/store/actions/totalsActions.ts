@@ -135,7 +135,8 @@ const totalsActions = {
     const isTotalsSyncNeeded = () => getters.canSyncTotals && (getters.isTotalsSyncRequired || payload.forceServerSync)
 
     const pullMethodsAndSyncTotals = async () => {
-      await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
+      const methodsResult = await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
+      if (methodsResult && isCartNotFoundError(methodsResult)) return methodsResult
 
       if (isTotalsSyncNeeded()) {
         const shippingDetails = rootGetters['checkout/getShippingDetails'];

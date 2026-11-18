@@ -94,7 +94,7 @@ const itemActions = {
       }
     }
 
-    let newDiffLog = await dispatch('create')
+    let newDiffLog = await dispatch('create', { allowTotalsFailure: true })
     if (newDiffLog !== undefined) {
       diffLog.merge(newDiffLog)
     }
@@ -106,7 +106,8 @@ const itemActions = {
     if (getters.isCartSyncEnabled && getters.isCartConnected && !forceServerSilence) {
       const syncDiffLog = await dispatch('sync', {
         forceClientState: true,
-        waitForTotalsUpdate: true
+        waitForTotalsUpdate: true,
+        allowTotalsFailure: true
       })
 
       if (!syncDiffLog.isEmpty()) {

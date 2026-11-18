@@ -17,7 +17,8 @@ interface CartSyncOptions {
   mergeQty?: boolean,
   forceSync?: boolean,
   forceUpdateServerItem?: boolean,
-  waitForTotalsUpdate?: boolean
+  waitForTotalsUpdate?: boolean,
+  allowTotalsFailure?: boolean
 }
 
 const synchronizeActions = {
@@ -162,7 +163,8 @@ const synchronizeActions = {
       mergeQty = false,
       forceSync = false,
       forceUpdateServerItem = false,
-      waitForTotalsUpdate = true
+      waitForTotalsUpdate = true,
+      allowTotalsFailure = false
     }: CartSyncOptions = {}
   ) {
     const { getCartItems, canUpdateMethods, isSyncRequired } = getters
@@ -191,7 +193,8 @@ const synchronizeActions = {
         forceClientState,
         mergeQty,
         forceUpdateServerItem,
-        waitForTotalsUpdate
+        waitForTotalsUpdate,
+        ...(allowTotalsFailure ? { allowTotalsFailure } : {})
       })
       cartHooksExecutors.afterSync(diffLog)
       commit(types.CART_SET_SYNC)
