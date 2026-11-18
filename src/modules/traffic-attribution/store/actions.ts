@@ -30,12 +30,17 @@ import {
 } from '../types/mutations';
 import { FIRST_TOUCH, LAST_TOUCH } from '../types/local-storage-key';
 
+function getCartId (rootGetters: Record<string, any>): string {
+  const value = rootGetters['cart/getCartToken'];
+  return value === null || value === undefined || value === '' ? '' : String(value);
+}
+
 async function sendAttribution (attribution: TrafficAttributionData, cartId: string, rootGetters: Record<string, any>): Promise<boolean> {
   const url = processURLAddress(
     `${config.budsies.endpoint}/carts/traffic-attributions?token={{token}}&cartId={{cartId}}`
   );
 
-  if (rootGetters['cart/getCartToken'] !== cartId) {
+  if (getCartId(rootGetters) !== cartId) {
     return false;
   }
 
@@ -221,7 +226,7 @@ export const actions: ActionTree<TrafficAttributionState, RootState> = {
     commit(SET_LAST_TOUCH, createLastTouchData(attribution));
   },
   async [REPORT_TRAFFIC_ATTRIBUTION] ({ commit, getters, rootGetters }): Promise<void> {
-    const cartId = rootGetters['cart/getCartToken'];
+    const cartId = getCartId(rootGetters);
     if (!cartId) {
       return;
     }

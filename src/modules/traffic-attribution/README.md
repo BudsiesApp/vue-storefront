@@ -42,6 +42,7 @@ Delivery stores a single optional `deliveredCartId` on each touch wrapper, outsi
 SET intake drops legacy `isSent` and invalid cart ids without rewriting attribution or timestamps.
 Legacy booleans cannot identify a cart, so those touches are delivered again on the next cart event.
 Each pass uses the active cart getter and checks it immediately before each queued request.
+Numeric and string cart ids use the same string form for comparison, coalescing and delivery records.
 Successful responses record that request cart even if the active cart changes while pending.
 First Touch must succeed before a distinct Last Touch. After its successful mark, the reporting action
 clears the current Last Touch's matching delivery id through the existing Last Touch set path; the mark

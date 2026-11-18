@@ -504,4 +504,44 @@ describe('traffic attribution actions', () => {
     expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
     expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body)).toEqual({ request: saved[LAST_TOUCH].attribution });
   });
+  it('preserves numeric cart delivery across reload and delivers to another numeric cart', async () => {
+    const saved: Record<string, any> = {};
+    const { context, getters } = createContext(
+      createTouch(createAttribution({ gclid: 'first' })),
+      createTouch(createAttribution({ srsltid: 'last' }))
+    );
+    context.rootGetters['cart/getCartToken'] = 1187986;
+    const cache = cacheHandlerFactory({
+      setItem: jest.fn((key, value) => {
+        saved[key] = JSON.parse(JSON.stringify(value));
+        return Promise.resolve();
+      })
+    } as any);
+    const commit = context.commit;
+    context.commit = (type, payload) => {
+      commit(type, payload);
+      cache({ type, payload }, { [MODULE_NAME]: {
+        firstTouch: getters[GET_FIRST_TOUCH],
+        lastTouch: getters[GET_LAST_TOUCH]
+      } } as any);
+    };
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+    expect(saved[FIRST_TOUCH].deliveredCartId).toBe('1187986');
+    expect(saved[LAST_TOUCH].deliveredCartId).toBe('1187986');
+
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(saved[key])) });
+    const reloaded = createContext(null, null).context;
+    reloaded.rootGetters['cart/getCartToken'] = 1187986;
+    await (actions as any)[SYNCHRONIZE](reloaded, { currentRoute: { query: {} } });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+
+    reloaded.rootGetters['cart/getCartToken'] = 1187987;
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(4);
+    expect(reloaded.getters[GET_FIRST_TOUCH].deliveredCartId).toBe('1187987');
+    expect(reloaded.getters[GET_LAST_TOUCH].deliveredCartId).toBe('1187987');
+  });
 });

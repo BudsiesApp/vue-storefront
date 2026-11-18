@@ -34,7 +34,7 @@ Persist normalized state on SET rather than the unnormalized payload, and persis
 
 ### 2. Bind each pass to the cart without changing core
 
-At report entry, read `rootGetters['cart/getCartToken']` once as the pass cart id; an empty id exits before transport. Keep touch snapshots for this pass. Immediately before each `TaskQueue.execute(task)`, re-read that getter and compare it with the pass cart id, with no `await` between the read and invocation. On mismatch, exit the pass without another send or mark. The facade therefore reads the identical cart id synchronously, while every delivery mutation uses the pass cart id.
+At report entry, read `rootGetters['cart/getCartToken']` once as the pass cart id; an empty id exits before transport. Keep touch snapshots for this pass. Immediately before each `TaskQueue.execute(task)`, re-read that getter and compare it with the pass cart id, with no `await` between the read and invocation. On mismatch, exit the pass without another send or mark. The facade therefore reads the identical cart id synchronously, while every delivery mutation uses the pass cart id. The active cart id is canonicalized to a string for comparison, coalescing and the delivery record, so numeric and string ids behave alike.
 
 Record each successful response for the pass cart, subject to the touch-identity guard, even if the active cart changed while the request was pending: the request used the pass cart. Keep earlier and current marks. The pre-request comparison stops the next request, preventing a Last Touch intended for cart A from being sent to cart B; B's own lifecycle event starts its delivery.
 

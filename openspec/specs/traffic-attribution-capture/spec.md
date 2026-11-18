@@ -215,7 +215,7 @@ Each touch SHALL store only its latest successfully delivered cart as optional w
 - **AND** if the sent First Touch is no longer current by `createdAt` after its response is handled, the pass MUST stop without further sends or marks from the stale snapshot; the next cart event MUST report the current touches
 
 ### Requirement: Request cart and recorded cart remain identical
-Reporting SHALL use the active store cart id at pass start and re-read it immediately before each one-argument TaskQueue request without an intervening await. A mismatch at that pre-request read SHALL stop the pass before the next send or mark. A successful response SHALL be recorded for the pass cart, subject to touch identity, even if the active cart changed while that request was pending; earlier and current marks SHALL remain. The existing POST body SHALL remain exactly `{ "request": <attribution> }`, without cart ids or `deliveredCartId` metadata.
+Reporting SHALL use the active store cart id at pass start and re-read it immediately before each one-argument TaskQueue request without an intervening await. A mismatch at that pre-request read SHALL stop the pass before the next send or mark. A successful response SHALL be recorded for the pass cart, subject to touch identity, even if the active cart changed while that request was pending; earlier and current marks SHALL remain. The existing POST body SHALL remain exactly `{ "request": <attribution> }`, without cart ids or `deliveredCartId` metadata. The active cart id is canonicalized to a string for comparison, coalescing and the delivery record, so numeric and string ids behave alike.
 
 #### Scenario: No cart or no first touch is available
 - **WHEN** reporting has an empty current cart id or no First Touch
