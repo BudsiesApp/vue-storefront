@@ -12,7 +12,7 @@ import { cartStore } from './store'
 import { LOCAL_CART_DATA_LOADED_EVENT } from './types/local-cart-data-loaded.event';
 import { ORDER_CONFLICT_EVENT } from '../order';
 import { CART_ITEM_PRICE_DICTIONARY, CART_ITEM_LOCALIZED_PRICE_DICTIONARY, GET_CART_ITEM_PRICE } from './types/CartItemGetters';
-import { CART_SET_PRODUCT_DISCOUNTED_PRICE, SN_CART, SET_EXCHANGE_RATE } from './store/mutation-types';
+import { CART_SET_PRODUCT_DISCOUNTED_PRICE, SN_CART, SET_EXCHANGE_RATE, SET_STARTUP_PROMISE } from './store/mutation-types';
 
 import * as getterTypes from './store/getter-types';
 
@@ -21,7 +21,8 @@ export const CartModule: StorefrontModule = function ({ store, router }) {
   store.registerModule('cart', cartStore)
 
   if (!isServer) {
-    store.dispatch('cart/load')
+    const restore = store.dispatch('cart/load')
+    store.commit(`cart/${SET_STARTUP_PROMISE}`, restore)
 
     const localStorageSynchronization = localStorageSynchronizationFactory(
       getItemsFromStorage,

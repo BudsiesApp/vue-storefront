@@ -26,22 +26,6 @@ async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Pr
   }
 }
 
-// A refresh that fails leaves the stored totals unverified: they may predate a change the server already
-// accepted, for example a coupon. Resetting the sync date keeps them from being treated as synchronized, and
-// makes the next sync check retry the refresh. It is skipped when `shouldReset` says that a newer refresh
-// has started, because that one decides the totals.
-async function resetTotalsSyncOnError<T> (commit: Commit, shouldReset: () => boolean, task: () => Promise<T>): Promise<T> {
-  try {
-    return await task();
-  } catch (error) {
-    if (shouldReset()) {
-      commit(types.CART_RESET_TOTALS_SYNC);
-    }
-
-    throw error;
-  }
-}
-
 const totalsActions = {
   async getTotals ({ commit }, { addressInformation, hasShippingInformation }) {
     return holdTotalsSyncing(commit, async () => {
@@ -67,11 +51,7 @@ const totalsActions = {
     const isOutdated = () => isSuperseded() || isCartReplaced()
 
     return holdTotalsSyncing(commit, async () => {
-      const task = await resetTotalsSyncOnError<Task>(
-        commit,
-        () => !isOutdated(),
-        () => dispatch('getTotals', { addressInformation, hasShippingInformation })
-      )
+      const task: Task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
@@ -81,7 +61,8 @@ const totalsActions = {
           return
         }
 
-        return dispatch('clear', { disconnect: true, sync: false });
+        await dispatch('clear', { disconnect: true, sync: false });
+        return task
       }
 
       if (isOutdated()) {
@@ -93,19 +74,17 @@ const totalsActions = {
       if (resultCode === 200) {
         // Line prices, totals and the sync date are applied in one go: nothing can wait between them, so no
         // newer refresh and no reconnect can start while only a part of the response is applied.
-        await resetTotalsSyncOnError(commit, () => !isOutdated(), async () => {
-          const platformTotals = result.totals || result
-          Logger.info('Overriding server totals. ', 'cart', platformTotals)()
-          const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
+        const platformTotals = result.totals || result
+        Logger.info('Overriding server totals. ', 'cart', platformTotals)()
+        const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 
-          for (let key of Object.keys(itemsAfterPlatformTotals)) {
-            const product = createTotalsItemUpdate(itemsAfterPlatformTotals[key], getters.getCartItems)
-            commit(types.CART_UPD_ITEM_PROPS, { product })
-          }
+        for (let key of Object.keys(itemsAfterPlatformTotals)) {
+          const product = createTotalsItemUpdate(itemsAfterPlatformTotals[key], getters.getCartItems)
+          commit(types.CART_UPD_ITEM_PROPS, { product })
+        }
 
-          commit(types.CART_UPD_TOTALS, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments: platformTotals.total_segments })
-          commit(types.CART_SET_TOTALS_SYNC)
-        })
+        commit(types.CART_UPD_TOTALS, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments: platformTotals.total_segments })
+        commit(types.CART_SET_TOTALS_SYNC)
 
         // we received payment methods as a result of this call, updating state
         if (result.payment_methods && getters.canUpdateMethods) {
@@ -120,7 +99,6 @@ const totalsActions = {
         return
       }
 
-      commit(types.CART_RESET_TOTALS_SYNC)
       Logger.error(result, 'cart')()
     });
   },
@@ -155,7 +133,6 @@ const totalsActions = {
   async syncTotals ({ commit, state, dispatch, getters, rootGetters }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
     const methodsData = payload ? payload.methodsData : null
     const isTotalsSyncNeeded = () => getters.canSyncTotals && (getters.isTotalsSyncRequired || payload.forceServerSync)
-    const refreshIdAtStart = state.totalsRefreshId
 
     const pullMethodsAndSyncTotals = async () => {
       await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
@@ -185,22 +162,16 @@ const totalsActions = {
             method_code: availableShippingMethod?.method_code
           });
 
-          await dispatch('overrideServerTotals', { hasShippingInformation, addressInformation })
-          return
+          return dispatch('overrideServerTotals', { hasShippingInformation, addressInformation })
         }
 
         Logger.error('Please do set the tax.defaultCountry in order to calculate totals', 'cart')()
       }
     }
 
-    // Held from the start, so the methods pull before the totals request is not seen as a finished sync. A failure
-    // before the totals request leaves the stored totals unverified too, unless a newer refresh has started since.
+    // Include the methods pull in the busy span, even before the totals request starts.
     if (isTotalsSyncNeeded()) {
-      return holdTotalsSyncing(commit, () => resetTotalsSyncOnError(
-        commit,
-        () => state.totalsRefreshId === refreshIdAtStart,
-        pullMethodsAndSyncTotals
-      ))
+      return holdTotalsSyncing(commit, pullMethodsAndSyncTotals)
     }
 
     return pullMethodsAndSyncTotals()

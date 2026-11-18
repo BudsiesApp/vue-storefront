@@ -96,6 +96,7 @@ describe('GA4 ecommerce listener', () => {
       },
       getters: {
         'cart/getCartItems': () => [item],
+        'cart/getLastTotalsSyncDate': () => 1,
         'cart/getCartItemPrice': () => () => ({ regular: 999, special: null }),
         'product/getProductPrice': () => () => ({ regular: 240, special: 216 }),
         'product/getProductBySkuDictionary': () => ({ [item.sku]: item }),
@@ -173,8 +174,24 @@ describe('GA4 ecommerce listener', () => {
     });
     expect(pushes[2]).toEqual({ ecommerce: null });
     expect(pushes[3].event).toBe('view_cart');
-    expect(pushes[3].ecommerce).toMatchObject({ currency: 'EUR', value: 0 });
+    expect(pushes[3].ecommerce).toMatchObject({ currency: 'EUR' });
+    expect(pushes[3].ecommerce).not.toHaveProperty('value');
     expect(pushes[3].ecommerce.coupon).toBeUndefined();
+  });
+
+  it('omits the old value and coupon for an empty cart and for local items without totals', () => {
+    const { pushes, emit } = setup();
+    emit('cartViewed', { products: [], platformTotals: totals });
+    emit('cartViewed', { products: [item], platformTotals: null });
+
+    expect(pushes[0]).toEqual({ ecommerce: null });
+    expect(pushes[1].ecommerce).toMatchObject({ currency: 'EUR', items: [] });
+    expect(pushes[1].ecommerce).not.toHaveProperty('value');
+    expect(pushes[1].ecommerce).not.toHaveProperty('coupon');
+    expect(pushes[2]).toEqual({ ecommerce: null });
+    expect(pushes[3].ecommerce.items).toHaveLength(1);
+    expect(pushes[3].ecommerce).not.toHaveProperty('value');
+    expect(pushes[3].ecommerce).not.toHaveProperty('coupon');
   });
 
   it('keeps product and line price values for product and cart-action events', () => {

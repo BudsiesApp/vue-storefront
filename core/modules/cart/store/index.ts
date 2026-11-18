@@ -6,7 +6,7 @@ import CartState from '../types/CartState'
 
 export const cartStore: Module<CartState, any> = {
   namespaced: true,
-  state: {
+  state: () => ({
     isMicrocartOpen: false,
     itemsAfterPlatformTotals: {},
     platformTotals: null,
@@ -22,6 +22,7 @@ export const cartStore: Module<CartState, any> = {
     cartItems: [], // TODO: check if it's properly namespaced
     connectBypassCount: 0,
     isAddingToCart: false,
+    addingDepth: 0,
     isLocalDataLoaded: false,
     productDiscountedPrice: {},
     isShippingMethodsSyncing: false,
@@ -29,13 +30,15 @@ export const cartStore: Module<CartState, any> = {
     shippingMethodsLookupId: 0,
     isCartSyncing: false,
     syncPromise: null,
+    startupPromise: null,
+    connectionPromises: [],
     isTotalsSyncing: false,
     totalsSyncDepth: 0,
     totalsRefreshId: 0,
     isPaymentMethodsSyncing: false,
     isCouponProcessing: false,
     exchangeRate: 1
-  },
+  }),
   getters,
   actions,
   mutations

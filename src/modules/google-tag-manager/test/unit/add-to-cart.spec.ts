@@ -6,6 +6,8 @@ import { CartService } from '@vue-storefront/core/data-resolver';
 import { DiffLog } from '@vue-storefront/core/modules/cart/helpers/createDiffLog';
 import itemActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
 import synchronizeActions from '@vue-storefront/core/modules/cart/store/actions/synchronizeActions';
+import mergeActions from '@vue-storefront/core/modules/cart/store/actions/mergeActions';
+import totalsActions from '@vue-storefront/core/modules/cart/store/actions/totalsActions';
 import * as cartMutationTypes from '@vue-storefront/core/modules/cart/store/mutation-types';
 import type CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import ServerError from 'src/modules/shared/types/server-error';
@@ -19,14 +21,14 @@ jest.mock('@vue-storefront/core/compatibility/plugins/event-bus', () => ({
   default: { $on: jest.fn(), $emit: jest.fn() }
 }));
 jest.mock('@vue-storefront/core/lib/logger', () => ({
-  Logger: { error: jest.fn(() => jest.fn()), info: jest.fn(() => jest.fn()) }
+  Logger: { error: jest.fn(() => jest.fn()), info: jest.fn(() => jest.fn()), debug: jest.fn(() => jest.fn()), warn: jest.fn(() => jest.fn()) }
 }));
 jest.mock('@vue-storefront/core/lib/multistore', () => ({
   currentStoreView: () => ({ name: 'Petsies' }),
   localizedRoute: jest.fn()
 }));
 jest.mock('@vue-storefront/core/app', () => ({ router: { push: jest.fn() } }));
-jest.mock('@vue-storefront/core/data-resolver', () => ({ CartService: { getItems: jest.fn() } }));
+jest.mock('@vue-storefront/core/data-resolver', () => ({ CartService: { getItems: jest.fn(), getTotals: jest.fn() } }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { get: jest.fn() } }));
 jest.mock('@vue-storefront/i18n', () => ({ __esModule: true, default: { t: (text: string) => text } }));
 // The diff log, notifications and validation are the real ones, so `addItems` decides what was accepted.
@@ -35,8 +37,12 @@ jest.mock('@vue-storefront/core/modules/cart/helpers', () => ({
   productsEquals: (left: { sku: string }, right: { sku: string }) => left.sku === right.sku,
   validateProduct: jest.requireActual('@vue-storefront/core/modules/cart/helpers/validateProduct').default,
   createDiffLog: () => new (jest.requireActual('@vue-storefront/core/modules/cart/helpers/createDiffLog').DiffLog)(),
-  notifications: jest.requireActual('@vue-storefront/core/modules/cart/helpers/notifications')
+  notifications: jest.requireActual('@vue-storefront/core/modules/cart/helpers/notifications'),
+  createOrderData: () => ({ country: 'US' }), createShippingInfoData: () => ({}),
+  getAvailableShippingMethod: () => undefined, prepareShippingInfoForUpdateTotals: () => ({}),
+  createCartItemForUpdate: jest.fn(), preparePaymentMethodsToSync: jest.fn()
 }));
+jest.mock('@vue-storefront/core/modules/cart/helpers/productChecksum', () => ({ __esModule: true, default: () => 'checksum' }));
 // The real rule that shows an error for a failed server response, so the tests see what the shopper sees.
 jest.mock('@vue-storefront/core/i18n', () => ({ __esModule: true, default: { t: (text: string) => text } }));
 jest.mock('@vue-storefront/core/modules/cart', () => ({ GET_CART_ITEM_PRICE: 'cart/getCartItemPrice' }));
@@ -48,6 +54,7 @@ jest.mock('@vue-storefront/core/filters', () => ({ price: jest.fn() }));
 jest.mock('@vue-storefront/core/modules/checkout', () => ({ ORDER_ERROR_EVENT: 'order-error' }));
 jest.mock('src/modules/shared', () => ({
   PriceHelper: jest.requireActual('@vue-storefront/core/helpers/price'),
+  getProductOptions: () => ({}),
   DEFAULT_CURRENCY_CODE: 'USD',
   normalizeProductPurchaseFlow: () => 'standard',
   ProductEvent: {},
@@ -112,22 +119,27 @@ describe('add_to_cart through the cart addItem action', () => {
     stockStatus?: string,
     // Result code of the cart read at the start of the synchronization.
     cartReadCode?: number
+    rejectAt?: 'checkProductStatus' | 'create' | 'sync'
+    totalsNotFound?: boolean
   }
 
   // Runs the real `addItem`, `addItems`, `sync` and `performSync` actions; only the stock check, the cart
   // mutation, the cart read, the merge of the server items and the clearing of the cart are replaced.
   async function addToCart (product: CartItem, itemTotals?: ItemTotals, options: AddToCartOptions = {}) {
-    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200 } = options;
+    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200, rejectAt, totalsNotFound = false } = options;
     const getters = {
       isCartConnected: true,
       isCartSyncEnabled: true,
       canUpdateMethods: true,
       isSyncRequired: true,
       getCartItems: store.state.cart.cartItems,
-      getPendingCouponCode: null
+      getPendingCouponCode: null,
+      canSyncTotals: true, isTotalsSyncRequired: true, getCartToken: 'quote', getCurrentCartHash: 'hash',
+      isCartHashChanged: false
     };
-    const syncState = { syncPromise: null };
-    const commit = (type: string, { product: addedProduct }: { product?: CartItem } = {}) => {
+    const syncState = { syncPromise: null, isAdding: false };
+    const commit = (type: string, { product: addedProduct, isAdding }: { product?: CartItem, isAdding?: boolean } = {}) => {
+      if (type === cartMutationTypes.CART_ADDING_ITEM) syncState.isAdding = Boolean(isAdding);
       if (type !== cartMutationTypes.CART_ADD_ITEM || !addedProduct) {
         return;
       }
@@ -149,7 +161,10 @@ describe('add_to_cart through the cart addItem action', () => {
       getters,
       commit,
       state: syncState,
+      rootGetters: { 'checkout/getShippingDetails': {}, 'checkout/getShippingMethods': [],
+        'checkout/getPaymentMethods': [], 'checkout/getPaymentDetails': {} },
       dispatch: jest.fn(async (name: string, payload: Record<string, any>) => {
+        if (name === rejectAt) throw new Error(`Rejected ${name}`);
         switch (name) {
           case 'addItems':
             return (itemActions as any).addItems(context, payload);
@@ -164,12 +179,25 @@ describe('add_to_cart through the cart addItem action', () => {
 
             return undefined;
           case 'merge': {
+            if (totalsNotFound) return (mergeActions as any).merge(context, payload);
             const diffLog = new DiffLog();
 
             serverResponses.forEach((response) => diffLog.pushServerResponse(response as any));
 
             return diffLog;
           }
+          case 'mergeClientItems':
+          case 'mergeServerItems':
+            return new DiffLog();
+          case 'updateItemsProductData':
+          case 'pullMethods':
+            return undefined;
+          case 'updateTotalsAfterMerge':
+            return (mergeActions as any).updateTotalsAfterMerge(context, payload);
+          case 'syncTotals':
+          case 'overrideServerTotals':
+          case 'getTotals':
+            return (totalsActions as any)[name](context, payload);
           default:
             return undefined;
         }
@@ -177,6 +205,7 @@ describe('add_to_cart through the cart addItem action', () => {
     };
 
     jest.mocked(CartService.getItems).mockResolvedValue({ resultCode: cartReadCode, result: [] } as any);
+    jest.mocked(CartService.getTotals).mockResolvedValue({ resultCode: 404, result: 'No such entity with cartId = 1' } as any);
 
     pushes.length = 0;
     addError = undefined;
@@ -186,6 +215,8 @@ describe('add_to_cart through the cart addItem action', () => {
     } catch (error) {
       addError = error;
     }
+
+    expect(syncState.isAdding).toBe(false);
 
     return pushes.find(({ event }) => event === 'add_to_cart');
   }
@@ -200,6 +231,11 @@ describe('add_to_cart through the cart addItem action', () => {
     expect(await addToCart(createProduct(2), itemTotals)).toMatchObject({
       ecommerce: { value: 999, items: [{ item_id: 'PLUSH-1', price: 100, discount: 0, quantity: 2 }] }
     });
+  });
+
+  it.each(['checkProductStatus', 'create', 'sync'] as const)('releases Add when %s rejects', async rejectAt => {
+    expect(await addToCart(createProduct(1), undefined, { rejectAt })).toBeUndefined();
+    expect(addError).toMatchObject({ message: `Rejected ${rejectAt}` });
   });
 
   it('reports synchronized net amounts for a discounted taxed product', async () => {
@@ -312,7 +348,16 @@ describe('add_to_cart through the cart addItem action', () => {
       it('shows an error, reports nothing and leaves nothing in the cart', async () => {
         expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 404 })).toBeUndefined();
         expect(addError).toBeInstanceOf(ServerError);
+        expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
         expect(store.state.cart.cartItems).toHaveLength(0);
+      });
+
+      it('rejects the add the same way when its totals refresh loses the cart', async () => {
+        expect(await addToCart(createProduct(1), itemTotals, { totalsNotFound: true })).toBeUndefined();
+        expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
+        expect(store.state.cart.cartItems).toHaveLength(0);
+        expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ ecommerce: { items: [{ quantity: 1 }] } });
+        expect(store.state.cart.cartItems[0].qty).toBe(1);
       });
 
       it('adds the item once when the shopper retries after the error', async () => {

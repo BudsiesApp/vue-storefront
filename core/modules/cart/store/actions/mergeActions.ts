@@ -321,7 +321,8 @@ const mergeActions = {
     if (dryRun) return
 
     if (getters.isTotalsSyncRequired && clientItems.length > 0) {
-      await dispatch('syncTotals')
+      const result = await dispatch('syncTotals')
+      if (result?.resultCode === 404) return result
     }
 
     commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
@@ -370,7 +371,10 @@ const mergeActions = {
     ]);
 
     if (waitForTotalsUpdate) {
-      await updatePromises;
+      const [totalsResult] = await updatePromises;
+      if (totalsResult?.resultCode === 404) {
+        diffLog.pushServerResponse({ status: 404, sku: '', result: totalsResult })
+      }
     }
 
     diffLog

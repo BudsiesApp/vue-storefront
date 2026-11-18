@@ -23,6 +23,7 @@ const connectActions = {
    * disconnect - if you want to clear cart token.
    */
   async clear ({ commit, dispatch, state }, { disconnect = true, sync = true } = {}) {
+    commit(types.CART_RESET_TOTALS_SYNC)
     await commit(types.CART_LOAD_CART, [])
 
     if (sync) {
@@ -38,8 +39,10 @@ const connectActions = {
         // The reconnect synchronizes the cart, which queues behind the running synchronization. When this action
         // is called from within that synchronization (for example by a totals refresh that finds the cart
         // missing), awaiting it would wait for itself forever, so it starts after the synchronization finished.
-        dispatch('waitForCartSync')
-          .then(() => dispatch('synchronizeCart'))
+        dispatch('trackConnection', async () => {
+          await dispatch('waitForCartSync')
+          await dispatch('synchronizeCart')
+        })
           .catch((error) => Logger.error(error, 'cart')())
 
         return
@@ -51,7 +54,10 @@ const connectActions = {
   async disconnect ({ commit }) {
     commit(types.CART_LOAD_CART_SERVER_TOKEN, null);
   },
-  async mergeGuestAndCustomer ({ commit, dispatch, getters }): Promise<void> {
+  async mergeGuestAndCustomer ({ dispatch }): Promise<void> {
+    return dispatch('trackConnection', () => dispatch('performGuestCustomerMerge'))
+  },
+  async performGuestCustomerMerge ({ commit, dispatch, getters }): Promise<void> {
     const cartToken = getters.getCartToken;
     const isCartEmpty = !getters.getCartItems.length;
     const shouldMergeCart = cartToken && !isCartEmpty;
@@ -69,6 +75,11 @@ const connectActions = {
     }
   },
   async connect (
+    { dispatch }, options: ConnectOptions = {}
+  ) {
+    return dispatch('trackConnection', () => dispatch('performConnect', options))
+  },
+  async performConnect (
     { getters, rootGetters, dispatch, commit },
     { guestCart = false, forceClientState = false, isCartSyncRecovery = false }: ConnectOptions = {}
   ) {

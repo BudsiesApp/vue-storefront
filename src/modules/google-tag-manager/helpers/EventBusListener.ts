@@ -125,8 +125,8 @@ export default class EventBusListener {
           event: GoogleTagManagerEvents.VIEW_CART,
           ecommerce: {
             currency: platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
-            value: platformTotals?.base_grand_total || 0,
-            coupon: platformTotals?.coupon_code,
+            ...(products.length && platformTotals?.base_grand_total != null ? { value: platformTotals.base_grand_total } : {}),
+            ...(products.length && platformTotals?.coupon_code ? { coupon: platformTotals.coupon_code } : {}),
             items
           }
         })
@@ -286,14 +286,15 @@ export default class EventBusListener {
   }
 
   private sendBeginCheckoutEvent (isExpressCheckout = false): void {
-    const platformTotals = this.store.state.cart.platformTotals;
+    const platformTotals = isExpressCheckout || this.store.getters['cart/getLastTotalsSyncDate']
+      ? this.store.state.cart.platformTotals : null;
     const cartItems: CartItem[] = this.store.getters['cart/getCartItems'];
     const items = cartItems.map((cartItem) => prepareCartItemData(cartItem, this.store));
 
     const data = {
       currency: platformTotals?.quote_currency_code,
-      value: platformTotals?.base_grand_total,
-      coupon: platformTotals?.coupon_code,
+      ...(platformTotals?.base_grand_total != null ? { value: platformTotals.base_grand_total } : {}),
+      ...(platformTotals?.coupon_code ? { coupon: platformTotals.coupon_code } : {}),
       items,
       custom_fields: {
         express_checkout: isExpressCheckout

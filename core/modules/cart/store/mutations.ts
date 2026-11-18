@@ -38,9 +38,12 @@ const mutations: MutationTree<CartState> = {
   [types.CART_SET_TOTALS_SYNC] (state) {
     state.cartServerLastTotalsSyncDate = new Date().getTime()
   },
-  // The stored totals can no longer be trusted, for example after a refresh that failed
+  // Totals belong to a quote and must not survive its replacement or explicit clearing.
   [types.CART_RESET_TOTALS_SYNC] (state) {
     state.cartServerLastTotalsSyncDate = 0
+    state.itemsAfterPlatformTotals = {}
+    state.platformTotals = null
+    state.platformTotalSegments = null
   },
   [types.CART_DEL_ITEM] (state, { product, removeByParentSku = true }) {
     EventBus.$emit('cart-before-delete', { items: state.cartItems })
@@ -82,6 +85,9 @@ const mutations: MutationTree<CartState> = {
     EventBus.$emit('cart-after-loaded')
   },
   [types.CART_LOAD_CART_SERVER_TOKEN] (state, token) {
+    if (state.cartServerToken !== token) {
+      mutations[types.CART_RESET_TOTALS_SYNC](state)
+    }
     state.cartServerToken = token
   },
   [types.CART_SET_PENDING_COUPON] (state, couponCode: string | null) {
@@ -103,7 +109,8 @@ const mutations: MutationTree<CartState> = {
     state.connectBypassCount = state.connectBypassCount + counter
   },
   [types.CART_ADDING_ITEM] (state, { isAdding }) {
-    state.isAddingToCart = isAdding
+    state.addingDepth = Math.max(0, (state.addingDepth || 0) + (isAdding ? 1 : -1))
+    state.isAddingToCart = state.addingDepth > 0
   },
   [types.CART_SET_LOCAL_DATA_LOADED] (state, isLoaded: boolean) {
     state.isLocalDataLoaded = isLoaded;
@@ -140,6 +147,15 @@ const mutations: MutationTree<CartState> = {
   },
   [types.SET_SYNC_PROMISE] (state, syncPromise: Promise<unknown> | null) {
     state.syncPromise = syncPromise;
+  },
+  [types.SET_STARTUP_PROMISE] (state, promise: Promise<unknown>) {
+    state.startupPromise = promise;
+  },
+  [types.ADD_CONNECTION_PROMISE] (state, promise: Promise<unknown>) {
+    state.connectionPromises.push(promise);
+  },
+  [types.REMOVE_CONNECTION_PROMISE] (state, promise: Promise<unknown>) {
+    state.connectionPromises = state.connectionPromises.filter(item => item !== promise);
   },
   [types.START_TOTALS_SYNC] (state) {
     state.totalsSyncDepth++;

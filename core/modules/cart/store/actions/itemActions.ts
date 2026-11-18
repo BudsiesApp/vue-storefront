@@ -106,7 +106,7 @@ const itemActions = {
     if (getters.isCartSyncEnabled && getters.isCartConnected && !forceServerSilence) {
       const syncDiffLog = await dispatch('sync', {
         forceClientState: true,
-        waitForTotalsUpdate: shouldRetryPendingCoupon
+        waitForTotalsUpdate: true
       })
 
       if (!syncDiffLog.isEmpty()) {

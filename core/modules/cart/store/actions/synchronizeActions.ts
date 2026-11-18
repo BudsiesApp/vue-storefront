@@ -7,6 +7,7 @@ import { CartService } from '@vue-storefront/core/data-resolver'
 import { createDiffLog } from '@vue-storefront/core/modules/cart/helpers'
 import i18n from '@vue-storefront/i18n'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
+import { watch } from 'vue'
 import { cartHooksExecutors } from '../../hooks'
 import { LOCAL_CART_DATA_LOADED_EVENT } from '../../types/local-cart-data-loaded.event'
 
@@ -29,9 +30,10 @@ const synchronizeActions = {
     dispatch('setDefaultCheckoutMethods')
     const storedItems = await StorageManager.get('cart').getItem('current-cart')
     commit(types.CART_LOAD_CART, storedItems)
-    dispatch('loadCartDataFromLocalStorage', { forceClientState, forceSync })
+    const restore = dispatch('loadCartDataFromLocalStorage', { forceClientState, forceSync })
 
     cartHooksExecutors.afterLoad(storedItems)
+    await restore
   },
   async loadCartDataFromLocalStorage ({ commit, dispatch }, { forceClientState, forceSync }) {
     const { synchronize } = config.cart
@@ -84,6 +86,43 @@ const synchronizeActions = {
           return
         }
       }
+    }
+  },
+  async waitForStartup ({ state }) {
+    try {
+      await state.startupPromise
+    } catch {
+      // Startup settlement, rather than success, is the contract for callers.
+    }
+  },
+  async waitForConnections ({ state }) {
+    while (state.connectionPromises.length) {
+      await Promise.all(state.connectionPromises.map(promise => promise.catch(() => undefined)))
+    }
+  },
+  async waitForIdle ({ getters, dispatch, state }) {
+    do {
+      await dispatch('waitForConnections')
+      await dispatch('waitForCartSync')
+      if (getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING) {
+        await new Promise<void>(resolve => {
+          const stop = watch(
+            () => getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING,
+            busy => { if (!busy) { stop(); resolve() } }
+          )
+        })
+      }
+    } while (state.connectionPromises.length || getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING)
+  },
+  async trackConnection ({ commit }, operation: () => Promise<unknown>) {
+    let release: () => void = () => undefined
+    const settled = new Promise<void>(resolve => { release = resolve })
+    commit(types.ADD_CONNECTION_PROMISE, settled)
+    try {
+      return await operation()
+    } finally {
+      commit(types.REMOVE_CONNECTION_PROMISE, settled)
+      release()
     }
   },
   /** @deprecated backward compatibility only */

@@ -62,10 +62,11 @@ describe('Cart connectActions', () => {
 
     await wrapper(cartActions);
 
-    expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_LOAD_CART, []);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_RESET_TOTALS_SYNC);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_LOAD_CART, []);
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'sync', { forceClientState: true, forceSync: true });
-    expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_SET_PENDING_COUPON, null);
-    expect(contextMock.commit).toHaveBeenNthCalledWith(3, types.CART_SET_ITEMS_HASH, null);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(3, types.CART_SET_PENDING_COUPON, null);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(4, types.CART_SET_ITEMS_HASH, null);
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'disconnect');
   });
 
@@ -82,7 +83,8 @@ describe('Cart connectActions', () => {
 
     await wrapper(cartActions);
 
-    expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_LOAD_CART, []);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_RESET_TOTALS_SYNC);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_LOAD_CART, []);
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'sync', { forceClientState: true, forceSync: true });
   });
 
@@ -99,9 +101,10 @@ describe('Cart connectActions', () => {
 
     await wrapper(cartActions);
 
-    expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_LOAD_CART, []);
-    expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_SET_PENDING_COUPON, null);
-    expect(contextMock.commit).toHaveBeenNthCalledWith(3, types.CART_SET_ITEMS_HASH, null);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(1, types.CART_RESET_TOTALS_SYNC);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(2, types.CART_LOAD_CART, []);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(3, types.CART_SET_PENDING_COUPON, null);
+    expect(contextMock.commit).toHaveBeenNthCalledWith(4, types.CART_SET_ITEMS_HASH, null);
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'disconnect');
   });
 
@@ -110,7 +113,8 @@ describe('Cart connectActions', () => {
     const synchronizationFinished = new Promise<void>((resolve) => { finishSynchronization = resolve; });
     const contextMock = {
       commit: jest.fn(),
-      dispatch: jest.fn(async (action: string) => {
+      dispatch: jest.fn(async (action: string, operation?: () => Promise<void>) => {
+        if (action === 'trackConnection' && operation) return operation();
         if (action === 'waitForCartSync') {
           await synchronizationFinished;
         }
@@ -155,7 +159,7 @@ describe('Cart connectActions', () => {
       serverMergeByDefault: false
     }
 
-    await (cartActions as any).connect(contextMock, {})
+    await (cartActions as any).performConnect(contextMock, {})
     expect(contextMock.commit).toBeCalledWith(types.CART_LOAD_CART_SERVER_TOKEN, 'server-cart-token')
     expect(contextMock.dispatch).toBeCalledWith('sync', { forceClientState: false, dryRun: true })
     expect(contextMock.dispatch).not.toBeCalledWith('applyPendingCoupon')
@@ -179,7 +183,7 @@ describe('Cart connectActions', () => {
       serverMergeByDefault: false
     }
 
-    await (cartActions as any).connect(contextMock, { isCartSyncRecovery: true })
+    await (cartActions as any).performConnect(contextMock, { isCartSyncRecovery: true })
 
     expect(contextMock.dispatch).toBeCalledWith('performSync', {
       forceClientState: false,
@@ -210,7 +214,7 @@ describe('Cart connectActions', () => {
       maxCartBypassAttempts: 4
     }
 
-    await (cartActions as any).connect(contextMock, {})
+    await (cartActions as any).performConnect(contextMock, {})
     expect(contextMock.commit).toBeCalledWith(types.CART_UPDATE_BYPASS_COUNTER, { counter: 1 })
     expect(contextMock.dispatch).toBeCalledWith('connect', { guestCart: true })
   })
