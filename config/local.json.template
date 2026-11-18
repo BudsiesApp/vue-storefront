@@ -111,6 +111,7 @@
   "trafficAttribution": {
     "firstTouchExpirationDays": 90,
     "lastTouchExpirationDays": 30,
+    "lastTouchReplacementCooldownSeconds": 30,
     "acquisitionClickIdKeys": [
       "gclid",
       "gbraid",

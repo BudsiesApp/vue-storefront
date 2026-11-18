@@ -22,7 +22,7 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     const state: TrafficAttributionState = (rootState as any)[MODULE_NAME];
 
     if (type.endsWith(SET_FIRST_TOUCH)) {
-      storage.setItem(FIRST_TOUCH, mutation.payload)
+      storage.setItem(FIRST_TOUCH, state.firstTouch)
         .catch((reason: any) => {
           Logger.error(reason, MODULE_NAME)();
         });
@@ -38,6 +38,11 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     }
 
     if (type.endsWith(MARK_FIRST_TOUCH_SENT) && state.firstTouch) {
+      if (state.lastTouch) {
+        storage.setItem(LAST_TOUCH, state.lastTouch).catch((reason: any) => {
+          Logger.error(reason, MODULE_NAME)();
+        });
+      }
       storage.setItem(FIRST_TOUCH, state.firstTouch)
         .catch((reason: any) => {
           Logger.error(reason, MODULE_NAME)();
@@ -46,7 +51,7 @@ export function cacheHandlerFactory (storage: LocalForageCacheDriver) {
     }
 
     if (type.endsWith(SET_LAST_TOUCH)) {
-      storage.setItem(LAST_TOUCH, mutation.payload)
+      storage.setItem(LAST_TOUCH, state.lastTouch)
         .catch((reason: any) => {
           Logger.error(reason, MODULE_NAME)();
         });

@@ -12,6 +12,7 @@ import RootState from '@vue-storefront/core/types/RootState';
 import {
   getTrafficAttributionDataFromRoute,
   hasTrafficAttributionAcquisitionSignal,
+  isSameCaptureAttribution,
   isSameTouchAttribution
 } from '../helpers/get-traffic-attribution-data-from-route.function';
 import { TouchData, TrafficAttributionData } from '../types/traffic-attribution.interface';
@@ -29,10 +30,14 @@ import {
 } from '../types/mutations';
 import { FIRST_TOUCH, LAST_TOUCH } from '../types/local-storage-key';
 
-async function sendAttribution (attribution: TrafficAttributionData): Promise<boolean> {
+async function sendAttribution (attribution: TrafficAttributionData, cartId: string, rootGetters: Record<string, any>): Promise<boolean> {
   const url = processURLAddress(
     `${config.budsies.endpoint}/carts/traffic-attributions?token={{token}}&cartId={{cartId}}`
   );
+
+  if (rootGetters['cart/getCartToken'] !== cartId) {
+    return false;
+  }
 
   const { resultCode } = await TaskQueue.execute({
     url,
@@ -75,7 +80,6 @@ function createTouchData (attribution: TrafficAttributionData, expirationDays: n
 
   return {
     attribution: { ...attribution },
-    isSent: false,
     createdAt,
     expiresAt: createdAt + expirationDays * DAY_IN_MILLISECONDS
   };
@@ -117,31 +121,38 @@ async function getStoredTouchData (
   }
 }
 
-let reportTrafficAttributionPromise: Promise<void> | null = null;
+const reports = new Map<string, Promise<void>>();
 
 async function reportTrafficAttribution (
   commit: Commit,
+  getters: Record<string, any>,
+  rootGetters: Record<string, any>,
+  cartId: string,
   firstTouch: TouchData,
   lastTouch: TouchData | null
 ): Promise<void> {
-  if (!firstTouch.isSent) {
-    const success = await sendAttribution(firstTouch.attribution);
-
-    if (success) {
-      commit(MARK_FIRST_TOUCH_SENT);
+  let firstSent = false;
+  if (firstTouch.deliveredCartId !== cartId) {
+    const success = await sendAttribution(firstTouch.attribution, cartId, rootGetters);
+    if (!success) {
+      return;
     }
+    commit(MARK_FIRST_TOUCH_SENT, { createdAt: firstTouch.createdAt, cartId });
+    const currentFirstTouch: TouchData | null = getters[GET_FIRST_TOUCH];
+    if (!currentFirstTouch || currentFirstTouch.createdAt !== firstTouch.createdAt) {
+      return;
+    }
+    firstSent = true;
   }
-
-  if (
-    lastTouch &&
-    !lastTouch.isSent &&
-    !isSameTouchAttribution(firstTouch.attribution, lastTouch.attribution)
-  ) {
-    const success = await sendAttribution(lastTouch.attribution);
-
-    if (success) {
-      commit(MARK_LAST_TOUCH_SENT);
-    }
+  if (!lastTouch || isSameTouchAttribution(firstTouch.attribution, lastTouch.attribution)) {
+    return;
+  }
+  if (!firstSent && lastTouch.deliveredCartId === cartId) {
+    return;
+  }
+  const success = await sendAttribution(lastTouch.attribution, cartId, rootGetters);
+  if (success) {
+    commit(MARK_LAST_TOUCH_SENT, { createdAt: lastTouch.createdAt, cartId });
   }
 }
 
@@ -192,29 +203,34 @@ export const actions: ActionTree<TrafficAttributionState, RootState> = {
     }
 
     const currentLastTouch: TouchData | null = getters[GET_LAST_TOUCH];
-    const isNewAttribution = !currentLastTouch || !isSameTouchAttribution(currentLastTouch.attribution, attribution);
-
-    if (isNewAttribution) {
-      commit(SET_LAST_TOUCH, createLastTouchData(attribution));
+    if (currentLastTouch) {
+      if (isSameCaptureAttribution(currentLastTouch.attribution, attribution)) {
+        return;
+      }
+      const seconds = Number(config.trafficAttribution && config.trafficAttribution.lastTouchReplacementCooldownSeconds);
+      const elapsed = Date.now() - currentLastTouch.createdAt;
+      if (Number.isFinite(seconds) && seconds > 0 && elapsed >= 0 && elapsed < seconds * 1000) {
+        return;
+      }
     }
+    commit(SET_LAST_TOUCH, createLastTouchData(attribution));
   },
-  async [REPORT_TRAFFIC_ATTRIBUTION] ({ commit, getters }): Promise<void> {
-    if (reportTrafficAttributionPromise) {
-      return reportTrafficAttributionPromise;
+  async [REPORT_TRAFFIC_ATTRIBUTION] ({ commit, getters, rootGetters }): Promise<void> {
+    const cartId = rootGetters['cart/getCartToken'];
+    if (!cartId) {
+      return;
     }
-
+    if (reports.has(cartId)) {
+      return reports.get(cartId);
+    }
     const firstTouch: TouchData | null = getters[GET_FIRST_TOUCH];
-    const lastTouch: TouchData | null = getters[GET_LAST_TOUCH];
-
     if (!firstTouch) {
       return;
     }
-
-    reportTrafficAttributionPromise = reportTrafficAttribution(commit, firstTouch, lastTouch)
-      .finally(() => {
-        reportTrafficAttributionPromise = null;
-      });
-
-    return reportTrafficAttributionPromise;
+    const lastTouch: TouchData | null = getters[GET_LAST_TOUCH];
+    const report = reportTrafficAttribution(commit, getters, rootGetters, cartId, firstTouch, lastTouch)
+      .finally(() => reports.delete(cartId));
+    reports.set(cartId, report);
+    return report;
   }
 };

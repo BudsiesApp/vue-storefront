@@ -1,6 +1,7 @@
+import Vue from 'vue';
 import { MutationTree } from 'vuex';
 
-import { TouchData } from '../types/traffic-attribution.interface';
+import { TouchData, TouchDelivery } from '../types/traffic-attribution.interface';
 import { TrafficAttributionState } from '../types/state.interface';
 import {
   SET_FIRST_TOUCH,
@@ -11,22 +12,37 @@ import {
   CLEAR_LAST_TOUCH
 } from '../types/mutations';
 
+function normalizeTouch (touch: TouchData): TouchData {
+  const { attribution, createdAt, expiresAt, deliveredCartId } = touch;
+  return {
+    attribution,
+    createdAt,
+    expiresAt,
+    ...(typeof deliveredCartId === 'string' && deliveredCartId.length > 0 ? { deliveredCartId } : {})
+  };
+}
+
 export const mutations: MutationTree<TrafficAttributionState> = {
   [SET_FIRST_TOUCH] (state, touch: TouchData) {
-    state.firstTouch = touch;
+    state.firstTouch = normalizeTouch(touch);
   },
   [SET_LAST_TOUCH] (state, touch: TouchData) {
-    state.lastTouch = touch;
+    state.lastTouch = normalizeTouch(touch);
   },
-  [MARK_FIRST_TOUCH_SENT] (state) {
-    if (state.firstTouch) {
-      state.firstTouch.isSent = true;
+  [MARK_FIRST_TOUCH_SENT] (state, { createdAt, cartId }: TouchDelivery) {
+    if (!state.firstTouch || state.firstTouch.createdAt !== createdAt) {
+      return;
+    }
+    Vue.set(state.firstTouch, 'deliveredCartId', cartId);
+    if (state.lastTouch && state.lastTouch.deliveredCartId === cartId) {
+      Vue.delete(state.lastTouch, 'deliveredCartId');
     }
   },
-  [MARK_LAST_TOUCH_SENT] (state) {
-    if (state.lastTouch) {
-      state.lastTouch.isSent = true;
+  [MARK_LAST_TOUCH_SENT] (state, { createdAt, cartId }: TouchDelivery) {
+    if (!state.lastTouch || state.lastTouch.createdAt !== createdAt) {
+      return;
     }
+    Vue.set(state.lastTouch, 'deliveredCartId', cartId);
   },
   [CLEAR_FIRST_TOUCH] (state) {
     state.firstTouch = null;

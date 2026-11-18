@@ -2,6 +2,7 @@ import {
   getTrafficAttributionDataFromRoute,
   hasTrafficAttributionAcquisitionSignal,
   isSameTouchAttribution,
+  isSameCaptureAttribution,
   normalizeTrafficAttributionQueryParams
 } from '../../helpers/get-traffic-attribution-data-from-route.function';
 import { TrafficAttributionData } from '../../types/traffic-attribution.interface';
@@ -283,5 +284,16 @@ describe('traffic attribution raw capture helpers', () => {
       expect(touch?.landing_page_url).toBe('http://localhost/landing');
       expect(window.location.search + window.location.hash).toBe(url.slice('/landing'.length));
     }
+  });
+});
+
+describe('capture identity', () => {
+  it('ignores detection time and query order while retaining landing, referrer and query identity', () => {
+    const a = { landing_page_url: 'https://example.com/a', referrer_url: 'https://search.example/', query_params: { gclid: 'one', utm_source: 'two' }, detected_at: 'old' };
+    const b = { ...a, query_params: { utm_source: 'two', gclid: 'one' }, detected_at: 'new' };
+    expect(isSameCaptureAttribution(a, b)).toBe(true);
+    expect(isSameCaptureAttribution(a, { ...b, landing_page_url: 'https://example.com/b' })).toBe(false);
+    expect(isSameCaptureAttribution(a, { ...b, referrer_url: 'https://other.example/' })).toBe(false);
+    expect(isSameCaptureAttribution(a, { ...b, query_params: { gclid: 'new' } })).toBe(false);
   });
 });

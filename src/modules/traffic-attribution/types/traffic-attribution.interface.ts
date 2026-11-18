@@ -7,7 +7,12 @@ export interface TrafficAttributionData {
 
 export interface TouchData {
   attribution: TrafficAttributionData,
-  isSent: boolean,
+  deliveredCartId?: string,
   createdAt: number,
   expiresAt: number
+}
+
+export interface TouchDelivery {
+  createdAt: number,
+  cartId: string
 }

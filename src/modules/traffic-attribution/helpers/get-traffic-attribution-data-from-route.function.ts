@@ -241,3 +241,7 @@ function normalizeAttributionValue (value: any): any {
 export function isSameTouchAttribution (a: TrafficAttributionData, b: TrafficAttributionData): boolean {
   return JSON.stringify(normalizeAttributionValue(a)) === JSON.stringify(normalizeAttributionValue(b));
 }
+
+export function isSameCaptureAttribution (a: TrafficAttributionData, b: TrafficAttributionData): boolean {
+  return isSameTouchAttribution({ ...a, detected_at: '' }, { ...b, detected_at: '' });
+}
