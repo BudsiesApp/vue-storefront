@@ -24,10 +24,7 @@ jest.mock('@storefront-ui/vue', () => ({
   },
   SfIcon: { name: 'SfIcon', render (h) { return h('span', this.$slots.default); } }
 }));
-jest.mock('src/modules/shared', () => ({
-  ...jest.requireActual('src/modules/shared/types/budsie-status'),
-  FOREVERS_BUNDLE_SKUS: []
-}));
+jest.mock('src/modules/shared', () => ({ FOREVERS_BUNDLE_SKUS: [] }));
 jest.mock('theme/components/molecules/m-spinner-button.vue', () => ({
   name: 'MSpinnerButton',
   props: { disabled: Boolean, showSpinner: Boolean },
@@ -49,7 +46,6 @@ jest.mock('src/modules/customization-system', () => ({
   ...jest.requireActual('src/modules/customization-system/composables/use-customization-state'),
   ...jest.requireActual('src/modules/customization-system/composables/use-entity-busy-state'),
   ...jest.requireActual('src/modules/customization-system/helpers/filter-customization-state'),
-  ...jest.requireActual('src/modules/customization-system/helpers/is-image-upload-customization'),
   ...jest.requireActual('src/modules/customization-system/types/widget-type'),
   ...jest.requireActual('src/modules/customization-system/types/customization-availability-flow.type')
 }));
