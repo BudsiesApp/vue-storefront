@@ -8,7 +8,7 @@ Magento accepts only image customizations for Awaiting-artwork items, so the dir
 
 - For Awaiting artwork, supply the creation wizard and images gallery with only image upload customizations plus unchanged group entries, and initialize them with only the draft's image entries. Image availability rules do not apply in this completion flow; locally restored non-image entries are discarded before saving.
 - Preserve the image predicate and rework the existing Awaiting-artwork composable into the shared source filter. Replace the former display predicate, save-time filter and hidden-checkbox reset with this single boundary.
-- Keep the completed Photo-step title `Upload Photos of Your Pet`, the forevers/golf upload h1 variants and their translations. Use the application i18n service for the new wizard title. Other statuses retain their existing fields, availability, state and headings; printed-product still has no h1.
+- Keep the completed Photo-step title `Upload Photos of Your Pet`, the forevers/golf upload h1 variants and their translations. Use the application i18n service for the new wizard title. Other statuses retain their existing fields, availability, state and headings; printed-product gets no additional page-level upload heading and keeps its existing product-name heading.
 - Preserve the inline Order History upload, Upgrades and the existing step infrastructure. Scope remains the wizard and gallery used by the three direct completion routes.
 - For Awaiting artwork, restore local photo state while ignoring the saved wizard position so the form opens on Photo. Keep saved-position restoration for other statuses.
 - Make customization availability rules optional so the source filter can return an image copy without a cast.

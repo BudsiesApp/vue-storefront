@@ -82,7 +82,7 @@ Keep the optional `title` prop in `theme/components/customization-system/forms/c
 
 ### 8. Select the Awaiting-artwork page h1 in the page
 
-Keep `mainTitleText` in `theme/pages/OrderItemCustomize.vue` returning `Upload Photos for Your Forevers Plush` or `Upload Photos for Your Golf Head Covers` for Awaiting artwork and the corresponding product type; other statuses retain the current `Customize Your …` texts and printed-product still has no h1. The page already owns both draft and product-type inputs, so the selection belongs at its existing h1 boundary.
+Keep `mainTitleText` in `theme/pages/OrderItemCustomize.vue` returning `Upload Photos for Your Forevers Plush` or `Upload Photos for Your Golf Head Covers` for Awaiting artwork and the corresponding product type; other statuses retain the current `Customize Your …` texts and printed-product gets no additional page-level upload heading, keeping the product-name heading its gallery already renders. The page already owns both draft and product-type inputs, so the selection belongs at its existing h1 boundary.
 
 ### 9. Extract the three new translation strings
 

@@ -8,7 +8,7 @@ For an order item whose loaded draft status is Awaiting artwork, the direct cust
 
 Non-image entries restored locally SHALL be discarded before saving and SHALL be absent from the state passed to saving. Complete retained image values SHALL be preserved, without restricting the page to the first image customization.
 
-For Awaiting artwork, the wizard Photo step SHALL display translated `Upload Photos of Your Pet`, and the forevers and golf-head-covers page h1 SHALL display translated `Upload Photos for Your Forevers Plush` and `Upload Photos for Your Golf Head Covers` respectively. Printed-product SHALL continue to have no h1; regular creation and Awaiting-customization step headings SHALL remain `Customize your {productType}`, and other statuses SHALL keep their current page headings.
+For Awaiting artwork, the wizard Photo step SHALL display translated `Upload Photos of Your Pet`, and the forevers and golf-head-covers page h1 SHALL display translated `Upload Photos for Your Forevers Plush` and `Upload Photos for Your Golf Head Covers` respectively. Printed-product SHALL get no additional page-level upload heading and SHALL keep its existing product-name heading; regular creation and Awaiting-customization step headings SHALL remain `Customize your {productType}`, and other statuses SHALL keep their current page headings.
 
 An Awaiting-artwork wizard SHALL open on Photo with its restored photo state even when local state contains a saved later step position; that saved position SHALL be ignored. Other statuses SHALL retain their existing saved-position restoration.
 
