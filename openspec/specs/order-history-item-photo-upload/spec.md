@@ -239,11 +239,13 @@ An item that has the awaiting-artwork action SHALL render its actions, including
 
 ### Requirement: Status-specific image-only artwork completion
 
-For an order item whose loaded draft status is Awaiting artwork, the direct customization page SHALL work with only image upload customizations and their draft state entries and SHALL send only image upload entries when saving. This restriction SHALL apply to `/forevers/customize/`, `/golf-head-covers/customize/` and `/printed-product/customize/` with `orderItemId`, to their creation-wizard and images-gallery layouts, and to the Petsies, Budsies, Budsies Education, Bulk Orders and Waggables themes. Group definitions SHALL remain unchanged for layout structure and SHALL NOT introduce non-image controls or saved entries. Availability rules on the retained image customizations SHALL NOT apply for Awaiting artwork; the source product and draft SHALL remain unchanged.
+For an order item whose loaded draft status is Awaiting artwork, the direct customization page SHALL work with only image upload customizations and their draft state entries and SHALL send only image upload entries when saving. This restriction SHALL apply to `/forevers/customize/`, `/golf-head-covers/customize/` and `/printed-product/customize/` with `orderItemId` and to their creation-wizard and images-gallery layouts. Group definitions SHALL remain unchanged for layout structure and SHALL NOT introduce non-image controls or saved entries. Availability rules on the retained image customizations SHALL NOT apply for Awaiting artwork; the source product and draft SHALL remain unchanged.
 
-Non-image entries restored locally SHALL be discarded before saving and SHALL be absent from the state passed to saving. Complete retained image values and quantities SHALL be preserved, without restricting the page to the first image customization.
+Non-image entries restored locally SHALL be discarded before saving and SHALL be absent from the state passed to saving. Complete retained image values SHALL be preserved, without restricting the page to the first image customization.
 
 For Awaiting artwork, the wizard Photo step SHALL display translated `Upload Photos of Your Pet`, and the forevers and golf-head-covers page h1 SHALL display translated `Upload Photos for Your Forevers Plush` and `Upload Photos for Your Golf Head Covers` respectively. Printed-product SHALL continue to have no h1; regular creation and Awaiting-customization step headings SHALL remain `Customize your {productType}`, and other statuses SHALL keep their current page headings.
+
+An Awaiting-artwork wizard SHALL open on Photo with its restored photo state even when local state contains a saved later step position; that saved position SHALL be ignored. Other statuses SHALL retain their existing saved-position restoration.
 
 The storefront SHALL preserve existing customization inputs, availability rules and completion behavior for other statuses or no draft, the separate Upgrades alteration step, and inline upload's eligibility and single-customization selection rules.
 
@@ -258,7 +260,7 @@ The storefront SHALL preserve existing customization inputs, availability rules 
 
 - **WHEN** a customer confirms an Awaiting-artwork item's customization after loading a draft or restoring local state containing image and non-image entries
 - **THEN** non-image draft and restored entries are absent from the state passed to saving
-- **AND** saving sends only image entries with their complete current values and quantities, without a first-image-only restriction
+- **AND** saving sends only image entries with their complete current values, without a first-image-only restriction
 - **AND** no group or unrelated entry is sent, and submission follows the existing successful-save sequence
 
 #### Scenario: Awaiting customization remains unchanged
@@ -294,3 +296,9 @@ The storefront SHALL preserve existing customization inputs, availability rules 
 - **AND** the page h1 is translated `Upload Photos for Your Forevers Plush` for forevers or `Upload Photos for Your Golf Head Covers` for golf head covers
 - **AND** Awaiting customization still displays `Customize your {productType}` when no last-step title override is supplied
 - **AND** Awaiting customization keeps `Customize Your Forevers Plush` / `Customize Your Golf Head Covers` as its corresponding page h1
+
+#### Scenario: Awaiting artwork opens on Photo despite a saved later wizard position
+
+- **WHEN** an Awaiting-artwork wizard restores local photo state with a saved step position pointing past Photo
+- **THEN** Photo remains active and displays the restored photo
+- **AND** the saved later position does not open Upgrades

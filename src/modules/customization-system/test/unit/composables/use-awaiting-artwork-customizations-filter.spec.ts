@@ -50,7 +50,7 @@ function fixture (status = BudsieStatus.AWAITING_ARTWORK) {
   const initialState = ref<CustomizationStateItem[]>([
     { customization_id: uploadMethodId, value: yesId, quantity: 1 },
     { customization_id: nameId, value: 'Rex', quantity: 1 },
-    { customization_id: imageId, value: [photo], quantity: 2 }
+    { customization_id: imageId, value: [photo], quantity: 1 }
   ]);
   const draft = ref<DraftOrderItem | undefined>({ id: 7, status_id: status, customization_state: initialState.value });
   return { customizations, initialState, draft };

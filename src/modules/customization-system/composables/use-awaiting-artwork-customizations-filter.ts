@@ -30,7 +30,7 @@ export function useAwaitingArtworkCustomizationsFilter (
       }
 
       const { availabilityRules, ...image } = customization;
-      return [image as Customization];
+      return [image];
     });
   });
 
