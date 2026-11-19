@@ -11,5 +11,6 @@ export interface OrderItemExtensionAttributes {
   is_custom_product?: boolean,
   plushie_id?: number,
   support_bulk_customization?: boolean,
+  shipping_holiday_name?: string,
   flow?: ProductPurchaseFlow
 }

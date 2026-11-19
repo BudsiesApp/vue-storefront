@@ -214,6 +214,7 @@ jobs:
           REDIS_PORT: '6379'
           REDIS_DB: '0'
           SHOW_PRODUCT_RATING: 'true'
+          ORDER_HISTORY_DISPLAY_HOLIDAY_PROMISE: 'false'
           AMAZONPAY_SANDBOX: 'true'
         run: |
           envsubst < config/local.json.template > config/local.json

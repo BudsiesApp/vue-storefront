@@ -2,7 +2,7 @@
   <div class="order-item-shipment-info">
     <div class="_content">
       <span class="_estimated-shipment-date" v-if="showEstimatedShipmentDate">
-        {{ $t('Est. shipment date') + ': ' + formattedEstimatedShipmentDate }}
+        {{ estimatedShipmentText }}
       </span>
 
       <span class="_shipped-date" v-if="shipmentDate">
@@ -25,6 +25,7 @@
 <script lang="ts">
 import { useI18n } from '@vue-storefront/core/application-services';
 import { PropType, computed, defineComponent } from 'vue';
+import config from 'config';
 
 import { OrderItemShipment } from '../types/order-item-shipment';
 
@@ -37,6 +38,10 @@ export default defineComponent({
     },
     estimatedShipmentDate: {
       type: String as PropType<string | null | undefined>,
+      default: undefined
+    },
+    shippingHolidayName: {
+      type: String,
       default: undefined
     }
   },
@@ -82,8 +87,20 @@ export default defineComponent({
       return !!formattedEstimatedShipmentDate.value && !shipmentDate.value;
     });
 
+    const showHolidayPromise = computed<boolean>(() => {
+      return config.orderHistory?.displayHolidayPromise === true && !!props.shippingHolidayName;
+    });
+
+    const estimatedShipmentText = computed(() => {
+      if (showHolidayPromise.value) {
+        return applicationI18n.t('In time for {holidayName}', { holidayName: props.shippingHolidayName });
+      }
+
+      return applicationI18n.t('Est. shipment date') + ': ' + formattedEstimatedShipmentDate.value;
+    });
+
     return {
-      formattedEstimatedShipmentDate,
+      estimatedShipmentText,
       shipmentDate,
       showEstimatedShipmentDate,
       showShipmentsList
