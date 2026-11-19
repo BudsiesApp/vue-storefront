@@ -1,6 +1,6 @@
 # Spec Delta
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Status-specific image-only artwork completion
 
