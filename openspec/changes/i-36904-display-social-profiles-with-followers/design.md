@@ -1,0 +1,75 @@
+# Design
+
+## Context
+
+`components/organisms/o-footer.vue` currently mounts separate desktop and mobile link groups from `interfaces/social-services.ts` and a PNG sprite. The root `App.vue` owns SSR prefetch, and its `components/atoms/a-organization-schema.vue` independently reads the same hardcoded list on the homepage. Magento already exports one `social_profile` document per Website/network into each of that Website's Store View catalog indexes. There are six supported networks and Magento enforces one profile per Website and network.
+
+## Goals / Non-Goals
+
+- Keep catalog access and profile selection behind one Vuex action, with the visual list and JSON-LD reading the same hydrated result.
+- Use the same action-level cache tagging as rush upgrades and the existing SSR cache policy without changing cache keys or adding a cache or service.
+- Adopt the component in every storefront theme: Petsies, Budsies, Budsies Education, Waggables and Stuffed Animal Pros. Keep the shared app independent of theme files, so a theme branch without the new component or store registration still builds.
+
+## Decisions
+
+### D1. Load profiles like settings and rush upgrades
+
+Follow the `BackendSettings` and `BudsiesModule` registration pattern. Export a `SocialProfilesModule` and its namespaced action and getter identifiers from `src/modules/social-profiles/index.ts`; the module registers the Vuex module from `store/index.ts` under its shared store-name constant. Add `registerModule(SocialProfilesModule)` beside `registerModule(BackendSettings)` in the Petsies theme's `config/modules.ts`. Do not construct the store through a custom factory, register it in `initTheme`, or inject callbacks or renderer context.
+
+Follow `backend-settings/fetchSettings` and `budsies/loadProductsRushAddons`: the action in `store/actions.ts` resolves `${config.budsies.endpoint}/social-profiles` with `processURLAddress` and awaits a silent JSON GET through unmodified `TaskQueue.execute()`. On result code 200, normalize `task.result` and commit it through a mutation; the endpoint guarantees a profile array, so the action does not check its shape. On a rejected task or non-200 result code, log the failure, commit an empty list, mark `no-cache` (D4), and settle normally so the optional profile load cannot enter the settings error-page path. Do not add a feature-specific deadline, cancellation, or retry.
+
+Dispatch once from the theme root's `serverPrefetch`, concurrently with settings and before children render. The footer and Organization schema read the same namespaced Vuex getter through computed properties; the browser restores the state before mount and neither consumer fetches the data. The single SSR caller does not need the rush loader's pending-promise bookkeeping.
+
+In the Vue Storefront API repository, add `GET /api/ext/budsies/social-profiles` in `src/api/extensions/budsies/index.js`, using the same search and success response pattern as `/plushies/products-rush-upgrades`. Use the existing OpenSearch client and `adjustIndexName(config.opensearch.index, 'social_profile')`. Each brand/Store View deployment selects its configured base index. Search once with `allow_partial_search_results: false` and a fixed size of 50 (Magento currently permits at most six profiles per Website). Return only `id`, `network`, `is_enabled`, `profile_url`, `subscribers_count`, `display_subscribers`, and `position` from the hits, without revalidating Magento's exported values. Return success via `apiStatus(res, profiles)`, including `[]` on no hits. On a search error, log its type and status and return a generic message in the standard error envelope with an explicit HTTP 500 via `apiStatus`. Do not pass `error.code` to `apiStatus`: OpenSearch errors can omit it, causing `apiStatus` to default to 200. Do not add an API response cache for this route.
+
+The existing loader, extension router, search client and response envelope are reused (rungs 2–3). The small endpoint (rung 4) is needed because the generic catalog search returns unwrapped JSON; it keeps the rush-upgrade loader pattern without changing Magento, the generic catalog API, or shared TaskQueue behavior.
+
+### D2. One normalized list for links, counts and Organization URLs
+
+Normalize the hits in a single `for...of` loop. Skip disabled profiles and networks the storefront does not support. The Magento admin save path requires a valid absolute HTTP(S) destination for an enabled profile. Use `profile_url` as exported, without checking its presence, format or protocol. Data written around Magento validation is out of scope. Order the collected profiles by numeric `position` then `id` using Magento's exported fields.
+
+Use the exported `subscribers_count` directly: Magento supplies a non-negative integer or `null` and already applies the count display flag. Do not check the flag, type, or sign again. Normalize `0` and `null` to an omitted count (`null`) without dropping the profile. For K/M/B choose the unit using the input count, truncate to tenths before composing the number and suffix, and emit no fractional digit when the tenth is zero. Serialize formatted text or `null` for both renders.
+
+Keep `a-organization-schema.vue` homepage-only; derive optional `sameAs` by mapping the ordered URL field. Escape literal `<` at the JSON-LD serialization sink (as `\u003c` in JSON), because URLs now come from outside the theme and the existing component emits raw script text. Keep the rest of the Organization and WebSite schema unchanged.
+
+### D3. Component-owned social styling
+
+Add the reusable component under the theme's `components/`. Select `circled` or `plain` by prop and use static imports of the supplied local assets, keyed by the social-network enum, with both sets included by the build. Use the files unchanged as image URLs, with an empty alt attribute. Render nothing for an empty list, and use one link for each icon and optional count. Get the brand from the active Store View and use translatable name templates with and without the count so translators can place the count, noun and new-tab notice naturally. Keep the visible count string verbatim in the accessible name. Use the count-free template when the normalized count is `null`, including a raw count of zero. A single count noun per network is sufficient; singular wording for one is not in scope.
+
+Use the component in `o-footer.vue`'s existing desktop and mobile placements. Use breakpoint CSS to hide the inactive instance completely, not viewport-dependent JS, so SSR and hydration agree and only one instance is focusable at a time. Keep all link, icon, count, spacing and focus styles in `social-profiles.vue`; the footer controls only placement, breakpoint visibility and custom-property values. Expose `--social-profiles-icon-size` for other themes to override, with defaults of 30px on mobile and 42px on desktop, and `--social-profiles-margin` (default `0 auto`, centered) for the list's position in its placement. Reserve icon dimensions before images load; size the mobile image to its box and the desktop image 2px larger, clipped with the same `-1px` offset as the sprite. Remove `interfaces/social-services.ts` and `assets/footer-socials.png` after both consumers have switched.
+
+Follow the [approved footer count-icon mockup](mockups/footer-follower-count-icon.html). Under each network icon, put the count in a centered flex row with Storefront UI's filled single-person glyph (`profile_fill`) to the left of the digits. Use `SfIcon` with a block count wrapper, `--icon-color: currentColor`, a `0.85em` icon box (about 11.5px at Petsies' count text size), and a 3px gap. Align the glyph to the digits and reuse the same glyph on all networks, including YouTube. No new icon asset or size custom property is needed; `--social-profiles-icon-size` still sizes the network icon only.
+
+Render the count row only if the formatted count is present. Hidden and zero counts reserve no space for either the digits or the glyph. The glyph is decorative and not separately focusable; the link's translated accessible name is unchanged. Keep the focus outline on the whole link so it surrounds the network icon and the count row together. Lay the links out as a centered CSS grid of equal `1fr` columns sized to the widest link, so the network icons stay evenly spaced without JS. Align each link within its column with `--social-profiles-justify-items` (default `center`) on mobile and desktop; the same value aligns the network icon and the count inside the link, so start-aligned links keep their icons evenly spaced. A theme that needs different alignments per breakpoint sets the property in its own media queries. The Budsies footer uses the plain set at 16px (`--social-profiles-icon-size: 16px`) and `start` alignment on desktop under its Social title; its mobile list stays centered. The desktop 1px clipping offset applies to the circled set only, so plain icons are not cropped. Below 390px, six equal columns no longer fit longer counts, so six profiles switch to two rows of three; shorter lists stay on one row. Keep the approved count and icon styling, and keep the desktop list clear of the newsletter form.
+
+Each theme branch has its own footer, so each adopts the component in its own placements and removes its hardcoded list and old social icon files:
+
+| Theme | Icon set and size | Alignment |
+| --- | --- | --- |
+| Petsies | circled, 30px mobile / 42px desktop (defaults) | centered |
+| Waggables | circled, defaults | desktop list starts under the newsletter (`--social-profiles-margin: 0`); mobile centered |
+| Budsies, Budsies Education | plain, 16px | desktop `start` under the Social title; mobile centered |
+| Stuffed Animal Pros | circled, 32px | `start` with `--social-profiles-margin: 0` in the Contact column, at all widths |
+
+Equal columns need the widest count's width in every column. In a placement narrower than that, such as the 268px Stuffed Animal Pros Contact column with four or more counted profiles, or a 320–341px phone with five six-character counts in the Budsies and Waggables fonts, the columns shrink unevenly; in the 320–341px case the row can scroll sideways. Current data stays within these limits: Stuffed Animal Pros has one supported network and the counts differ in length.
+
+### D4. Tag in the Vuex action, like rush upgrades
+
+In the load action, use the existing `Vue.prototype.$cacheTags` when present, as rush upgrades do. Add `social_profile` on success even for an empty list, and add `no-cache` when the load fails. Do not record load outcome in Vuex solely for tagging or add a check in the SSR response handler. This is a narrow exception to the general restriction on new prototype cache-tag access; do not expose tags through `$ssrContext` or the general request service.
+
+Register `social_profile` in `server.availableCacheTags` in `config/default.json` and `config/local.json.template` (the deployment template replaces the default array). Use the existing explicit and wildcard invalidation handling and the `no-cache` write rule, which applies whether output-cache tagging is on or off. No key or invalidation algorithm changes are needed.
+
+## Risks / Trade-offs
+
+- No profiles means no social links, by design. Prepare and reindex Petsies and Waggables content before their rollout rather than preserving the old data in code.
+- The action writes cache tags and `no-cache` through the shared Vue prototype. Under concurrent SSR, the tag set can belong to a different render, so a page can miss its profile tag or a failed response can be stored despite the mark; another render can receive the mark instead. No request-isolation work is included.
+- Like settings and rush upgrades, SSR waits for the load. A stalled request can hold the page until the existing transport, proxy or browser times out; only an observed failure takes the fallback path. The browser does not retry during hydration.
+- Each deployment uses one `DEFAULT_STORE_CODE` with `storeViews.multistore` and `users.tokenInHeader` disabled. The action runs only on the server, where tasks receive no user or cart token. Revisit the loader if these deployment assumptions change; this change adds no special request handling for those configurations.
+- The profile endpoint adds no API result cache. Magento's cache queue must still invalidate the storefront output cache. The checked-in API template leaves API output caching and forwarding off; the API only forwards from its enabled cache handler. Use the existing direct storefront route when forwarding is off. Verify actual eviction and refreshed content, not just a successful invalidation HTTP status.
+
+## Migration Plan
+
+1. Have the content owner enter and confirm the intended production profiles for `petsies_site`, `waggables_site`, `base` (Budsies and Budsies Education Store Views) and `bulkorders_site` in Magento, and run the `vsbridge_budsies_social_profile_indexer` reindex. Confirm the intended links, order and count visibility are available from the affected Store View indexes; do not release a storefront whose brand's profiles are not ready. LinkedIn is not a Magento network, so the Budsies, Budsies Education and Stuffed Animal Pros LinkedIn links disappear.
+2. Merge the theme branches in dependency order: the Petsies branch into `petsies-theme` first, then the Budsies, Budsies Education, Waggables and Stuffed Animal Pros branches into their themes. Each of those carries the same Petsies commits, so the later regular theme merges find them already merged. Release the Vue Storefront API endpoint before or together with the storefront. Ensure each affected deployment points to its paired API and that the endpoint returns the expected list for the configured index before the new storefront takes traffic.
+3. Verify that Magento's `social_profile` invalidation evicts cached storefront HTML for each brand's Store Views. If it does not, correct the existing invalidation route in deployment settings and verify eviction before go-live. Release with the storefront tag configuration and purge pre-change SSR HTML using the normal deployment cache purge; old pages lack the new dependency tag.
+4. If rollback is needed, restore the previous storefront release and purge its SSR pages again before removing the API endpoint. Indexed Magento profiles can stay in place.
