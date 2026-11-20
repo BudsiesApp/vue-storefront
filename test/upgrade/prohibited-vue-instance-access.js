@@ -25,6 +25,7 @@ const allowedCacheTagCounts = {
   'src/modules/backend-settings/store/getters.ts': 3,
   'src/modules/budsies/store/actions.ts': 8,
   'src/modules/gift-card/store/actions.ts': 2,
+  'src/modules/social-profiles/store/actions.ts': 4,
   'src/modules/url-rewrite/mappingFallback.ts': 3,
   'src/modules/vsf-storyblok-module/store/actions.ts': 5
 }

@@ -18,4 +18,10 @@
 
 - [x] 3.1 Register `social_profile` in both SSR configuration tag lists. Write profile cache tags only in the action through `Vue.prototype.$cacheTags`, like rush upgrades (D4). Test `social_profile` on empty and nonempty success, and that rejection and a non-200 result code each commit an empty list and add `no-cache` without rejecting the action.
 
+## 4. Adopt the component in the other theme branches
+
+- [x] 4.1 Budsies (`budsies-theme`) and Budsies Education (`budsies-education-theme`): use the plain set at 16px in the existing desktop Social column and mobile placement, `start` alignment on desktop, and remove `interfaces/social-services.ts` and the unused icons in `assets/brands/` (D3). Verify 16px uncropped icons, even spacing at 320px, 390px, 1024px, 1280px and 1440px, and no horizontal scrolling caused by the list.
+- [x] 4.2 Waggables (`waggables-theme`): use the circled set at the default sizes in the existing desktop and mobile placements, with the desktop list starting under the newsletter, and remove the hardcoded list (D3). Verify the same widths.
+- [x] 4.3 Stuffed Animal Pros (`bulkorders-theme`): use the circled set at 32px, start-aligned in the Contact column, and remove the hardcoded list and the unused icons in `assets/brands/` (D3). Verify the server-rendered footer on desktop and mobile; the client needs the app's `bulkorders-theme` branch.
+
 The Migration Plan in `design.md` is the source for release instructions; no separate deployment deliverable is needed for implementation.

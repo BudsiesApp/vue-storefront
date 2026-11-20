@@ -2,7 +2,7 @@
 
 ## Why
 
-Follower counts show prospective customers that the brand is established. Content managers can now maintain social profiles and counts in Magento; the Petsies storefront should reflect those changes instead of shipping its own list of links.
+Follower counts show prospective customers that the brand is established. Content managers can now maintain social profiles and counts in Magento; every storefront should reflect those changes instead of shipping its own list of links.
 
 ## What Changes
 
@@ -25,4 +25,5 @@ Follower counts show prospective customers that the brand is established. Conten
 - Storefront app: a standard registered Vuex module following settings and rush upgrades, with ordinary `TaskQueue.execute()` and cache tagging inside the action. No change to TaskQueue or the SSR response handler. Unadapted theme branches keep their current behavior.
 - Petsies theme submodule: normal module registration in `config/modules.ts`, application prefetch, reusable social list, responsive footer, Organization schema, theme translations and SVG assets.
 - Vue Storefront API: one read-only Budsies extension endpoint over the store's existing `social_profile` index; no change to the generic catalog API. Release it before or together with the storefront.
-- No Magento changes, Storyblok integration, social-network API calls, follower synchronization or adaptations of other theme branches. Entering production profiles is content work, not part of this implementation.
+- Other theme branches: Budsies, Budsies Education, Waggables and Stuffed Animal Pros each get a `36904-…` branch that merges the Petsies branch and adopts the component in their own footers, removing their hardcoded lists and old social icon files.
+- No Magento changes, Storyblok integration, social-network API calls or follower synchronization. Entering production profiles is content work, not part of this implementation.
