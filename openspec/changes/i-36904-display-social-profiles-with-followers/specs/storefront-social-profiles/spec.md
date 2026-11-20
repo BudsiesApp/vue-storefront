@@ -37,11 +37,15 @@ The Vue Storefront API SHALL expose `GET /api/ext/budsies/social-profiles` using
 
 ### Requirement: Optional compact social counts
 
-Each shown profile SHALL display the count exported by Magento when it is above zero. The storefront SHALL rely on Magento to apply count visibility and validate the value. A displayed count below 1,000 SHALL be displayed in full. For counts from 1,000, the largest applicable unit among K (thousands), M (millions), and B (billions) SHALL be used; the result SHALL be rounded down to at most one decimal place without a trailing `.0`. The format SHALL be identical across locales and on the server and browser.
+Each shown profile SHALL display the count exported by Magento when it is above zero. Each visible count SHALL have a small filled single-person icon to the left, aligned with the digits and in the same color. Every network, including YouTube, SHALL use that icon. The storefront SHALL rely on Magento to apply count visibility and validate the value. A displayed count below 1,000 SHALL be displayed in full. For counts from 1,000, the largest applicable unit among K (thousands), M (millions), and B (billions) SHALL be used; the result SHALL be rounded down to at most one decimal place without a trailing `.0`. The format SHALL be identical across locales and on the server and browser.
 
 #### Scenario: Omitted counts leave the profile link
 - **WHEN** Magento exports a count of `0` or `null` for an eligible profile
-- **THEN** the link remains visible without a count and its URL remains in homepage Organization `sameAs`
+- **THEN** the link remains visible without either the count or its person icon, and its URL remains in homepage Organization `sameAs`
+
+#### Scenario: The person icon identifies every shown count
+- **WHEN** an Instagram follower count and a YouTube subscriber count are shown
+- **THEN** the same small filled person icon appears immediately to the left of each number, aligned with and matching the color of the digits
 
 #### Scenario: Counts are not overstated at unit boundaries
 - **WHEN** shown profiles have counts of `999`, `1000`, `1250`, `999999`, `1000000`, `2549000`, `1000000000` or `1200000000`
@@ -52,26 +56,27 @@ Each shown profile SHALL display the count exported by Magento when it is above 
 The reusable theme social-profile component SHALL render the active store's eligible profiles with either supplied SVG icon set, selected by its caller, without depending on footer markup. The component SHALL encapsulate its spacing and sizing and expose `--social-profiles-icon-size` for other themes to override. The Petsies footer SHALL use the circled set at the existing placements and default sizes: the full 30px icon on mobile and a 44px icon centered in a 42px clipping box on desktop. Counts SHALL appear beside or below their icon in the footer's existing text colors. The supplied icons MUST NOT be altered and their Font Awesome attribution comments SHALL be preserved. Footer links, newsletter, brands and legal content SHALL retain their layout and behavior.
 
 #### Scenario: Six profiles at the narrowest supported width
-- **WHEN** six eligible profiles with visible counts are displayed at 320px viewport width
-- **THEN** all six are visible in the existing mobile social placement without horizontal scrolling
+- **WHEN** six eligible profiles with visible counts, including longer labels, are displayed at 320px viewport width
+- **THEN** all six links and their count icons are visible without horizontal scrolling in the existing mobile social placement
+- **AND** the links remain centered, with a second centered row allowed when the counts need more room
 
 #### Scenario: Petsies retains its desktop placement
 - **WHEN** Petsies displays eligible profiles on desktop
-- **THEN** the social list remains in the existing desktop footer placement with the circled icons visually matching the previous icons at their existing size
+- **THEN** the social list remains in the existing desktop footer placement, with the circled network icons at their existing size and the count rows clear of the newsletter form
 - **AND** the other footer sections retain their layout and behavior
 
 #### Scenario: Another theme selects an icon size
 - **WHEN** a caller sets `--social-profiles-icon-size`
-- **THEN** the icon box uses that size on mobile and desktop, with the desktop image retaining its 1px clipping offset on each side
+- **THEN** the network icon box uses that size on mobile and desktop, with the desktop image retaining its 1px clipping offset on each side, while the person icon scales with the count text
 
 ### Requirement: Accessible social links
 
-Each shown profile SHALL have one operable link per visible layout, with its decorative icon and any visible count inside the link. Links SHALL open in a new tab with `rel="noopener noreferrer"`, be reachable in visual order by keyboard, and show visible keyboard focus. The accessible name SHALL contain the brand, the network label, any visible count verbatim with its noun (`subscribers` for YouTube; `followers` for the others), and a new-tab announcement. User-facing wording SHALL use theme translations. Network labels SHALL be YouTube, Facebook, Instagram, X, Pinterest and TikTok; X MUST NOT appear as Twitter.
+Each shown profile SHALL have one operable link per visible layout, with the network icon and any visible count and its person icon inside the link. Both icons SHALL be decorative. Links SHALL open in a new tab with `rel="noopener noreferrer"`, be reachable in visual order by keyboard, and show a visible focus outline around the whole link. The accessible name SHALL contain the brand, the network label, any visible count verbatim with its noun (`subscribers` for YouTube; `followers` for the others), and a new-tab announcement. User-facing wording SHALL use theme translations. Network labels SHALL be YouTube, Facebook, Instagram, X, Pinterest and TikTok; X MUST NOT appear as Twitter.
 
 #### Scenario: Keyboard and assistive technology identify the same link
 - **WHEN** a visitor tabs through visible profiles whose Instagram and YouTube counts are `214K` and `1.2K`, respectively
-- **THEN** each receives focus once in display order with a visible focus indicator, and its accessible name includes the brand, network, `214K followers` or `1.2K subscribers`, and the new-tab announcement
-- **AND** no hidden or empty social link receives focus
+- **THEN** each receives focus once in display order, the outline surrounds the network icon and count row, and its accessible name includes the brand, network, `214K followers` or `1.2K subscribers`, and the new-tab announcement
+- **AND** neither icon adds an announcement or a separate focus stop, and no hidden or empty social link receives focus
 
 #### Scenario: An undisplayed count is not announced
 - **WHEN** a profile's count is zero, hidden or unavailable

@@ -6,7 +6,7 @@ Follower counts show prospective customers that the brand is established. Conten
 
 ## What Changes
 
-- Render the active store's eligible social profiles and optional compact counts in the Petsies footer, using the supplied circled SVGs in place of the sprite. A zero count leaves the link visible without a count. Keep the rest of the footer unchanged.
+- Render the active store's eligible social profiles and optional compact counts in the Petsies footer, using the supplied circled SVGs in place of the sprite. A small filled person icon identifies each visible count. A zero count leaves the link visible without the number or its icon. Keep the rest of the footer unchanged.
 - Share one server-rendered profile list with the homepage Organization schema. Use the existing tag flow to invalidate pages after reindexing, including pages that previously had no visible profiles. When the load fails, render the page without social links and mark it `no-cache` using the same shared mechanism as rush upgrades.
 - Place the social list in a reusable theme component that supports both SVG sets. Remove the hardcoded Petsies list without a fallback; the production profiles must be ready before release.
 
