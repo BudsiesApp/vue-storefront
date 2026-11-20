@@ -12,8 +12,9 @@ import ShippingAddress from '../../types/ShippingAddress'
 const methodsActions = {
   async pullMethods ({ getters, dispatch }, { forceServerSync }) {
     if (getters.isTotalsSyncRequired || forceServerSync) {
-      await dispatch('syncShippingMethods', { forceServerSync })
-      await dispatch('syncPaymentMethods', { forceServerSync })
+      const shippingResult = await dispatch('syncShippingMethods', { forceServerSync })
+      if (shippingResult && isCartNotFoundError(shippingResult)) return shippingResult
+      return dispatch('syncPaymentMethods', { forceServerSync })
     } else {
       Logger.debug('Skipping payment & shipping methods update as cart has not been changed', 'cart')()
     }
@@ -64,11 +65,12 @@ const methodsActions = {
 
             if (hasShippingInformation) {
               const task = await dispatch('getTotals', { addressInformation, hasShippingInformation });
-              backendPaymentMethods = task.result.payment_methods || []
 
               if (isCartNotFoundError(task)) {
-                return dispatch('clear', { disconnect: true, sync: false });
+                await dispatch('clear', { disconnect: true, sync: false });
+                return task;
               }
+              backendPaymentMethods = task.result.payment_methods || []
             }
           }
         }
@@ -77,7 +79,8 @@ const methodsActions = {
           const task = await CartService.getPaymentMethods();
 
           if (isCartNotFoundError(task)) {
-            return dispatch('clear', { disconnect: true, sync: false });
+            await dispatch('clear', { disconnect: true, sync: false });
+            return task;
           }
 
           backendPaymentMethods = task.resultCode === 200 ? task.result : [];
@@ -157,7 +160,8 @@ const methodsActions = {
         }
 
         if (isCartNotFoundError(task)) {
-          return dispatch('clear', { disconnect: true, sync: false });
+          await dispatch('clear', { disconnect: true, sync: false });
+          return task;
         }
 
         if (isSuccessful) {

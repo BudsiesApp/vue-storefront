@@ -1,7 +1,7 @@
 import * as types from '@vue-storefront/core/modules/cart/store/mutation-types'
 import { configureProductAsync } from '@vue-storefront/core/modules/catalog/helpers'
 import { prepareProductsToAdd, productsEquals, validateProduct } from '@vue-storefront/core/modules/cart/helpers'
-import cartActions from '@vue-storefront/core/modules/cart/store/actions';
+import cartActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
 import { createContextMock } from '@vue-storefront/unit-tests/utils';
 import config from 'config';
 
@@ -116,7 +116,7 @@ describe('Cart itemActions', () => {
     const product1 = { sku: 1, name: 'product1', server_item_id: 1 }
     const prepareProductsToAddMock = prepareProductsToAdd as jest.Mock
     prepareProductsToAddMock.mockImplementation(() => [product1])
-    const contextMock = createContextMock()
+    const contextMock = createContextMock({ dispatch: jest.fn().mockResolvedValue({ serverResponses: [] }) })
 
     await (cartActions as any).addItem(contextMock, { productToAdd: product1 })
 
@@ -161,7 +161,7 @@ describe('Cart itemActions', () => {
     expect(contextMock.commit).toBeCalledWith(types.CART_ADD_ITEM, { product: { ...product, onlineStockCheckid: 1 } })
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'checkProductStatus', { product })
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'create')
-    expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'sync', { forceClientState: true })
+    expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'sync', { forceClientState: true, waitForTotalsUpdate: true, allowTotalsFailure: true })
   })
 
   it('removes item from the cart', async () => {

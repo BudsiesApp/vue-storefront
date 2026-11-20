@@ -51,8 +51,10 @@ const actions: ActionTree<UserState, RootState> = {
       return dispatch('sessionAfterStarted');
     }
 
-    EventBus.$once(LOCAL_CART_DATA_LOADED_EVENT, () => {
-      dispatch('sessionAfterStarted');
+    return new Promise((resolve, reject) => {
+      EventBus.$once(LOCAL_CART_DATA_LOADED_EVENT, () => {
+        dispatch('sessionAfterStarted').then(resolve, reject);
+      });
     });
   },
   async sessionAfterStarted ({ commit, getters, dispatch }) {

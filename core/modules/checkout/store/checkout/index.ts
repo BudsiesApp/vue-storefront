@@ -13,7 +13,7 @@ import getDefaultPaymentDetails from '../../helpers/default-payment-details.fact
 
 export const checkoutModule: Module<CheckoutState, RootState> = {
   namespaced: true,
-  state: {
+  state: () => ({
     order: {},
     paymentMethods: [],
     shippingMethods: config.shipping.methods,
@@ -21,8 +21,10 @@ export const checkoutModule: Module<CheckoutState, RootState> = {
     shippingDetails: getDefaultShippingDetails(),
     paymentDetails: getDefaultPaymentDetails(),
     modifiedAt: 0,
+    entryPromise: null,
+    entryRefreshAttempted: false,
     successOrderData: undefined
-  },
+  }),
   getters,
   actions,
   mutations

@@ -7,6 +7,7 @@ import { CartService } from '@vue-storefront/core/data-resolver'
 import { createDiffLog } from '@vue-storefront/core/modules/cart/helpers'
 import i18n from '@vue-storefront/i18n'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
+import { watch } from 'vue'
 import { cartHooksExecutors } from '../../hooks'
 import { LOCAL_CART_DATA_LOADED_EVENT } from '../../types/local-cart-data-loaded.event'
 
@@ -16,7 +17,8 @@ interface CartSyncOptions {
   mergeQty?: boolean,
   forceSync?: boolean,
   forceUpdateServerItem?: boolean,
-  waitForTotalsUpdate?: boolean
+  waitForTotalsUpdate?: boolean,
+  allowTotalsFailure?: boolean
 }
 
 const synchronizeActions = {
@@ -29,9 +31,10 @@ const synchronizeActions = {
     dispatch('setDefaultCheckoutMethods')
     const storedItems = await StorageManager.get('cart').getItem('current-cart')
     commit(types.CART_LOAD_CART, storedItems)
-    dispatch('loadCartDataFromLocalStorage', { forceClientState, forceSync })
+    const restore = dispatch('loadCartDataFromLocalStorage', { forceClientState, forceSync })
 
     cartHooksExecutors.afterLoad(storedItems)
+    await restore
   },
   async loadCartDataFromLocalStorage ({ commit, dispatch }, { forceClientState, forceSync }) {
     const { synchronize } = config.cart
@@ -86,6 +89,43 @@ const synchronizeActions = {
       }
     }
   },
+  async waitForStartup ({ state }) {
+    try {
+      await state.startupPromise
+    } catch {
+      // Startup settlement, rather than success, is the contract for callers.
+    }
+  },
+  async waitForConnections ({ state }) {
+    while (state.connectionPromises.length) {
+      await Promise.all(state.connectionPromises.map(promise => promise.catch(() => undefined)))
+    }
+  },
+  async waitForIdle ({ getters, dispatch, state }) {
+    do {
+      await dispatch('waitForConnections')
+      await dispatch('waitForCartSync')
+      if (getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING) {
+        await new Promise<void>(resolve => {
+          const stop = watch(
+            () => getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING,
+            busy => { if (!busy) { stop(); resolve() } }
+          )
+        })
+      }
+    } while (state.connectionPromises.length || getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING)
+  },
+  async trackConnection ({ commit }, operation: () => Promise<unknown>) {
+    let release: () => void = () => undefined
+    const settled = new Promise<void>(resolve => { release = resolve })
+    commit(types.ADD_CONNECTION_PROMISE, settled)
+    try {
+      return await operation()
+    } finally {
+      commit(types.REMOVE_CONNECTION_PROMISE, settled)
+      release()
+    }
+  },
   /** @deprecated backward compatibility only */
   async serverPull ({ dispatch }, { forceClientState = false, dryRun = false }) {
     Logger.warn('The "cart/serverPull" action is deprecated and will not be supported with the Vue Storefront 1.11', 'cart')()
@@ -123,13 +163,15 @@ const synchronizeActions = {
       mergeQty = false,
       forceSync = false,
       forceUpdateServerItem = false,
-      waitForTotalsUpdate = true
+      waitForTotalsUpdate = true,
+      allowTotalsFailure = false
     }: CartSyncOptions = {}
   ) {
     const { getCartItems, canUpdateMethods, isSyncRequired } = getters
     if ((!canUpdateMethods || !isSyncRequired) && !forceSync) return createDiffLog()
 
-    const { result, resultCode } = await CartService.getItems()
+    const task = await CartService.getItems()
+    const { result, resultCode } = task
 
     if (resultCode === 200) {
       if (Array.isArray(result)) {
@@ -151,12 +193,15 @@ const synchronizeActions = {
         forceClientState,
         mergeQty,
         forceUpdateServerItem,
-        waitForTotalsUpdate
+        waitForTotalsUpdate,
+        ...(allowTotalsFailure ? { allowTotalsFailure } : {})
       })
       cartHooksExecutors.afterSync(diffLog)
       commit(types.CART_SET_SYNC)
       return diffLog
     }
+
+    const diffLog = createDiffLog()
 
     if (resultCode === 404) {
       dispatch(
@@ -166,12 +211,20 @@ const synchronizeActions = {
           sync: false
         }
       );
-      return createDiffLog();
+      // The cart no longer exists and was cleared together with the local changes, so the change is lost and
+      // callers must know. Nothing stays behind that a repeated action could apply twice.
+      diffLog.pushServerResponse({ status: resultCode, sku: '', result: task })
+
+      return diffLog
     }
 
-    Logger.error(result, 'cart')
+    // The items are not rejected, the synchronization failed. The local changes stay in the cart and the cart
+    // hash still differs, so a later synchronization sends them. Reporting the failure as the response of an
+    // item would make the caller show an error for a change that stays, and a retry would apply it twice.
+    Logger.error(result, 'cart')()
     cartHooksExecutors.afterSync(result)
-    return createDiffLog()
+
+    return diffLog
   },
   async stockSync ({ dispatch, commit, getters }, stockTask) {
     const product = { sku: stockTask.product_sku }

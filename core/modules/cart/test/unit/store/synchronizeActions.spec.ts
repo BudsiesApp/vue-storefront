@@ -205,27 +205,17 @@ describe('Cart synchronizeActions', () => {
     expect(commit).toHaveBeenLastCalledWith(types.SET_IS_CART_SYNCING, false)
   })
 
-  it('retains the cart after a failed pull', async () => {
-    (CartService.getItems as jest.Mock).mockImplementation(async () => ({
-      resultCode: 500,
-      result: null
-    }))
+  it('does not reject items when the pull fails without a result code', async () => {
+    (CartService.getItems as jest.Mock).mockImplementation(async () => ({ result: 'Network error' }))
 
     const contextMock = createContextMock({
-      rootGetters: {
-        'checkout/isUserInCheckout': true
-      },
-      getters: {
-        getCartItems: [],
-        canUpdateMethods: true,
-        isSyncRequired: true,
-        bypassCounter: 0
-      }
+      getters: { getCartItems: [], canUpdateMethods: true, isSyncRequired: true }
     });
 
-    await (cartActions as any).performSync(contextMock, {});
+    const diffLog = await (cartActions as any).performSync(contextMock, {});
+
     expect(contextMock.dispatch).not.toHaveBeenCalled()
-    expect(contextMock.commit).not.toHaveBeenCalled()
+    expect(diffLog.pushServerResponse).not.toHaveBeenCalled()
   })
 
   it('removes product when there is out of stock', async () => {

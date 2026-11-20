@@ -1,4 +1,5 @@
 import { prepareShippingInfoForUpdateTotals } from '@vue-storefront/core/modules/cart/helpers';
+import * as types from '@vue-storefront/core/modules/cart/store/mutation-types';
 import totalsActions from '@vue-storefront/core/modules/cart/store/actions/totalsActions';
 import { createContextMock } from '@vue-storefront/unit-tests/utils';
 
@@ -32,7 +33,7 @@ describe('Cart totals item refresh', () => {
   };
 
   async function overrideWith (totalsItem: Record<string, any>) {
-    const contextMock = createContextMock({ getters: { getCartItems: [cartItem] } });
+    const contextMock = createContextMock({ getters: { getCartItems: [cartItem] }, state: { totalsRefreshId: 0 } });
 
     (contextMock.dispatch as jest.Mock).mockImplementationOnce(async () => ({
       resultCode: 200,
@@ -42,7 +43,7 @@ describe('Cart totals item refresh', () => {
 
     await (totalsActions as any).overrideServerTotals(contextMock, { addressInformation: {}, hasShippingInformation: true });
 
-    return (contextMock.dispatch as jest.Mock).mock.calls[1];
+    return (contextMock.commit as jest.Mock).mock.calls.find(([type]) => type === types.CART_UPD_ITEM_PROPS);
   }
 
   it.each([
@@ -51,7 +52,7 @@ describe('Cart totals item refresh', () => {
   ])('merges recalculated item totals after %s a coupon', async (_, itemTotals) => {
     const totalsItem = { item_id: 7, qty: 2, extension_attributes: { budsies_quote_item_totals: itemTotals } };
 
-    expect(await overrideWith(totalsItem)).toEqual(['updateItem', {
+    expect(await overrideWith(totalsItem)).toEqual([types.CART_UPD_ITEM_PROPS, {
       product: {
         server_item_id: 7,
         qty: 2,
@@ -69,7 +70,7 @@ describe('Cart totals item refresh', () => {
   it('keeps the existing item totals when the response has none', async () => {
     const totalsItem = { item_id: 7, qty: 2 };
 
-    expect(await overrideWith(totalsItem)).toEqual(['updateItem', {
+    expect(await overrideWith(totalsItem)).toEqual([types.CART_UPD_ITEM_PROPS, {
       product: { server_item_id: 7, qty: 2, totals: totalsItem }
     }]);
   });
@@ -77,7 +78,7 @@ describe('Cart totals item refresh', () => {
   it('keeps the response item unchanged when no cart item matches it', async () => {
     const totalsItem = { item_id: 8, qty: 1, extension_attributes: { budsies_quote_item_totals: { final_price: 5 } } };
 
-    expect(await overrideWith(totalsItem)).toEqual(['updateItem', {
+    expect(await overrideWith(totalsItem)).toEqual([types.CART_UPD_ITEM_PROPS, {
       product: { server_item_id: 8, qty: 1, totals: totalsItem }
     }]);
   });

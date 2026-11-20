@@ -48,7 +48,7 @@ export default {
       platformTotals: state => state.cart.platformTotals
     })
   },
-  async beforeMount () {
+  beforeMount () {
     if (this.successOrderData) {
       return;
     }
@@ -72,7 +72,13 @@ export default {
     EventBus.$on('checkout-after-validationError', this.focusField)
     EventBus.$on('checkout-after-paymentMethodChanged', this.onPaymentMethodChanged)
 
-    this.$store.dispatch('cart/load', { forceClientState: true }).then(() => {
+    const entry = Promise.resolve().then(async () => {
+      await this.$store.dispatch('cart/waitForStartup')
+      await this.$store.dispatch('cart/waitForIdle')
+      if (this.$store.getters['cart/canUpdateMethods']) {
+        await this.$store.dispatch('cart/sync', { forceClientState: true, waitForTotalsUpdate: true })
+      }
+
       if (this.$store.state.cart.cartItems.length === 0) {
         this.notifyEmptyCart()
         this.$router.push(this.localizedRoute('/'))
@@ -108,18 +114,21 @@ export default {
           }
         })
       }
+      const storeView = currentStoreView()
+      let shippingCountry = this.$store.state.checkout.shippingDetails.country
+      let paymentCountry = this.$store.state.checkout.paymentDetails.country
+
+      if (!shippingCountry) shippingCountry = storeView.i18n.defaultCountry
+      if (!paymentCountry) paymentCountry = storeView.i18n.defaultCountry
+
+      await this.$store.dispatch('checkout/updatePaymentDetails', { country: paymentCountry });
+
+      EventBus.$emit('checkout-before-shippingMethods', shippingCountry, { entry: true })
+      this.$store.commit('checkout/setEntryRefreshAttempted')
+      await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
     });
-
-    const storeView = currentStoreView()
-    let shippingCountry = this.$store.state.checkout.shippingDetails.country
-    let paymentCountry = this.$store.state.checkout.paymentDetails.country
-
-    if (!shippingCountry) shippingCountry = storeView.i18n.defaultCountry
-    if (!paymentCountry) paymentCountry = storeView.i18n.defaultCountry
-
-    await this.$store.dispatch('checkout/updatePaymentDetails', { country: paymentCountry });
-
-    EventBus.$emit('checkout-before-shippingMethods', shippingCountry)
+    this.$store.commit('checkout/setEntryPromise', entry)
+    entry.catch(error => Logger.error(error, 'checkout')())
   },
   beforeDestroy () {
     this.$store.dispatch('checkout/setModifiedAt', 0) // exit checkout
@@ -152,9 +161,9 @@ export default {
     async onAfterShippingMethodChanged () {
       await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
     },
-    onBeforeShippingMethods (country) {
+    onBeforeShippingMethods (country, { entry = false } = {}) {
       this.$store.dispatch('checkout/updatePropValue', ['country', country])
-      this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
+      if (!entry) this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
       this.$forceUpdate()
     },
     onAfterPlaceOrder (payload) {
