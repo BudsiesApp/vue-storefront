@@ -53,12 +53,16 @@ Each shown profile SHALL display the count exported by Magento when it is above 
 
 ### Requirement: Responsive and reusable social list
 
-The reusable theme social-profile component SHALL render the active store's eligible profiles with either supplied SVG icon set, selected by its caller, without depending on footer markup. The component SHALL encapsulate its spacing and sizing and expose `--social-profiles-icon-size` for other themes to override. The Petsies footer SHALL use the circled set at the existing placements and default sizes: the full 30px icon on mobile and a 44px icon centered in a 42px clipping box on desktop. Counts SHALL appear beside or below their icon in the footer's existing text colors. The supplied icons MUST NOT be altered and their Font Awesome attribution comments SHALL be preserved. Footer links, newsletter, brands and legal content SHALL retain their layout and behavior.
+The reusable theme social-profile component SHALL render the active store's eligible profiles with either supplied SVG icon set, selected by its caller, without depending on footer markup. The component SHALL encapsulate its spacing and sizing and expose `--social-profiles-icon-size` and `--social-profiles-justify-items` for other themes to override. The Petsies footer SHALL use the circled set at the existing placements and default sizes: the full 30px icon on mobile and a 44px icon centered in a 42px clipping box on desktop. Counts SHALL appear beside or below their icon in the footer's existing text colors. Every link SHALL be as wide as the widest link, so the network icons are evenly spaced whatever the count lengths. The supplied icons MUST NOT be altered and their Font Awesome attribution comments SHALL be preserved. Footer links, newsletter, brands and legal content SHALL retain their layout and behavior.
 
 #### Scenario: Six profiles at the narrowest supported width
 - **WHEN** six eligible profiles with visible counts, including longer labels, are displayed at 320px viewport width
 - **THEN** all six links and their count icons are visible without horizontal scrolling in the existing mobile social placement
-- **AND** the links remain centered, with a second centered row allowed when the counts need more room
+- **AND** the list is centered; below 390px, six profiles form two rows of three evenly spaced links
+
+#### Scenario: Even spacing with different count lengths
+- **WHEN** the shown profiles have counts of different lengths, such as `1K` and `999.9K`, or some have no count
+- **THEN** every link is as wide as the widest one and the network icons are evenly spaced
 
 #### Scenario: Petsies retains its desktop placement
 - **WHEN** Petsies displays eligible profiles on desktop
@@ -68,6 +72,10 @@ The reusable theme social-profile component SHALL render the active store's elig
 #### Scenario: Another theme selects an icon size
 - **WHEN** a caller sets `--social-profiles-icon-size`
 - **THEN** the network icon box uses that size on mobile and desktop, with the desktop image retaining its 1px clipping offset on each side, while the person icon scales with the count text
+
+#### Scenario: Another theme aligns the links in their columns
+- **WHEN** a caller sets `--social-profiles-justify-items`, for example to `start`
+- **THEN** each link is aligned that way within its equal-width column on mobile and desktop; without it, links are centered
 
 ### Requirement: Accessible social links
 
