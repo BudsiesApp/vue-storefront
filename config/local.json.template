@@ -762,6 +762,9 @@
     "endpoint_ssr": "https://${VSF_API_DOMAIN}/api/product",
     "showRating": ${SHOW_PRODUCT_RATING}
   },
+  "orderHistory": {
+    "displayHolidayPromise": ${ORDER_HISTORY_DISPLAY_HOLIDAY_PROMISE}
+  },
   "orders": {
     "directBackendSync": true,
     "endpoint": "https://${VSF_API_DOMAIN}/api/order?token={{token}}",

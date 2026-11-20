@@ -27,6 +27,7 @@
       <order-item-shipment-info
         :shipments="item.shipments"
         :estimated-shipment-date="item.estimated_shipment_date"
+        :shipping-holiday-name="item.extension_attributes?.shipping_holiday_name"
         class="_section-content"
       />
     </div>
