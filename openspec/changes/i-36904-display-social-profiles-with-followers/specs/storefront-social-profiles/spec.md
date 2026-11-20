@@ -75,7 +75,7 @@ The reusable theme social-profile component SHALL render the active store's elig
 
 #### Scenario: Another theme aligns the links in their columns
 - **WHEN** a caller sets `--social-profiles-justify-items`, for example to `start`
-- **THEN** each link is aligned that way within its equal-width column on mobile and desktop; without it, links are centered
+- **THEN** each link, with its network icon and count, is aligned that way within its equal-width column on mobile and desktop, and the network icons stay evenly spaced; without it, links are centered
 
 ### Requirement: Accessible social links
 
