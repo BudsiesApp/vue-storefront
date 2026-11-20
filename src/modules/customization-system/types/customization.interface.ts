@@ -5,7 +5,7 @@ import { OptionData } from './option-data.interface';
 import { OptionVariant } from './option-variant.interface';
 
 export interface Customization {
-  availabilityRules: AvailabilityRules,
+  availabilityRules?: AvailabilityRules,
   bundleOptionId?: number,
   flowAvailability?: CustomizationAvailabilityFlow[],
   id: string,
