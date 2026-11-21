@@ -1,0 +1,40 @@
+# Tasks
+
+## 1. Delivery metadata and persistence
+
+- [x] 1.1 Replace `TouchData.isSent` with `deliveredCartId?: string` and the shared identity/cart payload in `types/traffic-attribution.interface.ts`; update new-touch construction and test fixtures. Verify new touches start pending and request-attribution types contain no delivery metadata, as required by the delivery metadata and request-body scenarios.
+- [x] 1.2 Implement SET normalization and identity-checked MARK mutations in `store/mutations.ts` per design decisions 1 and 3. Extend `test/unit/storage-helpers.spec.ts` using actual mutations for the scenarios "Stored delivery metadata is normalized", "A stored touch has neither delivery field", "An in-flight touch is replaced" and "Resent first touch restores an already delivered last touch"; verify valid/invalid ids, absent targets and both touches' resulting metadata without altering attribution/timestamps.
+- [x] 1.3 Update `helpers/cache-handler.factory.ts` to persist normalized SET state and only First Touch after a First Touch mark, retaining Last Touch mark and CLEAR persistence. Extend `test/unit/storage-helpers.spec.ts` for "Reload preserves cart-specific delivery" and persistence of "Resent first touch restores an already delivered last touch"; verify a restored successful cart is suppressed and a different cart remains eligible.
+
+## 2. Reporting and cart identity
+
+- [x] 2.1 Update `store/actions.ts` reporting per design decision 2. Extend `test/unit/actions.spec.ts` for "No cart or no first touch is available", "Transport uses the recorded cart" and "Request body contains attribution alone", using a facade mock that synchronously reads the shared active-cart getter; verify transport/mark cart equality, one task argument and the exact raw body without cart metadata.
+- [x] 2.2 Implement ordered delivery from design decision 3. Extend the action suite for each scenario under "Touch delivery is ordered and specific to each cart": A then B on created/connected events, A then B then A, distinct touches, full-payload duplicate suppression, repeated same-cart success, First Touch non-200/rejection skipping Last Touch and later ordered recovery, and Last Touch failure retrying only Last Touch. Verify request order and actual mutation-produced cart ids; cover the restoration scenario in task 2.3.
+- [x] 2.3 Add action coverage for "Resent first touch restores an already delivered last touch", including failed restoration followed by Last-Touch-only retry. Verify First Touch success invalidates the matching current Last Touch id in the reporting action through the existing Last Touch set path after the successful mark, each resulting wrapper is persisted through its own mutation, and Last Touch becomes delivered only after success.
+- [x] 2.4 Replace the global in-flight promise with the per-cart map from design decision 4. Extend the action suite with deferred requests: same-cart calls join, B starts while A is pending, A settling does not release B, and each cart can retry after settlement/rejection; verify request counts and final metadata.
+- [x] 2.5 Add deferred-response tests for "An in-flight touch is replaced", "Cart changes while a request is pending" and "Cart changes between requests". Verify obsolete marks change neither replacement metadata nor Last Touch after an obsolete First Touch response; if the sent First Touch is no longer current by `createdAt` when its response is handled, the pass stops without further sends or marks from the stale snapshot and the next cart event reports current touches; a successful pending response records A, earlier/current marks remain, the next pre-request read stops further sending, and B's own event reports B.
+- [x] 2.6 Add storage-to-action coverage for "Legacy sent touches are delivered once in order" using distinct `isSent: true` First/Last wrappers without a delivered cart id. Verify ordered delivery, persistence/reload suppression for that cart and subsequent delivery to a different cart.
+
+## 3. Capture and cross-tab guards
+
+- [x] 3.1 Add the capture-only comparator in `helpers/get-traffic-attribution-data-from-route.function.ts` and use it in `SYNCHRONIZE` without changing delivery equality. Extend `test/unit/get-traffic-attribution-data-from-route.spec.ts` and the action suite for a changed `detected_at`, reordered query keys and identical captures inside/outside/without cooldown; verify no touch metadata changes, while a changed landing/referrer/query remains distinct.
+- [x] 3.2 Implement cooldown evaluation in the existing capture action per design decision 5. Add fake-time action tests at N seconds minus 1 ms, exactly N and plus 1 ms, plus absent/zero/negative/non-numeric settings, positive numeric configuration strings, negative elapsed time, fixed-window anchoring with repeated suppression, and no deferred replay; verify the expected SET calls and preserved timestamps/expiry/delivery state.
+- [x] 3.3 Add separate action journeys for "A genuine later paid visit replaces last touch", "A genuine later organic visit replaces last touch" and "Rapid paid and organic captures are suppressed". Verify First Touch and all its metadata remain unchanged and only accepted visits replace Last Touch as pending.
+- [x] 3.4 Cover "Missing last touch is captured with cooldown enabled" and "Capture suppression does not block a new cart" in the action suite. Verify the eligible missing Last Touch is captured and a new cart receives retained attribution after duplicate or cooldown suppression.
+- [x] 3.5 Add the strict `createdAt` import guard to `helpers/get-local-storage-items.function.ts`. Extend `test/unit/storage-helpers.spec.ts` for each storage-ordering scenario: delayed older paid/organic First/Last values ignored, equal-age delivery updates accepted, and newer/no-current values or removals synchronized. Verify attribution and metadata match each scenario's expected state.
+
+## 4. Compatibility, configuration and documentation
+
+- [x] 4.1 Adapt existing #37235 fixtures from `isSent` to `deliveredCartId` only; verify existing route, referrer, auth and recovery compatibility tests keep passing.
+- [x] 4.2 Adapt existing #37232 Maestra and other module fixtures/assertions to `deliveredCartId`; verify existing tests keep passing.
+- [x] 4.3 Add the shipped cooldown key to `config/local.json.template`; verify its value is `30` with a one-off command parsing the template and record that command/outcome in the implementation report. Keep the README note for disabled settings and timing; do not add a template-reading test.
+- [x] 4.4 Revise README delivery guidance for the approved wrapper metadata, legacy normalization, cart identity, ordered restoration/retries and existing event timing. Verify it agrees with the delta and retains existing compatibility guidance without claiming historical recovery or exactly-once cross-tab delivery.
+- [x] 4.5 Split only if a test file exceeds ~500 lines.
+
+## 5. Validation and review handoff
+
+- [x] 5.1 Run `yarn test:unit:maintained --runInBand --testPathPattern=src/modules/traffic-attribution/test/unit` to exercise the complete module, including persistence/reporting integration and preserved regressions. Record command, suite/test totals and any failures; keep implementation tasks incomplete until their relevant tests pass.
+- [x] 5.2 Run `yarn lint` and `yarn type-check` using the repository package scripts. Record outcomes and concrete baseline/environment limitations without suppressing failures or modifying unrelated code.
+- [x] 5.3 Run `openspec validate i-37236-correct-traffic-attribution --strict` and verify success. Cross-check final artifacts against the delta scenarios and task acceptance criteria; confirm implementation remains within module/config scope and includes no core, API, database, classifier, expiry-policy, provider, dependency or unrelated work.
+
+These checkboxes describe future implementation work. During this proposal step only planning-artifact validation is executed; no implementation, application tests, database access or environment operation is performed.

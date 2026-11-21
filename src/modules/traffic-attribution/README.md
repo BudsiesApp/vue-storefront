@@ -1,7 +1,7 @@
 # Traffic attribution
 
 On initial client synchronization the module captures the landing origin/path and filtered raw query values.
-An unexpired First Touch is retained; a different acquisition landing replaces Last Touch as unsent. Acquisition
+An unexpired First Touch is retained; a different acquisition landing replaces Last Touch as pending. Acquisition
 includes `aleid` and `alart` in both the shipped `trafficAttribution.acquisitionClickIdKeys` template and the
 helper fallback. An explicitly configured list replaces the fallback, so custom lists must include these keys
 if AppLovin identifier-only landings should qualify. Sensitive query keys remain excluded.
@@ -37,3 +37,23 @@ The shipped and fallback acquisition lists include `m-message-click-id`; a nonbl
 Capture remains client-only on initial synchronization; existing First Touch, Last Touch and cart-event queued reporting semantics apply. The shared SSR cache strips only exact lowercase `m-message-click-id` using the existing clean-render and current-request redirect mechanism. Other case variants retain the existing exact-name cache behavior. Browser URLs and each visitor's own encoded redirect pairs remain available to that visitor.
 
 Magento classification acceptance precedes expanded UI publication, not UI implementation. Brand propagation, provider actions, historical operations and production releases require separate authorization; synthetic tests are not provider-send counts.
+
+Delivery stores a single optional `deliveredCartId` on each touch wrapper, outside attribution.
+SET intake drops legacy `isSent` and invalid cart ids without rewriting attribution or timestamps.
+Legacy booleans cannot identify a cart, so those touches are delivered again on the next cart event.
+Each pass uses the active cart getter and checks it immediately before each queued request.
+Numeric and string cart ids use the same string form for comparison, coalescing and delivery records.
+Successful responses record that request cart even if the active cart changes while pending.
+First Touch must succeed before a distinct Last Touch. After its successful mark, the reporting action
+clears the current Last Touch's matching delivery id through the existing Last Touch set path; the mark
+itself changes and persists only First Touch. This restores Magento's last row; failed restoration
+retries only Last Touch on the next event.
+Replaced or cleared First Touch stops the stale pass. Concurrent reports coalesce per cart.
+Returning from cart A to B to A resends in order; no exactly-once cross-tab guarantee is made.
+
+`trafficAttribution.lastTouchReplacementCooldownSeconds` ships as 30 seconds. Absent, zero,
+negative or non-numeric settings disable it; positive finite numeric strings are accepted.
+Identical captures ignore only `detected_at`. Different acquisition captures inside the fixed window
+are dropped without replay or timestamp changes. Exactly the boundary and negative elapsed time
+permit replacement. Missing Last Touch permits immediate capture. Storage events older by `createdAt`
+are ignored; equal-age delivery metadata, newer values and removals still synchronize.

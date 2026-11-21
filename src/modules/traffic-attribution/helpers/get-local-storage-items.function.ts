@@ -27,6 +27,10 @@ export function getItemsFromStorageFactory (store: Store<RootState>) {
     if (isFirstTouchChanged) {
       const value = parseLocalStorageValue(newValue || undefined);
       if (value) {
+        const current = (store.state as any)[MODULE_NAME]?.firstTouch;
+        if (current && value.createdAt < current.createdAt) {
+          return;
+        }
         store.commit(MODULE_NAME + '/' + SET_FIRST_TOUCH, value);
         return;
       }
@@ -43,6 +47,10 @@ export function getItemsFromStorageFactory (store: Store<RootState>) {
     if (isLastTouchChanged) {
       const value = parseLocalStorageValue(newValue || undefined);
       if (value) {
+        const current = (store.state as any)[MODULE_NAME]?.lastTouch;
+        if (current && value.createdAt < current.createdAt) {
+          return;
+        }
         store.commit(MODULE_NAME + '/' + SET_LAST_TOUCH, value);
         return;
       }

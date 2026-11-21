@@ -1,7 +1,10 @@
+import { createAttribution, createTouch, createDeferredTask, createContext, setReferrer } from './helpers/traffic-attribution-fixtures';
 import { processURLAddress } from '@vue-storefront/core/helpers';
 import { TaskQueue } from '@vue-storefront/core/lib/sync';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 
+import { cacheHandlerFactory } from '../../helpers/cache-handler.factory';
+import { MODULE_NAME } from '../../types/store-name';
 import { actions } from '../../store/actions';
 import { REPORT_TRAFFIC_ATTRIBUTION, SYNCHRONIZE } from '../../types/actions';
 import { GET_FIRST_TOUCH, GET_LAST_TOUCH } from '../../types/getters';
@@ -13,7 +16,6 @@ import {
   CLEAR_FIRST_TOUCH,
   CLEAR_LAST_TOUCH
 } from '../../types/mutations';
-import { TouchData, TrafficAttributionData } from '../../types/traffic-attribution.interface';
 import { FIRST_TOUCH, LAST_TOUCH } from '../../types/local-storage-key';
 
 jest.mock('config', () => ({
@@ -49,71 +51,6 @@ jest.mock('@vue-storefront/core/lib/logger', () => ({
   }
 }));
 
-function setReferrer (referrer: string) {
-  Object.defineProperty(document, 'referrer', {
-    configurable: true,
-    value: referrer
-  });
-}
-
-function createAttribution (queryParams: Record<string, string> = {}): TrafficAttributionData {
-  return {
-    landing_page_url: 'http://localhost/landing',
-    query_params: queryParams,
-    detected_at: '2026-06-06T00:00:00.000Z'
-  };
-}
-
-function createTouch (attribution: TrafficAttributionData, isSent = false): TouchData {
-  return {
-    attribution,
-    isSent,
-    createdAt: Date.now(),
-    expiresAt: Date.now() + 100000
-  };
-}
-
-function createDeferredTask () {
-  let deferredResolve: (value: { resultCode: number }) => void = jest.fn();
-
-  const promise = new Promise<{ resultCode: number }>((resolve) => {
-    deferredResolve = resolve;
-  });
-
-  return { promise, resolve: deferredResolve };
-}
-
-function createContext (firstTouch: TouchData | null, lastTouch: TouchData | null) {
-  const commits: { type: string, payload?: any }[] = [];
-  const getters: Record<string, TouchData | null> = {
-    [GET_FIRST_TOUCH]: firstTouch,
-    [GET_LAST_TOUCH]: lastTouch
-  };
-
-  return {
-    context: {
-      commit: jest.fn((type: string, payload?: any) => {
-        commits.push({ type, payload });
-        if (type === SET_FIRST_TOUCH) {
-          getters[GET_FIRST_TOUCH] = payload;
-        }
-        if (type === SET_LAST_TOUCH) {
-          getters[GET_LAST_TOUCH] = payload;
-        }
-        if (type === CLEAR_FIRST_TOUCH) {
-          getters[GET_FIRST_TOUCH] = null;
-        }
-        if (type === CLEAR_LAST_TOUCH) {
-          getters[GET_LAST_TOUCH] = null;
-        }
-      }),
-      getters
-    } as any,
-    commits,
-    getters
-  };
-}
-
 describe('traffic attribution actions', () => {
   beforeEach(() => {
     (processURLAddress as jest.Mock).mockClear();
@@ -136,7 +73,7 @@ describe('traffic attribution actions', () => {
     (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
     const { context, getters } = createContext(null, null);
     await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
-    expect(getters[GET_FIRST_TOUCH]).toBe(stored);
+    expect(getters[GET_FIRST_TOUCH]).toEqual(stored);
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body).request).toEqual(stored.attribution);
   });
@@ -153,7 +90,7 @@ describe('traffic attribution actions', () => {
 
     expect(commits.map((commit) => commit.type)).toEqual([SET_FIRST_TOUCH, SET_LAST_TOUCH]);
     expect(commits[0].payload.attribution).toEqual(commits[1].payload.attribution);
-    expect(commits[0].payload.isSent).toBe(false);
+    expect(commits[0].payload.deliveredCartId).toBeUndefined();
     expect(commits[0].payload.createdAt).toBe(1000);
   });
 
@@ -166,7 +103,7 @@ describe('traffic attribution actions', () => {
     expect(commits.map(commit => commit.type)).toEqual([SET_FIRST_TOUCH, SET_LAST_TOUCH]);
     expect(commits[0].payload.attribution.landing_page_url).toBe('http://localhost/landing');
     expect(commits[0].payload.attribution.query_params).toEqual({ 'm-message-click-id': 'raw+marker' });
-    expect(commits[0].payload.isSent).toBe(false);
+    expect(commits[0].payload.deliveredCartId).toBeUndefined();
   });
 
   it('preserves an existing first touch and skips direct last-touch updates', async () => {
@@ -206,20 +143,20 @@ describe('traffic attribution actions', () => {
     [{ ALEID: 'one', alart: 'two', token: 'private' }, { ALEID: 'one', alart: 'two' }]
   ])('captures and reports identifier-only last touch %o', async (query, expected) => {
     const firstTouch = createTouch(createAttribution({ utm_source: 'google' }));
-    const lastTouch = createTouch(createAttribution({ utm_source: 'old' }), true);
+    const lastTouch = createTouch(createAttribution({ utm_source: 'old' }), 'A');
     const { context, commits, getters } = createContext(firstTouch, lastTouch);
     await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query } });
 
     expect(getters[GET_FIRST_TOUCH]).toBe(firstTouch);
     expect(commits).toHaveLength(1);
     expect(commits[0].type).toBe(SET_LAST_TOUCH);
-    expect(getters[GET_LAST_TOUCH].isSent).toBe(false);
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBeUndefined();
     expect(getters[GET_LAST_TOUCH].attribution.query_params).toEqual(expected);
     const firstResponse = createDeferredTask();
     (TaskQueue.execute as jest.Mock).mockReturnValueOnce(firstResponse.promise).mockResolvedValueOnce({ resultCode: 200 });
     const reporting = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
-    expect(context.commit).not.toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
     firstResponse.resolve({ resultCode: 200 });
     await reporting;
     expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
@@ -227,19 +164,19 @@ describe('traffic attribution actions', () => {
     expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[1][0].payload.body)).toEqual({
       request: getters[GET_LAST_TOUCH].attribution
     });
-    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
-    expect(context.commit).toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
+    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
+    expect(context.commit).toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
   });
 
   it('leaves a failed Maestra report unsent', async () => {
-    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }), true);
+    const firstTouch = createTouch(createAttribution({ utm_source: 'first' }), 'A');
     const lastTouch = createTouch(createAttribution({ 'm-message-click-id': 'one' }));
     const { context } = createContext(firstTouch, lastTouch);
     (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 500 });
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
     expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
-    expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
-    expect(lastTouch.isSent).toBe(false);
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
+    expect(lastTouch.deliveredCartId).toBeUndefined();
   });
 
   it('loads unexpired stored touches during synchronization', async () => {
@@ -307,7 +244,7 @@ describe('traffic attribution actions', () => {
     await Promise.all([firstReport, secondReport]);
 
     expect(context.commit).toHaveBeenCalledTimes(1);
-    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
+    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
   });
 
   it('reports first then different last touch and marks sent only after success', async () => {
@@ -321,8 +258,8 @@ describe('traffic attribution actions', () => {
     expect(TaskQueue.execute as jest.Mock).toHaveBeenCalledTimes(2);
     expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body)).toEqual({ request: firstTouch.attribution });
     expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[1][0].payload.body)).toEqual({ request: lastTouch.attribution });
-    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
-    expect(context.commit).toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
+    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
+    expect(context.commit).toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
   });
 
   it('suppresses duplicate last-touch reporting when raw payloads match', async () => {
@@ -338,7 +275,273 @@ describe('traffic attribution actions', () => {
     await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
 
     expect(TaskQueue.execute as jest.Mock).toHaveBeenCalledTimes(1);
-    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT);
-    expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT);
+    expect(context.commit).toHaveBeenCalledWith(MARK_FIRST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
+    expect(context.commit).not.toHaveBeenCalledWith(MARK_LAST_TOUCH_SENT, { createdAt: 1000, cartId: 'A' });
+  });
+
+  it('delivers A then B then A and suppresses repeated success', async () => {
+    const { context, getters } = createContext(createTouch(createAttribution({ gclid: 'first' })), createTouch(createAttribution({ srsltid: 'last' })));
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    for (const cartId of ['A', 'A', 'B', 'B', 'A']) {
+      context.rootGetters['cart/getCartToken'] = cartId;
+      await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+      expect(getters[GET_FIRST_TOUCH].deliveredCartId).toBe(cartId);
+      expect(getters[GET_LAST_TOUCH].deliveredCartId).toBe(cartId);
+    }
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(6);
+    for (const [index, [task]] of (TaskQueue.execute as jest.Mock).mock.calls.entries()) {
+      const body = task.payload.body;
+      const attribution = index % 2 === 0
+        ? getters[GET_FIRST_TOUCH].attribution
+        : getters[GET_LAST_TOUCH].attribution;
+      expect(Object.keys(JSON.parse(body))).toEqual(['request']);
+      expect(JSON.parse(body)).toEqual({ request: attribution });
+      expect(body).not.toContain('A');
+      expect(body).not.toContain('B');
+      expect(body).not.toContain('deliveredCartId');
+    }
+    expect((TaskQueue.execute as jest.Mock).mock.calls.every(call => call.length === 1)).toBe(true);
+  });
+
+  it.each([false, true])('first failure skips last and releases retry, rejection=%s', async (reject) => {
+    const { context, getters } = createContext(createTouch(createAttribution({ gclid: 'first' })), createTouch(createAttribution({ srsltid: 'last' })));
+    if (reject) {
+      (TaskQueue.execute as jest.Mock).mockRejectedValueOnce(new Error('failed'));
+    } else {
+      (TaskQueue.execute as jest.Mock).mockResolvedValueOnce({ resultCode: 500 });
+    }
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context).catch(() => {});
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(getters[GET_FIRST_TOUCH].deliveredCartId).toBeUndefined();
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBeUndefined();
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it('restoration failure retries only last touch', async () => {
+    const { context, getters } = createContext(createTouch(createAttribution({ gclid: 'first' })), createTouch(createAttribution({ srsltid: 'last' }), 'A'));
+    (TaskQueue.execute as jest.Mock).mockResolvedValueOnce({ resultCode: 200 }).mockResolvedValueOnce({ resultCode: 500 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(getters[GET_FIRST_TOUCH].deliveredCartId).toBe('A');
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBeUndefined();
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(3);
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBe('A');
+  });
+
+  it.each([null, 'replacement'])('stops stale first response after %s', async (replacement) => {
+    const { context, getters } = createContext(createTouch(createAttribution({ gclid: 'first' })), createTouch(createAttribution({ srsltid: 'last' }), 'A'));
+    const pending = createDeferredTask();
+    (TaskQueue.execute as jest.Mock).mockReturnValue(pending.promise);
+    const report = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    if (replacement) {
+      context.commit(SET_FIRST_TOUCH, { ...createTouch(createAttribution()), createdAt: 2000 });
+    } else {
+      context.commit(CLEAR_FIRST_TOUCH);
+    }
+    pending.resolve({ resultCode: 200 });
+    await report;
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(getters[GET_FIRST_TOUCH]?.deliveredCartId).toBeUndefined();
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBe('A');
+  });
+
+  it('records pending A response while B independently coalesces', async () => {
+    const { context, getters } = createContext(createTouch(createAttribution()), createTouch(createAttribution({ gclid: 'last' })));
+    const pendingA = createDeferredTask();
+    const pendingB = createDeferredTask();
+    (TaskQueue.execute as jest.Mock).mockReturnValueOnce(pendingA.promise).mockReturnValueOnce(pendingB.promise).mockResolvedValue({ resultCode: 200 });
+    const a = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    context.rootGetters['cart/getCartToken'] = 'B';
+    const b = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    pendingA.resolve({ resultCode: 200 });
+    await a;
+    expect(getters[GET_FIRST_TOUCH].deliveredCartId).toBe('A');
+    const duplicateB = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+    pendingB.resolve({ resultCode: 200 });
+    await Promise.all([b, duplicateB]);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(3);
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBe('B');
+  });
+
+  it.each([null, ''])('does nothing without first touch or cart: %s', async (cart) => {
+    const { context } = createContext(cart === null ? null : createTouch(createAttribution()), null);
+    context.rootGetters['cart/getCartToken'] = cart === null ? 'A' : cart;
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).not.toHaveBeenCalled();
+    expect(context.commit).not.toHaveBeenCalled();
+  });
+
+  it('normalizes legacy touches, persists delivery and suppresses after reload', async () => {
+    const legacyFirst = { ...createTouch(createAttribution({ gclid: 'first' })), isSent: true };
+    const legacyLast = { ...createTouch(createAttribution({ srsltid: 'last' })), isSent: true };
+    const saved = { [FIRST_TOUCH]: legacyFirst, [LAST_TOUCH]: legacyLast } as any;
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(saved[key])) });
+    const { context, getters } = createContext(null, null);
+    const cache = cacheHandlerFactory({
+      setItem: jest.fn((key, value) => {
+        saved[key] = JSON.parse(JSON.stringify(value));
+        return Promise.resolve();
+      })
+    } as any);
+    const commit = context.commit;
+    context.commit = (type, payload) => {
+      commit(type, payload);
+      cache({ type, payload }, { [MODULE_NAME]: { firstTouch: getters[GET_FIRST_TOUCH], lastTouch: getters[GET_LAST_TOUCH] } } as any);
+    };
+    const transportCarts: string[] = [];
+    (TaskQueue.execute as jest.Mock).mockImplementation(() => {
+      transportCarts.push(context.rootGetters['cart/getCartToken']);
+      return Promise.resolve({ resultCode: 200 });
+    });
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(getters[GET_FIRST_TOUCH]).not.toHaveProperty('isSent');
+    const reloaded = createContext(null, null).context;
+    await (actions as any)[SYNCHRONIZE](reloaded, { currentRoute: { query: {} } });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+    context.rootGetters['cart/getCartToken'] = 'B';
+    reloaded.rootGetters['cart/getCartToken'] = 'B';
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(transportCarts).toEqual(['A', 'A', 'B', 'B']);
+    expect(reloaded.getters[GET_FIRST_TOUCH].deliveredCartId).toBe('B');
+    expect(reloaded.getters[GET_LAST_TOUCH].deliveredCartId).toBe('B');
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[2][0].payload.body)).toEqual({ request: legacyFirst.attribution });
+  });
+
+  it('does not mark a last touch replaced while its request is pending', async () => {
+    const { context, getters } = createContext(createTouch(createAttribution(), 'A'), createTouch(createAttribution({ gclid: 'old' })));
+    const pending = createDeferredTask();
+    (TaskQueue.execute as jest.Mock).mockReturnValue(pending.promise);
+    const report = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    context.commit(SET_LAST_TOUCH, { ...createTouch(createAttribution({ gclid: 'new' })), createdAt: 2000 });
+    pending.resolve({ resultCode: 200 });
+    await report;
+    expect(getters[GET_LAST_TOUCH].createdAt).toBe(2000);
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBeUndefined();
+  });
+
+  it('stops when cart changes between requests', async () => {
+    const { context, getters } = createContext(createTouch(createAttribution()), createTouch(createAttribution({ gclid: 'last' })));
+    const commit = context.commit;
+    context.commit = jest.fn((type, payload) => {
+      commit(type, payload);
+      if (type === MARK_FIRST_TOUCH_SENT) {
+        context.rootGetters['cart/getCartToken'] = 'B';
+      }
+    });
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(getters[GET_FIRST_TOUCH].deliveredCartId).toBe('A');
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBeUndefined();
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(3);
+  });
+
+  it('releases a rejected last touch pass for last-only retry', async () => {
+    const { context, getters } = createContext(createTouch(createAttribution(), 'A'), createTouch(createAttribution({ gclid: 'last' })));
+    (TaskQueue.execute as jest.Mock).mockRejectedValueOnce(new Error('failure'));
+    await expect((actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context)).rejects.toThrow('failure');
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+    expect(getters[GET_LAST_TOUCH].deliveredCartId).toBe('A');
+  });
+
+  it.each(['A', 'B', null])('clears only matching current last delivery after first mark: %s', async (lastCartId) => {
+    const first = createTouch(createAttribution({ gclid: 'first' }));
+    const last = lastCartId ? createTouch(createAttribution({ gclid: 'last' }), lastCartId) : null;
+    const { context, commits, getters } = createContext(first, last);
+    const pending = createDeferredTask();
+    (TaskQueue.execute as jest.Mock).mockReturnValueOnce(pending.promise).mockImplementationOnce(() => {
+      expect(commits.map(commit => commit.type)).toEqual(lastCartId === 'A'
+        ? [MARK_FIRST_TOUCH_SENT, SET_LAST_TOUCH] : [MARK_FIRST_TOUCH_SENT]);
+      if (lastCartId === 'A') {
+        expect(commits[1].payload).toEqual({ attribution: last.attribution, createdAt: last.createdAt, expiresAt: last.expiresAt });
+        expect(getters[GET_LAST_TOUCH]).not.toBe(last);
+        expect(getters[GET_LAST_TOUCH]).not.toHaveProperty('deliveredCartId');
+      }
+      return Promise.resolve({ resultCode: 200 });
+    });
+    const report = (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    pending.resolve({ resultCode: 200 });
+    await report;
+    expect(commits.filter(commit => commit.type === SET_LAST_TOUCH)).toHaveLength(lastCartId === 'A' ? 1 : 0);
+  });
+
+  it('persists failed restoration as pending and reload retries only last touch', async () => {
+    const saved: Record<string, any> = {
+      [FIRST_TOUCH]: createTouch(createAttribution({ gclid: 'first' }), 'B'),
+      [LAST_TOUCH]: createTouch(createAttribution({ gclid: 'last' }), 'A')
+    };
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(saved[key])) });
+    const { context, getters } = createContext(null, null);
+    const cache = cacheHandlerFactory({
+      setItem: jest.fn((key, value) => {
+        saved[key] = JSON.parse(JSON.stringify(value));
+        return Promise.resolve();
+      })
+    } as any);
+    const commit = context.commit;
+    context.commit = (type, payload) => {
+      commit(type, payload);
+      cache({ type, payload }, { [MODULE_NAME]: { firstTouch: getters[GET_FIRST_TOUCH], lastTouch: getters[GET_LAST_TOUCH] } } as any);
+    };
+    await (actions as any)[SYNCHRONIZE](context, { currentRoute: { query: {} } });
+    (TaskQueue.execute as jest.Mock).mockResolvedValueOnce({ resultCode: 200 }).mockResolvedValueOnce({ resultCode: 500 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(saved[FIRST_TOUCH].deliveredCartId).toBe('A');
+    expect(saved[LAST_TOUCH]).not.toHaveProperty('deliveredCartId');
+    const reloaded = createContext(null, null).context;
+    await (actions as any)[SYNCHRONIZE](reloaded, { currentRoute: { query: {} } });
+    (TaskQueue.execute as jest.Mock).mockClear().mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(1);
+    expect(JSON.parse((TaskQueue.execute as jest.Mock).mock.calls[0][0].payload.body)).toEqual({ request: saved[LAST_TOUCH].attribution });
+  });
+  it('preserves numeric cart delivery across reload and delivers to another numeric cart', async () => {
+    const saved: Record<string, any> = {};
+    const { context, getters } = createContext(
+      createTouch(createAttribution({ gclid: 'first' })),
+      createTouch(createAttribution({ srsltid: 'last' }))
+    );
+    context.rootGetters['cart/getCartToken'] = 1187986;
+    const cache = cacheHandlerFactory({
+      setItem: jest.fn((key, value) => {
+        saved[key] = JSON.parse(JSON.stringify(value));
+        return Promise.resolve();
+      })
+    } as any);
+    const commit = context.commit;
+    context.commit = (type, payload) => {
+      commit(type, payload);
+      cache({ type, payload }, { [MODULE_NAME]: {
+        firstTouch: getters[GET_FIRST_TOUCH],
+        lastTouch: getters[GET_LAST_TOUCH]
+      } } as any);
+    };
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200 });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](context);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+    expect(saved[FIRST_TOUCH].deliveredCartId).toBe('1187986');
+    expect(saved[LAST_TOUCH].deliveredCartId).toBe('1187986');
+
+    (StorageManager.get as jest.Mock).mockReturnValue({ getItem: jest.fn(key => Promise.resolve(saved[key])) });
+    const reloaded = createContext(null, null).context;
+    reloaded.rootGetters['cart/getCartToken'] = 1187986;
+    await (actions as any)[SYNCHRONIZE](reloaded, { currentRoute: { query: {} } });
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(2);
+
+    reloaded.rootGetters['cart/getCartToken'] = 1187987;
+    await (actions as any)[REPORT_TRAFFIC_ATTRIBUTION](reloaded);
+    expect(TaskQueue.execute).toHaveBeenCalledTimes(4);
+    expect(reloaded.getters[GET_FIRST_TOUCH].deliveredCartId).toBe('1187987');
+    expect(reloaded.getters[GET_LAST_TOUCH].deliveredCartId).toBe('1187987');
   });
 });
