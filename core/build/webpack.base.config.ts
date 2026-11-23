@@ -143,7 +143,10 @@ const config: webpack.Configuration = {
       },
       {
         test: /\.(png|jpg|gif|svg)$/,
-        type: 'asset/resource'
+        oneOf: [
+          { resourceQuery: /raw/, type: 'asset/source' },
+          { type: 'asset/resource' }
+        ]
       },
       {
         test: /\.css$/,
