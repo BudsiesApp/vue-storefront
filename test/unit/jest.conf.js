@@ -33,6 +33,7 @@ module.exports = {
     '!core/**/types/*.{js,ts}'
   ],
   moduleNameMapper: {
+    '^(.+\\.svg)\\?raw$': '$1',
     '^src(.*)$': '<rootDir>/src$1',
     '^theme(.*)$': '<rootDir>/src/themes/petsies-capybara$1',
     '^@vue-storefront/unit-tests/utils$': '<rootDir>/test/unit/utils',
