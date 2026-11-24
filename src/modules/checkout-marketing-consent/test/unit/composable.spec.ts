@@ -2,6 +2,7 @@ import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
 
 import { useStore } from '@vue-storefront/core/application-services';
+import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 
 import { useCheckoutConsent } from '../../composables/use-checkout-consent';
 import { consentPayload } from '../../helpers';
@@ -13,6 +14,7 @@ import { SET_HYDRATED, SET_SELECTION } from '../../types/store/mutations';
 
 jest.mock('@vue-storefront/core/application-services', () => ({ useStore: jest.fn() }));
 jest.mock('@vue-storefront/core/helpers', () => ({ isServer: false }));
+jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => jest.fn()) } }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { get: jest.fn() } }));
 
 Vue.use(Vuex);
@@ -145,4 +147,28 @@ describe('checkout consent draft', () => {
       });
     }
   );
+
+  it.each([
+    ['rejects', () => Promise.reject(new Error('storage failed'))],
+    ['never settles', () => new Promise<void>(() => undefined)]
+  ])('resolves save and keeps the selection in state when the storage write %s', async (_, write) => {
+    const store = createStore(FULL_SETTINGS);
+    const setItem = jest.fn(write);
+
+    (StorageManager.get as jest.Mock).mockReturnValue({ setItem });
+
+    const consent = useCheckoutConsent();
+
+    consent.updateEmail('a@example.test');
+
+    await consent.save('a@example.test');
+
+    expect(setItem).toHaveBeenCalledTimes(1);
+    expect(store.getters[`checkoutMarketingConsent/${GET_SELECTION}`]).toEqual({
+      email: 'a@example.test',
+      emailConsent: false,
+      smsConsent: false,
+      phone: ''
+    });
+  });
 });
