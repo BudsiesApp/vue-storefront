@@ -1,0 +1,2 @@
+export const GET_SELECTION = 'GET_SELECTION';
+export const GET_HYDRATED = 'GET_HYDRATED';
