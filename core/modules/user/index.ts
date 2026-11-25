@@ -8,6 +8,7 @@ import { localStorageSynchronizationFactory } from 'src/modules/shared'
 import { cacheHandlerFactory } from './helpers/cache-handler.factory'
 import { getItemsFromStorage } from './helpers/get-local-storage-items.function'
 import { AuthenticateRequestResponse } from './types/authenticate-request-response.interface'
+import { SET_STARTUP_PROMISE } from '../cart/store/mutation-types'
 
 export const UserModule: StorefrontModule = async function ({ store }) {
   StorageManager.init('user')
@@ -50,7 +51,9 @@ export const UserModule: StorefrontModule = async function ({ store }) {
       store.dispatch('user/removeAddress', payload);
     })
 
-    store.dispatch('user/startSession');
+    const restore = store.state.cart.startupPromise;
+    const session = store.dispatch('user/startSession');
+    store.commit(`cart/${SET_STARTUP_PROMISE}`, Promise.all([restore, session]).catch(() => undefined));
   }
 }
 

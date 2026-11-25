@@ -8,7 +8,9 @@ const successStatusCode = '200';
 export default function throwServerErrorFromDiffLog (diffLog: any) {
   diffLog.serverResponses.forEach((response: ServerResponse) => {
     if (response.status.toString() !== successStatusCode) {
-      const message = response?.result?.result || i18n.t('Something went wrong');
+      const message = response.status.toString() === '404'
+        ? i18n.t('Your cart is no longer available. Please add your items again.')
+        : response?.result?.result || i18n.t('Something went wrong');
       throw new ServerError(message);
     }
   });
