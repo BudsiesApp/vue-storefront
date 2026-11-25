@@ -49,10 +49,14 @@ export default {
     })
   },
   beforeMount () {
-    if (this.successOrderData || this.isSuccess) {
+    if (this.successOrderData) {
       return;
     }
 
+    // A reload of the success URL has no in-memory order. Run entry so an empty cart
+    // still redirects, but stop an ordinary entry if it transitions to success.
+    const startedOnSuccess = this.isSuccess
+    const isEntryActive = () => this.checkoutEntryActive && !this.successOrderData && (startedOnSuccess || !this.isSuccess)
     this.activateSection('personalDetails', { replaceHistoryEntry: true })
     EventBus.$emit('checkout-after-load')
     this.$store.dispatch('checkout/setModifiedAt', Date.now())
@@ -74,13 +78,13 @@ export default {
 
     this.checkoutEntryActive = true
     this.checkoutEntry = Promise.resolve().then(async () => {
-      if (!this.checkoutEntryActive || this.isSuccess) return
+      if (!isEntryActive()) return
       if (this.$store.getters['cart/canUpdateMethods'] && this.$store.getters['cart/isCartHashChanged']) {
         // The entry refresh below covers both the sent items and any pending coupon applied by sync.
         await this.$store.dispatch('cart/sync', { forceClientState: true, waitForTotalsUpdate: false, skipTotalsUpdate: true })
       }
 
-      if (!this.checkoutEntryActive || this.isSuccess) return
+      if (!isEntryActive()) return
       if (this.$store.state.cart.cartItems.length === 0) {
         this.checkoutEntryActive = false
         this.notifyEmptyCart()
@@ -94,7 +98,7 @@ export default {
       const paymentCountry = this.$store.state.checkout.paymentDetails.country || storeView.i18n.defaultCountry
 
       await this.$store.dispatch('checkout/updatePaymentDetails', { country: paymentCountry });
-      if (!this.checkoutEntryActive || this.isSuccess) return
+      if (!isEntryActive()) return
 
       EventBus.$emit('checkout-before-shippingMethods', shippingCountry, { entry: true })
       await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })

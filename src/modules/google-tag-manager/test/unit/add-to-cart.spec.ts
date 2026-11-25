@@ -83,12 +83,13 @@ describe('add_to_cart through the cart addItem action', () => {
   const store = new Store<any>({
     state: {
       cart: { cartItems: [], platformTotals: { quote_currency_code: 'USD' }, productDiscountedPrice: {} },
-      product: { productDiscountedPrice: {} },
+      product: { productDiscountedPrice: {}, productBySku: {} },
       user: { current: null }
     },
     getters: {
       'cart/getCartItems': (state) => state.cart.cartItems,
-      'cart/getCartItemPrice': () => cartItemPriceGetter
+      'cart/getCartItemPrice': () => cartItemPriceGetter,
+      'product/getProductBySkuDictionary': state => state.product.productBySku
     }
   });
   const category = [{ category_id: 4, name: 'Plushies', slug: 'plushies-4', path: 'plushies/plushies-4' }];
@@ -244,9 +245,30 @@ describe('add_to_cart through the cart addItem action', () => {
 
   beforeEach(() => {
     store.state.cart.cartItems = [];
+    store.state.product.productBySku = {};
     jest.mocked(EventBus.$emit).mockImplementation((event, payload) => {
       if (event === 'cart-prepare-item-product') fillProductWithAdditionalFields(payload);
       return EventBus;
+    });
+  });
+
+  it.each([false, true])('uses the hydrated cart name on Add without waiting for catalog hydration (cached child: %s)', async cached => {
+    const variantName = 'Custom Bling Collar | Jazzy Blue';
+    const variant = { sku: 'customcollar_jazzy_blue', name: variantName };
+    const product = {
+      ...createProduct(1), sku: variant.sku, name: 'Custom Bling Collar',
+      configurable_children: cached ? undefined : [{ sku: 'another-collar', name: 'Another color' }, variant]
+    };
+    if (cached) store.state.product.productBySku = { [variant.sku]: variant };
+
+    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 75 };
+    const event = await addToCart(product, undefined, { writeTotals: itemTotals });
+    expect(store.state.cart.cartItems[0].name).toBe('Custom Bling Collar');
+    expect(event).toMatchObject({ ecommerce: { items: [{ item_name: variantName, price: 75, quantity: 1 }] } });
+
+    // A retained item without fresh amounts still uses the same name, not the parent's name.
+    expect(await addToCart(product, undefined, { cartReadCode: 503 })).toMatchObject({
+      ecommerce: { items: [{ item_name: variantName, price: 80, quantity: 1 }] }
     });
   });
 

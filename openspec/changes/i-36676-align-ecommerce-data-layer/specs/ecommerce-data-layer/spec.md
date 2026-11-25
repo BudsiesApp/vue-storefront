@@ -110,6 +110,10 @@ Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax
 - **WHEN** a product already in the cart is added again
 - **THEN** the item reports only the added quantity
 
+#### Scenario: Name of a selected variant
+- **WHEN** a configured product retains its parent display name on the product page
+- **THEN** `add_to_cart` uses the same selected-variant name as `view_cart`, without waiting for catalog hydration
+
 #### Scenario: Existing line with no usable amounts in the write response
 - **WHEN** an existing line carries an earlier item totals DTO but its successful write does not supply usable amounts
 - **THEN** the event uses selected-option pricing instead of the retained DTO
@@ -198,6 +202,10 @@ On Petsies, Budsies, Budsies Education, and Waggables, each client-side mounted 
 - **THEN** no empty cart view is emitted while the connection or pull is pending
 - **AND** the normal business merge refresh makes one totals request for the resulting cart and applies the coupon, discount and totals before reporting those items
 - **AND** the sync uses the existing wait policy of a load with local cart items, not an additional analytics wait
+
+#### Scenario: Guest-cart merge or reorder repopulates the cart
+- **WHEN** login merge or reorder pulls server items into the local cart
+- **THEN** the normal post-merge methods and totals refresh supplies the resulting cart without a second refresh from the pull caller
 
 #### Scenario: Startup or connection fails
 - **WHEN** initial restore or an active connection rejects
@@ -305,6 +313,7 @@ On Petsies, Budsies, Budsies Education, and Waggables, standard `begin_checkout`
 #### Scenario: Empty, success, or direct server-rendered checkout
 - **WHEN** checkout is empty or displays the success page
 - **THEN** no standard `begin_checkout` is emitted
+- **AND** reloading the success URL with neither saved order data nor cart items shows the empty-cart notice and redirects home
 - **AND** a direct server request to checkout retains its redirect to the cart rather than emitting checkout start
 
 #### Scenario: Missing totals in a checkout event

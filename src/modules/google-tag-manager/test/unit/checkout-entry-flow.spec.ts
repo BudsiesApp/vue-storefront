@@ -45,8 +45,8 @@ function deferred () {
   return { promise, resolve: resolveDeferred, reject: rejectDeferred };
 }
 
-function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, success }: {
-  quantity?: number, pendingCoupon?: boolean, hasTotals?: boolean, failRefresh?: boolean, success?: string
+function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, success, hasOrder }: {
+  quantity?: number, pendingCoupon?: boolean, hasTotals?: boolean, failRefresh?: boolean, success?: string, hasOrder?: boolean
 } = {}) {
   const payment = deferred();
   const startup = deferred();
@@ -72,7 +72,7 @@ function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, succe
       namespaced: true,
       state: { shippingDetails: {}, paymentDetails: {} },
       getters: {
-        getSuccessOrderData: () => undefined, getShippingDetails: state => state.shippingDetails,
+        getSuccessOrderData: () => hasOrder ? { order: {} } : undefined, getShippingDetails: state => state.shippingDetails,
         getPaymentDetails: state => state.paymentDetails, getShippingMethods: () => [], getPaymentMethods: () => []
       },
       actions: {
@@ -109,6 +109,7 @@ function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, succe
   } });
   store.commit(`cart/${types.CART_SET_ITEMS_HASH}`, store.getters['cart/getCurrentCartHash']);
   if (quantity && quantity > 1) store.commit(`cart/${types.CART_UPD_ITEM}`, { product: item, qty: quantity });
+  const notifyEmptyCart = jest.fn();
   const page = new Vue({
     extends: Checkout,
     store,
@@ -116,11 +117,11 @@ function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, succe
     propsData: { success },
     computed: { isSuccess () { return this.success === 'success'; } },
     beforeCreate () { Object.assign(this, { $router: { push }, $t: (text: string) => text }); },
-    methods: { activateSection: jest.fn(), localizedRoute: (s: string) => s, notifyEmptyCart: jest.fn() },
+    methods: { activateSection: jest.fn(), localizedRoute: (s: string) => s, notifyEmptyCart },
     render: h => h('div')
   }).$mount() as Vue & { checkoutEntry: Promise<unknown>, success: string };
   const cleanup = () => page.$destroy();
-  return { page, store, order, cleanup, payment, startup, push };
+  return { page, store, order, cleanup, payment, startup, push, notifyEmptyCart };
 }
 
 it.each([false, true])('starts payment without startup or idle waits when unchanged, flushes edits when pending (%s)', async pending => {
@@ -149,11 +150,22 @@ it.each(['left', 'success'])('does not report a visit after checkout is %s', asy
   cleanup();
 });
 
-it.each([false, true])('skips payment and methods for an ineligible entry (success route: %s)', async success => {
-  const { startup, order, cleanup, push } = mountCheckout(success ? { success: 'success' } : { quantity: 0 });
+it.each([undefined, 'success'])('notifies and redirects an empty cart without payment or methods (route param: %s)', async success => {
+  const { startup, order, cleanup, push, notifyEmptyCart } = mountCheckout({ quantity: 0, success });
   startup.resolve();
   await flush();
-  expect(push).toHaveBeenCalledTimes(success ? 0 : 1);
+  expect(notifyEmptyCart).toHaveBeenCalledTimes(1);
+  expect(push).toHaveBeenCalledWith('/');
+  expect(order).toEqual([]);
+  cleanup();
+});
+
+it('keeps a genuine success visit with in-memory order data in place', async () => {
+  const { page, order, cleanup, push, notifyEmptyCart } = mountCheckout({ quantity: 0, success: 'success', hasOrder: true });
+  await flush();
+  expect(page.checkoutEntry).toBeNull();
+  expect(notifyEmptyCart).not.toHaveBeenCalled();
+  expect(push).not.toHaveBeenCalled();
   expect(order).toEqual([]);
   cleanup();
 });

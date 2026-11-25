@@ -251,11 +251,15 @@ const synchronizeActions = {
     EventBus.$emit('cart-after-itemchanged', { item: cartItem })
     commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
   },
-  async pullServerCart ({ dispatch }, forceSync = false): Promise<any> {
+  async pullServerCart ({ dispatch, getters }, forceSync = false): Promise<any> {
     await dispatch('clear', { disconnect: false, sync: false });
     const diffLog = await dispatch('sync', { forceSync });
 
-    await dispatch('syncTotals', { forceServerSync: true });
+    // A populated pull already refreshes totals in the merge. Keep the explicit
+    // methods refresh for an empty result, which the merge does not refresh.
+    if (!getters.getCartItems.length) {
+      await dispatch('syncTotals', { forceServerSync: true });
+    }
 
     return diffLog;
   },
