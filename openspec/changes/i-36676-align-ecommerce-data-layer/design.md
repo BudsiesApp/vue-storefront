@@ -119,7 +119,7 @@ A rejected request, non-404 error, malformed/unusable response, or methods-pull 
 
 After merging server and local items, decide whether to refresh totals using the resulting cart, not the pre-pull local items. This runs the existing business refresh and wait policy when a server cart populates an empty cache, so its coupon, discounts, and totals reach both the UI and analytics.
 
-Track `totalsSyncDepth` across `syncTotals` and `overrideServerTotals`, including methods, requests, and response application; release in `finally` and expose it to analytics as `isTotalsSettling`. Keep the base shopper flags and Place Order checks. Add refresh ID and token checks: only the latest-started refresh may apply a successful response; a 404 must not clear a replacement quote. A 404 from a business refresh for the same quote still clears it regardless of refresh generation. Apply responses synchronously.
+Track `totalsSyncDepth` across `syncTotals` and `overrideServerTotals`, including methods, requests, and response application; release in `finally` and expose it to analytics as `isTotalsSettling`. Keep the base timing of shopper-facing busy flags. Add refresh ID and token checks: only the latest-started refresh may apply a successful response; a 404 must not clear a replacement quote. A 404 from a business refresh for the same quote still clears it regardless of refresh generation. Apply responses synchronously.
 
 Defer `clear`'s reconnect behind an active sync, without awaiting it from inside that predecessor. Include the deferred reconnect in connection settlement.
 
