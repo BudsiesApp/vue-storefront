@@ -6,7 +6,7 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import Product from '@vue-storefront/core/modules/catalog/types/Product';
 import { Order } from '@vue-storefront/core/modules/order/types/Order';
 import { currentStoreView } from '@vue-storefront/core/lib/multistore';
-import { cartHooks } from '@vue-storefront/core/modules/cart/hooks';
+import { cartHooks, type AfterAddToCartPayload } from '@vue-storefront/core/modules/cart/hooks';
 import { SearchQuery } from 'storefront-query-builder';
 import { Logger } from '@vue-storefront/core/lib/logger';
 
@@ -16,7 +16,6 @@ import { PlushieWizardEvents } from 'src/modules/budsies';
 import { PriceHelper, ProductEvent, UserEvents, PersistedCustomerData, CustomerDataChangedEventPayload, DEFAULT_CURRENCY_CODE } from 'src/modules/shared';
 
 import CartItem from 'core/modules/cart/types/CartItem';
-import type { DiffLog } from 'core/modules/cart/helpers/createDiffLog';
 import { GET_PRODUCT_PRICE } from '@vue-storefront/core/modules/catalog';
 import { GET_CART_ITEM_PRICE } from '@vue-storefront/core/modules/cart';
 import PaymentDetails from 'core/modules/checkout/types/PaymentDetails';
@@ -239,12 +238,10 @@ export default class EventBusListener {
 
   private onAfterAddToCartHookHandler ({
     cartItem,
-    diffLog
-  }: {
-    cartItem: CartItem,
-    diffLog?: DiffLog
-  }) {
-    if (isAddToCartRejected(diffLog)) {
+    diffLog,
+    source
+  }: AfterAddToCartPayload) {
+    if (source === 'server-import' || isAddToCartRejected(diffLog)) {
       return;
     }
 

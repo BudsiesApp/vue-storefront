@@ -4,9 +4,11 @@ import VueGtm from '@gtm-support/vue2-gtm';
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import { CartService } from '@vue-storefront/core/data-resolver';
 import { DiffLog } from '@vue-storefront/core/modules/cart/helpers/createDiffLog';
+import { cartHooks } from '@vue-storefront/core/modules/cart/hooks';
 import itemActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
 import synchronizeActions from '@vue-storefront/core/modules/cart/store/actions/synchronizeActions';
 import mergeActions from '@vue-storefront/core/modules/cart/store/actions/mergeActions';
+import productActions from '@vue-storefront/core/modules/cart/store/actions/productActions';
 import totalsActions from '@vue-storefront/core/modules/cart/store/actions/totalsActions';
 import * as cartMutationTypes from '@vue-storefront/core/modules/cart/store/mutation-types';
 import type CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
@@ -97,6 +99,8 @@ describe('add_to_cart through the cart addItem action', () => {
   let addError: unknown;
 
   new EventBusListener(store, gtm).initEventBusListeners();
+  const afterAddToCart = jest.fn();
+  cartHooks.afterAddToCart(afterAddToCart);
 
   function createProduct (qty: number): CartItem {
     return {
@@ -115,27 +119,27 @@ describe('add_to_cart through the cart addItem action', () => {
     } as unknown as CartItem;
   }
 
-  interface AddToCartOptions {
+  interface CartActionOptions {
     // Responses of the server to the items of the add, as reported by the cart merge.
     serverResponses?: Record<string, any>[],
     stockStatus?: string,
     // Result code of the cart read at the start of the synchronization.
     cartReadCode?: number | null
+    serverItems?: (CartItem & { item_id: number, quote_id: string })[]
     rejectAt?: 'checkProductStatus' | 'create' | 'sync'
     writeTotals?: ItemTotals
     pullMethods?: () => Promise<void>
   }
 
-  // Runs the real `addItem`, `addItems`, `sync` and `performSync` actions; only the stock check, the cart
-  // mutation, the cart read, the merge of the server items and the clearing of the cart are replaced.
-  async function addToCart (product: CartItem, itemTotals?: ItemTotals, options: AddToCartOptions = {}) {
-    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200, rejectAt, writeTotals, pullMethods } = options;
+  // Run the real Add and server-import actions against stubbed APIs, catalog lookup and cart mutations.
+  function setupCartActions (product: CartItem, itemTotals?: ItemTotals, options: CartActionOptions = {}) {
+    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200, serverItems = [], rejectAt, writeTotals, pullMethods } = options;
     const getters = {
       get isCartConnected () { return Boolean(this.getCartToken); },
       isCartSyncEnabled: true,
       canUpdateMethods: true,
       isSyncRequired: true,
-      getCartItems: store.state.cart.cartItems,
+      get getCartItems () { return store.state.cart.cartItems; },
       getPendingCouponCode: null,
       canSyncTotals: true, isTotalsSyncRequired: true, getCartToken: 'quote', getCurrentCartHash: 'hash',
       isCartHashChanged: false
@@ -158,7 +162,7 @@ describe('add_to_cart through the cart addItem action', () => {
 
       store.state.cart.cartItems.push({
         ...addedProduct,
-        server_item_id: 7,
+        server_item_id: addedProduct.server_item_id ?? 7,
         extension_attributes: itemTotals ? { budsies_quote_item_totals: itemTotals } : {}
       });
     };
@@ -171,19 +175,21 @@ describe('add_to_cart through the cart addItem action', () => {
       dispatch: jest.fn(async (name: string, payload: Record<string, any>) => {
         if (name === rejectAt) throw new Error(`Rejected ${name}`);
         switch (name) {
+          case 'addItem':
           case 'addItems':
-            return (itemActions as any).addItems(context, payload);
+            return (itemActions as any)[name](context, payload);
           case 'checkProductStatus':
             return { status: stockStatus, onlineCheckTaskId: 1 };
           case 'sync':
-            return (synchronizeActions as any).sync(context, payload);
           case 'performSync':
-            return (synchronizeActions as any).performSync(context, payload);
+            return (synchronizeActions as any)[name](context, payload);
           case 'clear':
             store.state.cart.cartItems = [];
-            getters.getCartToken = '';
-            getters.canSyncTotals = false;
-            getters.canUpdateMethods = false;
+            if (payload.disconnect) {
+              getters.getCartToken = '';
+              getters.canSyncTotals = false;
+              getters.canUpdateMethods = false;
+            }
 
             return undefined;
           case 'merge': {
@@ -200,9 +206,14 @@ describe('add_to_cart through the cart addItem action', () => {
           case 'updateServerItem':
           case 'processUpdateServerItemResponse':
           case 'updateClientItem':
-            return (mergeActions as any)[name](context, payload);
           case 'mergeServerItems':
-            return new DiffLog();
+          case 'mergeServerItem':
+            return (mergeActions as any)[name](context, payload);
+          case 'getProductVariant':
+          case 'findProductOption':
+            return productActions[name](context, payload);
+          case 'product/single':
+            return serverItems.find(({ sku }) => sku === payload.options.sku);
           case 'updateItemsProductData':
             return undefined;
           case 'pullMethods':
@@ -222,7 +233,7 @@ describe('add_to_cart through the cart addItem action', () => {
       })
     };
 
-    jest.mocked(CartService.getItems).mockResolvedValue({ resultCode: cartReadCode ?? undefined, result: [] } as any);
+    jest.mocked(CartService.getItems).mockReset().mockResolvedValue({ resultCode: cartReadCode ?? undefined, result: serverItems } as any);
     jest.mocked(CartService.updateItem).mockReset().mockResolvedValue({ resultCode: 200, result: {
       item_id: 7, sku: product.sku,
       ...(writeTotals ? { extension_attributes: { budsies_quote_item_totals: writeTotals } } : {})
@@ -230,6 +241,12 @@ describe('add_to_cart through the cart addItem action', () => {
     jest.mocked(CartService.getTotals).mockReset().mockResolvedValue({ resultCode: 200, result: { items: [] } } as any);
 
     pushes.length = 0;
+
+    return context;
+  }
+
+  async function addToCart (product: CartItem, itemTotals?: ItemTotals, options: CartActionOptions = {}) {
+    const context = setupCartActions(product, itemTotals, options);
     addError = undefined;
 
     try {
@@ -238,7 +255,7 @@ describe('add_to_cart through the cart addItem action', () => {
       addError = error;
     }
 
-    expect(syncState.isAdding).toBe(false);
+    expect(context.state.isAdding).toBe(false);
 
     return pushes.find(({ event }) => event === 'add_to_cart');
   }
@@ -246,10 +263,49 @@ describe('add_to_cart through the cart addItem action', () => {
   beforeEach(() => {
     store.state.cart.cartItems = [];
     store.state.product.productBySku = {};
+    afterAddToCart.mockClear();
+    cartItemPriceGetter.mockClear();
     jest.mocked(EventBus.$emit).mockImplementation((event, payload) => {
       if (event === 'cart-prepare-item-product') fillProductWithAdditionalFields(payload);
       return EventBus;
     });
+  });
+
+  function serverCartWithTwoLines () {
+    return [
+      { ...createProduct(2), item_id: 7, quote_id: 'quote' },
+      { ...createProduct(3), sku: 'PLUSH-2', item_id: 8, quote_id: 'quote' }
+    ];
+  }
+
+  it('restores server lines during sync without reporting shopper Adds', async () => {
+    const serverItems = serverCartWithTwoLines();
+    const context = setupCartActions(serverItems[0], undefined, { serverItems });
+
+    await synchronizeActions.sync(context, {});
+
+    expect(store.state.cart.cartItems).toMatchObject([{ sku: 'PLUSH-1', qty: 2 }, { sku: 'PLUSH-2', qty: 3 }]);
+    expect(afterAddToCart).toHaveBeenCalledTimes(2);
+    expect(cartItemPriceGetter).not.toHaveBeenCalled();
+    expect(pushes).toHaveLength(0);
+    expect(CartService.getItems).toHaveBeenCalledTimes(1);
+    expect(CartService.updateItem).not.toHaveBeenCalled();
+  });
+
+  it('does not report Adds when the Re-order pull reloads the whole cart', async () => {
+    // Order History calls pullServerCart(true) after Magento has added the reordered unit.
+    const serverItems = serverCartWithTwoLines();
+    store.state.cart.cartItems = serverItems.map(item => ({ ...item, server_item_id: item.item_id }));
+    store.state.cart.cartItems[0].qty = 1;
+    const context = setupCartActions(serverItems[0], undefined, { serverItems });
+
+    await synchronizeActions.pullServerCart(context, true);
+
+    expect(store.state.cart.cartItems).toMatchObject([{ sku: 'PLUSH-1', qty: 2 }, { sku: 'PLUSH-2', qty: 3 }]);
+    expect(afterAddToCart).toHaveBeenCalledTimes(2);
+    expect(pushes).toHaveLength(0);
+    expect(CartService.getItems).toHaveBeenCalledTimes(1);
+    expect(CartService.updateItem).not.toHaveBeenCalled();
   });
 
   it.each([false, true])('uses the hydrated cart name on Add without waiting for catalog hydration (cached child: %s)', async cached => {

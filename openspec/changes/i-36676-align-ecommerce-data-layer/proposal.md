@@ -10,6 +10,7 @@ On the storefront app shared by Petsies, Budsies, Budsies Education, and Waggabl
 - Keep the current event `value` and `currency` sources: grand total with quote or order currency for cart, checkout, and purchase events; product or line price for item events.
 - Apply recalculated line prices and quote totals synchronously so cart and checkout events do not observe a partially applied response.
 - Report `add_to_cart` immediately when the Add action accepts the item. Use amounts supplied by the successful write for the matching line, the added quantity, and the added product's categories; otherwise use selected-option pricing. Do not wait for a totals refresh for analytics.
+- Report only shopper Adds: server restores during startup, reconnect, recovery, login or ordinary sync, and server pulls after Re-order do not emit `add_to_cart`. Tracking only the items actually added by Re-order is a follow-up.
 - Stop capping a cart item's paid price at the base product price when a paid option raises it.
 - Preserve base behavior for free campaign products and bundle selection quantities in the new item mapping.
 - Report the first assigned category as `item_category`; product data does not identify the category hierarchy, so deeper levels are not reported.

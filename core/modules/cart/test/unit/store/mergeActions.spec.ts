@@ -306,7 +306,7 @@ describe('Cart mergeActions', () => {
 
     await (cartActions as any).mergeServerItem(contextMock, { clientItems: [clientItem], serverItem, forceClientState: false, dryRun: false });
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'getProductVariant', { serverItem })
-    expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'addItem', { productToAdd: serverItem, forceServerSilence: true })
+    expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'addItem', { productToAdd: serverItem, forceServerSilence: true, source: 'server-import' })
   })
 
   it('updates totals after merge', async () => {

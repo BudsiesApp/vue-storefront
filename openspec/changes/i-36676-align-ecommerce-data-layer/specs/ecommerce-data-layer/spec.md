@@ -96,7 +96,16 @@ Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax
 
 ### Requirement: Added cart items use synchronized pricing
 
-`add_to_cart` SHALL be reported when the Add action accepts the item, without waiting for a later methods/totals refresh for analytics. It SHALL use amounts supplied by a successful write for the matching cart line, report the added quantity, and report the added product's categories. When no matching write supplies usable amounts, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
+`add_to_cart` SHALL be reported only when the shopper's Add action accepts the item, without waiting for a later methods/totals refresh for analytics. It SHALL use amounts supplied by a successful write for the matching cart line, report the added quantity, and report the added product's categories. When no matching write supplies usable amounts, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
+
+#### Scenario: Cart restored from the server
+- **WHEN** startup, reconnect, ordinary sync, cart recovery, or login with or without a guest cart restores lines from the server
+- **THEN** the lines are restored as usual without any `add_to_cart` push or extra request
+
+#### Scenario: Cart pulled after Re-order
+- **WHEN** Re-order adds an item on the server and the resulting cart is pulled
+- **THEN** the cart shows the resulting lines and quantities without any `add_to_cart` push, including for the reordered item
+- **AND** tracking only the quantity actually added by Re-order is deferred to a follow-up
 
 #### Scenario: Undiscounted product with quantity two
 - **WHEN** a product with a unit price of 100 is added with quantity 2
@@ -171,7 +180,7 @@ Item payloads SHALL report the name of the first named category assigned to the 
 
 ### Requirement: Existing event and integration behavior is preserved
 
-Payload updates SHALL preserve existing event names and firing points, except for the cart-view and checkout-start readiness corrections below, as well as SKU, internal ID, composed variant, and purchase-flow reporting and integration-specific custom fields. Each intended event emission SHALL continue to clear stale `ecommerce` data immediately before its payload push without introducing additional event pushes. GTM loading through the configured script source SHALL remain supported.
+Payload updates SHALL preserve event names and firing points except for the Add and readiness changes in this spec. They SHALL preserve SKU, internal ID, composed variant, purchase flow, and integration-specific custom fields. Each ecommerce event SHALL clear stale `ecommerce` data immediately before its payload push, without adding new events. GTM loading through the configured script source SHALL remain supported.
 
 #### Scenario: Checkout funnel and purchase verification
 - **WHEN** the existing checkout actions complete and an order is placed

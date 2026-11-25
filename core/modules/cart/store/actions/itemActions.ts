@@ -7,7 +7,8 @@ import {
   createDiffLog,
   notifications
 } from '@vue-storefront/core/modules/cart/helpers'
-import { cartHooksExecutors } from './../../hooks'
+import { cartHooksExecutors, type AfterAddToCartPayload } from './../../hooks'
+import type CartItem from '../../types/CartItem'
 import config from 'config'
 import throwServerErrorFromDiffLog from '../../helpers/throwServerErrorFromDiffLog'
 
@@ -39,14 +40,17 @@ const itemActions = {
   getItem ({ getters }, { product }) {
     return getters.getCartItems.find(p => productsEquals(p, product))
   },
-  async addItem ({ dispatch, commit }, { productToAdd, forceServerSilence = false }) {
+  async addItem ({ dispatch, commit }, { productToAdd, forceServerSilence = false, source }: {
+    productToAdd: CartItem, forceServerSilence?: boolean, source?: AfterAddToCartPayload['source']
+  }) {
     commit(types.CART_ADDING_ITEM, { isAdding: true })
     try {
       const { cartItem } = cartHooksExecutors.beforeAddToCart({ cartItem: productToAdd })
       const result = await dispatch('addItems', { productsToAdd: prepareProductsToAdd(cartItem), forceServerSilence })
       cartHooksExecutors.afterAddToCart({
         diffLog: result,
-        cartItem: cartItem
+        cartItem: cartItem,
+        source
       });
 
       throwServerErrorFromDiffLog(result);

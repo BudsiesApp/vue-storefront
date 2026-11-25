@@ -5,6 +5,7 @@
 - [x] 1.1 Map tax-exclusive unit prices and numeric discounts; normalize quantity once and round unit amounts to four decimals. Use selected options in the bundle fallback, preserve existing zero campaign pricing, and correct paid-option cart pricing.
 - [x] 1.2 Add normalized SHA-256 and legacy SHA3 email fields, clearing both for blank email. Preserve event value/currency sources, composed variants, ecommerce clearing, and the configured GTM script source.
 - [x] 1.3 Report the first named category and round purchase `subtotal_value` and `affiliate_total` to cents.
+- [x] 1.4 Mark server imports in the existing Add hook and suppress their Data Layer pushes without changing cart behavior. Cover sync and Re-order pulls with the real merge path and retain accepted/rejected Add coverage. Document the shared-tag impact and defer exact Re-order tracking.
 
 ## 2. Establish cart-owned settlement and totals ownership
 

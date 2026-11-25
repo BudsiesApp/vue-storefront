@@ -296,7 +296,7 @@ const mergeActions = {
     if (productToAdd) {
       EventBus.$emit('cart-prepare-item-product', { product: productToAdd, serverItem });
 
-      await dispatch('addItem', { productToAdd, forceServerSilence: true })
+      await dispatch('addItem', { productToAdd, forceServerSilence: true, source: 'server-import' })
       Logger.debug('Product variant for given serverItem has not found', 'cart', serverItem)()
     }
 
