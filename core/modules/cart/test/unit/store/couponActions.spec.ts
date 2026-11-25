@@ -98,7 +98,8 @@ describe('Cart couponActions', () => {
     expect(result).toBe(true)
     expect(contextMock.dispatch).toBeCalledWith('applyCoupon', {
       couponCode: 'coupon-code',
-      silent: true
+      silent: true,
+      skipTotalsUpdate: false
     })
     expect(contextMock.commit).toBeCalledWith(types.CART_SET_PENDING_COUPON, null)
   })

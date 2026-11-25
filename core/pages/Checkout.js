@@ -3,7 +3,7 @@ import { router } from '@vue-storefront/core/app';
 import i18n from '@vue-storefront/i18n'
 import config from 'config'
 import VueOfflineMixin from 'vue-offline/mixin'
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import Composite from '@vue-storefront/core/mixins/composite'
 import { currentStoreView, localizedRoute } from '@vue-storefront/core/lib/multistore'
@@ -11,6 +11,7 @@ import { isServer } from '@vue-storefront/core/helpers'
 import { setServerRedirect } from '@vue-storefront/core/request-services'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION } from '@vue-storefront/core/modules/checkout';
+import { requirePaymentTotals } from '@vue-storefront/core/modules/checkout/helpers/require-payment-totals';
 
 export default {
   name: 'Checkout',
@@ -36,23 +37,26 @@ export default {
         shipping: { $invalid: true },
         payment: { $invalid: true }
       },
-      focusedField: null
+      focusedField: null,
+      checkoutEntry: null,
+      checkoutEntryActive: false
     }
   },
   computed: {
     ...mapGetters({
       isVirtualCart: 'cart/isVirtualCart',
       successOrderData: 'checkout/getSuccessOrderData'
-    }),
-    ...mapState({
-      platformTotals: state => state.cart.platformTotals
     })
   },
-  async beforeMount () {
+  beforeMount () {
     if (this.successOrderData) {
       return;
     }
 
+    // A reload of the success URL has no in-memory order. Run entry so an empty cart
+    // still redirects, but stop an ordinary entry if it transitions to success.
+    const startedOnSuccess = this.isSuccess
+    const isEntryActive = () => this.checkoutEntryActive && !this.successOrderData && (startedOnSuccess || !this.isSuccess)
     this.activateSection('personalDetails', { replaceHistoryEntry: true })
     EventBus.$emit('checkout-after-load')
     this.$store.dispatch('checkout/setModifiedAt', Date.now())
@@ -72,56 +76,37 @@ export default {
     EventBus.$on('checkout-after-validationError', this.focusField)
     EventBus.$on('checkout-after-paymentMethodChanged', this.onPaymentMethodChanged)
 
-    this.$store.dispatch('cart/load', { forceClientState: true }).then(() => {
+    this.checkoutEntryActive = true
+    this.checkoutEntry = Promise.resolve().then(async () => {
+      if (!isEntryActive()) return
+      if (this.$store.getters['cart/canUpdateMethods'] && this.$store.getters['cart/isCartHashChanged']) {
+        // The entry refresh below covers both the sent items and any pending coupon applied by sync.
+        await this.$store.dispatch('cart/sync', { forceClientState: true, waitForTotalsUpdate: false, skipTotalsUpdate: true })
+      }
+
+      if (!isEntryActive()) return
       if (this.$store.state.cart.cartItems.length === 0) {
+        this.checkoutEntryActive = false
         this.notifyEmptyCart()
         this.$router.push(this.localizedRoute('/'))
-      } else {
-        this.stockCheckCompleted = false
-        const checkPromises = []
-        for (let product of this.$store.state.cart.cartItems) { // check the results of online stock check
-          if (product.onlineStockCheckid) {
-            checkPromises.push(new Promise((resolve, reject) => {
-              StorageManager.get('syncTasks').getItem(product.onlineStockCheckid, (err, item) => {
-                if (err || !item) {
-                  if (err) Logger.error(err)()
-                  resolve(null)
-                } else {
-                  product.stock = item.result
-                  resolve(product)
-                }
-              })
-            }))
-          }
-        }
-        Promise.all(checkPromises).then((checkedProducts) => {
-          this.stockCheckCompleted = true
-          this.stockCheckOK = true
-          for (let chp of checkedProducts) {
-            if (chp && chp.stock) {
-              if (!chp.stock.is_in_stock) {
-                this.stockCheckOK = false
-                chp.errors.stock = i18n.t('Out of stock!')
-                this.notifyOutStock(chp)
-              }
-            }
-          }
-        })
+        return
       }
+
+      this.checkCheckoutStock()
+      const storeView = currentStoreView()
+      const shippingCountry = this.$store.state.checkout.shippingDetails.country || storeView.i18n.defaultCountry
+      const paymentCountry = this.$store.state.checkout.paymentDetails.country || storeView.i18n.defaultCountry
+
+      await this.$store.dispatch('checkout/updatePaymentDetails', { country: paymentCountry });
+      if (!isEntryActive()) return
+
+      EventBus.$emit('checkout-before-shippingMethods', shippingCountry, { entry: true })
+      await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
     });
-
-    const storeView = currentStoreView()
-    let shippingCountry = this.$store.state.checkout.shippingDetails.country
-    let paymentCountry = this.$store.state.checkout.paymentDetails.country
-
-    if (!shippingCountry) shippingCountry = storeView.i18n.defaultCountry
-    if (!paymentCountry) paymentCountry = storeView.i18n.defaultCountry
-
-    await this.$store.dispatch('checkout/updatePaymentDetails', { country: paymentCountry });
-
-    EventBus.$emit('checkout-before-shippingMethods', shippingCountry)
+    this.checkoutEntry.catch(error => Logger.error(error, 'checkout')())
   },
   beforeDestroy () {
+    this.checkoutEntryActive = false
     this.$store.dispatch('checkout/setModifiedAt', 0) // exit checkout
     EventBus.$off('cart-after-update', this.onCartAfterUpdate)
     EventBus.$off('cart-after-delete', this.onCartAfterUpdate)
@@ -143,6 +128,38 @@ export default {
     'OnlineOnly': 'onNetworkStatusCheck'
   },
   methods: {
+    checkCheckoutStock () {
+      this.stockCheckCompleted = false
+      const checkPromises = []
+      for (let product of this.$store.state.cart.cartItems) { // check the results of online stock check
+        if (product.onlineStockCheckid) {
+          checkPromises.push(new Promise((resolve, reject) => {
+            StorageManager.get('syncTasks').getItem(product.onlineStockCheckid, (err, item) => {
+              if (err || !item) {
+                if (err) Logger.error(err)()
+                resolve(null)
+              } else {
+                product.stock = item.result
+                resolve(product)
+              }
+            })
+          }))
+        }
+      }
+      Promise.all(checkPromises).then((checkedProducts) => {
+        this.stockCheckCompleted = true
+        this.stockCheckOK = true
+        for (let chp of checkedProducts) {
+          if (chp && chp.stock) {
+            if (!chp.stock.is_in_stock) {
+              this.stockCheckOK = false
+              chp.errors.stock = i18n.t('Out of stock!')
+              this.notifyOutStock(chp)
+            }
+          }
+        }
+      })
+    },
     onCartAfterUpdate (payload) {
       if (this.$store.state.cart.cartItems.length === 0) {
         this.notifyEmptyCart()
@@ -152,9 +169,9 @@ export default {
     async onAfterShippingMethodChanged () {
       await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
     },
-    onBeforeShippingMethods (country) {
+    onBeforeShippingMethods (country, { entry = false } = {}) {
       this.$store.dispatch('checkout/updatePropValue', ['country', country])
-      this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
+      if (!entry) this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
       this.$forceUpdate()
     },
     onAfterPlaceOrder (payload) {
@@ -286,6 +303,9 @@ export default {
       return paymentMethod
     },
     prepareOrder () {
+      const platformTotals = requirePaymentTotals(this.$store)
+      if (!platformTotals) return
+
       this.order = {
         user_id: this.$store.state.user.current ? this.$store.state.user.current.id.toString() : '',
         cart_id: this.$store.state.cart.cartServerToken ? this.$store.state.cart.cartServerToken.toString() : '',
@@ -313,13 +333,13 @@ export default {
           payment_method_additional: this.payment.paymentMethodAdditional
         },
         paymentDetails: {
-          base_grand_total: this.platformTotals.base_grand_total,
-          base_tax_amount: this.platformTotals.base_tax_amount,
-          base_shipping_amount: this.platformTotals.base_shipping_amount,
-          base_subtotal: this.platformTotals.base_subtotal,
-          base_discount_amount: this.platformTotals.base_discount_amount,
-          order_currency_code: this.platformTotals.quote_currency_code,
-          coupon_code: this.platformTotals.coupon_code
+          base_grand_total: platformTotals.base_grand_total,
+          base_tax_amount: platformTotals.base_tax_amount,
+          base_shipping_amount: platformTotals.base_shipping_amount,
+          base_subtotal: platformTotals.base_subtotal,
+          base_discount_amount: platformTotals.base_discount_amount,
+          order_currency_code: platformTotals.quote_currency_code,
+          coupon_code: platformTotals.coupon_code
         },
         personalDetails: this.personalDetails
       }
@@ -346,7 +366,8 @@ export default {
     placeOrder () {
       this.checkConnection({ online: typeof navigator !== 'undefined' ? navigator.onLine : true })
       if (this.checkStocks()) {
-        this.$store.dispatch('checkout/placeOrder', { order: this.prepareOrder() })
+        const order = this.prepareOrder()
+        if (order) this.$store.dispatch('checkout/placeOrder', { order })
       } else {
         this.notifyNotAvailable()
       }

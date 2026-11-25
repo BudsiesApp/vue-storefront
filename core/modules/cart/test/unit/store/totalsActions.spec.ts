@@ -87,7 +87,7 @@ describe('Cart totalsActions', () => {
       key3: { qty: 5, param1: 1, param2: 6, item_id: 3 }
     }
     const totals = { total_segments: {} }
-    const contextMock = createContextMock({ getters: { getCartItems: [] } });
+    const contextMock = createContextMock({ getters: { getCartItems: [] }, state: { totalsRefreshId: 0 } });
 
     (contextMock.dispatch as jest.Mock).mockImplementationOnce(async () => ({
       resultCode: 200,
@@ -112,6 +112,7 @@ describe('Cart totalsActions', () => {
     (createOrderData as jest.Mock).mockImplementation(() => ({ country: 'US', method_code: 'XXX' }));
     (createShippingInfoData as jest.Mock).mockImplementation(() => 'address information');
     const contextMock = createContextMock({
+      state: { totalsRefreshId: 0 },
       rootGetters: {
         'checkout/getShippingDetails': {},
         'checkout/getShippingMethods': {},
