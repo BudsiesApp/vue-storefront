@@ -141,7 +141,8 @@ describe('Cart synchronizeActions', () => {
       serverItems: [],
       mergeQty: false,
       forceUpdateServerItem: false,
-      waitForTotalsUpdate: true
+      waitForTotalsUpdate: true,
+      skipTotalsUpdate: false
     })
   })
 

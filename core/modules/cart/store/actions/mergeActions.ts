@@ -366,7 +366,7 @@ const mergeActions = {
     const mergeServerItemsDiffLog = await dispatch('mergeServerItems', mergeParameters)
 
     const updatePromises = Promise.all([
-      dispatch('updateTotalsAfterMerge', { clientItems, dryRun, ...(skipTotalsUpdate ? { skipTotalsUpdate } : {}) }),
+      dispatch('updateTotalsAfterMerge', { clientItems, dryRun, skipTotalsUpdate }),
       dispatch('updateItemsProductData')
     ]);
 

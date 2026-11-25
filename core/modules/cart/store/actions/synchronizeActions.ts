@@ -136,7 +136,7 @@ const synchronizeActions = {
       : Promise.resolve()
     const syncPromise = waitForPreviousSync.then(async () => {
       const diffLog = await dispatch('performSync', options)
-      await dispatch('applyPendingCouponInCartTransaction', options.skipTotalsUpdate ? { skipTotalsUpdate: true } : undefined)
+      await dispatch('applyPendingCouponInCartTransaction', { skipTotalsUpdate: options.skipTotalsUpdate })
 
       return diffLog
     })
@@ -192,7 +192,7 @@ const synchronizeActions = {
         mergeQty,
         forceUpdateServerItem,
         waitForTotalsUpdate,
-        ...(skipTotalsUpdate ? { skipTotalsUpdate } : {})
+        skipTotalsUpdate
       })
       cartHooksExecutors.afterSync(diffLog)
       commit(types.CART_SET_SYNC)

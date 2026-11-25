@@ -19,12 +19,11 @@ The same `price`, `discount`, `quantity`, and category rules apply to all existi
 
 Item pricing corrections:
 
-- After a coupon is applied or removed without a page reload, cart line prices and the items of later cart, checkout, and purchase events use the recalculated server item totals instead of the values from the last cart load.
+- Coupon changes continue to refresh server item prices. Line and quote totals now apply synchronously, so a visit event cannot see a partially applied response.
 - `add_to_cart` reports the accepted Add immediately with the line price from the item-write response, the added quantity, and the added product's categories. Without usable line totals it falls back to local pricing, including the selected bundle options. Genuine rejections are not reported; a cart-read 404 clears the cart and shows the friendly translated error. Another cart-read error keeps the local change and reports the Add. A subsequent background totals 404 may clear the cart after an accepted Add; it does not reject the Add or retract its event. The existing pending-coupon and first-quote waits are unchanged.
 - Cart and order items without usable server item totals (an offline or unsynchronized cart) report tax-exclusive prices derived from their product data, and a bundle with the options the customer selected. Previously these items reported tax-inclusive prices; items with server totals are unchanged.
 - A cart item whose paid price exceeds its base product price because of a paid option reports and displays the paid price instead of the base price. Item-event `value` still uses its existing price helper, so correcting that helper can also change the value for these paid-option items; this is not the net-item-revenue migration.
-- Bundle campaign prices keep a free (zero-priced) child at zero and multiply child prices by their selection quantity, on product listings, product pages, and in analytics.
-- A product or upgrade made free by a campaign is shown as free (its regular price struck through) instead of at its regular price, and product event values derived from the displayed price report 0.
+- Existing campaign display prices are unchanged. The new item mapping preserves free products and bundle selection quantities.
 
 Customer email hashes, on login, customer-data, plushie-wizard, and purchase pushes:
 
@@ -38,12 +37,12 @@ For `buyer@example.com`: `customerEmailHashed` is `6a6c26195c3682faa816966af7897
 Cart and checkout readiness:
 
 - `view_cart` and standard `begin_checkout` wait independently of the UI for startup, active Add, cart connection/sync, totals application, and coupon processing. They report once per mounted visit. Leaving cancels the event, not shared requests.
-- Reuse the current quote's totals, or make at most one eligible GET totals request if none exist and checkout entry has not attempted its refresh. This read does not refresh methods or set shopper busy flags. On failure, use last-known same-quote totals or report local items without inventing value/coupon. Offline, disabled, and disconnected carts make no analytics request; empty carts report `items: []` without value/coupon.
+- Reuse the current quote's totals, or make at most one eligible GET totals request if none exist and checkout entry has not attempted its refresh. The read does not refresh methods or set shopper busy flags. Discard its reply if the cart changed or has pending edits. If usable totals are unavailable, report local items without inventing value/coupon. Offline, disabled, and disconnected carts make no analytics request; empty carts report `items: []` without value/coupon.
 - In-app checkout uses a component-local promise. If there are local edits, send them (and any pending coupon retry) without an intermediate methods/totals chain; then prepare payment and refresh once. With no edits, payment preparation starts without waiting for startup or cart idle. The mounted analytics handler waits for entry, skips a retry if entry attempted totals, and emits nothing after leaving or turning into a success page.
 - Analytics does not require a cart hash match. Catalog hydration, item totals and shipment-estimate metadata are excluded from the ordinary sync hash, so they do not masquerade as unsent cart edits.
 - Full totals-busy holds, quote/latest-response guards, synchronous response application, and deferred reconnect remain. Late totals responses cannot overwrite or clear a replacement quote, and replacement/clear invalidates the prior quote's totals and successful timestamp. A failed refresh alone no longer invalidates same-quote last-known totals.
 - Standard checkout start excludes empty and success pages. A direct checkout URL request still redirects to the cart rather than emitting on SSR. Express-checkout `begin_checkout` keeps its trigger.
 
-Unchanged by this refactor: first-named-category-only mapping and purchase `custom_fields.subtotal_value`/`affiliate_total` rounding. Their release decisions remain separate. Other pre-existing cart bugs are excluded except exception-safe Add completion and sending edits before checkout.
+Existing cart races outside the stated edit-preservation requirements are out of scope.
 
 External verification pending: record GA4 DebugView purchase `value`, `shipping`, `tax`, `currency`, `coupon`, and item data. Add DebugView evidence to final Redmine notes; outgoing network requests alone do not establish DebugView receipt.

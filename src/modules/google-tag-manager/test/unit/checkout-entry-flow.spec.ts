@@ -50,7 +50,7 @@ jest.mock('@vue-storefront/core/modules/cart/helpers', () => ({
 }));
 jest.mock('@vue-storefront/core/modules/cart/helpers/productsEquals', () => ({ __esModule: true, default: (a, b) => a.sku === b.sku }));
 jest.mock('@vue-storefront/core/modules/cart/helpers/productChecksum', () => ({ __esModule: true, default: () => 'checksum' }));
-jest.mock('src/modules/shared', () => ({}));
+jest.mock('src/modules/shared', () => ({ CartEvents: jest.requireActual('src/modules/shared/types/cart-events').default }));
 
 Vue.use(Vuex);
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));

@@ -27,14 +27,19 @@ async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Pr
 
 const totalsActions = {
   async getTotals ({ commit }, { addressInformation, hasShippingInformation }) {
-    return holdTotalsSyncing(commit, async () => {
-      commit(types.SET_IS_TOTALS_SYNCING, true);
-      try {
-        return await (hasShippingInformation ? CartService.setShippingInfo(addressInformation) : CartService.getTotals());
-      } finally {
-        commit(types.SET_IS_TOTALS_SYNCING, false);
+    commit(types.SET_IS_TOTALS_SYNCING, true);
+
+    try {
+      if (hasShippingInformation) {
+        const response = await CartService.setShippingInfo(addressInformation);
+        return response;
       }
-    });
+
+      const response = await CartService.getTotals();
+      return response;
+    } finally {
+      commit(types.SET_IS_TOTALS_SYNCING, false);
+    }
   },
   async fetchMissingTotals ({ getters, dispatch }) {
     if (getters.canSyncTotals && !getters.getLastTotalsSyncDate && getters.getCartItems.length) {
@@ -52,6 +57,7 @@ const totalsActions = {
     // after a reconnect, applying it would give the current cart the totals of an old one, and clearing would
     // discard the current cart for the sake of an old one.
     const requestedCartToken = getters.getCartToken
+    const requestedItemsHash = readOnly ? getters.getCurrentCartHash : undefined
     const isCartReplaced = () => getters.getCartToken !== requestedCartToken
     const isOutdated = () => isSuperseded() || isCartReplaced()
 
@@ -60,6 +66,9 @@ const totalsActions = {
         ? await CartService.getTotals()
         : await dispatch('getTotals', { addressInformation, hasShippingInformation })
       const { resultCode, result } = task;
+
+      // The analytics read does not lock cart controls. Never apply its reply over a local edit.
+      if (readOnly && (getters.isCartHashChanged || getters.getCurrentCartHash !== requestedItemsHash)) return
 
       if (isCartNotFoundError(task)) {
         if (isCartReplaced()) {
@@ -93,7 +102,7 @@ const totalsActions = {
         commit(types.CART_SET_TOTALS_SYNC)
 
         // we received payment methods as a result of this call, updating state
-        if (!readOnly && result.payment_methods && getters.canUpdateMethods) {
+        if (result.payment_methods && getters.canUpdateMethods) {
           const { uniqueBackendMethods, paymentMethods } = preparePaymentMethodsToSync(
             result.payment_methods.map(method => ({ ...method, is_server_method: true })),
             rootGetters['checkout/getNotServerPaymentMethods']

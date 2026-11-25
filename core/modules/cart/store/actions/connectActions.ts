@@ -101,10 +101,9 @@ const connectActions = {
       Logger.log('Bypassing with guest cart' + getters.bypassCounter, 'cart')()
       commit(types.CART_UPDATE_BYPASS_COUNTER, { counter: 1 })
       Logger.error(result, 'cart')()
-      return dispatch('connect', {
-        guestCart: true,
-        ...(isCartSyncRecovery ? { isCartSyncRecovery: true } : {})
-      })
+      return dispatch('connect', isCartSyncRecovery
+        ? { guestCart: true, isCartSyncRecovery: true }
+        : { guestCart: true })
     }
 
     Logger.warn('Cart sync is disabled by the config', 'cart')()
@@ -115,7 +114,7 @@ const connectActions = {
    */
   async create (
     { dispatch, getters },
-    { ignoreClientItemsCount = false } = {}
+    { ignoreClientItemsCount } = { ignoreClientItemsCount: false }
   ) {
     const storedItems = getters['getCartItems'] || []
     const cartToken = getters['getCartToken']

@@ -133,7 +133,7 @@ export default {
       const checkPromises = []
       for (let product of this.$store.state.cart.cartItems) { // check the results of online stock check
         if (product.onlineStockCheckid) {
-          checkPromises.push(new Promise(resolve => {
+          checkPromises.push(new Promise((resolve, reject) => {
             StorageManager.get('syncTasks').getItem(product.onlineStockCheckid, (err, item) => {
               if (err || !item) {
                 if (err) Logger.error(err)()
@@ -150,10 +150,12 @@ export default {
         this.stockCheckCompleted = true
         this.stockCheckOK = true
         for (let chp of checkedProducts) {
-          if (chp?.stock && !chp.stock.is_in_stock) {
-            this.stockCheckOK = false
-            chp.errors.stock = i18n.t('Out of stock!')
-            this.notifyOutStock(chp)
+          if (chp && chp.stock) {
+            if (!chp.stock.is_in_stock) {
+              this.stockCheckOK = false
+              chp.errors.stock = i18n.t('Out of stock!')
+              this.notifyOutStock(chp)
+            }
           }
         }
       })

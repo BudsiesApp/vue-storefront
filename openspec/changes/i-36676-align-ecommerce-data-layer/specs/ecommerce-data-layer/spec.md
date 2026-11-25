@@ -238,10 +238,15 @@ After required operations settle, cart views and standard checkout starts SHALL 
 - **THEN** the event is still emitted once after active work settles, using local items and no unavailable event value or coupon
 - **AND** the visit does not loop, retry, or remain blocked waiting for a success
 
+#### Scenario: Cart edited during the analytics read
+- **WHEN** the cart changes while the read is pending, or still has unsent edits when the response arrives
+- **THEN** the read's response is discarded and does not overwrite the edit or change the next cart sync
+- **AND** the event can report the resulting local items without unavailable value or coupon
+
 #### Scenario: Refresh fails after earlier successful totals
 - **WHEN** an active refresh fails after a coupon change or another cart operation, and successful totals of the same quote exist
 - **THEN** those last-known totals remain available and the visit reports them once after processing settles
-- **AND** no failure-driven reset discards them or claims a new successful refresh
+- **AND** the failure does not invalidate those totals or count as a successful refresh
 
 #### Scenario: Offline, disabled, or disconnected cart
 - **WHEN** totals synchronization is offline or disabled, or the settled cart has no server connection

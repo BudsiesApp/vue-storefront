@@ -18,7 +18,7 @@ const couponActions = {
     }
 
     try {
-      const task = await dispatch('applyCoupon', { couponCode, silent: true, ...(skipTotalsUpdate ? { skipTotalsUpdate } : {}) })
+      const task = await dispatch('applyCoupon', { couponCode, silent: true, skipTotalsUpdate })
 
       if (!task || task.resultCode !== 200) {
         return false
