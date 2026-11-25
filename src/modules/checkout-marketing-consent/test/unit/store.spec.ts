@@ -10,6 +10,7 @@ import { GET_HYDRATED, GET_SELECTION } from '../../types/store/getters';
 import { ConsentSelection } from '../../types/marketing-consent';
 
 jest.mock('@vue-storefront/core/helpers', () => ({ isServer: false }));
+jest.mock('@vue-storefront/core/lib/sync', () => ({ TaskQueue: { execute: jest.fn() } }));
 jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => jest.fn()) } }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { get: jest.fn() } }));
 

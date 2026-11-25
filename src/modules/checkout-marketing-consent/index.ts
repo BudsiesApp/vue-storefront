@@ -5,12 +5,13 @@ import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 
 import { consentModule } from './store';
 import { STORE_NAME } from './store/store-name';
-import { CLEAR_SELECTION, HYDRATE_SELECTION } from './types/store/actions';
+import { CLEAR_SELECTION, HYDRATE_SELECTION, SUBMIT_SUBSCRIPTION } from './types/store/actions';
 import { GET_SELECTION } from './types/store/getters';
 
 const HYDRATE_SELECTION_ACTION = `${STORE_NAME}/${HYDRATE_SELECTION}`;
 const CLEAR_SELECTION_ACTION = `${STORE_NAME}/${CLEAR_SELECTION}`;
 const SELECTION_GETTER = `${STORE_NAME}/${GET_SELECTION}`;
+export const SUBMIT_SUBSCRIPTION_ACTION = `${STORE_NAME}/${SUBMIT_SUBSCRIPTION}`;
 
 export const CheckoutMarketingConsentModule: StorefrontModule = ({ store }) => {
   StorageManager.init(STORE_NAME);

@@ -15,6 +15,13 @@ const getters: GetterTree<CartState, RootState> = {
   getCartToken: state => state.cartServerToken,
   getLastSyncDate: state => state.cartServerLastSyncDate,
   getLastTotalsSyncDate: state => state.cartServerLastTotalsSyncDate,
+  getPaymentTotals: ({ cartServerToken, cartServerLastTotalsSyncDate, platformTotals }) => {
+    if (!cartServerToken || !cartServerLastTotalsSyncDate || !platformTotals) return null
+
+    const { base_grand_total, base_tax_amount, base_shipping_amount, base_subtotal, base_discount_amount, quote_currency_code } = platformTotals
+    return [base_grand_total, base_tax_amount, base_shipping_amount, base_subtotal, base_discount_amount].every(Number.isFinite) &&
+      typeof quote_currency_code === 'string' && quote_currency_code.length > 0 ? platformTotals : null
+  },
   getPendingCouponCode: state => state.pendingCouponCode,
   getShippingMethod: state => state.shipping,
   getPaymentMethod: state => state.payment,
@@ -106,6 +113,7 @@ const getters: GetterTree<CartState, RootState> = {
   [IS_SHIPPING_METHODS_SYNCING_ERROR]: (state) => state.isShippingMethodsSyncingError,
   [IS_CART_SYNCING]: (state) => state.isCartSyncing,
   [IS_TOTALS_SYNCING]: (state) => state.isTotalsSyncing,
+  isTotalsSettling: (state) => state.totalsSyncDepth > 0,
   [IS_PAYMENT_METHODS_SYNCING]: (state) => state.isPaymentMethodsSyncing,
   [IS_COUPON_PROCESSING]: (state) => state.isCouponProcessing
 }

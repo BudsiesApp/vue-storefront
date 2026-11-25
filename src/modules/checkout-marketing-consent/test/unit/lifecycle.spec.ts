@@ -7,6 +7,7 @@ jest.mock('@vue-storefront/core/compatibility/plugins/event-bus', () => ({
   default: { $on: jest.fn() }
 }));
 jest.mock('@vue-storefront/core/helpers', () => ({ isServer: false }));
+jest.mock('@vue-storefront/core/lib/sync', () => ({ TaskQueue: { execute: jest.fn() } }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { init: jest.fn() } }));
 
 describe('checkout consent lifecycle', () => {

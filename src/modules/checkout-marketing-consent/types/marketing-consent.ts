@@ -9,6 +9,14 @@ export interface ConsentAvailability {
   sms: boolean;
 }
 
+export interface MarketingSubscriptionRequest {
+  orderId: number | string;
+  email: string;
+  emailConsent?: boolean;
+  smsConsent?: boolean;
+  phone?: string;
+}
+
 export interface MarketingConsentValue {
   emailConsent: boolean;
   smsConsent: boolean;

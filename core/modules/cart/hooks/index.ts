@@ -1,5 +1,12 @@
 import { createListenerHook, createMutatorHook } from '@vue-storefront/core/lib/hooks'
+import type { DiffLog } from '../helpers/createDiffLog';
 import CartItem from '../types/CartItem';
+
+export interface AfterAddToCartPayload {
+  cartItem: CartItem,
+  diffLog?: DiffLog,
+  source?: 'server-import'
+}
 
 const {
   hook: beforeSyncHook,
@@ -19,7 +26,7 @@ const {
 const {
   hook: afterAddToCartHook,
   executor: afterAddToCartExecutor
-} = createListenerHook<any>()
+} = createListenerHook<AfterAddToCartPayload>()
 
 const {
   hook: beforeRemoveFromCartHook,

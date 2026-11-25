@@ -1,12 +1,13 @@
 import { ActionTree } from 'vuex';
-
-import { isServer } from '@vue-storefront/core/helpers';
+import config from 'config';
+import { TaskQueue } from '@vue-storefront/core/lib/sync';
+import { isServer, processURLAddress } from '@vue-storefront/core/helpers';
 import { Logger } from '@vue-storefront/core/lib/logger';
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager';
 import RootState from '@vue-storefront/core/types/RootState';
 
-import { ConsentSelection } from '../types/marketing-consent';
-import { CLEAR_SELECTION, HYDRATE_SELECTION, SAVE_SELECTION } from '../types/store/actions';
+import { ConsentSelection, MarketingSubscriptionRequest } from '../types/marketing-consent';
+import { CLEAR_SELECTION, HYDRATE_SELECTION, SAVE_SELECTION, SUBMIT_SUBSCRIPTION } from '../types/store/actions';
 import { SET_HYDRATED, SET_SELECTION } from '../types/store/mutations';
 import { ConsentState } from '../types/store/state';
 import { SELECTION_STORAGE_KEY, STORE_NAME } from './store-name';
@@ -26,6 +27,18 @@ function persistSelection (selection: ConsentSelection | null): void {
 }
 
 export const actions: ActionTree<ConsentState, RootState> = {
+  async [SUBMIT_SUBSCRIPTION] (_, payload: MarketingSubscriptionRequest) {
+    const { result, resultCode } = await TaskQueue.execute({
+      url: processURLAddress(`${config.budsies.endpoint}/marketing-subscription-requests`),
+      payload: {
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        mode: 'cors', method: 'POST', body: JSON.stringify(payload)
+      },
+      silent: false
+    });
+    if (resultCode !== 200) throw Error('Error while submitting marketing subscription ' + result);
+    return result;
+  },
   async [HYDRATE_SELECTION] ({ commit }): Promise<void> {
     const selection = await StorageManager.get(STORE_NAME).getItem(SELECTION_STORAGE_KEY);
 

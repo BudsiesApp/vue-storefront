@@ -13,6 +13,16 @@ export function consentAvailability (settings?: MarketingConsentSettings): Conse
   };
 }
 
+export function acceptedOrderChannels (order?: { addressInformation?: { paymentExtraFields?: Record<string, unknown>; [key: string]: unknown } }): ConsentAvailability {
+  const consent = order?.addressInformation?.paymentExtraFields?.budsies_marketing_consent as ConsentPayload | undefined;
+  return { email: consent?.email === true, sms: consent?.sms === true };
+}
+
+export function remainingConsentChannels (settings: MarketingConsentSettings | undefined, accepted: ConsentAvailability): ConsentAvailability {
+  const offered = consentAvailability(settings);
+  return { email: offered.email && !accepted.email, sms: offered.sms && !accepted.sms };
+}
+
 export function emailKey (email: string): string {
   return (email || '').trim().toLowerCase();
 }

@@ -14,6 +14,7 @@ import { SET_HYDRATED, SET_SELECTION } from '../../types/store/mutations';
 
 jest.mock('@vue-storefront/core/application-services', () => ({ useStore: jest.fn() }));
 jest.mock('@vue-storefront/core/helpers', () => ({ isServer: false }));
+jest.mock('@vue-storefront/core/lib/sync', () => ({ TaskQueue: { execute: jest.fn() } }));
 jest.mock('@vue-storefront/core/lib/logger', () => ({ Logger: { error: jest.fn(() => jest.fn()) } }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { get: jest.fn() } }));
 

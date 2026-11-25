@@ -64,11 +64,11 @@ const methodsActions = {
 
             if (hasShippingInformation) {
               const task = await dispatch('getTotals', { addressInformation, hasShippingInformation });
-              backendPaymentMethods = task.result.payment_methods || []
 
               if (isCartNotFoundError(task)) {
                 return dispatch('clear', { disconnect: true, sync: false });
               }
+              backendPaymentMethods = task.result.payment_methods || []
             }
           }
         }
