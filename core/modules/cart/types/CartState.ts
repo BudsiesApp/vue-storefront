@@ -23,7 +23,11 @@ export default interface CartState {
   shippingMethodsLookupId: number,
   isCartSyncing: boolean,
   syncPromise: Promise<unknown> | null,
+  startupPromise: Promise<unknown> | null,
+  connectionPromises: Promise<unknown>[],
   isTotalsSyncing: boolean,
+  totalsSyncDepth: number,
+  totalsRefreshId: number,
   isPaymentMethodsSyncing: boolean,
   isCouponProcessing: boolean,
   exchangeRate: number

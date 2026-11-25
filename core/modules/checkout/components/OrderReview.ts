@@ -2,6 +2,7 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { mapGetters } from 'vuex'
 import i18n from '@vue-storefront/i18n'
 import { Logger } from '@vue-storefront/core/lib/logger'
+import { requirePaymentTotals } from '../helpers/require-payment-totals'
 
 export const OrderReview = {
   name: 'OrderReview',
@@ -28,6 +29,8 @@ export const OrderReview = {
   },
   methods: {
     placeOrder () {
+      if (!requirePaymentTotals(this.$store)) return
+
       if (this.getPersonalDetails.createAccount) {
         this.register()
       } else {
@@ -80,7 +83,7 @@ export const OrderReview = {
             password: this.getPersonalDetails.password
           })
           EventBus.$emit('notification-progress-stop')
-          EventBus.$emit('checkout-before-placeOrder', result.result.id)
+          if (requirePaymentTotals(this.$store)) EventBus.$emit('checkout-before-placeOrder', result.result.id)
         }
       } catch (err) {
         EventBus.$emit('notification-progress-stop')

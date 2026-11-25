@@ -11,7 +11,6 @@ export function prepareBaseItemData (product: Product) {
     item_id: product.sku,
     item_internal_id: product.id,
     item_name: product.name,
-    item_category: prepareProductCategories(product),
-    quantity: product.qty
+    ...prepareProductCategories(product)
   }
 }
