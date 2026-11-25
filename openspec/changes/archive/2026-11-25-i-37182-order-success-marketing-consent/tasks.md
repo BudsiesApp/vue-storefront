@@ -22,7 +22,7 @@
 
 - [x] 4.1 Mount the shared form below the confirmation-email line and before the numbered sections in Petsies `o-order-success.vue`, passing the placed order's Magento id without conversion, email, billing telephone and derived accepted channels; verify a mounting test with `magentoOrderId: "123"` observes these order-derived inputs and that existing sections remain in order.
 - [x] 4.2 Style the light subscription box for desktop/mobile using existing theme tokens and add the new strings with `yarn update-i18n-files`; verify `resource/i18n/en-US.csv` contains the specified messages and no unrelated extraction changes are included.
-- [ ] 4.3 Inspect the integrated Petsies form in a browser at desktop/mobile widths with no accepted channels, one remaining channel, invalid phone, pending, success and failure states; activate the actual Subscribe button with checked SMS and an empty phone to verify the custom phone error/focus runs instead of native validation, and verify placement, content order, mobile full-width button, keyboard/error association, working label/privacy links and no horizontal overflow.
+- [x] 4.3 Inspect the integrated Petsies form in a browser at desktop/mobile widths with no accepted channels, one remaining channel, invalid phone, pending, success and failure states; activate the actual Subscribe button with checked SMS and an empty phone to verify the custom phone error/focus runs instead of native validation, and verify placement, content order, mobile full-width button, keyboard/error association, working label/privacy links and no horizontal overflow.
 
 ## 5. Implementation validation
 
