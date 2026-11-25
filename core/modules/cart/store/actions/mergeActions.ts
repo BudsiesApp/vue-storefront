@@ -296,7 +296,7 @@ const mergeActions = {
     if (productToAdd) {
       EventBus.$emit('cart-prepare-item-product', { product: productToAdd, serverItem });
 
-      await dispatch('addItem', { productToAdd, forceServerSilence: true })
+      await dispatch('addItem', { productToAdd, forceServerSilence: true, source: 'server-import' })
       Logger.debug('Product variant for given serverItem has not found', 'cart', serverItem)()
     }
 
@@ -317,14 +317,15 @@ const mergeActions = {
 
     return diffLog
   },
-  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { clientItems, dryRun }) {
+  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { dryRun, skipTotalsUpdate }) {
     if (dryRun) return
 
-    if (getters.isTotalsSyncRequired && clientItems.length > 0) {
-      await dispatch('syncTotals')
-    }
-
+    const refreshTotals = !skipTotalsUpdate && getters.isTotalsSyncRequired && getters.getCartItems.length > 0
+    // The items are already merged. Do not make checkout think there are still edits to send while totals refresh.
     commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
+    if (refreshTotals) {
+      await dispatch('syncTotals', { forceServerSync: true })
+    }
   },
   async updateItemsProductData (
     { dispatch, rootGetters }
@@ -336,7 +337,7 @@ const mergeActions = {
       await dispatch('updateClientItemProductData', clientItem);
     }
   },
-  async merge ({ commit, getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false, waitForTotalsUpdate = true }) {
+  async merge ({ commit, getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false, waitForTotalsUpdate = true, skipTotalsUpdate = false }) {
     const hookResult = cartHooksExecutors.beforeSync({ clientItems, serverItems })
 
     const diffLog = createDiffLog()
@@ -365,12 +366,14 @@ const mergeActions = {
     const mergeServerItemsDiffLog = await dispatch('mergeServerItems', mergeParameters)
 
     const updatePromises = Promise.all([
-      dispatch('updateTotalsAfterMerge', { clientItems, dryRun }),
+      dispatch('updateTotalsAfterMerge', { dryRun, skipTotalsUpdate }),
       dispatch('updateItemsProductData')
     ]);
 
     if (waitForTotalsUpdate) {
       await updatePromises;
+    } else {
+      updatePromises.catch(error => Logger.error(error, 'cart')());
     }
 
     diffLog
