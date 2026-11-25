@@ -96,7 +96,7 @@ Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax
 
 ### Requirement: Added cart items use synchronized pricing
 
-`add_to_cart` SHALL be reported when the Add action accepts the item, without waiting for a later methods/totals refresh for analytics. It SHALL map its item from the cart line as updated by the item write, report the added quantity, and report the added product's categories. When that line has no usable server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
+`add_to_cart` SHALL be reported when the Add action accepts the item, without waiting for a later methods/totals refresh for analytics. It SHALL use amounts supplied by a successful write for the matching cart line, report the added quantity, and report the added product's categories. When no matching write supplies usable amounts, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
 
 #### Scenario: Undiscounted product with quantity two
 - **WHEN** a product with a unit price of 100 is added with quantity 2
@@ -109,6 +109,11 @@ Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax
 #### Scenario: Adding to an existing line
 - **WHEN** a product already in the cart is added again
 - **THEN** the item reports only the added quantity
+
+#### Scenario: Existing line with no usable amounts in the write response
+- **WHEN** an existing line carries an earlier item totals DTO but its successful write does not supply usable amounts
+- **THEN** the event uses selected-option pricing instead of the retained DTO
+- **AND** unrelated writes cannot supply its price, including writes for the same SKU with a different line identity
 
 #### Scenario: Add rejected by the server
 - **WHEN** the server rejects the added item, for example with "Provided email is not valid"
@@ -181,7 +186,7 @@ Payload updates SHALL preserve existing event names and firing points, except fo
 
 ### Requirement: Cart views wait for actual cart operations
 
-Each client-side mounted cart-page visit SHALL emit at most one `view_cart` after initial restoration and connection, and active add, connection/pull, cart, totals, and coupon operations have settled, including failures. The event SHALL use current items and the bounded totals policy below, not a cart hash match. Visual loading SHALL remain independent of analytics readiness.
+On Petsies, Budsies, Budsies Education, and Waggables, each client-side mounted cart-page visit SHALL emit at most one `view_cart` after initial restoration and connection, and active add, connection/pull, cart, totals, and coupon operations have settled, including failures. The event SHALL use current items and the same-quote totals policy below, not a cart hash match. Visual loading SHALL remain independent of analytics readiness.
 
 #### Scenario: Full reload with an applied coupon
 - **WHEN** cached cart items load while the quote token, hash, or initial cart connection is still being restored
@@ -191,12 +196,13 @@ Each client-side mounted cart-page visit SHALL emit at most one `view_cart` afte
 #### Scenario: Empty local cache with a customer's full server cart
 - **WHEN** a logged-in customer's restored local cart is empty and the initial connection is still fetching their server cart
 - **THEN** no empty cart view is emitted while the connection or pull is pending
-- **AND** after the pull brings items in without totals, the bounded totals attempt runs before reporting those items
+- **AND** the normal business merge refresh makes one totals request for the resulting cart and applies the coupon, discount and totals before reporting those items
+- **AND** the sync uses the existing wait policy of a load with local cart items, not an additional analytics wait
 
 #### Scenario: Startup or connection fails
 - **WHEN** initial restore or an active connection rejects
 - **THEN** its operation boundary still settles and does not leave the visit waiting forever
-- **AND** the view follows the bounded totals policy with the resulting local cart
+- **AND** the view follows the same-quote totals policy with the resulting local cart
 
 #### Scenario: Navigation and subsequent synchronization
 - **WHEN** a cart page mounts with current-quote totals and no pending operations
@@ -222,26 +228,16 @@ Each client-side mounted cart-page visit SHALL emit at most one `view_cart` afte
 #### Scenario: Server rendering or leaving before settlement
 - **WHEN** a page is server rendered, or its client visit ends before event readiness
 - **THEN** no cart/checkout visit event is emitted for that rendering or ended visit
-- **AND** completion of a shared request later does not emit the ended visit's event or start its missing-totals request
+- **AND** completion of a shared request later does not emit the ended visit's event
 
-### Requirement: Visit totals use a bounded same-quote policy
+### Requirement: Visits observe business totals with a same-quote fallback
 
-After required operations settle, cart views and standard checkout starts SHALL reuse successfully applied current-quote totals. An eligible nonempty cart without them SHALL make at most one analytics totals attempt per visit, unless checkout entry already attempted its refresh. Failed operations SHALL allow same-quote last-known totals, or local-item reporting without an invented event value or coupon. Another quote's totals SHALL NOT be reused.
+After required operations settle, cart views and standard checkout starts SHALL reuse successfully applied current-quote totals without making analytics-specific totals requests. Failed operations SHALL allow same-quote last-known totals, or local-item reporting without an invented event value or coupon. Another quote's totals SHALL NOT be reused.
 
-#### Scenario: One attempt when no totals were loaded
-- **WHEN** a nonempty connected online cart can synchronize totals but has none for its current quote
-- **THEN** the visit makes one read-only totals request and waits for it without starting methods preparation or holding shopper-facing busy flags
-- **AND** a successful result is applied before the event uses its item prices, coupon, and value
-
-#### Scenario: Failed attempt without last-known totals
-- **WHEN** that attempt rejects or returns an error or unusable response
+#### Scenario: Failed business refresh without last-known totals
+- **WHEN** the business refresh rejects or returns an error or unusable response without earlier applied totals for the current quote
 - **THEN** the event is still emitted once after active work settles, using local items and no unavailable event value or coupon
-- **AND** the visit does not loop, retry, or remain blocked waiting for a success
-
-#### Scenario: Cart edited during the analytics read
-- **WHEN** the cart changes while the read is pending, or still has unsent edits when the response arrives
-- **THEN** the read's response is discarded and does not overwrite the edit or change the next cart sync
-- **AND** the event can report the resulting local items without unavailable value or coupon
+- **AND** the visit makes no follow-up totals request and does not remain blocked waiting for a success
 
 #### Scenario: Refresh fails after earlier successful totals
 - **WHEN** an active refresh fails after a coupon change or another cart operation, and successful totals of the same quote exist
@@ -256,7 +252,7 @@ After required operations settle, cart views and standard checkout starts SHALL 
 #### Scenario: Quote replaced or explicitly cleared
 - **WHEN** quote B replaces quote A, or the cart is cleared
 - **THEN** A's totals, coupon, and successful-totals evidence are invalidated for further reporting
-- **AND** if B's attempt fails before B has totals, the event uses local items without A's value or coupon
+- **AND** if B's business refresh fails before B has totals, the event uses local items without A's value or coupon
 - **AND** committing the unchanged quote identity does not discard that quote's totals
 
 ### Requirement: Totals refreshes retain cart correctness guards
@@ -287,7 +283,7 @@ Analytics readiness SHALL track totals processing through method preparation, re
 
 ### Requirement: Checkout start waits for its entry sequence
 
-Standard `begin_checkout` SHALL report once for an eligible mounted visit, waiting independently for checkout entry and active cart work. In-app checkout SHALL send pending edits before its single entry refresh without waiting for analytics or startup. Express-checkout triggering SHALL remain unchanged.
+On Petsies, Budsies, Budsies Education, and Waggables, standard `begin_checkout` SHALL report once for an eligible mounted visit, waiting independently for checkout entry and active cart work. In-app checkout SHALL send pending edits before its single entry refresh without waiting for analytics or startup. Express-checkout triggering and its flag SHALL remain unchanged.
 
 #### Scenario: Checkout's asynchronous idle gap
 - **WHEN** checkout mounts while payment details are still being prepared and its entry refresh has not started
@@ -302,10 +298,9 @@ Standard `begin_checkout` SHALL report once for an eligible mounted visit, waiti
 - **AND** `begin_checkout` reports the edited quantity and successful corresponding totals
 
 #### Scenario: Checkout reuses its entry refresh
-- **WHEN** checkout entry already attempted its refresh
-- **THEN** analytics does not add another refresh, whether that attempt succeeded or failed
-- **AND** failure follows the same-quote fallback policy
-- **AND** when entry settles before attempting a refresh and current-quote totals are absent, the visit still has its one eligible attempt
+- **WHEN** checkout entry settles after a successful or failed refresh, or fails before its refresh
+- **THEN** analytics does not initiate a totals request
+- **AND** failures follow the same-quote fallback policy
 
 #### Scenario: Empty, success, or direct server-rendered checkout
 - **WHEN** checkout is empty or displays the success page
@@ -315,6 +310,20 @@ Standard `begin_checkout` SHALL report once for an eligible mounted visit, waiti
 #### Scenario: Missing totals in a checkout event
 - **WHEN** a checkout event is emitted without usable totals
 - **THEN** the event is pushed without throwing and does not invent a coupon or monetary total
+
+### Requirement: Payment requires valid current-quote totals
+
+Standard and express checkout SHALL require valid, successfully applied totals for the current quote before payment starts and at final submission. Totals from another quote SHALL NOT be used. A payment blocked by missing totals SHALL offer a retryable error and a business refresh, without waiting for analytics.
+
+#### Scenario: Replacement quote has no usable totals
+- **WHEN** login or recovery replaces the quote and its totals refresh fails, even though payment methods are available
+- **THEN** payment cannot start until business totals for the replacement quote are ready
+- **AND** the shopper can request one normal business totals refresh and retry payment
+
+#### Scenario: Totals become unavailable during payment
+- **WHEN** a standard or express payment reaches final submission without valid current-quote totals
+- **THEN** no order is submitted or missing totals dereferenced, and the shopper can retry
+- **AND** the rejected submission does not consume the payment nonce or session ID
 
 ### Requirement: Customer email hashes
 

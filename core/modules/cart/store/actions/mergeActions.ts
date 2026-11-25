@@ -317,10 +317,10 @@ const mergeActions = {
 
     return diffLog
   },
-  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { clientItems, dryRun, skipTotalsUpdate }) {
+  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { dryRun, skipTotalsUpdate }) {
     if (dryRun) return
 
-    const refreshTotals = !skipTotalsUpdate && getters.isTotalsSyncRequired && clientItems.length > 0
+    const refreshTotals = !skipTotalsUpdate && getters.isTotalsSyncRequired && getters.getCartItems.length > 0
     // The items are already merged. Do not make checkout think there are still edits to send while totals refresh.
     commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
     if (refreshTotals) {
@@ -366,7 +366,7 @@ const mergeActions = {
     const mergeServerItemsDiffLog = await dispatch('mergeServerItems', mergeParameters)
 
     const updatePromises = Promise.all([
-      dispatch('updateTotalsAfterMerge', { clientItems, dryRun, skipTotalsUpdate }),
+      dispatch('updateTotalsAfterMerge', { dryRun, skipTotalsUpdate }),
       dispatch('updateItemsProductData')
     ]);
 

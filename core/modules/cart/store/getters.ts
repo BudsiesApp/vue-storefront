@@ -15,6 +15,13 @@ const getters: GetterTree<CartState, RootState> = {
   getCartToken: state => state.cartServerToken,
   getLastSyncDate: state => state.cartServerLastSyncDate,
   getLastTotalsSyncDate: state => state.cartServerLastTotalsSyncDate,
+  getPaymentTotals: ({ cartServerToken, cartServerLastTotalsSyncDate, platformTotals }) => {
+    if (!cartServerToken || !cartServerLastTotalsSyncDate || !platformTotals) return null
+
+    const { base_grand_total, base_tax_amount, base_shipping_amount, base_subtotal, base_discount_amount, quote_currency_code } = platformTotals
+    return [base_grand_total, base_tax_amount, base_shipping_amount, base_subtotal, base_discount_amount].every(Number.isFinite) &&
+      typeof quote_currency_code === 'string' && quote_currency_code.length > 0 ? platformTotals : null
+  },
   getPendingCouponCode: state => state.pendingCouponCode,
   getShippingMethod: state => state.shipping,
   getPaymentMethod: state => state.payment,

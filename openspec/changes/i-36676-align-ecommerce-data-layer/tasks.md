@@ -12,20 +12,22 @@
 - [x] 2.2 Expose connection settlement from token fetch through pull/merge, including login and deferred reconnect. Verify the delayed token and pull paths with real store actions.
 - [x] 2.3 Invalidate quote-owned totals/segments and successful-totals evidence at quote replacement and explicit clear, but not on an unchanged token commit. Verify same-quote failures preserve last-known totals and a replacement quote cannot inherit the old quote's value, coupon, or timestamp.
 - [x] 2.4 Reset Add processing in `finally` across the entire existing add operation without changing temporary cart-read failures into item rejections. Verify real add flow releases `getIsAdding` on stock/token/network rejection and still accepts local items retained after a non-404 cart-read failure.
-- [x] 2.5 Show a friendly cart-read 404 rejection and allow a successful retry. Keep base Add timing, including the pending-coupon exception. Report from the written line and verify an accepted Add settles while the methods/totals chain is pending.
+- [x] 2.5 Show a friendly cart-read 404 rejection and allow a successful retry. Keep base Add timing, including the pending-coupon exception. Use amounts supplied by a successful write for the matching line; otherwise use selected-option pricing, including when an existing line retained a prior DTO.
 - [x] 2.6 Track the analytics busy span separately from the base storefront totals flag. Guard latest refresh and quote identity, apply responses synchronously, and defer `clear`'s reconnect behind active sync; cover late success/404 and overlapping refreshes.
 
 ## 3. Order checkout entry around pending edits
 
 - [x] 3.1 Establish the entry promise on the checkout component. Skip startup/idle waits for the page; flush pending local edits before payment and the one entry methods/totals chain, or skip the flush when the cart is unchanged. Cover entry request ordering and the edited quantity and totals at emission.
-- [x] 3.2 Return/await the real entry refresh dispatch instead of relying on an EventBus notification's return. Preserve shipping-method notifications without a duplicate fire-and-forget refresh; expose whether entry actually attempted its refresh. Test the async payment-details idle gap with existing totals, successful entry, failed entry refresh without analytics retry, and entry failure before any refresh (one missing-totals attempt remains eligible).
+- [x] 3.2 Return/await the real entry refresh dispatch instead of relying on an EventBus notification's return. Preserve shipping-method notifications without a duplicate fire-and-forget refresh. Test the async payment-details idle gap, successful entry, failed entry refresh, and entry failure before any refresh, without analytics retries.
+- [x] 3.3 Require usable current-quote totals before starting standard or express payment and at final submission. Offer a business refresh when missing, and verify that a rejected submission does not consume the payment nonce/session ID.
 
 ## 4. Report visits without blocking the shopper
 
-- [x] 4.1 Use a cart-view composable and checkout's mounted handler to report once after startup and active cart work, plus checkout entry where applicable. Bound the fallback to one eligible totals read without shopper busy flags. Discard obsolete replies and verify a concurrent quantity edit still reaches cart synchronization. Cancel the visit event when the page ends without cancelling shared requests.
+- [x] 4.1 Use a shared cart-view composable and a mounted checkout handler in each of the four themes. Report once after startup and active cart work, plus checkout entry where applicable. Do not initiate a totals read for analytics; cancel the visit event when the page ends without cancelling shared requests.
 - [x] 4.2 Exclude empty/success checkout and recheck eligibility before emission. Exclude hydrated metadata from the synchronization hash. Cover catalog/merge ordering and returning from shipping with shipment metadata.
 - [x] 4.3 Emit empty items without old value/coupon for an empty cart. For nonempty carts without usable totals, map local items and omit unavailable value/coupon. Preserve currency sources/defaults and express checkout. Verify listener payloads and preceding ecommerce clear.
 - [x] 4.4 Inspect existing-cart Add and cart → immediate quantity edit → checkout in the local browser. Verify request order and usable UI; use maintained tests for event payloads without enabling the live GTM container locally.
+- [x] 4.5 Run the normal post-merge business refresh when an empty local cart is populated. Verify one totals request with totals applied; on failure, report same-quote last-known totals or local items without an extra request.
 
 ## 5. Integrate and validate
 

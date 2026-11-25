@@ -1,7 +1,6 @@
 import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
-import Checkout from 'theme/pages/Checkout.vue';
-import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
+import Checkout from '@vue-storefront/core/pages/Checkout';
 import { CartService } from '@vue-storefront/core/data-resolver';
 import { DiffLog } from '@vue-storefront/core/modules/cart/helpers/createDiffLog';
 import synchronizeActions from '@vue-storefront/core/modules/cart/store/actions/synchronizeActions';
@@ -11,22 +10,6 @@ import totalsActions from '@vue-storefront/core/modules/cart/store/actions/total
 import cartGetters from '@vue-storefront/core/modules/cart/store/getters';
 import cartMutations from '@vue-storefront/core/modules/cart/store/mutations';
 import * as types from '@vue-storefront/core/modules/cart/store/mutation-types';
-import CartEvents from 'src/modules/shared/types/cart-events';
-
-jest.mock('@storefront-ui/vue', () => ({ SfSteps: {} }));
-jest.mock('src/modules/payment-braintree', () => ({ Braintree: {} }));
-jest.mock('@vue-storefront/core/lib/modules', () => ({ registerModule: jest.fn() }));
-jest.mock('theme/components/organisms/o-billing-address', () => ({}));
-jest.mock('theme/components/organisms/o-shipping', () => ({}));
-jest.mock('theme/components/organisms/o-confirm-order', () => ({}));
-jest.mock('theme/components/organisms/o-order-review', () => ({}));
-jest.mock('theme/components/organisms/o-order-summary', () => ({}));
-jest.mock('theme/components/organisms/o-order-success', () => ({}));
-jest.mock('theme/components/organisms/o-personal-details', () => ({}));
-jest.mock('theme/components/organisms/o-cart-items-table', () => ({}));
-jest.mock('src/modules/promotion-platform/components/ProductionSpotCountdown.vue', () => ({}));
-jest.mock('theme/store/ui/modals', () => ({}));
-jest.mock('@vue-storefront/core/filters', () => ({}));
 jest.mock('@vue-storefront/core/app', () => ({ router: {} }));
 jest.mock('@vue-storefront/i18n', () => ({ __esModule: true, default: { t: (s: string) => s } }));
 jest.mock('config', () => ({ cart: { synchronize: true, synchronize_totals: true } }));
@@ -68,7 +51,6 @@ function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, succe
   const payment = deferred();
   const startup = deferred();
   const order: string[] = [];
-  const events: object[] = [];
   let serverQuantity = 1;
   const item = { sku: 'one', qty: 1, server_item_id: 7 };
   const push = jest.fn();
@@ -127,39 +109,36 @@ function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, succe
   } });
   store.commit(`cart/${types.CART_SET_ITEMS_HASH}`, store.getters['cart/getCurrentCartHash']);
   if (quantity && quantity > 1) store.commit(`cart/${types.CART_UPD_ITEM}`, { product: item, qty: quantity });
-  const onCheckout = () => events.push({ qty: item.qty, value: store.state.cart.platformTotals?.base_grand_total });
-  EventBus.$on(CartEvents.BEGIN_CHECKOUT, onCheckout);
   const page = new Vue({
     extends: Checkout,
     store,
+    props: { success: { type: String, default: undefined } },
     propsData: { success },
+    computed: { isSuccess () { return this.success === 'success'; } },
     beforeCreate () { Object.assign(this, { $router: { push }, $t: (text: string) => text }); },
     methods: { activateSection: jest.fn(), localizedRoute: (s: string) => s, notifyEmptyCart: jest.fn() },
     render: h => h('div')
   }).$mount() as Vue & { checkoutEntry: Promise<unknown>, success: string };
-  const cleanup = () => { page.$destroy(); EventBus.$off(CartEvents.BEGIN_CHECKOUT, onCheckout); };
-  return { page, store, order, events, cleanup, payment, startup, push };
+  const cleanup = () => page.$destroy();
+  return { page, store, order, cleanup, payment, startup, push };
 }
 
 it.each([false, true])('starts payment without startup or idle waits when unchanged, flushes edits when pending (%s)', async pending => {
-  const { page, payment, startup, order, events, cleanup } = mountCheckout({ quantity: pending ? 2 : 1, hasTotals: true, pendingCoupon: pending });
+  const { page, store, payment, startup, order, cleanup } = mountCheckout({ quantity: pending ? 2 : 1, hasTotals: true, pendingCoupon: pending });
   const preparation = pending ? ['read cart', 'write quantity', 'apply coupon', 'payment details'] : ['payment details'];
   expect(page.checkoutEntry).toBeInstanceOf(Promise);
   await flush();
   expect(order).toEqual(preparation);
-  expect(events).toEqual([]);
   payment.resolve();
   await page.checkoutEntry;
   expect(order).toEqual([...preparation, 'methods', 'totals']);
-  expect(events).toEqual([]);
+  expect(store.state.cart.platformTotals.base_grand_total).toBe(pending ? 20 : 10);
   startup.resolve();
-  await flush();
-  expect(events).toEqual([{ qty: pending ? 2 : 1, value: pending ? 20 : 10 }]);
   cleanup();
 });
 
 it.each(['left', 'success'])('does not report a visit after checkout is %s', async ended => {
-  const { page, payment, startup, order, events, cleanup } = mountCheckout();
+  const { page, payment, startup, order, cleanup } = mountCheckout();
   await flush();
   if (ended === 'left') page.$destroy();
   else page.success = 'success';
@@ -167,28 +146,44 @@ it.each(['left', 'success'])('does not report a visit after checkout is %s', asy
   startup.resolve();
   await flush();
   expect(order).toEqual(['payment details']);
-  expect(events).toEqual([]);
   cleanup();
 });
 
-it.each([false, true])('skips payment, methods and analytics for an ineligible entry (success route: %s)', async success => {
-  const { startup, order, events, cleanup, push } = mountCheckout(success ? { success: 'success' } : { quantity: 0 });
+it.each([false, true])('skips payment and methods for an ineligible entry (success route: %s)', async success => {
+  const { startup, order, cleanup, push } = mountCheckout(success ? { success: 'success' } : { quantity: 0 });
   startup.resolve();
   await flush();
   expect(push).toHaveBeenCalledTimes(success ? 0 : 1);
   expect(order).toEqual([]);
-  expect(events).toEqual([]);
   cleanup();
 });
 
-it.each(['payment details', 'totals'])('allows a read-only fallback only when entry fails before totals (%s)', async stage => {
-  const { payment, startup, order, events, cleanup } = mountCheckout({ failRefresh: stage === 'totals' });
+it.each(['payment details', 'totals'])('does not retry when %s fails', async stage => {
+  const { payment, startup, order, cleanup } = mountCheckout({ failRefresh: stage === 'totals' });
   await flush();
   if (stage === 'totals') payment.resolve();
   else payment.reject(new Error('payment unavailable'));
   startup.resolve();
   await flush();
-  expect(order).toEqual(stage === 'totals' ? ['payment details', 'methods', 'totals'] : ['payment details', 'totals']);
-  expect(events).toEqual([{ qty: 1, value: stage === 'totals' ? undefined : 10 }]);
+  expect(order).toEqual(stage === 'totals' ? ['payment details', 'methods', 'totals'] : ['payment details']);
+  cleanup();
+});
+
+it('requires complete, successfully applied totals for the current payment quote, including zero totals', () => {
+  const { store, cleanup } = mountCheckout({ quantity: 0 });
+  const totals = {
+    base_grand_total: 0, base_tax_amount: 0, base_shipping_amount: 0, base_subtotal: 10,
+    base_discount_amount: -10, quote_currency_code: 'USD'
+  };
+  const applyTotals = (platformTotals: object) => {
+    store.commit(`cart/${types.CART_UPD_TOTALS}`, { platformTotals });
+    store.commit(`cart/${types.CART_SET_TOTALS_SYNC}`);
+  };
+  applyTotals({ ...totals, base_shipping_amount: null });
+  expect(store.getters['cart/getPaymentTotals']).toBeNull();
+  applyTotals(totals);
+  expect(store.getters['cart/getPaymentTotals']).toEqual(totals);
+  store.commit(`cart/${types.CART_LOAD_CART_SERVER_TOKEN}`, 'replacement');
+  expect(store.getters['cart/getPaymentTotals']).toBeNull();
   cleanup();
 });

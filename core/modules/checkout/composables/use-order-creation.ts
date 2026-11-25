@@ -3,14 +3,17 @@ import { Order } from '@vue-storefront/core/modules/order/types/Order';
 
 import ShippingDetails from '../types/ShippingDetails';
 import PaymentDetails from '../types/PaymentDetails';
+import { requirePaymentTotals } from '../helpers/require-payment-totals';
 
 export function useOrderCreation () {
   const applicationStore = useStore();
   function prepareOrderData (paymentAdditionalData: any) {
+    const platformTotals = requirePaymentTotals(applicationStore);
+    if (!platformTotals) return;
+
     const paymentDetails: PaymentDetails = applicationStore.getters['checkout/getPaymentDetails'];
     const shippingDetails: ShippingDetails = applicationStore.getters['checkout/getShippingDetails'];
     const personalDetails = applicationStore.getters['checkout/getPersonalDetails'];
-    const platformTotals = applicationStore.state.cart.platformTotals;
     const isVirtualCart = applicationStore.getters['cart/isVirtualCart'];
 
     const orderData: Order = {

@@ -25,7 +25,7 @@ import { ORDER_ERROR_EVENT } from '@vue-storefront/core/modules/checkout';
 
 import { prepareCartItemData } from './prepare-cart-item-data.function';
 import { isAddToCartRejected } from './is-add-to-cart-rejected.function';
-import { findAddedCartLine, prepareAddedCartItemData } from './prepare-added-cart-item-data.function';
+import { prepareAddedCartItemData } from './prepare-added-cart-item-data.function';
 import { prepareProductItemData } from './prepare-product-item-data.function';
 import GoogleTagManagerEvents from '../types/GoogleTagManagerEvents';
 import { trackEcommerceEventFactory } from './track-ecommerce-event.factory';
@@ -248,7 +248,6 @@ export default class EventBusListener {
       return;
     }
 
-    const addedCartLine = findAddedCartLine(cartItem, this.store.getters['cart/getCartItems']);
     const price: PriceHelper.ProductPrice = this.store.getters[GET_CART_ITEM_PRICE](cartItem);
 
     this.trackEcommerceEvent({
@@ -256,7 +255,7 @@ export default class EventBusListener {
       ecommerce: {
         currency: this.store.state.cart.platformTotals?.quote_currency_code || DEFAULT_CURRENCY_CODE,
         value: PriceHelper.getFinalPrice(price),
-        items: [prepareAddedCartItemData(cartItem, addedCartLine, this.store)]
+        items: [prepareAddedCartItemData(cartItem, diffLog, this.store)]
       }
     });
   }

@@ -41,12 +41,7 @@ const totalsActions = {
       commit(types.SET_IS_TOTALS_SYNCING, false);
     }
   },
-  async fetchMissingTotals ({ getters, dispatch }) {
-    if (getters.canSyncTotals && !getters.getLastTotalsSyncDate && getters.getCartItems.length) {
-      return dispatch('overrideServerTotals', { readOnly: true });
-    }
-  },
-  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation, readOnly = false }) {
+  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation }) {
     commit(types.START_TOTALS_REFRESH)
 
     // Refreshes can overlap and their responses can arrive in any order. The refresh that started last decides
@@ -57,18 +52,12 @@ const totalsActions = {
     // after a reconnect, applying it would give the current cart the totals of an old one, and clearing would
     // discard the current cart for the sake of an old one.
     const requestedCartToken = getters.getCartToken
-    const requestedItemsHash = readOnly ? getters.getCurrentCartHash : undefined
     const isCartReplaced = () => getters.getCartToken !== requestedCartToken
     const isOutdated = () => isSuperseded() || isCartReplaced()
 
     return holdTotalsSyncing(commit, async () => {
-      const task: Task = readOnly
-        ? await CartService.getTotals()
-        : await dispatch('getTotals', { addressInformation, hasShippingInformation })
+      const task: Task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
       const { resultCode, result } = task;
-
-      // The analytics read does not lock cart controls. Never apply its reply over a local edit.
-      if (readOnly && (getters.isCartHashChanged || getters.getCurrentCartHash !== requestedItemsHash)) return
 
       if (isCartNotFoundError(task)) {
         if (isCartReplaced()) {
@@ -87,9 +76,10 @@ const totalsActions = {
       }
 
       if (resultCode === 200) {
+        const platformTotals = result?.totals ?? result
+        if (!Number.isFinite(platformTotals?.base_grand_total) || !Array.isArray(platformTotals.items)) return
         // Line prices, totals and the sync date are applied in one go: nothing can wait between them, so no
         // newer refresh and no reconnect can start while only a part of the response is applied.
-        const platformTotals = result.totals || result
         Logger.info('Overriding server totals. ', 'cart', platformTotals)()
         const itemsAfterPlatformTotals = prepareShippingInfoForUpdateTotals(platformTotals.items)
 

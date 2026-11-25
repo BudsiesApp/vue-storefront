@@ -86,6 +86,7 @@ describe('OrderReview', () => {
           register: mockRegisterFn
         },
         mocks: {
+          $store: { getters: { 'cart/getPaymentTotals': { base_grand_total: 10 } } },
           $bus: {
             $emit: mockEmitFn
           }
@@ -145,6 +146,7 @@ describe('OrderReview', () => {
 
     const mockStore = {
       modules: {
+        cart: { namespaced: true, getters: { getPaymentTotals: () => ({ base_grand_total: 10 }) } },
         user: {
           actions: {
             login: jest.fn(),

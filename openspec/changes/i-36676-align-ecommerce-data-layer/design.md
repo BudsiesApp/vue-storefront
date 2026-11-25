@@ -15,9 +15,9 @@ On `petsies-theme`, `EventBusListener.ts` creates the ecommerce events and `trac
 
 ## Goals / Non-Goals
 
-**Goals:** Correct item-level fields and email hashes; use explicit operation completion for cart/checkout event timing; reuse backend item totals and existing event value sources; allow bounded, same-quote best-effort reporting after an actual failure.
+**Goals:** Correct item-level fields and email hashes; use explicit operation completion for cart/checkout event timing across Petsies, Budsies, Budsies Education, and Waggables; reuse backend item totals and existing event value sources; allow same-quote best-effort reporting after a business failure.
 
-**Non-Goals:** Changing event `value` or `currency` sources when totals exist; a new analytics service, parallel Data Layers, or new event types; a discount engine; checkout/order snapshot infrastructure; backend changes; broad listener refactoring; display-pricing changes beyond paid-option pricing. Preserve the configured GTM script source from #36478. Existing cart races outside the Add-state cleanup and checkout pending-edit flush are out of scope; the new analytics totals read must not overwrite shopper edits.
+**Non-Goals:** Changing event `value` or `currency` sources when totals exist; a new analytics service, parallel Data Layers, or new event types; a discount engine; checkout/order snapshot infrastructure; backend changes; broad listener refactoring; display-pricing changes beyond paid-option pricing; Bulk Orders (separate app branch). Preserve the configured GTM script source from #36478. Existing cart races outside the Add-state cleanup and checkout pending-edit flush are out of scope.
 
 ## Decisions
 
@@ -32,7 +32,7 @@ Paths are relative to each pushed event; `items[]` means every emitted item.
 | Cart/order events | `items[].quantity` | Raw item `qty` | Normalized quantity (Decision 2). |
 | All ecommerce events with `items` | `items[].item_category` | One pipe-joined string | First named assigned category; no further levels (Decision 6). |
 | `view_cart` | `ecommerce.coupon` | Absent | Applied current-quote `platformTotals.coupon_code`, when available; absent for an empty cart or without usable quote totals. |
-| `view_cart`, standard `begin_checkout` | event timing | `isLoading` watcher on the cart; `beforeMount` on checkout | Emitted once after real operation boundaries and at most one missing-totals attempt; same-quote fallback after failure (Decision 7). |
+| `view_cart`, standard `begin_checkout` | event timing | `isLoading` watcher on the cart; `beforeMount` on checkout | Emitted once after business operations settle; same-quote fallback after failure and no analytics refresh (Decision 7). |
 | Customer-identifying pushes | `customerEmailHashed`, `customerEmailHashedSha3` | SHA3-256 of the raw email in `customerEmailHashed`, also for blank emails | SHA-256 of the normalized email, and SHA3-256 of the raw email; both set to undefined when blank (Decision 8). |
 
 Unchanged: `ecommerce.value` and `ecommerce.currency` (grand total with quote/order currency for cart, checkout, and purchase; product or line price for item events), purchase `shipping`, `tax`, `transaction_id`, and `coupon`, event names, `shipping_tier`, `payment_type`, `item_id`, `item_internal_id`, `item_variant`, `purchase_flow`, integration custom fields, and the `ecommerce: null` push before each ecommerce event.
@@ -67,7 +67,7 @@ Reuse the base campaign price helpers: `getBundleOptionDiscountedPrice` multipli
 
 ### 5. Map `add_to_cart` from the synchronized line
 
-When the existing `afterAddToCart` hook runs, immediately map the matching store line as updated by the item-write response, with the action quantity and the added product's categories. Keep the cart item price getter of the added product as the source of `value`. If no line or no usable item totals exist, use the local, tax-exclusive product fallback with the selected bundle options (Decision 3). Product and listing events keep the default bundle options; `remove_from_cart` keeps mapping the line it receives. Suppress the event when the hook's diff log reports a failed server response or an error notification; a warning alone does not suppress it.
+When the existing `afterAddToCart` hook runs, match the added product to its cart line using cart identity and match a successful write in the diff log by server line ID. Use that write's amounts, the action quantity, and the added product's categories. Keep the cart item price getter of the added product as the source of `value`. If no matching write supplied usable amounts, ignore retained DTOs and use the local, tax-exclusive product fallback with the selected bundle options (Decision 3). Product and listing events keep the default bundle options; `remove_from_cart` keeps mapping the line it receives. Suppress the event when the hook's diff log reports a failed server response or an error notification; a warning alone does not suppress it.
 
 For an existing quote, `addItems` waits for its item write but only waits for the follow-on refresh when retrying a pending coupon, as before. First-quote creation keeps its existing synchronization. The listener does not wait for idle or for totals. A later background methods or totals failure is not a result of Add. A later cart-lost 404 can still clear that cart, so the shopper can see “added” and then an empty cart. That is the existing background-refresh behavior; do not propagate that 404 into the Add diff log or try to retract the event.
 
@@ -85,18 +85,17 @@ Alternatives rejected: deriving ancestry from path segments matched against slug
 
 ### 7. Cart and checkout analytics wait independently of the shopper
 
-#### Owned by each visit, with bounded work
+#### Owned by each visit, observing business work only
 
-Move cart-view reporting from the `isLoading` watcher to a mounted composable. Move standard checkout reporting from `beforeMount` to a mounted handler that awaits the checkout component's entry promise. Read current items and usable totals at emission, not when mounting.
+In all four themes, move cart-view reporting from the `isLoading` watcher to a mounted composable. Move standard checkout reporting from `beforeMount` to a mounted handler that awaits the checkout component's entry promise. Read current items and usable totals at emission, not when mounting.
 
 The sequence is:
 
 1. On the client after mount, await cart startup settlement and, for checkout, the actual entry operation.
 2. Await any active connection/pull and the existing cart/totals/coupon work, including the add operation (`getIsAdding`). Settlement includes rejection; it is not proof of success. Recheck after an await so newly active work is not mistaken for idle. The existing Add flag is a boolean: if Adds overlap, the first to finish can clear it before the second settles.
-3. If checkout's entry has not already attempted its refresh, the visit can dispatch `cart/fetchMissingTotals`. That action makes one read-only totals request only for a nonempty eligible cart without successfully applied totals for its current quote. It does not refresh methods or set shopper-facing busy flags. Discard its reply if local edits are pending or the cart has changed since the request started. Await it and any remaining active work before reporting.
-4. Emit once while the visit is still mounted and eligible. On failure use same-quote last-known totals if present; otherwise map local items and omit unavailable event-level monetary data. An empty cart emits `items: []` without `value` or `coupon`, even if the store retained previous totals. Keep existing currency sources/defaults; do not synthesize a grand total from items or set a missing value to zero.
+3. Emit once while the visit is still mounted and eligible. On failure use same-quote last-known totals if present; otherwise map local items and omit unavailable event-level monetary data. An empty cart emits `items: []` without `value` or `coupon`, even if the store retained previous totals. Keep existing currency sources/defaults; do not synthesize a grand total from items or set a missing value to zero.
 
-Emission does not require a hash match or consult `isTotalsSyncRequired`. There is no timer or retry loop. Offline, disabled, or disconnected carts make no analytics totals request. Unmount suppresses later dispatch/emission for that visit; it does not abort shared cart requests. A new visit can make its own attempt; later login after a genuinely empty emitted view does not add another event to that visit. Express checkout retains its existing trigger.
+Emission does not require a hash match or consult `isTotalsSyncRequired`. Analytics never requests totals, starts cart recovery, or retries a failed refresh. Unmount suppresses emission for that visit; it does not abort shared cart requests. Later login after a genuinely empty emitted view does not add another event to that visit. Express checkout retains its existing trigger.
 
 #### Cart-owned operation boundaries
 
@@ -110,7 +109,7 @@ Create the component-local checkout entry promise synchronously in `beforeMount`
 
 On a changed, connected cart, reuse `cart/sync` with `forceClientState` to send local edits, waiting for item writes and any pending coupon application but skipping their intermediate methods/totals refresh. On an unchanged cart, skip the sync entirely. Then prepare payment and run the existing forced methods/totals chain once. Store the merged item hash before background totals work so an already accepted Add is not mistaken for an unsent edit. Do not reload cached items or introduce a pending-edit registry.
 
-Await the actual refresh dispatch in the entry promise. Keep the shipping-method notification without firing a second refresh from that notification. If entry attempts its refresh, analytics never retries it. If entry fails before attempting it, the mounted handler can still make its one eligible read-only request. Recheck the `success` route and mounted state before emitting.
+Await the actual refresh dispatch in the entry promise. Keep the shipping-method notification without firing a second refresh from that notification. Recheck the `success` route and mounted state before emitting.
 
 #### Totals ownership and cart correctness remain in core
 
@@ -118,17 +117,23 @@ At the quote-token mutation and explicit cart-clear boundary, invalidate previou
 
 A rejected request, non-404 error, malformed/unusable response, or methods-pull failure keeps the last successfully applied totals of the same quote. Only quote replacement or clear invalidates that snapshot. A failed request neither marks new totals successful nor strands a busy hold.
 
+After merging server and local items, decide whether to refresh totals using the resulting cart, not the pre-pull local items. This runs the existing business refresh and wait policy when a server cart populates an empty cache, so its coupon, discounts, and totals reach both the UI and analytics.
+
 Track `totalsSyncDepth` across `syncTotals` and `overrideServerTotals`, including methods, requests, and response application; release in `finally` and expose it to analytics as `isTotalsSettling`. Keep the base shopper flags and Place Order checks. Add refresh ID and token checks: only the latest-started refresh may apply a successful response; a 404 must not clear a replacement quote. A 404 from a business refresh for the same quote still clears it regardless of refresh generation. Apply responses synchronously.
 
 Defer `clear`'s reconnect behind an active sync, without awaiting it from inside that predecessor. Include the deferred reconnect in connection settlement.
 
-Extend the cart hash exclusions for stock and totals to cover catalog hydration (except SKU), `budsies_quote_item_totals`, and `estimated_shipment`. Checkout uses the hash to identify edits to send, and the read-only fallback uses it only to reject an obsolete response. Quantity, SKU, options, and other extension attributes remain hash-relevant.
+Extend the cart hash exclusions for stock and totals to cover catalog hydration (except SKU), `budsies_quote_item_totals`, and `estimated_shipment`. Checkout uses the hash to identify edits to send. Quantity, SKU, options, and other extension attributes remain hash-relevant.
+
+#### Payment requires current-quote totals
+
+Standard and express payment require successfully applied current-quote totals with finite order amounts and a currency (zero is valid). Missing totals disable the standard order action and hide wallet start controls. The shopper can request one normal totals refresh and retry payment. Check again before handing off or building the order; an express attempt with missing totals at final submission does not clear its nonce or session ID. These checks use only business state and do not wait for analytics.
 
 #### Cost and coverage
 
 Use existing Vuex actions/promises and Vue lifecycle hooks instead of a separate queue or snapshot store. An idle-only predicate misses startup and checkout-entry gaps, and a timestamp without quote invalidation can identify another quote's totals.
 
-Cover the real catalog/merge path, startup and empty-cache login, busy boundaries, quote ownership and late responses, concurrent edits during fallback, and checkout entry/cancellation. Exercise immediate Add against the actual item-write path while methods are pending.
+Cover the real catalog/merge path, a single business refresh after an empty-cache pull, same-quote/local reporting after failure without a second read, busy boundaries, quote ownership and late responses, and checkout entry/cancellation. Exercise immediate Add against the actual item-write path while methods are pending and an existing line whose write omits the amounts. Run the maintained suites with all four themes.
 
 ### 8. Customer email hashes
 
@@ -144,7 +149,7 @@ Add `js-sha256` and one helper that returns both digests for a nonblank email: S
 - The cart hash covers fewer fields → after deployment, stored cart hashes no longer match once, causing one extra cart synchronization per visitor.
 - A methods/totals failure after an accepted Add does not reject it, and an expired quote may clear after the Add was reported. A write response without usable line amounts falls back to local pricing; the storefront cannot detect an amount that the server sends as usable but stale.
 - A failed refresh can report an earlier coupon/value and item prices → accepted only for last-known totals of the same quote after real operations settle. Successful requests must still report their applied result. Supplied 30-day failure counts were 29 of about 45,000 shipping-information requests and 7 of about 1,100 totals requests, concentrated on about 17 carts; these support best-effort failure reporting, not ignoring lifecycle races.
-- No current-quote totals after the bounded attempt → report local items without an invented event value/coupon; no analytics retry loop. Offline/disabled/disconnected carts use local data without a request.
+- No usable current-quote totals after business work → report local items without an invented event value/coupon. Payment is unavailable until a business refresh supplies usable totals.
 - The shopper leaves before readiness → that visit has no event; do not emit on a later page.
 - The category field changes to one named category, and purchase custom-field amounts are rounded to cents.
 - Quantity changes during coupon processing and other unrelated cart/rejected-add races → accepted outside this scope. Only exception-safe Add cleanup and sending edits before checkout are included.

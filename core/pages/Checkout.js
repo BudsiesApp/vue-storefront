@@ -3,7 +3,7 @@ import { router } from '@vue-storefront/core/app';
 import i18n from '@vue-storefront/i18n'
 import config from 'config'
 import VueOfflineMixin from 'vue-offline/mixin'
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import Composite from '@vue-storefront/core/mixins/composite'
 import { currentStoreView, localizedRoute } from '@vue-storefront/core/lib/multistore'
@@ -11,6 +11,7 @@ import { isServer } from '@vue-storefront/core/helpers'
 import { setServerRedirect } from '@vue-storefront/core/request-services'
 import { Logger } from '@vue-storefront/core/lib/logger'
 import { CHECKOUT_UPDATE_SUCCESS_ORDER_DATA_MUTATION } from '@vue-storefront/core/modules/checkout';
+import { requirePaymentTotals } from '@vue-storefront/core/modules/checkout/helpers/require-payment-totals';
 
 export default {
   name: 'Checkout',
@@ -38,17 +39,13 @@ export default {
       },
       focusedField: null,
       checkoutEntry: null,
-      checkoutEntryActive: false,
-      entryRefreshAttempted: false
+      checkoutEntryActive: false
     }
   },
   computed: {
     ...mapGetters({
       isVirtualCart: 'cart/isVirtualCart',
       successOrderData: 'checkout/getSuccessOrderData'
-    }),
-    ...mapState({
-      platformTotals: state => state.cart.platformTotals
     })
   },
   beforeMount () {
@@ -100,7 +97,6 @@ export default {
       if (!this.checkoutEntryActive || this.isSuccess) return
 
       EventBus.$emit('checkout-before-shippingMethods', shippingCountry, { entry: true })
-      this.entryRefreshAttempted = true
       await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
     });
     this.checkoutEntry.catch(error => Logger.error(error, 'checkout')())
@@ -303,6 +299,9 @@ export default {
       return paymentMethod
     },
     prepareOrder () {
+      const platformTotals = requirePaymentTotals(this.$store)
+      if (!platformTotals) return
+
       this.order = {
         user_id: this.$store.state.user.current ? this.$store.state.user.current.id.toString() : '',
         cart_id: this.$store.state.cart.cartServerToken ? this.$store.state.cart.cartServerToken.toString() : '',
@@ -330,13 +329,13 @@ export default {
           payment_method_additional: this.payment.paymentMethodAdditional
         },
         paymentDetails: {
-          base_grand_total: this.platformTotals.base_grand_total,
-          base_tax_amount: this.platformTotals.base_tax_amount,
-          base_shipping_amount: this.platformTotals.base_shipping_amount,
-          base_subtotal: this.platformTotals.base_subtotal,
-          base_discount_amount: this.platformTotals.base_discount_amount,
-          order_currency_code: this.platformTotals.quote_currency_code,
-          coupon_code: this.platformTotals.coupon_code
+          base_grand_total: platformTotals.base_grand_total,
+          base_tax_amount: platformTotals.base_tax_amount,
+          base_shipping_amount: platformTotals.base_shipping_amount,
+          base_subtotal: platformTotals.base_subtotal,
+          base_discount_amount: platformTotals.base_discount_amount,
+          order_currency_code: platformTotals.quote_currency_code,
+          coupon_code: platformTotals.coupon_code
         },
         personalDetails: this.personalDetails
       }
@@ -363,7 +362,8 @@ export default {
     placeOrder () {
       this.checkConnection({ online: typeof navigator !== 'undefined' ? navigator.onLine : true })
       if (this.checkStocks()) {
-        this.$store.dispatch('checkout/placeOrder', { order: this.prepareOrder() })
+        const order = this.prepareOrder()
+        if (order) this.$store.dispatch('checkout/placeOrder', { order })
       } else {
         this.notifyNotAvailable()
       }

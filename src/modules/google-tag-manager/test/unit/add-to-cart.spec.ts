@@ -186,7 +186,7 @@ describe('add_to_cart through the cart addItem action', () => {
 
             return undefined;
           case 'merge': {
-            if (pullMethods) return (mergeActions as any).merge(context, payload);
+            if (!serverResponses.length) return (mergeActions as any).merge(context, payload);
             const diffLog = new DiffLog();
 
             serverResponses.forEach((response) => diffLog.pushServerResponse(response as any));
@@ -223,7 +223,8 @@ describe('add_to_cart through the cart addItem action', () => {
 
     jest.mocked(CartService.getItems).mockResolvedValue({ resultCode: cartReadCode ?? undefined, result: [] } as any);
     jest.mocked(CartService.updateItem).mockReset().mockResolvedValue({ resultCode: 200, result: {
-      item_id: 7, sku: product.sku, extension_attributes: { budsies_quote_item_totals: writeTotals }
+      item_id: 7, sku: product.sku,
+      ...(writeTotals ? { extension_attributes: { budsies_quote_item_totals: writeTotals } } : {})
     } } as any);
     jest.mocked(CartService.getTotals).mockReset().mockResolvedValue({ resultCode: 200, result: { items: [] } } as any);
 
@@ -252,7 +253,7 @@ describe('add_to_cart through the cart addItem action', () => {
   it('reports an undiscounted product added with quantity two', async () => {
     const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
 
-    expect(await addToCart(createProduct(2), itemTotals)).toMatchObject({
+    expect(await addToCart(createProduct(2), undefined, { writeTotals: itemTotals })).toMatchObject({
       ecommerce: { value: 999, items: [{ item_id: 'PLUSH-1', price: 100, discount: 0, quantity: 2 }] }
     });
   });
@@ -288,6 +289,21 @@ describe('add_to_cart through the cart addItem action', () => {
     expect(await addToCart(createProduct(1))).toMatchObject({
       ecommerce: { items: [{ price: 80, discount: 20, quantity: 1 }] }
     });
+  });
+
+  it.each([200, 503])('does not reuse an existing line DTO without fresh write amounts (cart read %s)', async cartReadCode => {
+    const oldTotals = { regular_price: 100, savings_amount: 0, discount_amount: -50, final_price: 50 };
+    store.state.cart.cartItems.push({
+      ...createProduct(3), server_item_id: 7,
+      extension_attributes: { budsies_quote_item_totals: oldTotals }
+    });
+    expect(await addToCart(createProduct(2), undefined, { cartReadCode })).toMatchObject({
+      ecommerce: { value: 999, items: [{ price: 80, discount: 20, quantity: 2 }] }
+    });
+    expect(addError).toBeUndefined();
+    expect(CartService.updateItem).toHaveBeenCalledTimes(cartReadCode === 200 ? 1 : 0);
+    expect(store.state.cart.cartItems[0].extension_attributes.budsies_quote_item_totals).toEqual(oldTotals);
+    expect(store.state.cart.cartItems[0].qty).toBe(5);
   });
 
   it('keeps the cart item price getter of the added product as the event value source', async () => {

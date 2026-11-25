@@ -37,7 +37,7 @@ describe('Cart totals item refresh', () => {
 
     (contextMock.dispatch as jest.Mock).mockImplementationOnce(async () => ({
       resultCode: 200,
-      result: { totals: { total_segments: {} } }
+      result: { totals: { base_grand_total: 200, total_segments: {}, items: [totalsItem] } }
     }));
     (prepareShippingInfoForUpdateTotals as jest.Mock).mockImplementation(() => ({ 7: totalsItem }));
 

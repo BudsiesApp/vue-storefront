@@ -315,10 +315,11 @@ describe('Cart mergeActions', () => {
     const contextMock = createContextMock({
       getters: {
         isTotalsSyncRequired: true,
+        getCartItems: [clientItem],
         getCurrentCartHash: 'cart-hash'
       }
     });
-    await (cartActions as any).updateTotalsAfterMerge(contextMock, { clientItems: [clientItem], dryRun: false });
+    await (cartActions as any).updateTotalsAfterMerge(contextMock, { dryRun: false });
     expect(contextMock.dispatch).toBeCalledWith('syncTotals', { forceServerSync: true })
     expect(contextMock.commit).toBeCalledWith(types.CART_SET_ITEMS_HASH, 'cart-hash')
   })
@@ -352,6 +353,6 @@ describe('Cart mergeActions', () => {
     await (cartActions as any).merge(contextMock, { clientItems: [clientItem], serverItems: [serverItem] });
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(1, 'mergeClientItems', { clientItems: [clientItem], serverItems: [serverItem], dryRun: false, forceClientState: false, mergeQty: false })
     expect(contextMock.dispatch).toHaveBeenNthCalledWith(2, 'mergeServerItems', { clientItems: [clientItem], serverItems: [serverItem], dryRun: false, forceClientState: false, mergeQty: false })
-    expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'updateTotalsAfterMerge', { clientItems: [clientItem], dryRun: false, skipTotalsUpdate: false })
+    expect(contextMock.dispatch).toHaveBeenNthCalledWith(3, 'updateTotalsAfterMerge', { dryRun: false, skipTotalsUpdate: false })
   })
 });
