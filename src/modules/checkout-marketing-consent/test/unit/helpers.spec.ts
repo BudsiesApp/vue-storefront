@@ -2,6 +2,8 @@ import {
   applyConsentToOrder,
   consentAvailability,
   consentPayload,
+  acceptedOrderChannels,
+  remainingConsentChannels,
   emailKey
 } from '../../helpers';
 import { ConsentSelection, MarketingConsentSettings } from '../../types/marketing-consent';
@@ -30,6 +32,15 @@ describe('checkout marketing consent policy', () => {
     expect(consentAvailability(disabledSms)).toEqual({ email: false, sms: false });
     expect(consentAvailability(settings)).toEqual({ email: true, sms: true });
     expect(emailKey(' Test@Example.com ')).toBe('test@example.com');
+  });
+
+  it('derives unaccepted offered channels from the placed order', () => {
+    expect(acceptedOrderChannels()).toEqual({ email: false, sms: false });
+    expect(acceptedOrderChannels({ addressInformation: {} })).toEqual({ email: false, sms: false });
+    const accepted = acceptedOrderChannels({ addressInformation: { paymentExtraFields: { budsies_marketing_consent: { email: true, sms: 1 } } } });
+    expect(accepted).toEqual({ email: true, sms: false });
+    expect(remainingConsentChannels(settings, accepted)).toEqual({ email: false, sms: true });
+    expect(remainingConsentChannels({ ...settings, smsEnabled: false }, accepted)).toEqual({ email: false, sms: false });
   });
 
   it('limits consent to the offered channels and matching email', () => {
