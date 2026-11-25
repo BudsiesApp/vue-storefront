@@ -158,7 +158,6 @@ const mutations: MutationTree<CartState> = {
   },
   [types.START_TOTALS_SYNC] (state) {
     state.totalsSyncDepth++;
-    state.isTotalsSyncing = true;
   },
   // Numbers the totals refreshes in the order they start, so a response can tell that a newer refresh superseded it
   [types.START_TOTALS_REFRESH] (state) {
@@ -166,7 +165,9 @@ const mutations: MutationTree<CartState> = {
   },
   [types.FINISH_TOTALS_SYNC] (state) {
     state.totalsSyncDepth = Math.max(0, state.totalsSyncDepth - 1);
-    state.isTotalsSyncing = state.totalsSyncDepth > 0;
+  },
+  [types.SET_IS_TOTALS_SYNCING] (state, isSyncing: boolean) {
+    state.isTotalsSyncing = isSyncing;
   },
   [types.SET_IS_PAYMENT_METHODS_SYNCING] (state, isSyncing: boolean) {
     state.isPaymentMethodsSyncing = isSyncing;

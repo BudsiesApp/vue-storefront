@@ -10,7 +10,7 @@ const couponActions = {
 
     return dispatch('applyPendingCouponInCartTransaction')
   },
-  async applyPendingCouponInCartTransaction ({ getters, commit, dispatch }) {
+  async applyPendingCouponInCartTransaction ({ getters, commit, dispatch }, { skipTotalsUpdate = false } = {}) {
     const couponCode = getters.getPendingCouponCode
 
     if (!couponCode || getters.getCoupon || getters[IS_COUPON_PROCESSING]) {
@@ -18,7 +18,7 @@ const couponActions = {
     }
 
     try {
-      const task = await dispatch('applyCoupon', { couponCode, silent: true })
+      const task = await dispatch('applyCoupon', { couponCode, silent: true, ...(skipTotalsUpdate ? { skipTotalsUpdate } : {}) })
 
       if (!task || task.resultCode !== 200) {
         return false
@@ -49,13 +49,13 @@ const couponActions = {
       }
     }
   },
-  async applyCoupon ({ getters, dispatch, commit }, { couponCode, silent = false }: {couponCode: string, silent: boolean}) {
+  async applyCoupon ({ getters, dispatch, commit }, { couponCode, silent = false, skipTotalsUpdate = false }: {couponCode: string, silent: boolean, skipTotalsUpdate?: boolean}) {
     if (couponCode && getters.canSyncTotals) {
       commit(types.SET_IS_COUPON_PROCESSING, true);
       try {
         const task = await CartService.applyCoupon(couponCode, silent)
 
-        if (task.result) {
+        if (task.result && !skipTotalsUpdate) {
           await dispatch('syncTotals', { forceServerSync: true })
 
           // 'getCurrentCartHash' has been changed (it's based on cart items data)

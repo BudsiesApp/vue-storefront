@@ -9,13 +9,6 @@ import getDefaultPaymentDetails from '../../helpers/default-payment-details.fact
 import ShippingDetails from '../../types/ShippingDetails'
 
 const mutations: MutationTree<CheckoutState> = {
-  setEntryPromise (state, promise: Promise<unknown>) {
-    state.entryPromise = promise
-    state.entryRefreshAttempted = false
-  },
-  setEntryRefreshAttempted (state) {
-    state.entryRefreshAttempted = true
-  },
   /**
    * Setup current order object
    * @param {Object} order Object

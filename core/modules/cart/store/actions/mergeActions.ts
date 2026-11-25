@@ -19,7 +19,6 @@ import ServerItem from '../../types/Servertem'
 import { DiffLog } from '../../helpers/createDiffLog'
 import { isClientItemHasRequiredServerItemFields } from '../../helpers/is-client-item-has-required-server-item-fields.function'
 import { updateClientItemProductData } from '../../helpers/update-client-item-product-data.function';
-import { isCartNotFoundError } from '../../helpers/is-cart-not-found-error';
 
 async function loadClientItemsProducts (clientItems: CartItem[], dispatch) {
   const itemsSkuSet = new Set<string>();
@@ -318,22 +317,15 @@ const mergeActions = {
 
     return diffLog
   },
-  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { clientItems, dryRun, allowTotalsFailure = false }) {
+  async updateTotalsAfterMerge ({ commit, dispatch, getters }, { clientItems, dryRun, skipTotalsUpdate }) {
     if (dryRun) return
 
-    if (getters.isTotalsSyncRequired && clientItems.length > 0) {
-      let result
-      try {
-        result = await dispatch('syncTotals')
-      } catch (error) {
-        if (!allowTotalsFailure) throw error
-        Logger.error(error, 'cart')()
-        return
-      }
-      if (result && isCartNotFoundError(result)) return result
-    }
-
+    const refreshTotals = !skipTotalsUpdate && getters.isTotalsSyncRequired && clientItems.length > 0
+    // The items are already merged. Do not make checkout think there are still edits to send while totals refresh.
     commit(types.CART_SET_ITEMS_HASH, getters.getCurrentCartHash)
+    if (refreshTotals) {
+      await dispatch('syncTotals', { forceServerSync: true })
+    }
   },
   async updateItemsProductData (
     { dispatch, rootGetters }
@@ -345,7 +337,7 @@ const mergeActions = {
       await dispatch('updateClientItemProductData', clientItem);
     }
   },
-  async merge ({ commit, getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false, waitForTotalsUpdate = true, allowTotalsFailure = false }) {
+  async merge ({ commit, getters, dispatch }, { serverItems, clientItems, dryRun = false, forceClientState = false, mergeQty = false, forceUpdateServerItem = false, waitForTotalsUpdate = true, skipTotalsUpdate = false }) {
     const hookResult = cartHooksExecutors.beforeSync({ clientItems, serverItems })
 
     const diffLog = createDiffLog()
@@ -374,15 +366,14 @@ const mergeActions = {
     const mergeServerItemsDiffLog = await dispatch('mergeServerItems', mergeParameters)
 
     const updatePromises = Promise.all([
-      dispatch('updateTotalsAfterMerge', { clientItems, dryRun, ...(allowTotalsFailure ? { allowTotalsFailure } : {}) }),
+      dispatch('updateTotalsAfterMerge', { clientItems, dryRun, ...(skipTotalsUpdate ? { skipTotalsUpdate } : {}) }),
       dispatch('updateItemsProductData')
     ]);
 
     if (waitForTotalsUpdate) {
-      const [totalsResult] = await updatePromises;
-      if (totalsResult && isCartNotFoundError(totalsResult)) {
-        diffLog.pushServerResponse({ status: 404, sku: '', result: totalsResult })
-      }
+      await updatePromises;
+    } else {
+      updatePromises.catch(error => Logger.error(error, 'cart')());
     }
 
     diffLog

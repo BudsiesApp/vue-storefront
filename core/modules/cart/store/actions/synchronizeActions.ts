@@ -18,7 +18,7 @@ interface CartSyncOptions {
   forceSync?: boolean,
   forceUpdateServerItem?: boolean,
   waitForTotalsUpdate?: boolean,
-  allowTotalsFailure?: boolean
+  skipTotalsUpdate?: boolean
 }
 
 const synchronizeActions = {
@@ -102,18 +102,16 @@ const synchronizeActions = {
     }
   },
   async waitForIdle ({ getters, dispatch, state }) {
+    const isBusy = () => getters.getIsAdding || getters.IS_CART_SYNCING || getters.isTotalsSettling || getters.IS_COUPON_PROCESSING
     do {
       await dispatch('waitForConnections')
       await dispatch('waitForCartSync')
-      if (getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING) {
+      if (isBusy()) {
         await new Promise<void>(resolve => {
-          const stop = watch(
-            () => getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING,
-            busy => { if (!busy) { stop(); resolve() } }
-          )
+          const stop = watch(isBusy, busy => { if (!busy) { stop(); resolve() } })
         })
       }
-    } while (state.connectionPromises.length || getters.getIsAdding || getters.IS_CART_SYNCING || getters.IS_TOTALS_SYNCING || getters.IS_COUPON_PROCESSING)
+    } while (state.connectionPromises.length || isBusy())
   },
   async trackConnection ({ commit }, operation: () => Promise<unknown>) {
     let release: () => void = () => undefined
@@ -138,7 +136,7 @@ const synchronizeActions = {
       : Promise.resolve()
     const syncPromise = waitForPreviousSync.then(async () => {
       const diffLog = await dispatch('performSync', options)
-      await dispatch('applyPendingCouponInCartTransaction')
+      await dispatch('applyPendingCouponInCartTransaction', options.skipTotalsUpdate ? { skipTotalsUpdate: true } : undefined)
 
       return diffLog
     })
@@ -164,7 +162,7 @@ const synchronizeActions = {
       forceSync = false,
       forceUpdateServerItem = false,
       waitForTotalsUpdate = true,
-      allowTotalsFailure = false
+      skipTotalsUpdate = false
     }: CartSyncOptions = {}
   ) {
     const { getCartItems, canUpdateMethods, isSyncRequired } = getters
@@ -194,7 +192,7 @@ const synchronizeActions = {
         mergeQty,
         forceUpdateServerItem,
         waitForTotalsUpdate,
-        ...(allowTotalsFailure ? { allowTotalsFailure } : {})
+        ...(skipTotalsUpdate ? { skipTotalsUpdate } : {})
       })
       cartHooksExecutors.afterSync(diffLog)
       commit(types.CART_SET_SYNC)

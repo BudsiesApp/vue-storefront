@@ -10,8 +10,8 @@ const asyncLoadedItemFields = [
   ...productFieldsAllowedToUpdate.filter((field) => field !== 'sku')
 ]
 
-// Written by every totals refresh, so they must not make the stored hash stale.
-const asyncLoadedExtensionAttributes = ['budsies_quote_item_totals']
+// Server-computed item metadata is not a shopper edit to send back to the server.
+const asyncLoadedExtensionAttributes = ['budsies_quote_item_totals', 'estimated_shipment']
 
 function getHashableItem (item) {
   const hashableItem = omit(item, asyncLoadedItemFields)

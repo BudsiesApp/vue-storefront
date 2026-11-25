@@ -106,6 +106,7 @@ const getters: GetterTree<CartState, RootState> = {
   [IS_SHIPPING_METHODS_SYNCING_ERROR]: (state) => state.isShippingMethodsSyncingError,
   [IS_CART_SYNCING]: (state) => state.isCartSyncing,
   [IS_TOTALS_SYNCING]: (state) => state.isTotalsSyncing,
+  isTotalsSettling: (state) => state.totalsSyncDepth > 0,
   [IS_PAYMENT_METHODS_SYNCING]: (state) => state.isPaymentMethodsSyncing,
   [IS_COUPON_PROCESSING]: (state) => state.isCouponProcessing
 }

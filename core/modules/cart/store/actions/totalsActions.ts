@@ -14,8 +14,7 @@ import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { isCartNotFoundError } from '../../helpers/is-cart-not-found-error'
 import { createTotalsItemUpdate } from '../../helpers/create-totals-item-update.function'
 
-// The totals are "syncing" until the response is fully applied, so that nothing reads the old totals
-// as synchronized in between. Holds nest: the flag is released when the outermost one finishes.
+// Analytics waits through methods preparation and response application, not just the totals request.
 async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Promise<T> {
   commit(types.START_TOTALS_SYNC);
 
@@ -29,14 +28,20 @@ async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Pr
 const totalsActions = {
   async getTotals ({ commit }, { addressInformation, hasShippingInformation }) {
     return holdTotalsSyncing(commit, async () => {
-      if (hasShippingInformation) {
-        return CartService.setShippingInfo(addressInformation);
+      commit(types.SET_IS_TOTALS_SYNCING, true);
+      try {
+        return await (hasShippingInformation ? CartService.setShippingInfo(addressInformation) : CartService.getTotals());
+      } finally {
+        commit(types.SET_IS_TOTALS_SYNCING, false);
       }
-
-      return CartService.getTotals();
     });
   },
-  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation }) {
+  async fetchMissingTotals ({ getters, dispatch }) {
+    if (getters.canSyncTotals && !getters.getLastTotalsSyncDate && getters.getCartItems.length) {
+      return dispatch('overrideServerTotals', { readOnly: true });
+    }
+  },
+  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation, readOnly = false }) {
     commit(types.START_TOTALS_REFRESH)
 
     // Refreshes can overlap and their responses can arrive in any order. The refresh that started last decides
@@ -51,7 +56,9 @@ const totalsActions = {
     const isOutdated = () => isSuperseded() || isCartReplaced()
 
     return holdTotalsSyncing(commit, async () => {
-      const task: Task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
+      const task: Task = readOnly
+        ? await CartService.getTotals()
+        : await dispatch('getTotals', { addressInformation, hasShippingInformation })
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
@@ -61,8 +68,7 @@ const totalsActions = {
           return
         }
 
-        await dispatch('clear', { disconnect: true, sync: false });
-        return task
+        return dispatch('clear', { disconnect: true, sync: false });
       }
 
       if (isOutdated()) {
@@ -87,7 +93,7 @@ const totalsActions = {
         commit(types.CART_SET_TOTALS_SYNC)
 
         // we received payment methods as a result of this call, updating state
-        if (result.payment_methods && getters.canUpdateMethods) {
+        if (!readOnly && result.payment_methods && getters.canUpdateMethods) {
           const { uniqueBackendMethods, paymentMethods } = preparePaymentMethodsToSync(
             result.payment_methods.map(method => ({ ...method, is_server_method: true })),
             rootGetters['checkout/getNotServerPaymentMethods']
@@ -130,13 +136,12 @@ const totalsActions = {
       await dispatch('overrideServerTotals', { hasShippingInformation, addressInformation });
     }
   },
-  async syncTotals ({ commit, state, dispatch, getters, rootGetters }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
+  async syncTotals ({ commit, dispatch, getters, rootGetters }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
     const methodsData = payload ? payload.methodsData : null
     const isTotalsSyncNeeded = () => getters.canSyncTotals && (getters.isTotalsSyncRequired || payload.forceServerSync)
 
     const pullMethodsAndSyncTotals = async () => {
-      const methodsResult = await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
-      if (methodsResult && isCartNotFoundError(methodsResult)) return methodsResult
+      await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
 
       if (isTotalsSyncNeeded()) {
         const shippingDetails = rootGetters['checkout/getShippingDetails'];

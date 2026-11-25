@@ -96,7 +96,7 @@ Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax
 
 ### Requirement: Added cart items use synchronized pricing
 
-`add_to_cart` SHALL be reported only after the cart accepted the item: the add is not rejected locally and the server did not reject it. It SHALL map its item from the server-synchronized cart line of the added product, report the added quantity, and report the added product's categories. When that line has no server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
+`add_to_cart` SHALL be reported when the Add action accepts the item, without waiting for a later methods/totals refresh for analytics. It SHALL map its item from the cart line as updated by the item write, report the added quantity, and report the added product's categories. When that line has no usable server-calculated item totals, the item SHALL use the tax-exclusive unit price derived from the product data and, for a bundle, from the options the customer selected.
 
 #### Scenario: Undiscounted product with quantity two
 - **WHEN** a product with a unit price of 100 is added with quantity 2
@@ -124,10 +124,10 @@ Product and cart item payloads SHALL emit finite, non-negative, unlocalized, tax
 - **THEN** the cart is cleared with the local change, the add reports a friendly translated cart-lost error rather than the backend's raw message, and no `add_to_cart` event is reported
 - **AND** when the shopper adds the product again, the line has the added quantity once and the add is reported
 
-#### Scenario: Cart lost in the add's totals refresh
-- **WHEN** the totals refresh within an add returns a cart-lost 404 and clears the added local change
-- **THEN** the add has the same friendly translated error and no `add_to_cart` event as a cart-read 404
-- **AND** the cart reconnects after the running synchronization settles
+#### Scenario: Accepted Add while totals refresh in the background
+- **WHEN** an Add to a connected quote is accepted by the item write and no pending coupon requires the Add to wait
+- **THEN** the Add action completes and the event reports the write-updated price and added quantity without waiting for methods or totals
+- **AND** a subsequent background 404 can clear the cart without changing the completed Add's result or event
 
 #### Scenario: Add operation rejects before cart synchronization
 - **WHEN** an add's stock check or quote creation rejects while a cart view or checkout start is waiting
@@ -230,11 +230,11 @@ After required operations settle, cart views and standard checkout starts SHALL 
 
 #### Scenario: One attempt when no totals were loaded
 - **WHEN** a nonempty connected online cart can synchronize totals but has none for its current quote
-- **THEN** the visit makes one forced totals attempt and waits for completion
+- **THEN** the visit makes one read-only totals request and waits for it without starting methods preparation or holding shopper-facing busy flags
 - **AND** a successful result is applied before the event uses its item prices, coupon, and value
 
 #### Scenario: Failed attempt without last-known totals
-- **WHEN** that attempt rejects, returns an error or unusable response, or fails during methods preparation before a totals request
+- **WHEN** that attempt rejects or returns an error or unusable response
 - **THEN** the event is still emitted once after active work settles, using local items and no unavailable event value or coupon
 - **AND** the visit does not loop, retry, or remain blocked waiting for a success
 
@@ -256,7 +256,7 @@ After required operations settle, cart views and standard checkout starts SHALL 
 
 ### Requirement: Totals refreshes retain cart correctness guards
 
-Totals processing SHALL remain busy through method preparation, request completion, and synchronous application of item prices, totals, and successful-sync evidence. Only the latest-started refresh of the current quote SHALL apply a successful result. Missing-cart handling SHALL preserve replacement carts and defer reconnect behind an active synchronization rather than wait on itself.
+Analytics readiness SHALL track totals processing through method preparation, request completion, and synchronous application of item prices, totals, and successful-sync evidence, independently of shopper-facing busy flags. Only the latest-started refresh of the current quote SHALL apply a successful result. Missing-cart handling SHALL preserve replacement carts and defer reconnect behind an active synchronization rather than wait on itself.
 
 #### Scenario: Refresh in progress when the page mounts
 - **WHEN** a page mounts during a forced refresh after an earlier success
@@ -282,7 +282,7 @@ Totals processing SHALL remain busy through method preparation, request completi
 
 ### Requirement: Checkout start waits for its entry sequence
 
-Standard `begin_checkout` SHALL use the shared visit flow and wait for checkout entry, including delivery of pending cart edits before the entry totals refresh. It SHALL emit once only for a mounted, nonempty, nonsuccess checkout visit. Express-checkout triggering SHALL remain unchanged, and missing totals SHALL NOT make checkout event handlers fail.
+Standard `begin_checkout` SHALL report once for an eligible mounted visit, waiting independently for checkout entry and active cart work. In-app checkout SHALL send pending edits before its single entry refresh without waiting for analytics or startup. Express-checkout triggering SHALL remain unchanged.
 
 #### Scenario: Checkout's asynchronous idle gap
 - **WHEN** checkout mounts while payment details are still being prepared and its entry refresh has not started
@@ -293,6 +293,7 @@ Standard `begin_checkout` SHALL use the shared visit flow and wait for checkout 
 - **WHEN** the shopper changes quantity and enters checkout before the cart's one-second debounce runs
 - **THEN** the edited quantity is sent to the server before checkout's forced totals request
 - **AND** cart unmount does not cancel its only delivery or let that totals response restore the previous quantity
+- **AND** the item/coupon flush does not run its own methods/totals chain; an unchanged cart skips the flush entirely
 - **AND** `begin_checkout` reports the edited quantity and successful corresponding totals
 
 #### Scenario: Checkout reuses its entry refresh

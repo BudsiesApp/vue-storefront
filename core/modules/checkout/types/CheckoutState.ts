@@ -17,8 +17,6 @@ export default interface CheckoutState {
   shippingDetails: ShippingDetails,
   paymentDetails: PaymentDetails,
   modifiedAt: number,
-  entryPromise: Promise<unknown> | null,
-  entryRefreshAttempted: boolean,
   successOrderData: {
     order: Order,
     confirmation: any

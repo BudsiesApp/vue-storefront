@@ -36,7 +36,10 @@ export default {
         shipping: { $invalid: true },
         payment: { $invalid: true }
       },
-      focusedField: null
+      focusedField: null,
+      checkoutEntry: null,
+      checkoutEntryActive: false,
+      entryRefreshAttempted: false
     }
   },
   computed: {
@@ -49,7 +52,7 @@ export default {
     })
   },
   beforeMount () {
-    if (this.successOrderData) {
+    if (this.successOrderData || this.isSuccess) {
       return;
     }
 
@@ -72,65 +75,38 @@ export default {
     EventBus.$on('checkout-after-validationError', this.focusField)
     EventBus.$on('checkout-after-paymentMethodChanged', this.onPaymentMethodChanged)
 
-    const entry = Promise.resolve().then(async () => {
-      await this.$store.dispatch('cart/waitForStartup')
-      await this.$store.dispatch('cart/waitForIdle')
-      if (this.$store.getters['cart/canUpdateMethods']) {
-        await this.$store.dispatch('cart/sync', { forceClientState: true, waitForTotalsUpdate: true })
+    this.checkoutEntryActive = true
+    this.checkoutEntry = Promise.resolve().then(async () => {
+      if (!this.checkoutEntryActive || this.isSuccess) return
+      if (this.$store.getters['cart/canUpdateMethods'] && this.$store.getters['cart/isCartHashChanged']) {
+        // The entry refresh below covers both the sent items and any pending coupon applied by sync.
+        await this.$store.dispatch('cart/sync', { forceClientState: true, waitForTotalsUpdate: false, skipTotalsUpdate: true })
       }
 
+      if (!this.checkoutEntryActive || this.isSuccess) return
       if (this.$store.state.cart.cartItems.length === 0) {
+        this.checkoutEntryActive = false
         this.notifyEmptyCart()
         this.$router.push(this.localizedRoute('/'))
-      } else {
-        this.stockCheckCompleted = false
-        const checkPromises = []
-        for (let product of this.$store.state.cart.cartItems) { // check the results of online stock check
-          if (product.onlineStockCheckid) {
-            checkPromises.push(new Promise((resolve, reject) => {
-              StorageManager.get('syncTasks').getItem(product.onlineStockCheckid, (err, item) => {
-                if (err || !item) {
-                  if (err) Logger.error(err)()
-                  resolve(null)
-                } else {
-                  product.stock = item.result
-                  resolve(product)
-                }
-              })
-            }))
-          }
-        }
-        Promise.all(checkPromises).then((checkedProducts) => {
-          this.stockCheckCompleted = true
-          this.stockCheckOK = true
-          for (let chp of checkedProducts) {
-            if (chp && chp.stock) {
-              if (!chp.stock.is_in_stock) {
-                this.stockCheckOK = false
-                chp.errors.stock = i18n.t('Out of stock!')
-                this.notifyOutStock(chp)
-              }
-            }
-          }
-        })
+        return
       }
-      const storeView = currentStoreView()
-      let shippingCountry = this.$store.state.checkout.shippingDetails.country
-      let paymentCountry = this.$store.state.checkout.paymentDetails.country
 
-      if (!shippingCountry) shippingCountry = storeView.i18n.defaultCountry
-      if (!paymentCountry) paymentCountry = storeView.i18n.defaultCountry
+      this.checkCheckoutStock()
+      const storeView = currentStoreView()
+      const shippingCountry = this.$store.state.checkout.shippingDetails.country || storeView.i18n.defaultCountry
+      const paymentCountry = this.$store.state.checkout.paymentDetails.country || storeView.i18n.defaultCountry
 
       await this.$store.dispatch('checkout/updatePaymentDetails', { country: paymentCountry });
+      if (!this.checkoutEntryActive || this.isSuccess) return
 
       EventBus.$emit('checkout-before-shippingMethods', shippingCountry, { entry: true })
-      this.$store.commit('checkout/setEntryRefreshAttempted')
+      this.entryRefreshAttempted = true
       await this.$store.dispatch('cart/syncTotals', { forceServerSync: true })
     });
-    this.$store.commit('checkout/setEntryPromise', entry)
-    entry.catch(error => Logger.error(error, 'checkout')())
+    this.checkoutEntry.catch(error => Logger.error(error, 'checkout')())
   },
   beforeDestroy () {
+    this.checkoutEntryActive = false
     this.$store.dispatch('checkout/setModifiedAt', 0) // exit checkout
     EventBus.$off('cart-after-update', this.onCartAfterUpdate)
     EventBus.$off('cart-after-delete', this.onCartAfterUpdate)
@@ -152,6 +128,36 @@ export default {
     'OnlineOnly': 'onNetworkStatusCheck'
   },
   methods: {
+    checkCheckoutStock () {
+      this.stockCheckCompleted = false
+      const checkPromises = []
+      for (let product of this.$store.state.cart.cartItems) { // check the results of online stock check
+        if (product.onlineStockCheckid) {
+          checkPromises.push(new Promise(resolve => {
+            StorageManager.get('syncTasks').getItem(product.onlineStockCheckid, (err, item) => {
+              if (err || !item) {
+                if (err) Logger.error(err)()
+                resolve(null)
+              } else {
+                product.stock = item.result
+                resolve(product)
+              }
+            })
+          }))
+        }
+      }
+      Promise.all(checkPromises).then((checkedProducts) => {
+        this.stockCheckCompleted = true
+        this.stockCheckOK = true
+        for (let chp of checkedProducts) {
+          if (chp?.stock && !chp.stock.is_in_stock) {
+            this.stockCheckOK = false
+            chp.errors.stock = i18n.t('Out of stock!')
+            this.notifyOutStock(chp)
+          }
+        }
+      })
+    },
     onCartAfterUpdate (payload) {
       if (this.$store.state.cart.cartItems.length === 0) {
         this.notifyEmptyCart()

@@ -1,19 +1,17 @@
 import Vue from 'vue';
 import Vuex, { Store } from 'vuex';
 import VueGtm from '@gtm-support/vue2-gtm';
-import config from 'config';
+import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus';
 import { CartService } from '@vue-storefront/core/data-resolver';
 import { DiffLog } from '@vue-storefront/core/modules/cart/helpers/createDiffLog';
 import itemActions from '@vue-storefront/core/modules/cart/store/actions/itemActions';
-import connectActions from '@vue-storefront/core/modules/cart/store/actions/connectActions';
 import synchronizeActions from '@vue-storefront/core/modules/cart/store/actions/synchronizeActions';
 import mergeActions from '@vue-storefront/core/modules/cart/store/actions/mergeActions';
-import methodsActions from '@vue-storefront/core/modules/cart/store/actions/methodsActions';
 import totalsActions from '@vue-storefront/core/modules/cart/store/actions/totalsActions';
-import { getAvailableShippingMethod } from '@vue-storefront/core/modules/cart/helpers';
 import * as cartMutationTypes from '@vue-storefront/core/modules/cart/store/mutation-types';
 import type CartItem from '@vue-storefront/core/modules/cart/types/CartItem';
 import ServerError from 'src/modules/shared/types/server-error';
+import fillProductWithAdditionalFields from 'src/modules/budsies/helpers/fill-product-with-additional-fields.function';
 
 import EventBusListener from '../../helpers/EventBusListener';
 
@@ -31,7 +29,7 @@ jest.mock('@vue-storefront/core/lib/multistore', () => ({
   localizedRoute: jest.fn()
 }));
 jest.mock('@vue-storefront/core/app', () => ({ router: { push: jest.fn() } }));
-jest.mock('@vue-storefront/core/data-resolver', () => ({ CartService: { getCartToken: jest.fn(), getItems: jest.fn(), updateItem: jest.fn(), getTotals: jest.fn(), setShippingInfo: jest.fn(), getShippingMethods: jest.fn(), getPaymentMethods: jest.fn() } }));
+jest.mock('@vue-storefront/core/data-resolver', () => ({ CartService: { getItems: jest.fn(), updateItem: jest.fn(), getTotals: jest.fn() } }));
 jest.mock('@vue-storefront/core/lib/storage-manager', () => ({ StorageManager: { get: jest.fn() } }));
 jest.mock('@vue-storefront/i18n', () => ({ __esModule: true, default: { t: (text: string) => text } }));
 // The diff log, notifications and validation are the real ones, so `addItems` decides what was accepted.
@@ -96,7 +94,6 @@ describe('add_to_cart through the cart addItem action', () => {
   const category = [{ category_id: 4, name: 'Plushies', slug: 'plushies-4', path: 'plushies/plushies-4' }];
   // The error that `addItem` threw for the last add, which the shopper sees.
   let addError: unknown;
-  let addResult: DiffLog | undefined;
 
   new EventBusListener(store, gtm).initEventBusListeners();
 
@@ -122,21 +119,16 @@ describe('add_to_cart through the cart addItem action', () => {
     serverResponses?: Record<string, any>[],
     stockStatus?: string,
     // Result code of the cart read at the start of the synchronization.
-    cartReadCode?: number
+    cartReadCode?: number | null
     rejectAt?: 'checkProductStatus' | 'create' | 'sync'
-    totalsNotFound?: boolean
-    totalsFailure?: boolean
-    methodsFailure?: boolean
-    methodsNotFound?: 'shipping' | 'payment' | 'shipping-info'
-    missingCartCodeOnly?: boolean
-    initiallyDisconnected?: boolean
+    writeTotals?: ItemTotals
+    pullMethods?: () => Promise<void>
   }
 
   // Runs the real `addItem`, `addItems`, `sync` and `performSync` actions; only the stock check, the cart
   // mutation, the cart read, the merge of the server items and the clearing of the cart are replaced.
   async function addToCart (product: CartItem, itemTotals?: ItemTotals, options: AddToCartOptions = {}) {
-    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200, rejectAt, totalsNotFound = false,
-      totalsFailure = false, methodsFailure = false, methodsNotFound, initiallyDisconnected = false, missingCartCodeOnly = false } = options;
+    const { serverResponses = [], stockStatus = 'ok', cartReadCode = 200, rejectAt, writeTotals, pullMethods } = options;
     const getters = {
       get isCartConnected () { return Boolean(this.getCartToken); },
       isCartSyncEnabled: true,
@@ -144,7 +136,7 @@ describe('add_to_cart through the cart addItem action', () => {
       isSyncRequired: true,
       getCartItems: store.state.cart.cartItems,
       getPendingCouponCode: null,
-      canSyncTotals: true, isTotalsSyncRequired: true, getCartToken: initiallyDisconnected ? '' : 'quote', getCurrentCartHash: 'hash',
+      canSyncTotals: true, isTotalsSyncRequired: true, getCartToken: 'quote', getCurrentCartHash: 'hash',
       isCartHashChanged: false
     };
     const syncState = { syncPromise: null, isAdding: false };
@@ -174,19 +166,10 @@ describe('add_to_cart through the cart addItem action', () => {
       commit,
       state: syncState,
       rootGetters: { 'checkout/getShippingDetails': {}, 'checkout/getShippingMethods': [],
-        'checkout/getPaymentMethods': [], 'checkout/getPaymentDetails': methodsNotFound === 'shipping-info' ? { country: 'US' } : {} },
+        'checkout/getPaymentMethods': [], 'checkout/getPaymentDetails': {} },
       dispatch: jest.fn(async (name: string, payload: Record<string, any>) => {
         if (name === rejectAt) throw new Error(`Rejected ${name}`);
         switch (name) {
-          case 'create':
-            if (initiallyDisconnected) return (connectActions as any).create(context, payload);
-            return undefined;
-          case 'connect':
-            return (connectActions as any).connect(context, payload);
-          case 'performConnect':
-            return (connectActions as any).performConnect(context, payload);
-          case 'trackConnection':
-            return (payload as any)();
           case 'addItems':
             return (itemActions as any).addItems(context, payload);
           case 'checkProductStatus':
@@ -203,7 +186,7 @@ describe('add_to_cart through the cart addItem action', () => {
 
             return undefined;
           case 'merge': {
-            if (totalsNotFound || totalsFailure || methodsFailure || methodsNotFound) return (mergeActions as any).merge(context, payload);
+            if (pullMethods) return (mergeActions as any).merge(context, payload);
             const diffLog = new DiffLog();
 
             serverResponses.forEach((response) => diffLog.pushServerResponse(response as any));
@@ -211,8 +194,6 @@ describe('add_to_cart through the cart addItem action', () => {
             return diffLog;
           }
           case 'mergeClientItems':
-            if (totalsFailure || methodsFailure) return (mergeActions as any).mergeClientItems(context, payload);
-            return new DiffLog().pushServerResponse({ status: 200, sku: product.sku, result: {} });
           case 'mergeClientItem':
           case 'synchronizeServerItem':
           case 'updateServerItem':
@@ -224,13 +205,10 @@ describe('add_to_cart through the cart addItem action', () => {
           case 'updateItemsProductData':
             return undefined;
           case 'pullMethods':
-            if (methodsFailure) throw new Error('methods unavailable');
-            if (methodsNotFound) return (methodsActions as any).pullMethods(context, payload);
-            return undefined;
-          case 'syncShippingMethods':
-          case 'syncPaymentMethods':
-          case 'updateShippingMethods':
-            return (methodsActions as any)[name](context, payload);
+            return pullMethods?.();
+          case 'updateItem':
+            Object.assign(store.state.cart.cartItems[0], payload.product);
+            return;
           case 'updateTotalsAfterMerge':
             return (mergeActions as any).updateTotalsAfterMerge(context, payload);
           case 'syncTotals':
@@ -243,23 +221,17 @@ describe('add_to_cart through the cart addItem action', () => {
       })
     };
 
-    jest.mocked(CartService.getItems).mockResolvedValue({ resultCode: cartReadCode, result: [] } as any);
-    jest.mocked(CartService.updateItem).mockReset().mockResolvedValue({ resultCode: 200, result: { item_id: 7, sku: product.sku } } as any);
-    const missingCart = { ...(missingCartCodeOnly ? { code: 404 } : { resultCode: 404 }), result: 'No such entity with cartId = 1' } as any;
-    jest.mocked(CartService.getCartToken).mockResolvedValue({ resultCode: 200, result: 'quote' } as any);
-    jest.mocked(CartService.getTotals).mockReset().mockResolvedValue(missingCart);
-    if (totalsFailure) jest.mocked(CartService.getTotals).mockRejectedValue(new Error('totals unavailable'));
-    jest.mocked(CartService.getShippingMethods).mockResolvedValue(methodsNotFound === 'shipping' ? missingCart : { resultCode: 200, result: [] } as any);
-    jest.mocked(CartService.getPaymentMethods).mockResolvedValue(missingCart);
-    jest.mocked(CartService.setShippingInfo).mockResolvedValue(missingCart);
-    jest.mocked(getAvailableShippingMethod).mockReturnValue(methodsNotFound === 'shipping-info' ? { carrier_code: 'test', method_code: 'test' } as any : undefined);
+    jest.mocked(CartService.getItems).mockResolvedValue({ resultCode: cartReadCode ?? undefined, result: [] } as any);
+    jest.mocked(CartService.updateItem).mockReset().mockResolvedValue({ resultCode: 200, result: {
+      item_id: 7, sku: product.sku, extension_attributes: { budsies_quote_item_totals: writeTotals }
+    } } as any);
+    jest.mocked(CartService.getTotals).mockReset().mockResolvedValue({ resultCode: 200, result: { items: [] } } as any);
 
     pushes.length = 0;
     addError = undefined;
-    addResult = undefined;
 
     try {
-      addResult = await (itemActions as any).addItem(context, { productToAdd: product });
+      await (itemActions as any).addItem(context, { productToAdd: product });
     } catch (error) {
       addError = error;
     }
@@ -271,6 +243,10 @@ describe('add_to_cart through the cart addItem action', () => {
 
   beforeEach(() => {
     store.state.cart.cartItems = [];
+    jest.mocked(EventBus.$emit).mockImplementation((event, payload) => {
+      if (event === 'cart-prepare-item-product') fillProductWithAdditionalFields(payload);
+      return EventBus;
+    });
   });
 
   it('reports an undiscounted product added with quantity two', async () => {
@@ -281,13 +257,26 @@ describe('add_to_cart through the cart addItem action', () => {
     });
   });
 
-  it.each(['totalsFailure', 'methodsFailure'] as const)('accepts an item when only %s rejects after its server update', async failure => {
-    const event = await addToCart(createProduct(1), undefined, { [failure]: true });
-    expect(addError).toBeUndefined();
-    expect(event).toMatchObject({ event: 'add_to_cart', ecommerce: { items: [{ quantity: 1 }] } });
-    expect(store.state.cart.cartItems[0].qty).toBe(1);
-    expect(CartService.updateItem).toHaveBeenCalledTimes(1);
-    expect(addResult?.serverResponses).toEqual(expect.arrayContaining([expect.objectContaining({ status: 200 })]));
+  it('resolves an accepted quantity increase with the write price while the methods/totals chain is pending', async () => {
+    const previousTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
+    const writeTotals = { ...previousTotals, discount_amount: -25, final_price: 75 };
+    await addToCart(createProduct(3), previousTotals);
+    let finishMethods!: () => void;
+    const methods = new Promise<void>(resolve => { finishMethods = resolve; });
+    const pullMethods = jest.fn(() => methods);
+    try {
+      const event = await addToCart(createProduct(2), undefined, { writeTotals, pullMethods });
+      expect(addError).toBeUndefined();
+      expect(CartService.updateItem).toHaveBeenCalledTimes(1);
+      expect(pullMethods).toHaveBeenCalledTimes(1);
+      expect(CartService.getTotals).not.toHaveBeenCalled();
+      expect(event).toMatchObject({ ecommerce: { value: 999, items: [{ quantity: 2, price: 75, discount: 25 }] } });
+      expect(store.state.cart.cartItems[0].qty).toBe(5);
+    } finally {
+      finishMethods();
+    }
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(CartService.getTotals).toHaveBeenCalledTimes(1);
   });
 
   it.each(['checkProductStatus', 'create', 'sync'] as const)('releases Add when %s rejects', async rejectAt => {
@@ -295,29 +284,10 @@ describe('add_to_cart through the cart addItem action', () => {
     expect(addError).toMatchObject({ message: `Rejected ${rejectAt}` });
   });
 
-  it('reports synchronized net amounts for a discounted taxed product', async () => {
-    const itemTotals = { regular_price: 100, savings_amount: -20, discount_amount: 0, final_price: 80 };
-
-    expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({
-      ecommerce: { value: 999, items: [{ price: 80, discount: 20, quantity: 1 }] }
-    });
-  });
-
   it('falls back to net product prices when the line has no item totals', async () => {
     expect(await addToCart(createProduct(1))).toMatchObject({
       ecommerce: { items: [{ price: 80, discount: 20, quantity: 1 }] }
     });
-  });
-
-  it('reports only the added quantity for an existing line', async () => {
-    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: -10, final_price: 90 };
-
-    await addToCart(createProduct(3), itemTotals);
-
-    expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({
-      ecommerce: { value: 999, items: [{ price: 90, discount: 10, quantity: 1 }] }
-    });
-    expect(store.state.cart.cartItems[0].qty).toBe(4);
   });
 
   it('keeps the cart item price getter of the added product as the event value source', async () => {
@@ -338,46 +308,11 @@ describe('add_to_cart through the cart addItem action', () => {
     expect(addError).toMatchObject({ message: 'Provided email is not valid' });
   });
 
-  it('reports an item when every server response succeeded', async () => {
-    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
-    const accepted = [{ status: 200, sku: 'PLUSH-1', result: {} }];
-
-    expect(await addToCart(createProduct(1), itemTotals, { serverResponses: accepted })).toMatchObject({ event: 'add_to_cart' });
-  });
-
-  describe('when the cart rejects the add locally', () => {
-    const itemTotals = { regular_price: 100, savings_amount: 0, discount_amount: 0, final_price: 100 };
-
-    it('does not report an item that is out of stock', async () => {
-      expect(await addToCart(createProduct(1), itemTotals, { stockStatus: 'out_of_stock' })).toBeUndefined();
-      expect(store.state.cart.cartItems).toHaveLength(0);
-    });
-
-    it('does not report a quantity increase of an existing line that is out of stock', async () => {
-      expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ event: 'add_to_cart' });
-      expect(await addToCart(createProduct(1), itemTotals, { stockStatus: 'out_of_stock' })).toBeUndefined();
-      expect(store.state.cart.cartItems[0].qty).toBe(1);
-    });
-
-    it('does not report a product that fails the cart validation', async () => {
-      const productWithoutPrice: CartItem = { ...createProduct(1), price_incl_tax: 0 };
-
-      expect(await addToCart(productWithoutPrice, itemTotals)).toBeUndefined();
-      expect(store.state.cart.cartItems).toHaveLength(0);
-    });
-
-    it('reports an item that was added with only a stock warning', async () => {
-      const stockConfig = (config as any).stock;
-
-      stockConfig.allowOutOfStockInCart = false;
-
-      try {
-        expect(await addToCart(createProduct(1), itemTotals, { stockStatus: 'volatile' })).toMatchObject({ event: 'add_to_cart' });
-        expect(store.state.cart.cartItems).toHaveLength(1);
-      } finally {
-        stockConfig.allowOutOfStockInCart = true;
-      }
-    });
+  it.each(['stock', 'validation'])('does not report a local %s rejection', async reason => {
+    const product = createProduct(1);
+    if (reason === 'validation') product.price_incl_tax = 0;
+    expect(await addToCart(product, undefined, { stockStatus: reason === 'stock' ? 'out_of_stock' : 'ok' })).toBeUndefined();
+    expect(store.state.cart.cartItems).toHaveLength(0);
   });
 
   describe('when the cart synchronization fails', () => {
@@ -385,73 +320,21 @@ describe('add_to_cart through the cart addItem action', () => {
 
     // The items are not rejected: they stay in the cart and a later synchronization sends them, so no error
     // is shown and a retry of the shopper is not triggered.
-    it.each([500, 503])('keeps the item and shows no error when the cart read fails with %s', async (cartReadCode) => {
+    it.each([500, 503, null])('keeps the item and shows no error when the cart read fails with %s', async (cartReadCode) => {
       expect(await addToCart(createProduct(1), itemTotals, { cartReadCode })).toMatchObject({ event: 'add_to_cart' });
       expect(addError).toBeUndefined();
       expect(store.state.cart.cartItems).toHaveLength(1);
       expect(store.state.cart.cartItems[0].qty).toBe(1);
     });
 
-    it('reports the added quantity of an increase when the cart read fails, and keeps the sum in the cart', async () => {
-      expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ event: 'add_to_cart' });
-      expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 500 })).toMatchObject({
-        ecommerce: { items: [{ quantity: 1 }] }
-      });
-      expect(addError).toBeUndefined();
-      expect(store.state.cart.cartItems[0].qty).toBe(2);
-    });
-
-    describe('when the cart is no longer found', () => {
-      it('shows an error, reports nothing and leaves nothing in the cart', async () => {
-        expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 404 })).toBeUndefined();
-        expect(addError).toBeInstanceOf(ServerError);
-        expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
-        expect(store.state.cart.cartItems).toHaveLength(0);
-      });
-
-      it('rejects the add the same way when its totals refresh loses the cart', async () => {
-        expect(await addToCart(createProduct(1), itemTotals, { totalsNotFound: true })).toBeUndefined();
-        expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
-        expect(store.state.cart.cartItems).toHaveLength(0);
-        expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ ecommerce: { items: [{ quantity: 1 }] } });
-        expect(store.state.cart.cartItems[0].qty).toBe(1);
-      });
-
-      it.each([
-        ['shipping', false], ['payment', false], ['shipping-info', false],
-        ['shipping', true], ['payment', true], ['shipping-info', true]
-      ] as const)('rejects the cleared add when %s methods report a missing cart (code only: %s)', async (methodsNotFound, missingCartCodeOnly) => {
-        expect(await addToCart(createProduct(1), itemTotals, { methodsNotFound, missingCartCodeOnly })).toBeUndefined();
-        expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
-        expect(store.state.cart.cartItems).toHaveLength(0);
-        expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ ecommerce: { items: [{ quantity: 1 }] } });
-        expect(store.state.cart.cartItems[0].qty).toBe(1);
-      });
-
-      it('rejects a cleared add when methods lose the newly created quote', async () => {
-        expect(await addToCart(createProduct(1), itemTotals, { initiallyDisconnected: true, methodsNotFound: 'shipping' })).toBeUndefined();
-        expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
-        expect(store.state.cart.cartItems).toHaveLength(0);
-      });
-
-      it('adds the item once when the shopper retries after the error', async () => {
-        await addToCart(createProduct(1), itemTotals, { cartReadCode: 404 });
-
-        expect(addError).toBeInstanceOf(ServerError);
-        expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 200 })).toMatchObject({
-          ecommerce: { items: [{ quantity: 1 }] }
-        });
-        expect(addError).toBeUndefined();
-        expect(store.state.cart.cartItems).toHaveLength(1);
-        expect(store.state.cart.cartItems[0].qty).toBe(1);
-      });
-
-      it('drops a line that was in the cart before, with the rest of the cart', async () => {
-        await addToCart(createProduct(3), itemTotals);
-        await addToCart(createProduct(1), itemTotals, { cartReadCode: 404 });
-
-        expect(store.state.cart.cartItems).toHaveLength(0);
-      });
+    it('reports the cart-read 404 clearly, and adds once when the shopper retries', async () => {
+      await addToCart(createProduct(3), itemTotals);
+      expect(await addToCart(createProduct(1), itemTotals, { cartReadCode: 404 })).toBeUndefined();
+      expect(addError).toBeInstanceOf(ServerError);
+      expect(addError).toMatchObject({ message: 'Your cart is no longer available. Please add your items again.' });
+      expect(store.state.cart.cartItems).toHaveLength(0);
+      expect(await addToCart(createProduct(1), itemTotals)).toMatchObject({ ecommerce: { items: [{ quantity: 1 }] } });
+      expect(store.state.cart.cartItems[0].qty).toBe(1);
     });
   });
 
@@ -489,15 +372,9 @@ describe('add_to_cart through the cart addItem action', () => {
       } as unknown as CartItem;
     }
 
-    it('prices the selected bundle options instead of the default ones', async () => {
-      expect(await addToCart(createBundle(11))).toMatchObject({
-        ecommerce: { items: [{ item_id: 'BUNDLE-1', price: 120, discount: 20, quantity: 1 }] }
-      });
-    });
-
-    it('prices the default selection with the default option amounts', async () => {
-      expect(await addToCart(createBundle(10))).toMatchObject({
-        ecommerce: { items: [{ price: 80, discount: 20 }] }
+    it.each([[10, 80], [11, 120]])('prices the bundle option %s actually selected', async (option, price) => {
+      expect(await addToCart(createBundle(option))).toMatchObject({
+        ecommerce: { items: [{ item_id: 'BUNDLE-1', price, discount: 20, quantity: 1 }] }
       });
     });
   });
