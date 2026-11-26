@@ -35,6 +35,7 @@ import { BEFORE_STORE_BACKEND_API_REQUEST } from 'src/modules/shared';
 
 import ProductStructuredData from './components/ProductStructuredData.vue';
 import { debugDataFactory } from './helpers/debug-data.factory';
+export { getDaysInMonth } from './helpers/get-days-in-month.function';
 
 const debugData = debugDataFactory();
 

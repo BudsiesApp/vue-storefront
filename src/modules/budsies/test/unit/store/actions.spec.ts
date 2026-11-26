@@ -76,6 +76,26 @@ describe('Budsies cart recovery actions', () => {
   });
 });
 
+describe('shareBirthday', () => {
+  const payload = { name: 'Rex', birthMonth: 2, birthDay: 29, email: 'order@example.com', orderId: 123 };
+
+  beforeEach(() => (TaskQueue.execute as jest.Mock).mockReset());
+
+  it('posts the birthday and order attributes and returns the result', async () => {
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 200, result: 'saved' });
+    await expect((actions as any).shareBirthday({}, payload)).resolves.toBe('saved');
+    const request = (TaskQueue.execute as jest.Mock).mock.calls[0][0];
+    expect(request.url).toBe('https://api.example.com/api/ext/budsies/share/artists?token={{token}}');
+    expect(request.payload.method).toBe('POST');
+    expect(JSON.parse(request.payload.body)).toEqual(payload);
+  });
+
+  it('rejects a non-200 response', async () => {
+    (TaskQueue.execute as jest.Mock).mockResolvedValue({ resultCode: 400, result: 'rejected' });
+    await expect((actions as any).shareBirthday({}, payload)).rejects.toThrow('Error while sharing birthday rejected');
+  });
+});
+
 describe('customer address failures', () => {
   const context = { rootGetters: { 'user/current': { id: 4 } } };
 
