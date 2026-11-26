@@ -40,7 +40,7 @@ module.exports = {
   },
   transformIgnorePatterns: [
     '(.*)storefront-query-builder/node_modules/(.*)',
-    '<rootDir>/node_modules/(?!lodash(?:-es)?/|@storefront-ui/vue/src/components/molecules/SfSteps/_internal/SfStep\\.vue$)'
+    '<rootDir>/node_modules/(?!lodash(?:-es)?/|@storefront-ui/vue/src/(?:components/molecules/SfSteps/_internal/SfStep\\.vue$|components/molecules/SfSelect/|components/atoms/(?:SfChevron|SfButton|SfOverlay)/|utilities/))'
   ],
   setupFiles: [
     '<rootDir>/test/unit/setupTestEnvironment.ts'

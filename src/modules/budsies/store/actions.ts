@@ -368,7 +368,8 @@ export const actions: ActionTree<BudsiesState, RootState> = {
       name: string,
       birthDay: number,
       birthMonth: number,
-      email: string
+      email: string,
+      orderId: number
     }
   ): Promise<any> {
     const url = processURLAddress(`${config.budsies.endpoint}/share/artists?token={{token}}`)
