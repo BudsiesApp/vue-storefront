@@ -3,6 +3,8 @@ import { isServer } from '@vue-storefront/core/helpers'
 import { StorageManager } from '@vue-storefront/core/lib/storage-manager'
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 
+import { VIDEO_PLAYBACK_COLLECTION } from 'src/modules/shared/helpers/video-playback';
+
 import addonFactory from './factories/extra-photo-addon.factory';
 import nl2br from './filters/nl2br';
 import ExtraPhotoAddon from './models/extra-photo-addon.model';
@@ -43,6 +45,7 @@ export const BudsiesModule: StorefrontModule = async function ({ store }) {
   store.registerModule('budsies', budsiesStore);
 
   if (!isServer) {
+    StorageManager.init(VIDEO_PLAYBACK_COLLECTION);
     EventBus.$on(BEFORE_STORE_BACKEND_API_REQUEST, (payload: { url: string }) => {
       const urlParts = payload.url.split('?');
       const existingQueryString = urlParts[1] || '';
