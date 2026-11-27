@@ -13,6 +13,7 @@ import {
 import EventBus from '@vue-storefront/core/compatibility/plugins/event-bus'
 import { isCartNotFoundError } from '../../helpers/is-cart-not-found-error'
 import { createTotalsItemUpdate } from '../../helpers/create-totals-item-update.function'
+import { hasUsablePaymentTotals } from '../../helpers/has-usable-payment-totals'
 
 // Analytics waits through methods preparation and response application, not just the totals request.
 async function holdTotalsSyncing<T> (commit: Commit, task: () => Promise<T>): Promise<T> {
@@ -41,22 +42,32 @@ const totalsActions = {
       commit(types.SET_IS_TOTALS_SYNCING, false);
     }
   },
-  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation }) {
-    commit(types.START_TOTALS_REFRESH)
+  async overrideServerTotals ({ commit, state, getters, rootGetters, dispatch }, { addressInformation, hasShippingInformation, refresh }) {
+    if (!refresh) {
+      commit(types.START_TOTALS_REFRESH)
+      refresh = { id: state.totalsRefreshId, cartToken: getters.getCartToken }
+    }
 
     // Refreshes can overlap and their responses can arrive in any order. The refresh that started last decides
     // the totals: the response or the failure of an older one must neither overwrite them nor invalidate them.
-    const refreshId = state.totalsRefreshId
+    const refreshId = refresh.id
     const isSuperseded = () => state.totalsRefreshId !== refreshId
     // The answer is about the cart that was requested. When another cart replaced it in the meantime, for example
     // after a reconnect, applying it would give the current cart the totals of an old one, and clearing would
     // discard the current cart for the sake of an old one.
-    const requestedCartToken = getters.getCartToken
+    const requestedCartToken = refresh.cartToken
     const isCartReplaced = () => getters.getCartToken !== requestedCartToken
     const isOutdated = () => isSuperseded() || isCartReplaced()
 
     return holdTotalsSyncing(commit, async () => {
-      const task: Task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
+      if (isOutdated()) return
+      let task: Task
+      try {
+        task = await dispatch('getTotals', { addressInformation, hasShippingInformation })
+      } catch (error) {
+        if (!isOutdated()) commit(types.SET_TOTALS_REFRESH_FAILED, true)
+        throw error
+      }
       const { resultCode, result } = task;
 
       if (isCartNotFoundError(task)) {
@@ -77,7 +88,10 @@ const totalsActions = {
 
       if (resultCode === 200) {
         const platformTotals = result?.totals ?? result
-        if (!Number.isFinite(platformTotals?.base_grand_total) || !Array.isArray(platformTotals.items)) return
+        if (!hasUsablePaymentTotals(platformTotals) || !Array.isArray(platformTotals.items)) {
+          commit(types.SET_TOTALS_REFRESH_FAILED, true)
+          return
+        }
         // Line prices, totals and the sync date are applied in one go: nothing can wait between them, so no
         // newer refresh and no reconnect can start while only a part of the response is applied.
         Logger.info('Overriding server totals. ', 'cart', platformTotals)()
@@ -90,6 +104,7 @@ const totalsActions = {
 
         commit(types.CART_UPD_TOTALS, { itemsAfterPlatformTotals, platformTotals, platformTotalSegments: platformTotals.total_segments })
         commit(types.CART_SET_TOTALS_SYNC)
+        commit(types.SET_TOTALS_REFRESH_FAILED, false)
 
         // we received payment methods as a result of this call, updating state
         if (result.payment_methods && getters.canUpdateMethods) {
@@ -104,6 +119,7 @@ const totalsActions = {
         return
       }
 
+      commit(types.SET_TOTALS_REFRESH_FAILED, true)
       Logger.error(result, 'cart')()
     });
   },
@@ -135,10 +151,11 @@ const totalsActions = {
       await dispatch('overrideServerTotals', { hasShippingInformation, addressInformation });
     }
   },
-  async syncTotals ({ commit, dispatch, getters, rootGetters }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
+  async syncTotals ({ commit, dispatch, getters, rootGetters, state }, payload: { forceServerSync: boolean, methodsData?: any } = { forceServerSync: false, methodsData: null }) {
     const methodsData = payload ? payload.methodsData : null
     const isTotalsSyncNeeded = () => getters.canSyncTotals && (getters.isTotalsSyncRequired || payload.forceServerSync)
 
+    let refresh: { id: number, cartToken: string } | undefined
     const pullMethodsAndSyncTotals = async () => {
       await dispatch('pullMethods', { forceServerSync: payload.forceServerSync })
 
@@ -167,7 +184,7 @@ const totalsActions = {
             method_code: availableShippingMethod?.method_code
           });
 
-          return dispatch('overrideServerTotals', { hasShippingInformation, addressInformation })
+          return dispatch('overrideServerTotals', { hasShippingInformation, addressInformation, refresh })
         }
 
         Logger.error('Please do set the tax.defaultCountry in order to calculate totals', 'cart')()
@@ -176,7 +193,18 @@ const totalsActions = {
 
     // Include the methods pull in the busy span, even before the totals request starts.
     if (isTotalsSyncNeeded()) {
-      return holdTotalsSyncing(commit, pullMethodsAndSyncTotals)
+      commit(types.START_TOTALS_REFRESH)
+      refresh = { id: state.totalsRefreshId, cartToken: getters.getCartToken }
+      return holdTotalsSyncing(commit, async () => {
+        try {
+          return await pullMethodsAndSyncTotals()
+        } catch (error) {
+          if (refresh && state.totalsRefreshId === refresh.id && getters.getCartToken === refresh.cartToken) {
+            commit(types.SET_TOTALS_REFRESH_FAILED, true)
+          }
+          throw error
+        }
+      })
     }
 
     return pullMethodsAndSyncTotals()

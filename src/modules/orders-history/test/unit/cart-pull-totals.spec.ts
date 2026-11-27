@@ -63,7 +63,7 @@ it.each(['guest merge', 'empty-cache login', 'reorder'])('applies one methods/to
       }
     }
   } });
-  const totals = { base_grand_total: 70, coupon_code: 'SAVE', items: [{ item_id: 7, qty: 2 }] };
+  const totals = { base_grand_total: 70, base_tax_amount: 0, base_shipping_amount: 0, base_subtotal: 70, base_discount_amount: 0, quote_currency_code: 'USD', coupon_code: 'SAVE', items: [{ item_id: 7, qty: 2 }] };
   jest.mocked(TaskQueue.execute).mockResolvedValue({ resultCode: 200 } as any);
   jest.mocked(CartService.mergeGuestAndCustomer).mockResolvedValue({ resultCode: 200, result: 'current-quote' } as any);
   jest.mocked(CartService.getCartToken).mockResolvedValue({ resultCode: 200, result: 'current-quote' } as any);

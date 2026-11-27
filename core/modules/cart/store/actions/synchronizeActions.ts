@@ -102,7 +102,7 @@ const synchronizeActions = {
     }
   },
   async waitForIdle ({ getters, dispatch, state }) {
-    const isBusy = () => getters.getIsAdding || getters.IS_CART_SYNCING || getters.isTotalsSettling || getters.IS_COUPON_PROCESSING
+    const isBusy = () => getters.isCartBusy
     do {
       await dispatch('waitForConnections')
       await dispatch('waitForCartSync')
