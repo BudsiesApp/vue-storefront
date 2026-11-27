@@ -4,7 +4,7 @@ import totalsActions from '@vue-storefront/core/modules/cart/store/actions/total
 import { createContextMock } from '@vue-storefront/unit-tests/utils';
 
 jest.mock('@vue-storefront/core/lib/logger', () => ({
-  Logger: { info: jest.fn(() => () => {}) }
+  Logger: { info: jest.fn(() => () => {}), error: jest.fn(() => () => {}) }
 }));
 jest.mock('@vue-storefront/core/data-resolver', () => ({ CartService: {} }));
 jest.mock('@vue-storefront/core/compatibility/plugins/event-bus', () => ({
@@ -37,7 +37,7 @@ describe('Cart totals item refresh', () => {
 
     (contextMock.dispatch as jest.Mock).mockImplementationOnce(async () => ({
       resultCode: 200,
-      result: { totals: { base_grand_total: 200, total_segments: {}, items: [totalsItem] } }
+      result: { totals: { base_grand_total: 200, base_tax_amount: 0, base_shipping_amount: 0, base_subtotal: 200, base_discount_amount: 0, quote_currency_code: 'USD', total_segments: {}, items: [totalsItem] } }
     }));
     (prepareShippingInfoForUpdateTotals as jest.Mock).mockImplementation(() => ({ 7: totalsItem }));
 
@@ -81,5 +81,28 @@ describe('Cart totals item refresh', () => {
     expect(await overrideWith(totalsItem)).toEqual([types.CART_UPD_ITEM_PROPS, {
       product: { server_item_id: 8, qty: 1, totals: totalsItem }
     }]);
+  });
+
+  it('retains prior totals after an unusable response and clears failure on a successful retry', async () => {
+    const context = createContextMock({ getters: { getCartItems: [], getCartToken: 'quote' }, state: { totalsRefreshId: 0 } });
+    (prepareShippingInfoForUpdateTotals as jest.Mock).mockReturnValue({});
+    (context.dispatch as jest.Mock)
+      .mockResolvedValueOnce({ resultCode: 200, result: { base_grand_total: 10, items: [] } })
+      .mockResolvedValueOnce({ resultCode: 200, result: { base_grand_total: 10, base_tax_amount: 0, base_shipping_amount: 0, base_subtotal: 10, base_discount_amount: 0, quote_currency_code: 'USD', items: [] } });
+
+    await (totalsActions as any).overrideServerTotals(context, {});
+    expect(context.commit).toHaveBeenCalledWith(types.SET_TOTALS_REFRESH_FAILED, true);
+    expect(context.commit).not.toHaveBeenCalledWith(types.CART_UPD_TOTALS, expect.anything());
+    await (totalsActions as any).overrideServerTotals(context, {});
+    expect(context.commit).toHaveBeenCalledWith(types.SET_TOTALS_REFRESH_FAILED, false);
+    expect(context.commit).toHaveBeenCalledWith(types.CART_UPD_TOTALS, expect.anything());
+  });
+
+  it('marks a rejected totals request as failed and releases the hold', async () => {
+    const context = createContextMock({ getters: { getCartToken: 'quote' }, state: { totalsRefreshId: 0 } });
+    (context.dispatch as jest.Mock).mockRejectedValueOnce(new Error('network'));
+    await expect((totalsActions as any).overrideServerTotals(context, {})).rejects.toThrow('network');
+    expect(context.commit).toHaveBeenCalledWith(types.SET_TOTALS_REFRESH_FAILED, true);
+    expect(context.commit).toHaveBeenCalledWith(types.FINISH_TOTALS_SYNC);
   });
 });

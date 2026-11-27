@@ -65,7 +65,7 @@ function mountCheckout ({ quantity, pendingCoupon, hasTotals, failRefresh, succe
   jest.mocked(CartService.getTotals).mockImplementation(async () => {
     order.push('totals');
     if (failRefresh) throw new Error('totals unavailable');
-    return { resultCode: 200, result: { base_grand_total: serverQuantity * 10, items: [{ item_id: 7, qty: serverQuantity }] } } as any;
+    return { resultCode: 200, result: { base_grand_total: serverQuantity * 10, base_tax_amount: 0, base_shipping_amount: 0, base_subtotal: serverQuantity * 10, base_discount_amount: 0, quote_currency_code: 'USD', items: [{ item_id: 7, qty: serverQuantity }] } } as any;
   });
   const store = new Store<any>({ modules: {
     checkout: {

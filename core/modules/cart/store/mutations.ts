@@ -44,6 +44,7 @@ const mutations: MutationTree<CartState> = {
     state.itemsAfterPlatformTotals = {}
     state.platformTotals = null
     state.platformTotalSegments = null
+    state.hasTotalsRefreshFailed = false
   },
   [types.CART_DEL_ITEM] (state, { product, removeByParentSku = true }) {
     EventBus.$emit('cart-before-delete', { items: state.cartItems })
@@ -162,6 +163,9 @@ const mutations: MutationTree<CartState> = {
   // Numbers the totals refreshes in the order they start, so a response can tell that a newer refresh superseded it
   [types.START_TOTALS_REFRESH] (state) {
     state.totalsRefreshId = (state.totalsRefreshId || 0) + 1;
+  },
+  [types.SET_TOTALS_REFRESH_FAILED] (state, failed: boolean) {
+    state.hasTotalsRefreshFailed = failed
   },
   [types.FINISH_TOTALS_SYNC] (state) {
     state.totalsSyncDepth = Math.max(0, state.totalsSyncDepth - 1);

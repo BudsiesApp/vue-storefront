@@ -34,6 +34,7 @@ export const cartStore: Module<CartState, any> = {
     isTotalsSyncing: false,
     totalsSyncDepth: 0,
     totalsRefreshId: 0,
+    hasTotalsRefreshFailed: false,
     isPaymentMethodsSyncing: false,
     isCouponProcessing: false,
     exchangeRate: 1

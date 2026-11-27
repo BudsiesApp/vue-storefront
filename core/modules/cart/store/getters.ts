@@ -9,6 +9,7 @@ import config from 'config'
 
 import CartItem from '../types/CartItem'
 import getCartItemKey from '../helpers/get-cart-item-key.function'
+import { hasUsablePaymentTotals } from '../helpers/has-usable-payment-totals'
 import { IS_SHIPPING_METHODS_SYNCING, IS_SHIPPING_METHODS_SYNCING_ERROR, IS_CART_SYNCING, IS_TOTALS_SYNCING, IS_PAYMENT_METHODS_SYNCING, IS_COUPON_PROCESSING, IS_COUPON_INTERACTION_BLOCKED } from './getter-types'
 
 const getters: GetterTree<CartState, RootState> = {
@@ -18,10 +19,16 @@ const getters: GetterTree<CartState, RootState> = {
   getPaymentTotals: ({ cartServerToken, cartServerLastTotalsSyncDate, platformTotals }) => {
     if (!cartServerToken || !cartServerLastTotalsSyncDate || !platformTotals) return null
 
-    const { base_grand_total, base_tax_amount, base_shipping_amount, base_subtotal, base_discount_amount, quote_currency_code } = platformTotals
-    return [base_grand_total, base_tax_amount, base_shipping_amount, base_subtotal, base_discount_amount].every(Number.isFinite) &&
-      typeof quote_currency_code === 'string' && quote_currency_code.length > 0 ? platformTotals : null
+    return hasUsablePaymentTotals(platformTotals) ? platformTotals : null
   },
+  isCartBusy: (state, getters) => getters.getIsAdding || getters.IS_CART_SYNCING || getters.isTotalsSettling || getters.IS_COUPON_PROCESSING,
+  hasTotalsRefreshFailed: state => state.hasTotalsRefreshFailed,
+  hasPendingQuantityChange: (state) => state.cartItems.some((item) => {
+    const appliedItem = state.itemsAfterPlatformTotals?.[item.server_item_id]
+
+    return !appliedItem || appliedItem.qty !== item.qty
+  }),
+  canStartExpressCheckout: (state, getters) => !!getters.getPaymentTotals && !getters.isCartBusy && !getters.hasTotalsRefreshFailed && !getters.hasPendingQuantityChange,
   getPendingCouponCode: state => state.pendingCouponCode,
   getShippingMethod: state => state.shipping,
   getPaymentMethod: state => state.payment,
