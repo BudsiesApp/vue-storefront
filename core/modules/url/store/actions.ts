@@ -176,13 +176,13 @@ export const actions: ActionTree<UrlState, any> = {
         payload
       )
       if (!response.ok) {
-        return null
+        throw new Error(`URL mapping request failed with status ${response.status}`)
       }
       response = await response.json()
       return response
     } catch (err) {
       Logger.error('FetchError in request to ES: ', 'search', err)()
-      return null
+      throw err
     }
   },
   /**

@@ -12,7 +12,7 @@ import qs from 'qs'
 import { resolveParentData } from '../helpers/resolve-parent-data.function'
 
 const fetchStory = async url => {
-  const { result: story }: any = await TaskQueue.execute({
+  const { code, result: story }: any = await TaskQueue.execute({
     url,
     payload: {
       method: 'GET',
@@ -20,6 +20,9 @@ const fetchStory = async url => {
     },
     silent: true
   })
+  if (code !== 200) {
+    throw new Error(`Storyblok story request failed with code ${code}`)
+  }
   return story
 }
 
@@ -85,7 +88,7 @@ export const actions: ActionTree<StoryblokState, RootState> = {
   async checkStoryExist (context, { fullSlug: key }): Promise<boolean> {
     const url = processURLAddress(`${config.storyblok.endpoint}/check-exist/${key}`.replace(/([^:]\/)\/+/g, '$1'))
 
-    const { result }: any = await TaskQueue.execute({
+    const { code, result }: any = await TaskQueue.execute({
       url,
       payload: {
         method: 'GET',
@@ -93,6 +96,10 @@ export const actions: ActionTree<StoryblokState, RootState> = {
       },
       silent: true
     });
+
+    if (code !== 200) {
+      throw new Error(`Storyblok existence request failed with code ${code}`)
+    }
 
     return result.exist;
   },

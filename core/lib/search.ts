@@ -124,24 +124,7 @@ export const quickSearchByQuery = async ({ query = {}, start = 0, size = 50, ent
         }
       }).catch(err => {
         if (!servedFromCache) {
-          if (!isServer) {
-            Logger.debug('No results and offline ' + cacheKey + ' (' + entityType + '), ms=' + (new Date().getTime() - benchmarkTime.getTime()))()
-            const res = {
-              items: [],
-              total: 0,
-              start: 0,
-              perPage: 0,
-              aggregations: {},
-              offline: true,
-              cache: true,
-              noresults: true,
-              suggestions: {}
-            }
-            resolve(res)
-          } else {
-            Logger.error('Can not connect the vue-storefront-api / ElasticSearch instance!', 'search', err)()
-            reject(err)
-          }
+          Logger.error('Can not connect the vue-storefront-api / ElasticSearch instance!', 'search', err)()
         }
         reject(err)
       })
