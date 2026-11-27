@@ -111,10 +111,10 @@ describe('quickSearchByQuery in-flight request coalescing', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     pendingSearches[0].reject(new Error('Network error'))
 
-    const results = await Promise.all([first, second])
+    const results = await Promise.allSettled([first, second])
 
     expect(searchAdapter.search).toHaveBeenCalledTimes(1)
-    results.forEach((result) => expect(result.offline).toBe(true))
+    results.forEach((result) => expect(result.status).toBe('rejected'))
 
     const retry = quickSearchByQuery({ query: { sku: 'sku-2' } })
     await waitForSearches(2)

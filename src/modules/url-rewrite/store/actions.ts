@@ -56,6 +56,10 @@ export const actions: ActionTree<State, RootState> = {
       return urlRewrite;
     }
 
-    return null;
+    if (result.code === 404) {
+      return null;
+    }
+
+    throw new Error(`URL rewrite lookup failed with code ${result.code}`);
   }
 }
