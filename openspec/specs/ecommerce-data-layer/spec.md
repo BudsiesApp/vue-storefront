@@ -329,20 +329,6 @@ On Petsies, Budsies, Budsies Education, and Waggables, standard `begin_checkout`
 - **WHEN** a checkout event is emitted without usable totals
 - **THEN** the event is pushed without throwing and does not invent a coupon or monetary total
 
-### Requirement: Payment requires valid current-quote totals
-
-Standard and express checkout SHALL require valid, successfully applied totals for the current quote before payment starts and at final submission. Totals from another quote SHALL NOT be used. A payment blocked by missing totals SHALL offer a retryable error and a business refresh, without waiting for analytics.
-
-#### Scenario: Replacement quote has no usable totals
-- **WHEN** login or recovery replaces the quote and its totals refresh fails, even though payment methods are available
-- **THEN** payment cannot start until business totals for the replacement quote are ready
-- **AND** the shopper can request one normal business totals refresh and retry payment
-
-#### Scenario: Totals become unavailable during payment
-- **WHEN** a standard or express payment reaches final submission without valid current-quote totals
-- **THEN** no order is submitted or missing totals dereferenced, and the shopper can retry
-- **AND** the rejected submission does not consume the payment nonce or session ID
-
 ### Requirement: Customer email hashes
 
 Customer-identifying events SHALL report hexadecimal SHA-256 of the trimmed, lowercased email as `customerEmailHashed` and hexadecimal SHA3-256 of the raw email as `customerEmailHashedSha3`. A blank email SHALL clear both fields with undefined. Hash input SHALL come from the relevant event's customer, order, or wizard email, and push order SHALL remain unchanged.

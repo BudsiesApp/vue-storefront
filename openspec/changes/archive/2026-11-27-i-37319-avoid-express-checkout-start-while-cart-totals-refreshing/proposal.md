@@ -19,11 +19,11 @@ Cart-page express checkout can open a wallet with the grand total from before a 
 
 ### New Capabilities
 
-None.
+- `checkout-payment-readiness`: Holds the payment-totals requirement "Payment requires valid current-quote totals", moved from `ecommerce-data-layer` with its existing standard-checkout and final-submission guarantees. It is extended with immediate quantity-edit blocking, cart-write/coupon readiness through totals application, inactive presentation, failure recovery and non-blocking cart interactions.
 
 ### Modified Capabilities
 
-- `ecommerce-data-layer`: Extend the existing payment-totals requirement with immediate quantity-edit blocking, cart-write/coupon readiness through totals application, inactive presentation, failure recovery and non-blocking cart interactions. Preserve the existing standard-checkout and final-submission guarantees.
+- `ecommerce-data-layer`: Remove the payment-totals requirement, which moves to `checkout-payment-readiness`. Its other requirements are unchanged.
 
 ## Impact
 

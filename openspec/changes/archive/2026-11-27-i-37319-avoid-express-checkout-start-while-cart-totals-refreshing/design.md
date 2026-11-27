@@ -2,7 +2,7 @@
 
 ## Context
 
-See [proposal.md](proposal.md) for the problem and [the spec delta](specs/ecommerce-data-layer/spec.md) for the contract.
+See [proposal.md](proposal.md) for the problem and [the spec delta](specs/checkout-payment-readiness/spec.md) for the contract. The payment-totals requirement moves there from `ecommerce-data-layer` ([removal delta](specs/ecommerce-data-layer/spec.md)).
 
 The checked-out application includes the totals lifecycle introduced by #36676. `cart/isTotalsSettling` uses `totalsSyncDepth` to cover `syncTotals`' methods preparation and nested `overrideServerTotals` response application. `IS_TOTALS_SYNCING` covers only the HTTP portion and must not be widened. `overrideServerTotals` already numbers requests and rejects superseded or replaced-quote responses.
 

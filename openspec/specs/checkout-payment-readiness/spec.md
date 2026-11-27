@@ -1,6 +1,10 @@
-# Spec Delta
+# checkout-payment-readiness Specification
 
-## MODIFIED Requirements
+## Purpose
+
+Cart and checkout payment starts only from valid, successfully applied totals for the current quote. On the cart page, express wallet buttons stay visible but inactive while cart edits or a totals refresh can still change the grand total, and the existing totals retry offers the way back after totals are missing or a refresh fails.
+
+## Requirements
 
 ### Requirement: Payment requires valid current-quote totals
 
