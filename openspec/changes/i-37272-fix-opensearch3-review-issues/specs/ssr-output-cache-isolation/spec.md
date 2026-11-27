@@ -14,3 +14,16 @@ A category whose initial catalog load fails and a route whose backend lookup fai
 #### Scenario: Empty and successful categories keep normal caching
 - **WHEN** a category search completes successfully with zero hits or with products
 - **THEN** existing page output-cache eligibility and lifetime remain unchanged
+
+### Requirement: Successful missing-category responses retain the page-not-found cache opt-out
+
+When `/c/<slug>/` resolves successfully to neither a category nor a url-rewrite, the original SSR request SHALL return HTTP 404 with the existing page-not-found page and its existing `no-cache` marker, without an HTTP redirect. The SSR output cache SHALL NOT store this response or a redirect standing in for it. An existing category whose products load successfully with zero hits SHALL retain its normal successful empty-category response and cache eligibility. No new negative-response cache SHALL be introduced.
+
+#### Scenario: Missing category is not stored in shared output
+- **WHEN** a direct request successfully finds no category and no rewrite
+- **THEN** the response contains the page-not-found content with HTTP 404 and the existing cache opt-out, and the SSR output cache stores no entry for it
+
+#### Scenario: Created category is not hidden by a cached 404
+- **WHEN** an uncached missing-category response has been served and the category is later indexed successfully
+- **THEN** a fresh direct request to the same URL can render the category without waiting for expiry or invalidating a newly created SSR 404 entry
+- **AND** existing browser query-cache freshness behavior remains unchanged

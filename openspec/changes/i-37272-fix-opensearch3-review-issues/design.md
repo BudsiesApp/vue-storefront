@@ -36,9 +36,11 @@ Route failures continue to reach `beforeEachGuard` and its existing `next({name:
 
 Rejected SSR category prefetch reaches `createSsrErrorHandler`, which redirects to `/error` without invoking the output-cache writer. Once the theme stops swallowing the rejection, this existing path prevents a failed category from being cached. Reuse it without changes or new SSR cache tests; keep server-entry, cache implementation and successful redirects unchanged. No new error page, status scheme or original-URL restoration is needed.
 
+For a successful category miss with no url-rewrite, the theme companion selects the existing page-not-found route during initial navigation, before products load or the SSR page is chosen. Its `Error.vue.asyncData` already returns HTTP 404 and adds `no-cache`; the output-cache writer already skips that marker. Keep this real original-request 404 separate from throwing a 404 after rendering starts, which the current SSR error handler translates into a redirect. No change to core SSR, status handling or caching is needed. New focused theme tests verify the missing-category response and existing cache opt-out; the unchanged backend-failure render path still needs no new dedicated cache harness test.
+
 ### 4. Keep changes in their owning OpenSpec roots
 
-This change owns search/lookup propagation and reuses existing SSR failure-cache behavior without changes or new cache tests. `BudsiesApp/vue-storefront-api` owns filter normalization, API lookup status handling and stock removal. The `src/themes/petsies-capybara` companion owns category guard completion and subsequent-load notifications, including sort-triggered page reloads. Each uses the same change name, with no duplicate theme behavior contract here.
+This change owns search/lookup propagation and the SSR no-cache contract while reusing the existing cache implementation. `BudsiesApp/vue-storefront-api` owns filter normalization, API lookup status handling and stock removal. The `src/themes/petsies-capybara` companion owns category guard completion, real uncached 404 routing/tests for missing categories, and subsequent-load notifications including sort-triggered page reloads. Each uses the same change name.
 
 ## Risks / Trade-offs
 
@@ -46,6 +48,7 @@ This change owns search/lookup propagation and reuses existing SSR failure-cache
 - Other catalog consumers may log an error while retaining an empty visual block → Accepted scope; no new messages are introduced outside category and route resolution.
 - Rejected SSR renders and browser error navigation replace the requested URL with `/error/` → Accepted existing behavior; reloading that URL does not retry the original page. SSR lookup failures can render the error route in place instead.
 - Existing bad category cache entries from before rollout can survive until expiry → Runtime failure checks begin from a cold category entry; normal expiry/invalidation remains available. No migration or broad cache purge is introduced.
+- A missing category can be created later → Its 404 is not stored in SSR output, so a fresh direct request can render the newly indexed category. Existing query-cache freshness within an already-open browser tab remains unchanged; no new persistent missing-category state is added.
 
 ## Migration Plan
 
